@@ -118,7 +118,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       const payload = {
         ...data,
         amount: parseFloat(data.amount),
-        expenseDate: data.expenseDate.toISOString(),
+        expenseDate: new Date(data.expenseDate),
         attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || "/uploads/default-receipt.pdf",
         attachmentType,
         projectId: data.projectId === "none" ? null : data.projectId,
