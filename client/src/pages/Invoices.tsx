@@ -33,7 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
-import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import { DataExportButton } from "@/components/DataExportButton";
 import { Link } from "wouter";
 import type { Invoice, Client } from "@shared/schema";
@@ -451,25 +450,12 @@ export default function Invoices() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex space-x-1">
-                              <Link href={`/invoices/${invoice.id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  View
-                                </Button>
-                              </Link>
-                              <StatusUpdateForm
-                                entityType="invoice"
-                                entityId={invoice.id}
-                                currentStatus={invoice.status}
-                                trigger={
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="w-3 h-3 mr-1" />
-                                    Status
-                                  </Button>
-                                }
-                              />
-                            </div>
+                            <Link href={`/invoices/${invoice.id}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Button>
+                            </Link>
                           </TableCell>
                         </TableRow>
                       );
@@ -543,23 +529,13 @@ export default function Invoices() {
                           </div>
                         </div>
                         
-                        <div className="flex space-x-2 mt-4">
-                          <Link href={`/invoices/${invoice.id}`} className="flex-1">
+                        <div className="mt-4">
+                          <Link href={`/invoices/${invoice.id}`} className="w-full block">
                             <Button variant="outline" size="sm" className="w-full">
                               <Eye className="w-3 h-3 mr-1" />
                               View Details
                             </Button>
                           </Link>
-                          <StatusUpdateForm
-                            entityType="invoice"
-                            entityId={invoice.id}
-                            currentStatus={invoice.status}
-                            trigger={
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                            }
-                          />
                         </div>
                       </CardContent>
                     </Card>
