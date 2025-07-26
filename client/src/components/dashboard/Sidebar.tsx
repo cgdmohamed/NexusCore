@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
-import { LanguageToggle } from "@/components/ui/language-toggle";
+
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import {
@@ -106,10 +106,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Language Toggle */}
-        <div className="mb-6">
-          <LanguageToggle />
-        </div>
+
 
         {/* Navigation Menu */}
         <nav className="space-y-2">

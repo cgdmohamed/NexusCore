@@ -2,6 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL Language Support */
+[dir="rtl"] {
+  /* Flip horizontal margins and paddings */
+  .space-x-1 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  .space-x-2 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  .space-x-3 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  .space-x-4 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  .space-x-6 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  .space-x-8 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+  
+  /* Text alignment */
+  .text-left { text-align: right; }
+  .text-right { text-align: left; }
+  
+  /* Float directions */
+  .float-left { float: right; }
+  .float-right { float: left; }
+  
+  /* Border radius */
+  .rounded-l { border-radius: 0 0.25rem 0.25rem 0; }
+  .rounded-r { border-radius: 0.25rem 0 0 0.25rem; }
+  .rounded-tl { border-top-right-radius: 0.25rem; border-top-left-radius: 0; }
+  .rounded-tr { border-top-left-radius: 0.25rem; border-top-right-radius: 0; }
+  .rounded-bl { border-bottom-right-radius: 0.25rem; border-bottom-left-radius: 0; }
+  .rounded-br { border-bottom-left-radius: 0.25rem; border-bottom-right-radius: 0; }
+}
+
+/* Arabic Font Support */
+[dir="rtl"] {
+  font-family: 'Tajawal', 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Dropdown and Modal RTL Support */
+[dir="rtl"] .dropdown-content {
+  right: 0;
+  left: auto;
+}
+
+[dir="rtl"] .popover-content {
+  right: 0;
+  left: auto;
+}
+
+/* Form field RTL alignment */
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="email"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Icon and button RTL adjustments */
+[dir="rtl"] .icon-left {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .icon-right {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Table RTL Support */
+[dir="rtl"] th:first-child {
+  text-align: right;
+}
+
+[dir="rtl"] td:first-child {
+  text-align: right;
+}
+
+/* Card and component RTL spacing */
+[dir="rtl"] .card-content {
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+}
+
 :root {
   --background: hsl(248, 100%, 98%);
   --foreground: hsl(216, 19%, 18%);

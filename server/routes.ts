@@ -429,6 +429,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification routes for navbar
+  app.get('/api/notifications', async (req: any, res) => {
+    try {
+      // Mock notifications data - in real app, this would be a database table
+      const notifications = [
+        {
+          id: '1',
+          type: 'invoice.paid',
+          title: 'Invoice INV-2024-001 paid',
+          message: 'Payment of $1,500 received from TechCorp Solutions',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          userId: req.user?.id || '1',
+        },
+        {
+          id: '2',
+          type: 'client.added',
+          title: 'New client registered',
+          message: 'TechCorp Solutions has been added to CRM',
+          isRead: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          userId: req.user?.id || '1',
+        },
+        {
+          id: '3',
+          type: 'task.assigned',
+          title: 'Task assigned',
+          message: 'Website redesign project has been assigned to you',
+          isRead: true,
+          createdAt: new Date(Date.now() - 7200000).toISOString(),
+          userId: req.user?.id || '1',
+        },
+        {
+          id: '4',
+          type: 'quotation.accepted',
+          title: 'Quotation accepted',
+          message: 'Quotation QUO-2024-005 has been accepted by client',
+          isRead: true,
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          userId: req.user?.id || '1',
+        },
+      ];
+
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.patch('/api/notifications/:id/read', async (req: any, res) => {
+    try {
+      // In real app, this would update the database
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      res.status(500).json({ error: 'Failed to mark notification as read' });
+    }
+  });
+
+  app.patch('/api/notifications/mark-all-read', async (req: any, res) => {
+    try {
+      // In real app, this would update all notifications for the user
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      res.status(500).json({ error: 'Failed to mark all notifications as read' });
+    }
+  });
+
   // Activity routes
   app.get('/api/activities', async (req: any, res) => {
     try {

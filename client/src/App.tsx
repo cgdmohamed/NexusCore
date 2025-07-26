@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { Navbar } from "@/components/ui/navbar";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
@@ -49,30 +50,33 @@ function Router() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/crm" component={CRM} />
-          <Route path="/crm/:id" component={ClientProfile} />
-          <Route path="/quotations" component={Quotations} />
-          <Route path="/quotations/:id" component={QuotationDetail} />
-          <Route path="/quotation-management" component={QuotationManagement} />
-          <Route path="/invoices" component={Invoices} />
-          <Route path="/invoices/:id" component={InvoiceDetail} />
-          <Route path="/expenses" component={Expenses} />
-          <Route path="/expenses/:id" component={ExpenseDetail} />
-          <Route path="/expenses/:id/edit" component={ExpenseEdit} />
-          <Route path="/payment-sources" component={PaymentSources} />
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Navbar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-auto">
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/crm" component={CRM} />
+            <Route path="/crm/:id" component={ClientProfile} />
+            <Route path="/quotations" component={Quotations} />
+            <Route path="/quotations/:id" component={QuotationDetail} />
+            <Route path="/quotation-management" component={QuotationManagement} />
+            <Route path="/invoices" component={Invoices} />
+            <Route path="/invoices/:id" component={InvoiceDetail} />
+            <Route path="/expenses" component={Expenses} />
+            <Route path="/expenses/:id" component={ExpenseDetail} />
+            <Route path="/expenses/:id/edit" component={ExpenseEdit} />
+            <Route path="/payment-sources" component={PaymentSources} />
 
-          <Route path="/user-management" component={UserManagement} />
-          <Route path="/employees/:id" component={EmployeeProfile} />
-          <Route path="/tasks" component={Tasks} />
-          <Route path="/analytics" component={Analytics} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
+            <Route path="/user-management" component={UserManagement} />
+            <Route path="/employees/:id" component={EmployeeProfile} />
+            <Route path="/tasks" component={Tasks} />
+            <Route path="/analytics" component={Analytics} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+      </div>
     </div>
   );
 }
