@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./replitAuth";
+import { setupDatabaseRoutes } from "./database-routes";
 import {
   insertClientSchema,
   insertQuotationSchema,
@@ -87,42 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Client routes
-  app.get('/api/clients', async (req: any, res) => {
-    try {
-      // Return mock data for development
-      const clients = [
-        {
-          id: '1',
-          name: 'TechCorp Solutions',
-          email: 'contact@techcorp.com',
-          phone: '+1 555-0123',
-          city: 'San Francisco',
-          country: 'USA',
-          status: 'active',
-          totalValue: '45000',
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-15')
-        },
-        {
-          id: '2',
-          name: 'Digital Innovations',
-          email: 'hello@digital-innovations.com',
-          phone: '+1 555-0456',
-          city: 'New York',
-          country: 'USA',
-          status: 'prospect',
-          totalValue: '23000',
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ];
-      res.json(clients);
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-      res.status(500).json({ message: "Failed to fetch clients" });
-    }
-  });
+  // Setup database routes for all CRUD operations
+  setupDatabaseRoutes(app);
 
   app.get('/api/clients/:id', async (req, res) => {
     try {
@@ -139,20 +106,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/clients', async (req: any, res) => {
     try {
-      // Mock client creation for development
-      const newClient = {
-        id: Date.now().toString(),
-        name: req.body.name || 'New Client',
-        email: req.body.email || '',
-        phone: req.body.phone || '',
-        city: req.body.city || '',
-        country: req.body.country || '',
-        status: req.body.status || 'prospect',
+      const clientData = {
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone,
+        city: req.body.city,
+        country: req.body.country,
+        status: req.body.status || 'active',
         totalValue: req.body.totalValue || '0',
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdBy: '1', // Use development user ID
       };
-      
+
+      const [newClient] = await db.insert(clients).values(clientData).returning();
       res.status(201).json(newClient);
     } catch (error) {
       console.error("Error creating client:", error);
