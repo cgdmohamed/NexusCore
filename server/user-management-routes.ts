@@ -334,7 +334,7 @@ export function registerUserManagementRoutes(app: Express) {
             lastName: employees.lastName,
             department: employees.department,
             jobTitle: employees.jobTitle,
-            profileImageUrl: employees.profileImageUrl,
+            profileImage: employees.profileImage,
           },
           role: {
             id: roles.id,

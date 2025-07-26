@@ -105,11 +105,13 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <Header 
         title="User & Employee Management" 
         subtitle="Manage system users, employee profiles, and role-based access control"
       />
+      
+      <div className="p-6 space-y-6">
 
       {/* Statistics Cards */}
       {stats && (
@@ -495,6 +497,36 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Dialog Forms */}
+      <Dialog open={showUserForm} onOpenChange={setShowUserForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingUser ? "Edit User" : "Create New User"}</DialogTitle>
+          </DialogHeader>
+          <UserForm user={editingUser} onClose={closeUserForm} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showEmployeeForm} onOpenChange={setShowEmployeeForm}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{editingEmployee ? "Edit Employee" : "Create New Employee"}</DialogTitle>
+          </DialogHeader>
+          <EmployeeForm employee={editingEmployee} onClose={closeEmployeeForm} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showRoleForm} onOpenChange={setShowRoleForm}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingRole ? "Edit Role" : "Create New Role"}</DialogTitle>
+          </DialogHeader>
+          <RoleForm role={editingRole} onClose={closeRoleForm} />
+        </DialogContent>
+      </Dialog>
+      
+      </div>
     </div>
   );
 }
