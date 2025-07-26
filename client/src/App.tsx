@@ -17,6 +17,7 @@ import Tasks from "@/pages/Tasks";
 import Analytics from "@/pages/Analytics";
 import ClientProfile from "@/pages/ClientProfile";
 import QuotationDetail from "@/pages/QuotationDetail";
+import InvoiceDetail from "@/pages/InvoiceDetail";
 import QuotationManagement from "@/pages/QuotationManagement";
 
 function Router() {
@@ -54,6 +55,7 @@ function Router() {
           <Route path="/quotations/:id" component={QuotationDetail} />
           <Route path="/quotation-management" component={QuotationManagement} />
           <Route path="/invoices" component={Invoices} />
+          <Route path="/invoices/:id" component={InvoiceDetail} />
           <Route path="/expenses" component={Expenses} />
           <Route path="/employees" component={Employees} />
           <Route path="/tasks" component={Tasks} />
