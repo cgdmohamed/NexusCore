@@ -83,13 +83,50 @@ export const invoices = pgTable("invoices", {
   invoiceNumber: varchar("invoice_number").notNull().unique(),
   clientId: varchar("client_id").references(() => clients.id).notNull(),
   quotationId: varchar("quotation_id").references(() => quotations.id),
+  title: text("title").default("Invoice"),
+  description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }).default("0"),
-  status: varchar("status").notNull().default("pending"), // pending, paid, overdue, cancelled
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0"),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  discountRate: decimal("discount_rate", { precision: 5, scale: 2 }).default("0"),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0"),
+  status: varchar("status").notNull().default("draft"), // draft, sent, paid, partially_paid, overdue, cancelled
+  invoiceDate: timestamp("invoice_date").defaultNow(),
   dueDate: timestamp("due_date"),
   paidDate: timestamp("paid_date"),
+  notes: text("notes"),
+  paymentTerms: text("payment_terms"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Invoice Items table
+export const invoiceItems = pgTable("invoice_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").references(() => invoices.id).notNull(),
+  serviceId: varchar("service_id").references(() => services.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Payment Records table
+export const payments = pgTable("payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").references(() => invoices.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer
+  bankTransferNumber: varchar("bank_transfer_number"),
+  attachmentUrl: varchar("attachment_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });
 
@@ -167,7 +204,7 @@ export const quotationsRelations = relations(quotations, ({ one, many }) => ({
   invoices: many(invoices),
 }));
 
-export const invoicesRelations = relations(invoices, ({ one }) => ({
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   client: one(clients, {
     fields: [invoices.clientId],
     references: [clients.id],
@@ -178,6 +215,30 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
   }),
   createdBy: one(users, {
     fields: [invoices.createdBy],
+    references: [users.id],
+  }),
+  items: many(invoiceItems),
+  payments: many(payments),
+}));
+
+export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceItems.invoiceId],
+    references: [invoices.id],
+  }),
+  service: one(services, {
+    fields: [invoiceItems.serviceId],
+    references: [services.id],
+  }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [payments.invoiceId],
+    references: [invoices.id],
+  }),
+  createdBy: one(users, {
+    fields: [payments.createdBy],
     references: [users.id],
   }),
 }));
@@ -261,6 +322,14 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Invoice types
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+export type InvoiceItem = typeof invoiceItems.$inferSelect;
+export type InsertInvoiceItem = typeof invoiceItems.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
 
 // Quotation line items
 export const quotationItems = pgTable("quotation_items", {

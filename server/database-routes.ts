@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, users, quotationItems, services, clientNotes } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, users, quotationItems, services, clientNotes } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
@@ -257,12 +257,23 @@ export function setupDatabaseRoutes(app: Express) {
   app.post('/api/invoices', async (req: any, res) => {
     try {
       const invoiceData = {
-        invoiceNumber: `INV-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        invoiceNumber: `INV-2025-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
         clientId: req.body.clientId,
-        amount: req.body.amount,
+        quotationId: req.body.quotationId || null,
+        title: req.body.title || 'New Invoice',
+        description: req.body.description || null,
+        amount: req.body.amount || '0',
+        subtotal: req.body.subtotal || req.body.amount || '0',
+        taxRate: req.body.taxRate || '0',
+        taxAmount: req.body.taxAmount || '0',
+        discountRate: req.body.discountRate || '0',
+        discountAmount: req.body.discountAmount || '0',
         paidAmount: '0',
-        status: 'pending',
+        status: 'draft',
+        invoiceDate: new Date(),
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        notes: req.body.notes || null,
+        paymentTerms: req.body.paymentTerms || null,
         createdBy: '1', // Development user ID
       };
 
@@ -271,6 +282,163 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error creating invoice:", error);
       res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  // Get specific invoice with details
+  app.get('/api/invoices/:id', async (req: any, res) => {
+    try {
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  // Update invoice
+  app.patch('/api/invoices/:id', async (req: any, res) => {
+    try {
+      const updateData = { ...req.body, updatedAt: new Date() };
+      
+      const [updatedInvoice] = await db.update(invoices)
+        .set(updateData)
+        .where(eq(invoices.id, req.params.id))
+        .returning();
+      
+      res.json(updatedInvoice);
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      res.status(500).json({ message: "Failed to update invoice" });
+    }
+  });
+
+  // Invoice Items CRUD
+  app.get('/api/invoices/:id/items', async (req: any, res) => {
+    try {
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching invoice items:", error);
+      res.status(500).json({ message: "Failed to fetch invoice items" });
+    }
+  });
+
+  app.post('/api/invoices/:id/items', async (req: any, res) => {
+    try {
+      const itemData = {
+        invoiceId: req.params.id,
+        serviceId: req.body.serviceId || null,
+        name: req.body.name,
+        description: req.body.description || null,
+        quantity: req.body.quantity,
+        unitPrice: req.body.unitPrice,
+        totalPrice: (parseFloat(req.body.quantity) * parseFloat(req.body.unitPrice)).toFixed(2),
+      };
+
+      const [newItem] = await db.insert(invoiceItems).values(itemData).returning();
+      
+      // Recalculate invoice totals
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      
+      await db.update(invoices)
+        .set({ 
+          subtotal: subtotal.toFixed(2),
+          amount: subtotal.toFixed(2), // For now, assume no tax/discount
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.id));
+      
+      res.status(201).json(newItem);
+    } catch (error) {
+      console.error("Error creating invoice item:", error);
+      res.status(500).json({ message: "Failed to create invoice item" });
+    }
+  });
+
+  app.delete('/api/invoices/:invoiceId/items/:itemId', async (req: any, res) => {
+    try {
+      await db.delete(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
+      
+      // Recalculate invoice totals
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      
+      await db.update(invoices)
+        .set({ 
+          subtotal: subtotal.toFixed(2),
+          amount: subtotal.toFixed(2),
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.invoiceId));
+      
+      res.json({ message: "Invoice item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice item:", error);
+      res.status(500).json({ message: "Failed to delete invoice item" });
+    }
+  });
+
+  // Payment Records CRUD
+  app.get('/api/invoices/:id/payments', async (req: any, res) => {
+    try {
+      const paymentRecords = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
+      res.json(paymentRecords);
+    } catch (error) {
+      console.error("Error fetching payment records:", error);
+      res.status(500).json({ message: "Failed to fetch payment records" });
+    }
+  });
+
+  app.post('/api/invoices/:id/payments', async (req: any, res) => {
+    try {
+      const paymentData = {
+        invoiceId: req.params.id,
+        amount: req.body.amount,
+        paymentDate: new Date(req.body.paymentDate),
+        paymentMethod: req.body.paymentMethod,
+        bankTransferNumber: req.body.bankTransferNumber || null,
+        attachmentUrl: req.body.attachmentUrl || null,
+        notes: req.body.notes || null,
+        createdBy: '1', // Development user ID
+      };
+
+      const [newPayment] = await db.insert(payments).values(paymentData).returning();
+      
+      // Recalculate paid amount and update invoice status
+      const allPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
+      const totalPaid = allPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      const invoiceAmount = parseFloat(invoice.amount);
+      
+      let newStatus = invoice.status;
+      let paidDate = invoice.paidDate;
+      
+      if (totalPaid >= invoiceAmount) {
+        newStatus = 'paid';
+        paidDate = new Date();
+      } else if (totalPaid > 0) {
+        newStatus = 'partially_paid';
+      }
+      
+      await db.update(invoices)
+        .set({ 
+          paidAmount: totalPaid.toFixed(2),
+          status: newStatus,
+          paidDate: paidDate,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.id));
+      
+      res.status(201).json(newPayment);
+    } catch (error) {
+      console.error("Error recording payment:", error);
+      res.status(500).json({ message: "Failed to record payment" });
     }
   });
 

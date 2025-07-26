@@ -1,0 +1,130 @@
+Please implement the Invoices module with full support for internal invoice creation, management, and tracking. Invoices can be created manually or generated automatically from an approved quotation. This module should include:
+
+Invoice Details Page
+
+Invoice number (auto-generated or editable)
+
+Client information (linked to CRM)
+
+Invoice date and due date
+
+Invoice status (Draft, Sent, Paid, Paid Partially, Overdue, Cancelled)
+
+List of items:
+
+Item name/description
+
+Quantity
+
+Unit price
+
+Line total
+
+Optional: discounts or taxes
+
+Summary section:
+
+Subtotal
+
+Tax (if applicable)
+
+Total amount
+
+Notes or payment terms
+
+Actions
+
+Create new invoice manually
+
+Convert from quotation (auto-fill data and link records)
+
+Download or export invoice as a clean PDF layout
+
+Edit invoice (only in Draft status)
+
+Mark invoice status as Paid, Cancelled, Overdue, etc.
+
+Linking and History
+
+Each invoice should be linked to:
+
+The associated client (from CRM)
+
+The originating quotation (if applicable)
+
+The invoice view should display related quotation reference
+
+Maintain an internal activity log for status changes and edits
+
+Filtering and Dashboard View
+
+Display a list of all invoices with filters by status, client, and date range
+
+Include summary counters such as:
+
+Total invoiced this month
+
+Unpaid invoices
+
+Overdue invoices
+
+Allow search by invoice number or client name
+
+Down Payments & Partial Payments
+
+Enable support for down payment invoices generated from quotations.
+
+The user should be able to specify a percentage (e.g., 30%) and the system should auto-generate a separate invoice for that amount.
+
+The remaining balance can be invoiced later via a follow-up invoice linked to the same quotation.
+
+Support partial payments tracking:
+
+Allow recording multiple payments against a single invoice
+
+Show payment history with date, amount, payment method, and internal notes
+
+Display:
+
+Total amount
+
+Total paid
+
+Balance due
+
+Automatically update invoice status based on payment progress:
+
+Draft → Sent → Paid Partially → Paid → Overdue (if due date is passed and not paid in full)
+
+This module is for internal use only. All invoices must be exportable in PDF format for external sharing when needed, but no client interaction is required within the system.
+
+Please add manual payment tracking functionality to the Invoices module. For each invoice, users should be able to record one or more payments manually. Each payment entry should include the following fields:
+
+Payment Date
+
+Payment Amount
+
+Payment Method (Dropdown: Cash / Bank Transfer)
+
+Bank Transfer Number (optional, only shown if method = Bank Transfer)
+
+Attachment (optional upload of a payment receipt or bank transfer screenshot - image or PDF)
+
+Notes (optional)
+
+Each payment should be linked to its respective invoice and displayed in a "Payment History" section on the invoice view. The system should:
+
+Automatically calculate and display:
+
+Total Paid
+
+Remaining Balance
+
+Automatically update invoice status:
+
+If total paid = invoice total → status becomes Paid
+
+If total paid < invoice total → status becomes Paid Partially
+
+The payment records are internal only and meant to reflect the company’s actual received payments from clients. No online payment integration is needed at this stage.
+
