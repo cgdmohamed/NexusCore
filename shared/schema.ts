@@ -93,7 +93,7 @@ export const invoices = pgTable("invoices", {
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
   discountRate: decimal("discount_rate", { precision: 5, scale: 2 }).default("0"),
   discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0"),
-  status: varchar("status").notNull().default("draft"), // draft, sent, paid, partially_paid, overdue, cancelled
+  status: varchar("status").notNull().default("draft"), // draft, sent, paid, partially_paid, overdue, cancelled, refunded, partially_refunded
   invoiceDate: timestamp("invoice_date").defaultNow(),
   dueDate: timestamp("due_date"),
   paidDate: timestamp("paid_date"),

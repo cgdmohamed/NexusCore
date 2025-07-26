@@ -357,6 +357,8 @@ export default function InvoiceDetail() {
       case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -369,6 +371,8 @@ export default function InvoiceDetail() {
       case 'draft': return <Edit className="w-4 h-4" />;
       case 'overdue': return <AlertCircle className="w-4 h-4" />;
       case 'cancelled': return <AlertCircle className="w-4 h-4" />;
+      case 'refunded': return <RotateCcw className="w-4 h-4" />;
+      case 'partially_refunded': return <RefreshCw className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -540,50 +544,56 @@ export default function InvoiceDetail() {
         </div>
 
         {/* Financial Summary */}
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center">
+            <CardTitle className="text-lg flex items-center text-blue-900">
               <DollarSign className="w-5 h-5 mr-2" />
               Financial Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
+            {/* Prominent Invoice Total */}
+            <div className="bg-white p-6 rounded-lg border-2 border-blue-300 shadow-sm mb-6">
+              <div className="text-center">
+                <Label className="text-sm text-blue-700 font-medium">INVOICE TOTAL</Label>
+                <p className="text-5xl font-bold text-blue-900 mt-2">${totalAmount.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-lg border">
                 <Label className="text-sm text-gray-600">Subtotal</Label>
-                <p className="text-2xl font-bold">${subtotal.toLocaleString()}</p>
+                <p className="text-xl font-bold">${subtotal.toLocaleString()}</p>
               </div>
-              <div>
+              <div className="bg-white p-4 rounded-lg border">
                 <Label className="text-sm text-gray-600">Tax Amount</Label>
-                <p className="text-2xl font-bold">${taxAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold">${taxAmount.toLocaleString()}</p>
               </div>
-              <div>
-                <Label className="text-sm text-gray-600">Total Amount</Label>
-                <p className="text-2xl font-bold">${totalAmount.toLocaleString()}</p>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <Label className="text-sm text-green-700 font-medium">Paid Amount</Label>
+                <p className="text-xl font-bold text-green-700">${paidAmount.toLocaleString()}</p>
               </div>
-              <div>
-                <Label className="text-sm text-gray-600">Outstanding</Label>
-                <p className={`text-2xl font-bold ${remainingAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  ${remainingAmount.toLocaleString()}
-                </p>
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <Label className="text-sm text-red-700 font-medium">Outstanding</Label>
+                <p className="text-xl font-bold text-red-700">${remainingAmount.toLocaleString()}</p>
               </div>
             </div>
             
             {/* Payment Progress */}
-            <div className="mt-6">
-              <div className="flex justify-between items-center mb-2">
-                <Label className="text-sm text-gray-600">Payment Progress</Label>
-                <span className="text-sm font-medium">{paymentProgress.toFixed(1)}%</span>
+            <div className="mt-6 bg-white p-4 rounded-lg border">
+              <div className="flex justify-between items-center mb-3">
+                <Label className="text-sm text-gray-600 font-medium">Payment Progress</Label>
+                <span className="text-lg font-bold text-blue-600">{paymentProgress.toFixed(1)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className="w-full bg-gray-200 rounded-full h-4">
                 <div 
-                  className="bg-green-600 h-3 rounded-full transition-all duration-300" 
+                  className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between text-sm text-gray-600 mt-1">
-                <span>Paid: ${paidAmount.toLocaleString()}</span>
-                <span>Remaining: ${remainingAmount.toLocaleString()}</span>
+              <div className="flex justify-between text-sm text-gray-600 mt-2">
+                <span className="font-medium">Paid: ${paidAmount.toLocaleString()}</span>
+                <span className="font-medium">Remaining: ${remainingAmount.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>

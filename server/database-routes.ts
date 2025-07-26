@@ -552,14 +552,16 @@ export function setupDatabaseRoutes(app: Express) {
         createdBy: "1"
       }).returning().then(rows => rows[0]);
 
-      // Update invoice paid amount
+      // Update invoice paid amount and status
       const newPaidAmount = paidAmount - refundAmountNum;
+      const invoiceAmount = parseFloat(invoice.amount || "0");
       let newStatus = invoice.status;
       
-      if (newPaidAmount === 0) {
-        newStatus = "draft";
-      } else if (newPaidAmount < parseFloat(invoice.amount)) {
-        newStatus = "partially_paid";
+      // Determine new status based on refund amount
+      if (newPaidAmount <= 0) {
+        newStatus = "refunded";  // Fully refunded
+      } else if (newPaidAmount < invoiceAmount) {
+        newStatus = "partially_refunded";  // Partially refunded
       }
       
       await db.update(invoices)
@@ -575,7 +577,8 @@ export function setupDatabaseRoutes(app: Express) {
         refundAmount: refundAmountNum,
         refundPayment,
         newPaidAmount,
-        message: `Successfully processed refund of ${refundAmountNum}`
+        newStatus,
+        message: `Successfully processed refund of ${refundAmountNum}. Invoice status updated to ${newStatus}.`
       });
     } catch (error) {
       console.error("Error processing refund:", error);
