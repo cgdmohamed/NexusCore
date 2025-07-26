@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TaskForm } from "@/components/forms/TaskForm";
 import type { Task } from "@shared/schema";
 
 export default function Tasks() {
@@ -37,10 +38,7 @@ export default function Tasks() {
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text">All Tasks</h3>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create Task
-              </Button>
+              <TaskForm />
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -51,10 +49,14 @@ export default function Tasks() {
             ) : taskList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No tasks found</p>
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create your first task
-                </Button>
+                <TaskForm 
+                  trigger={
+                    <Button variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create your first task
+                    </Button>
+                  }
+                />
               </div>
             ) : (
               <Table>

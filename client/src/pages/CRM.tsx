@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ClientForm } from "@/components/forms/ClientForm";
 import type { Client } from "@shared/schema";
 
 export default function CRM() {
@@ -36,10 +37,7 @@ export default function CRM() {
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text">All Clients</h3>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Client
-              </Button>
+              <ClientForm />
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -50,10 +48,14 @@ export default function CRM() {
             ) : clientList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No clients found</p>
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add your first client
-                </Button>
+                <ClientForm 
+                  trigger={
+                    <Button variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add your first client
+                    </Button>
+                  }
+                />
               </div>
             ) : (
               <Table>

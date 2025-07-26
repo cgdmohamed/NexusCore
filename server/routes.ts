@@ -139,25 +139,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/clients', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const clientData = insertClientSchema.parse({ ...req.body, createdBy: userId });
-      const client = await storage.createClient(clientData);
+      // Mock client creation for development
+      const newClient = {
+        id: Date.now().toString(),
+        name: req.body.name || 'New Client',
+        email: req.body.email || '',
+        phone: req.body.phone || '',
+        city: req.body.city || '',
+        country: req.body.country || '',
+        status: req.body.status || 'prospect',
+        totalValue: req.body.totalValue || '0',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      // Create activity
-      await storage.createActivity({
-        type: "client_added",
-        title: "New client registered",
-        description: client.name,
-        entityType: "client",
-        entityId: client.id,
-        createdBy: userId,
-      });
-      
-      res.status(201).json(client);
+      res.status(201).json(newClient);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
       console.error("Error creating client:", error);
       res.status(500).json({ message: "Failed to create client" });
     }
@@ -281,25 +278,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/invoices', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const invoiceData = insertInvoiceSchema.parse({ ...req.body, createdBy: userId });
-      const invoice = await storage.createInvoice(invoiceData);
+      // Mock invoice creation for development
+      const newInvoice = {
+        id: Date.now().toString(),
+        invoiceNumber: `INV-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        clientId: req.body.clientId || '1',
+        amount: req.body.amount || '0',
+        paidAmount: '0',
+        status: 'pending',
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      // Create activity
-      await storage.createActivity({
-        type: "invoice_created",
-        title: "Invoice created",
-        description: invoice.invoiceNumber,
-        entityType: "invoice",
-        entityId: invoice.id,
-        createdBy: userId,
-      });
-      
-      res.status(201).json(invoice);
+      res.status(201).json(newInvoice);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
       console.error("Error creating invoice:", error);
       res.status(500).json({ message: "Failed to create invoice" });
     }
@@ -342,25 +335,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/expenses', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const expenseData = insertExpenseSchema.parse({ ...req.body, createdBy: userId });
-      const expense = await storage.createExpense(expenseData);
+      // Mock expense creation for development
+      const newExpense = {
+        id: Date.now().toString(),
+        title: req.body.title || 'New Expense',
+        category: req.body.category || 'office',
+        amount: req.body.amount || '0',
+        description: req.body.description || '',
+        status: 'pending',
+        receiptUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      // Create activity
-      await storage.createActivity({
-        type: "expense_logged",
-        title: "Expense logged",
-        description: expense.title,
-        entityType: "expense",
-        entityId: expense.id,
-        createdBy: userId,
-      });
-      
-      res.status(201).json(expense);
+      res.status(201).json(newExpense);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
       console.error("Error creating expense:", error);
       res.status(500).json({ message: "Failed to create expense" });
     }

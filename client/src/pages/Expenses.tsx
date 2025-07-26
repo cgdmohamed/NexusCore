@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import type { Expense } from "@shared/schema";
 
 export default function Expenses() {
@@ -37,10 +38,7 @@ export default function Expenses() {
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text">All Expenses</h3>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Log Expense
-              </Button>
+              <ExpenseForm />
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -51,10 +49,14 @@ export default function Expenses() {
             ) : expenseList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No expenses found</p>
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Log your first expense
-                </Button>
+                <ExpenseForm 
+                  trigger={
+                    <Button variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Log your first expense
+                    </Button>
+                  }
+                />
               </div>
             ) : (
               <Table>
