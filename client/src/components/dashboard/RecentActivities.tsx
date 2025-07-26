@@ -64,15 +64,19 @@ export function RecentActivities() {
         <div className="space-y-4">
           {activityList.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-neutral">No recent activities</p>
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertCircle className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-neutral text-sm">No recent activities</p>
+              <p className="text-neutral text-xs mt-1">Activities will appear here as users interact with the system</p>
             </div>
           ) : (
-            activityList.map((activity) => {
+            activityList.slice(0, 5).map((activity) => {
               const activityType = activityIcons[activity.type as keyof typeof activityIcons] || activityIcons.client_added;
               const Icon = activityType.icon;
               
               return (
-                <div key={activity.id} className="flex items-start space-x-4">
+                <div key={activity.id} className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
                   <div className={`w-8 h-8 ${activityType.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`${activityType.color} text-sm w-4 h-4`} />
                   </div>

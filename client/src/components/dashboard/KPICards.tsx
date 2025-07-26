@@ -15,8 +15,29 @@ export function KPICards() {
     queryKey: ["/api/tasks/stats"],
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ["/api/clients"],
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["/api/invoices"],
+  });
+
   const kpiData = kpis as any;
   const taskData = taskStats as any;
+
+  // Calculate real-time data from actual API responses
+  const realTimeStats = {
+    totalRevenue: invoices.reduce((sum: number, inv: any) => sum + parseFloat(inv.paidAmount || 0), 0),
+    activeClients: clients.filter((client: any) => client.status === 'active').length,
+    pendingRevenue: invoices.reduce((sum: number, inv: any) => {
+      const remaining = parseFloat(inv.amount || 0) - parseFloat(inv.paidAmount || 0);
+      return sum + (remaining > 0 ? remaining : 0);
+    }, 0),
+    overdueInvoices: invoices.filter((inv: any) => 
+      inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid')
+    ).length
+  };
 
   if (isLoading) {
     return (
@@ -41,22 +62,22 @@ export function KPICards() {
 
   const kpiCards = [
     {
-      title: t('dashboard.totalRevenue'),
-      value: `$${kpiData?.totalRevenue?.toLocaleString() || '0'}`,
-      change: "Monthly revenue tracked",
+      title: "Total Revenue",
+      value: `$${realTimeStats.totalRevenue.toLocaleString()}`,
+      change: `$${realTimeStats.pendingRevenue.toLocaleString()} pending`,
       icon: DollarSign,
       iconBg: "bg-green-100",
-      iconColor: "text-secondary",
-      changeColor: "text-secondary",
+      iconColor: "text-green-600",
+      changeColor: realTimeStats.pendingRevenue > 0 ? "text-orange-600" : "text-green-600",
     },
     {
-      title: t('dashboard.activeClients'),
-      value: kpiData?.activeClients?.toString() || '0',
-      change: "Clients managed",
+      title: "Active Clients",
+      value: realTimeStats.activeClients.toString(),
+      change: `${clients.length} total clients`,
       icon: Users,
       iconBg: "bg-blue-100",
-      iconColor: "text-primary",
-      changeColor: "text-secondary",
+      iconColor: "text-blue-600",
+      changeColor: "text-blue-600",
     },
     {
       title: "Active Tasks",
@@ -65,16 +86,16 @@ export function KPICards() {
       icon: CheckSquare,
       iconBg: "bg-yellow-100",
       iconColor: "text-yellow-600",
-      changeColor: (taskData?.statusBreakdown?.pending || 0) > 0 ? "text-yellow-600" : "text-secondary",
+      changeColor: (taskData?.statusBreakdown?.pending || 0) > 0 ? "text-yellow-600" : "text-green-600",
     },
     {
-      title: t('dashboard.teamPerformance'),
-      value: `${Math.round(((taskData?.statusBreakdown?.completed || 0) / (taskData?.totalTasks || 1)) * 100)}%`,
-      change: "Task completion rate",
+      title: "Task Performance",
+      value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
+      change: `${taskData?.overdueTasks || 0} overdue tasks`,
       icon: TrendingUp,
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
-      changeColor: "text-secondary",
+      changeColor: (taskData?.overdueTasks || 0) > 0 ? "text-red-600" : "text-purple-600",
     },
   ];
 
