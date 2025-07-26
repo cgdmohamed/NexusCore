@@ -25,7 +25,9 @@ import {
   CreditCard,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  RotateCcw,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -69,6 +71,7 @@ export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
   const [itemForm, setItemForm] = useState<InvoiceItemFormData>({
     name: '',
     description: '',
@@ -85,6 +88,12 @@ export default function InvoiceDetail() {
   });
   const [overpaymentWarning, setOverpaymentWarning] = useState<any>(null);
   const [showCreditInfo, setShowCreditInfo] = useState(false);
+  const [refundForm, setRefundForm] = useState({
+    refundAmount: "",
+    refundMethod: "",
+    refundReference: "",
+    notes: ""
+  });
 
   const { data: invoice, isLoading: invoiceLoading } = useQuery<Invoice>({
     queryKey: [`/api/invoices/${id}`],
@@ -229,6 +238,77 @@ export default function InvoiceDetail() {
       });
     },
   });
+
+  const refundMutation = useMutation({
+    mutationFn: async (refundData: any) => {
+      return apiRequest("POST", `/api/invoices/${id}/refund`, refundData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      
+      setIsProcessingRefund(false);
+      setRefundForm({
+        refundAmount: "",
+        refundMethod: "",
+        refundReference: "",
+        notes: ""
+      });
+      
+      toast({
+        title: "Refund Processed",
+        description: `Successfully processed refund of ${refundForm.refundAmount} EGP`,
+      });
+    },
+    onError: (error: any) => {
+      console.error("Refund error:", error);
+      toast({
+        title: "Refund Failed",
+        description: error.message || "Failed to process refund",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleRefund = () => {
+    const refundAmount = parseFloat(refundForm.refundAmount);
+    
+    if (!refundAmount || refundAmount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid refund amount",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (refundAmount > paidAmount) {
+      toast({
+        title: "Amount Exceeds Limit",
+        description: `Refund amount cannot exceed paid amount (${paidAmount} EGP)`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!refundForm.refundMethod) {
+      toast({
+        title: "Missing Method",
+        description: "Please select a refund method",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    refundMutation.mutate({
+      refundAmount: refundAmount,
+      refundMethod: refundForm.refundMethod,
+      refundReference: refundForm.refundReference,
+      notes: refundForm.notes
+    });
+  };
 
   if (invoiceLoading) {
     return (
@@ -642,14 +722,94 @@ export default function InvoiceDetail() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Payment Records</CardTitle>
-              <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Record Payment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
+              <div className="flex gap-2">
+                {paidAmount > 0 && (
+                  <Dialog open={isProcessingRefund} onOpenChange={setIsProcessingRefund}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Process Refund
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Process Invoice Refund</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="refundAmount">Refund Amount (EGP)</Label>
+                          <Input
+                            id="refundAmount"
+                            type="number"
+                            min="0.01"
+                            max={paidAmount}
+                            step="0.01"
+                            value={refundForm.refundAmount}
+                            onChange={(e) => setRefundForm(prev => ({ ...prev, refundAmount: e.target.value }))}
+                            placeholder="0.00"
+                          />
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Maximum refundable: {paidAmount} EGP
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="refundMethod">Refund Method</Label>
+                          <select
+                            id="refundMethod"
+                            value={refundForm.refundMethod}
+                            onChange={(e) => setRefundForm(prev => ({ ...prev, refundMethod: e.target.value }))}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="">Select refund method</option>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="credit_card">Credit Card Reversal</option>
+                            <option value="check">Check</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor="refundReference">Reference Number (Optional)</Label>
+                          <Input
+                            id="refundReference"
+                            value={refundForm.refundReference}
+                            onChange={(e) => setRefundForm(prev => ({ ...prev, refundReference: e.target.value }))}
+                            placeholder="Transaction/Reference number"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="refundNotes">Notes (Optional)</Label>
+                          <Textarea
+                            id="refundNotes"
+                            value={refundForm.notes}
+                            onChange={(e) => setRefundForm(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="Additional notes about this refund..."
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={handleRefund} 
+                            disabled={!refundForm.refundAmount || !refundForm.refundMethod || refundMutation.isPending}
+                            className="flex-1"
+                          >
+                            {refundMutation.isPending ? "Processing..." : "Process Refund"}
+                          </Button>
+                          <Button variant="outline" onClick={() => setIsProcessingRefund(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Record Payment
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Record Payment</DialogTitle>
                   </DialogHeader>
@@ -762,6 +922,7 @@ export default function InvoiceDetail() {
                 </DialogContent>
               </Dialog>
             </div>
+          </div>
           </CardHeader>
           <CardContent>
             {payments.length === 0 ? (

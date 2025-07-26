@@ -126,10 +126,14 @@ export const payments = pgTable("payments", {
   isOverpayment: boolean("is_overpayment").default(false),
   adminApproved: boolean("admin_approved").default(false),
   paymentDate: timestamp("payment_date").notNull(),
-  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer, credit_card, check, other
+  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer, credit_card, check, other, credit_balance
   bankTransferNumber: varchar("bank_transfer_number"),
   attachmentUrl: varchar("attachment_url"),
   notes: text("notes"),
+  // Refund fields
+  isRefund: boolean("is_refund").default(false),
+  refundReference: varchar("refund_reference"),
+  originalPaymentId: varchar("original_payment_id").references(() => payments.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
   approvedBy: varchar("approved_by").references(() => users.id),
@@ -139,12 +143,13 @@ export const payments = pgTable("payments", {
 export const clientCreditHistory = pgTable("client_credit_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   clientId: varchar("client_id").references(() => clients.id).notNull(),
-  type: varchar("type").notNull(), // credit_added, credit_used, credit_refunded
+  type: varchar("type").notNull(), // credit_added, credit_used, credit_refunded, credit_applied
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   relatedInvoiceId: varchar("related_invoice_id").references(() => invoices.id),
   relatedPaymentId: varchar("related_payment_id").references(() => payments.id),
   description: text("description").notNull(),
   notes: text("notes"),
+  refundReference: varchar("refund_reference"),
   previousBalance: decimal("previous_balance", { precision: 10, scale: 2 }).notNull(),
   newBalance: decimal("new_balance", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),

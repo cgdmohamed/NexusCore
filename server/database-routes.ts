@@ -513,6 +513,137 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Process invoice refund
+  app.post('/api/invoices/:id/refund', async (req: any, res) => {
+    try {
+      const { refundAmount, refundMethod, refundReference, notes } = req.body;
+      const refundAmountNum = parseFloat(refundAmount);
+
+      // Validate request
+      if (!refundAmountNum || refundAmountNum <= 0) {
+        return res.status(400).json({ message: "Invalid refund amount" });
+      }
+
+      // Get invoice
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const paidAmount = parseFloat(invoice.paidAmount || "0");
+      
+      // Validate refund amount doesn't exceed paid amount
+      if (refundAmountNum > paidAmount) {
+        return res.status(400).json({ 
+          message: `Refund amount (${refundAmountNum}) cannot exceed paid amount (${paidAmount})` 
+        });
+      }
+
+      // Create refund payment record (negative amount)
+      const refundPayment = await db.insert(payments).values({
+        invoiceId: req.params.id,
+        amount: (-Math.abs(refundAmountNum)).toString(),
+        paymentDate: new Date(),
+        paymentMethod: refundMethod || "bank_transfer",
+        bankTransferNumber: refundReference,
+        notes: notes || `Partial refund: ${refundAmountNum}`,
+        isRefund: true,
+        refundReference: refundReference,
+        createdBy: "1"
+      }).returning().then(rows => rows[0]);
+
+      // Update invoice paid amount
+      const newPaidAmount = paidAmount - refundAmountNum;
+      let newStatus = invoice.status;
+      
+      if (newPaidAmount === 0) {
+        newStatus = "draft";
+      } else if (newPaidAmount < parseFloat(invoice.amount)) {
+        newStatus = "partially_paid";
+      }
+      
+      await db.update(invoices)
+        .set({ 
+          paidAmount: newPaidAmount.toString(),
+          status: newStatus,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.id));
+
+      res.json({ 
+        success: true, 
+        refundAmount: refundAmountNum,
+        refundPayment,
+        newPaidAmount,
+        message: `Successfully processed refund of ${refundAmountNum}`
+      });
+    } catch (error) {
+      console.error("Error processing refund:", error);
+      res.status(500).json({ message: "Failed to process refund" });
+    }
+  });
+
+  // Process credit refund (convert credit balance to cash/bank transfer)
+  app.post('/api/clients/:clientId/credit/refund', async (req: any, res) => {
+    try {
+      const { refundAmount, refundMethod, refundReference, notes } = req.body;
+      const refundAmountNum = parseFloat(refundAmount);
+
+      // Validate request
+      if (!refundAmountNum || refundAmountNum <= 0) {
+        return res.status(400).json({ message: "Invalid refund amount" });
+      }
+
+      // Get client and current credit balance
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.clientId));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      const availableCredit = parseFloat(client.creditBalance || "0");
+      
+      if (refundAmountNum > availableCredit) {
+        return res.status(400).json({ 
+          message: `Refund amount (${refundAmountNum}) cannot exceed available credit (${availableCredit})` 
+        });
+      }
+
+      // Update client credit balance
+      const newCreditBalance = availableCredit - refundAmountNum;
+      await db.update(clients)
+        .set({ 
+          creditBalance: newCreditBalance.toFixed(2),
+          updatedAt: new Date()
+        })
+        .where(eq(clients.id, req.params.clientId));
+
+      // Record credit history
+      await db.insert(clientCreditHistory).values({
+        clientId: req.params.clientId,
+        type: 'credit_refunded',
+        amount: refundAmountNum.toFixed(2),
+        description: `Credit refunded via ${refundMethod}${refundReference ? ` - Ref: ${refundReference}` : ''}`,
+        notes: notes || `Credit balance refunded to client`,
+        refundReference: refundReference,
+        previousBalance: availableCredit.toFixed(2),
+        newBalance: newCreditBalance.toFixed(2),
+        createdBy: '1',
+      });
+
+      res.json({ 
+        success: true, 
+        refundAmount: refundAmountNum,
+        refundMethod,
+        refundReference,
+        newCreditBalance,
+        message: `Successfully processed credit refund of ${refundAmountNum}`
+      });
+    } catch (error) {
+      console.error("Error processing credit refund:", error);
+      res.status(500).json({ message: "Failed to process credit refund" });
+    }
+  });
+
   // Get client credit balance and history
   app.get('/api/clients/:id/credit', async (req: any, res) => {
     try {
