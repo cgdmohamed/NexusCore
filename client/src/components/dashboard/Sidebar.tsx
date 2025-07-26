@@ -11,7 +11,7 @@ import {
   Receipt,
   CreditCard,
   Wallet,
-  Bus,
+
   CheckSquare,
   TrendingUp,
   Building,
@@ -25,7 +25,7 @@ const navigation = [
   { name: 'nav.invoices', href: '/invoices', icon: Receipt, badge: '3' },
   { name: 'nav.expenses', href: '/expenses', icon: CreditCard },
   { name: 'nav.payment_sources', href: '/payment-sources', icon: Wallet },
-  { name: 'nav.employees', href: '/employees', icon: Bus },
+
   { name: 'nav.user_management', href: '/user-management', icon: UserCog },
   { name: 'nav.tasks', href: '/tasks', icon: CheckSquare, badge: '12' },
   { name: 'nav.analytics', href: '/analytics', icon: TrendingUp },
