@@ -66,7 +66,7 @@ export default function QuotationDetail() {
 
   const addItemMutation = useMutation({
     mutationFn: async (itemData: any) => {
-      return apiRequest(`/api/quotations/${id}/items`, "POST", itemData);
+      return apiRequest("POST", `/api/quotations/${id}/items`, itemData);
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
@@ -142,7 +142,7 @@ export default function QuotationDetail() {
 
   const updateQuotationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest(`/api/quotations/${id}`, "PATCH", data);
+      return apiRequest("PATCH", `/api/quotations/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
@@ -156,7 +156,7 @@ export default function QuotationDetail() {
 
   const convertToInvoiceMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/quotations/${id}/convert-to-invoice`, "POST", {});
+      return apiRequest("POST", `/api/quotations/${id}/convert-to-invoice`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
@@ -170,7 +170,7 @@ export default function QuotationDetail() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
-      return apiRequest(`/api/quotations/${id}`, "PATCH", { status });
+      return apiRequest("PATCH", `/api/quotations/${id}`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
