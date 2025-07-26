@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
