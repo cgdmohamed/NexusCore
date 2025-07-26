@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Upload, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertEmployeeSchema, type Employee } from "@shared/schema";
 import { z } from "zod";
+import { useState, useRef } from "react";
 
 type FormData = z.infer<typeof insertEmployeeSchema>;
 
@@ -21,6 +24,8 @@ interface EmployeeFormProps {
 export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
   const { toast } = useToast();
   const isEditing = !!employee;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(employee?.profileImage || "");
 
   const form = useForm<FormData>({
     resolver: zodResolver(insertEmployeeSchema),
@@ -33,7 +38,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
       department: employee?.department || "operations",
       hiringDate: employee?.hiringDate ? new Date(employee.hiringDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       status: employee?.status || "active",
-      profileImageUrl: employee?.profileImageUrl || "",
+      profileImage: employee?.profileImage || "",
       notes: employee?.notes || "",
     },
   });
@@ -68,6 +73,36 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
       });
     },
   });
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setProfileImagePreview(base64String);
+        form.setValue("profileImage", base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setProfileImagePreview("");
+    form.setValue("profileImage", "");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const onSubmit = (data: FormData) => {
     createMutation.mutate(data);
@@ -210,15 +245,52 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="profileImageUrl">Profile Image URL</Label>
-          <Input
-            id="profileImageUrl"
-            placeholder="https://example.com/profile.jpg"
-            {...form.register("profileImageUrl")}
-          />
-          {form.formState.errors.profileImageUrl && (
-            <p className="text-sm text-red-600">{form.formState.errors.profileImageUrl.message}</p>
-          )}
+          <Label>Profile Image</Label>
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-20 h-20">
+              {profileImagePreview ? (
+                <AvatarImage src={profileImagePreview} alt="Profile preview" />
+              ) : (
+                <AvatarFallback className="text-lg">
+                  {(form.watch("firstName") || "").charAt(0)}{(form.watch("lastName") || "").charAt(0)}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="flex flex-col space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center space-x-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Image</span>
+              </Button>
+              {profileImagePreview && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeImage}
+                  className="flex items-center space-x-2 text-red-600"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Remove</span>
+                </Button>
+              )}
+              <p className="text-xs text-gray-500">
+                Max file size: 5MB. Supported formats: JPG, PNG, GIF
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-2 md:col-span-2">

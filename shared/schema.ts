@@ -53,9 +53,7 @@ export const employees = pgTable("employees", {
   department: departmentEnum("department").notNull(),
   hiringDate: timestamp("hiring_date"),
   status: employeeStatusEnum("status").notNull().default("active"),
-  profileImageUrl: varchar("profile_image_url"),
-  address: text("address"),
-  emergencyContact: text("emergency_contact"),
+  profileImage: text("profile_image"), // Base64 encoded image data
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
