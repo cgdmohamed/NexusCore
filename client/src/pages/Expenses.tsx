@@ -144,8 +144,11 @@ export default function Expenses() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <Header />
+      <div className="space-y-6">
+        <Header 
+          title={t('nav.expenses')}
+          subtitle="Track and manage company expenses and payments"
+        />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -164,98 +167,110 @@ export default function Expenses() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <Header />
+    <div className="space-y-6">
+      <Header 
+        title={t('nav.expenses')}
+        subtitle="Track and manage company expenses and payments"
+      />
       
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total Expenses</CardTitle>
-            <DollarSign className="h-5 w-5 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">
-              ${stats?.totalAmount?.toLocaleString() || "0"}
-            </div>
-            <p className="text-xs text-blue-700 mt-1">
-              {stats?.totalExpenses || 0} expense records
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Paid Expenses</CardTitle>
-            <CheckCircle className="h-5 w-5 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">
-              ${stats?.paidAmount?.toLocaleString() || "0"}
-            </div>
-            <p className="text-xs text-green-700 mt-1">
-              {stats?.paidExpenses || 0} completed payments
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-800">Pending</CardTitle>
-            <Clock className="h-5 w-5 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-900">
-              ${stats?.pendingAmount?.toLocaleString() || "0"}
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              {stats?.pendingExpenses || 0} awaiting payment
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Categories</CardTitle>
-            <PieChart className="h-5 w-5 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
-              {stats?.categoryBreakdown?.length || 0}
-            </div>
-            <p className="text-xs text-purple-700 mt-1">
-              Active expense categories
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Expense Management
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Track and manage company expenses ({filteredExpenses.length} records)
-          </p>
+      <div className="p-6 space-y-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Receipt className="h-4 w-4 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Expenses</p>
+                  <p className="text-2xl font-bold">{stats?.totalExpenses || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Paid</p>
+                  <p className="text-2xl font-bold">{stats?.paidExpenses || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold">{stats?.pendingExpenses || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Overdue</p>
+                  <p className="text-2xl font-bold">{stats?.overdueExpenses || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Amount</p>
+                  <p className="text-2xl font-bold">${(stats?.totalAmount || 0).toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <TrendingDown className="h-4 w-4 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-2xl font-bold">${(stats?.pendingAmount || 0).toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <DataExportButton 
-            data={filteredExpenses} 
-            filename="expenses" 
-            className="hidden sm:flex"
-          />
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Expense
-          </Button>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
+        {/* Header Actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="text-gray-600">
+              {filteredExpenses.length} expenses found
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <DataExportButton 
+              data={filteredExpenses} 
+              filename="expenses"
+            />
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div className="relative flex-1 max-w-sm">
@@ -347,15 +362,15 @@ export default function Expenses() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Content */}
-      {viewMode === "table" ? (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
+        {/* Content */}
+        {viewMode === "table" ? (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
                 <TableHead 
                   className="cursor-pointer hover:bg-gray-50"
                   onClick={() => {
@@ -500,28 +515,28 @@ export default function Expenses() {
                   </TableCell>
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
-          
-          {filteredExpenses.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
-              <p className="text-gray-500 mb-4">
-                {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
-                  ? "Try adjusting your search filters"
-                  : "Get started by adding your first expense record"
-                }
-              </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Expense
-              </Button>
-            </div>
-          )}
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              </TableBody>
+            </Table>
+            
+            {filteredExpenses.length === 0 && (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
+                    ? "Try adjusting your search filters"
+                    : "Get started by adding your first expense record"
+                  }
+                </p>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Expense
+                </Button>
+              </div>
+            )}
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredExpenses.map((expense) => (
             <Card key={expense.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
@@ -615,8 +630,9 @@ export default function Expenses() {
               </Button>
             </div>
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
