@@ -305,12 +305,21 @@ export function registerExpenseRoutes(app: Express) {
     try {
       const { id } = req.params;
       const userId = '1'; // Development user ID
+      
+      console.log("Received expense update payload:", JSON.stringify(req.body, null, 2));
+      
       // Convert date fields to Date objects for updates
       const updates = { 
         ...req.body, 
         expenseDate: req.body.expenseDate ? new Date(req.body.expenseDate) : undefined,
         updatedAt: new Date() 
       };
+      
+      console.log("Final update data for DB (dates converted):", {
+        ...updates,
+        expenseDate: updates.expenseDate?.toISOString(),
+        updatedAt: updates.updatedAt.toISOString(),
+      });
 
       const [expense] = await db
         .update(expenses)

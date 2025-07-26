@@ -1,0 +1,30 @@
+4:23:20 PM [express] GET /api/clients 304 in 302ms :: [{"id":"cfc13abb-db19-4db4-a94e-daa0c743ffb6",…
+4:23:20 PM [express] GET /api/invoices 304 in 308ms :: []
+4:23:21 PM [express] GET /api/tasks/stats 304 in 577ms :: {"statusBreakdown":{"pending":1,"in_progre…
+4:23:51 PM [vite] hmr update /src/components/forms/ExpenseForm.tsx, /src/index.css?v=SMvzjddsCDngF3psTr9OR
+4:24:17 PM [express] GET /api/auth/user 200 in 1ms :: {"id":"1","email":"test@company.com","firstNam…
+4:24:18 PM [express] GET /api/expenses/86e0feff-90e5-4ac0-9c1f-e70080f38c41 304 in 301ms :: {"id":"8…
+4:24:18 PM [express] GET /api/clients 304 in 296ms :: [{"id":"cfc13abb-db19-4db4-a94e-daa0c743ffb6",…
+4:24:18 PM [express] GET /api/invoices 304 in 317ms :: []
+4:24:18 PM [express] GET /api/expense-categories 304 in 76ms :: [{"id":"1146bcd8-8835-4806-9857-a5f7…
+4:24:18 PM [express] GET /api/tasks/stats 304 in 605ms :: {"statusBreakdown":{"pending":1,"in_progre…
+Error updating expense: TypeError: value.toISOString is not a function
+    at PgTimestamp.mapToDriverValue (/home/runner/workspace/node_modules/src/pg-core/columns/timestamp.ts:66:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:223:69)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:174:17)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:174:17)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:124:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at SQL.toQuery (/home/runner/workspace/node_modules/src/sql/sql.ts:123:17)
+    at PgDialect.sqlToQuery (/home/runner/workspace/node_modules/src/pg-core/dialect.ts:591:14)
+    at QueryPromise._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/update.ts:579:18)
+    at QueryPromise.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/update.ts:596:15)
+    at QueryPromise.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+4:24:24 PM [express] PUT /api/expenses/86e0feff-90e5-4ac0-9c1f-e70080f38c41 500 in 1ms :: {"message"…
