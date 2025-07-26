@@ -222,7 +222,7 @@ export const clientCreditHistory = pgTable("client_credit_history", {
 
 
 
-// Tasks table
+// Tasks table - Basic structure matching actual database
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -235,6 +235,37 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").defaultNow(),
   assignedTo: varchar("assigned_to").references(() => users.id),
   createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Task Comments table for internal collaboration
+export const taskComments = pgTable("task_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").references(() => tasks.id).notNull(),
+  comment: text("comment").notNull(),
+  attachments: text("attachments").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+});
+
+// Task Dependencies table for workflow control
+export const taskDependencies = pgTable("task_dependencies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").references(() => tasks.id).notNull(),
+  dependsOnTaskId: varchar("depends_on_task_id").references(() => tasks.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+});
+
+// Task Activity Log for tracking changes
+export const taskActivityLog = pgTable("task_activity_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").references(() => tasks.id).notNull(),
+  action: varchar("action").notNull(), // created, assigned, status_changed, updated, commented, etc.
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
 });
 
 // Activities table for tracking system activities

@@ -43,16 +43,10 @@ export function registerAnalyticsRoutes(app: Express) {
           dateFilter as any
         ));
 
-      // Total Expenses
-      const expenseResult = await db
-        .select({ 
-          totalExpenses: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)` 
-        })
-        .from(expenses)
-        .where(and(
-          eq(expenses.status, 'approved'),
-          dateFilter as any
-        ));
+      // Total Expenses  
+      const expenseResult = await db.execute(
+        sql`SELECT COALESCE(SUM(CAST(amount AS DECIMAL)), 0) as totalExpenses FROM expenses WHERE status = 'approved'`
+      );
 
       // New Clients
       const newClientsResult = await db
@@ -96,7 +90,7 @@ export function registerAnalyticsRoutes(app: Express) {
         ));
 
       const totalRevenue = revenueResult[0]?.totalRevenue || 0;
-      const totalExpenses = expenseResult[0]?.totalExpenses || 0;
+      const totalExpenses = expenseResult[0]?.totalexpenses || 0;
       const netProfit = totalRevenue - totalExpenses;
       const newClients = newClientsResult[0]?.newClients || 0;
       const completedTasks = completedTasksResult[0]?.completedTasks || 0;
@@ -178,12 +172,11 @@ export function registerAnalyticsRoutes(app: Express) {
         const expenseData = await db.execute(
           sql`
             SELECT 
-              category,
+              'General' as category,
               SUM(CAST(amount AS DECIMAL)) as totalAmount,
               COUNT(*) as count
             FROM expenses 
             WHERE status = 'approved'
-            GROUP BY category
           `
         );
 

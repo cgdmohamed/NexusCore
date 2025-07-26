@@ -8,6 +8,7 @@ import { registerPaymentSourceRoutes } from "./payment-source-routes";
 import { registerUserManagementRoutes } from "./user-management-routes";
 import { registerKpiRoutes } from "./kpi-routes";
 import { registerAnalyticsRoutes } from "./analytics-routes";
+import { registerTaskManagementRoutes } from "./task-management-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
@@ -120,6 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerUserManagementRoutes(app);
   registerKpiRoutes(app);
   registerAnalyticsRoutes(app);
+  registerTaskManagementRoutes(app);
 
   // Seed user management data
   try {

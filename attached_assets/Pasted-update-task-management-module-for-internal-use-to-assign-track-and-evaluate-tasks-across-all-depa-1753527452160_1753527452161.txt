@@ -1,0 +1,110 @@
+update  task management module for internal use to assign, track, and evaluate tasks across all departments. Tasks may be general or linked to specific projects or clients. This module will help managers monitor work distribution and employee productivity.
+
+1. Task Structure
+Each task should include the following fields:
+
+Title
+
+Description
+
+Assigned To (Employee)
+
+Assigned By (User)
+
+Priority (Low / Medium / High / Critical)
+
+Status (To Do / In Progress / Review / Completed / Canceled)
+
+Due Date
+
+Actual Completion Date (manual or auto)
+
+Tags or Category (optional)
+
+Linked Project (optional)
+
+Linked Client (optional)
+
+Attachments (optional)
+
+2. Task Types and Linking
+Allow creation of both:
+
+General internal tasks (e.g., HR, admin, marketing, planning)
+
+Project/client-specific tasks
+
+Linking to project or client is optional
+
+The system must support filtering and viewing tasks with or without associations
+
+3. Notifications and Visibility
+Notify employees when a task is assigned or updated
+
+Employees can view:
+
+Tasks assigned to them
+
+Tasks they created (if permitted)
+
+Managers can view all team tasks
+
+Admins can access all tasks across the system
+
+4. Task Views and Filters
+Provide views such as:
+
+Table View with filters:
+
+Status, Assignee, Creator, Due Date, Project, Client
+
+Calendar View (optional)
+
+Grouping by department or priority
+
+5. Performance and KPIs Integration
+Count completed tasks per employee for KPI tracking
+
+Calculate:
+
+Tasks completed on time
+
+Tasks overdue
+
+Average task duration
+
+Option to mark tasks as billable or non-billable
+
+6. Permissions and Roles
+Admins and managers can create, assign, and edit all tasks
+
+Employees can update the status of their own tasks
+
+Optionally restrict task assignment rights by role
+
+Managers can comment or request updates on tasks
+
+7. Optional Features
+Internal comments per task (with timestamps)
+
+File attachments (e.g., screenshots, documents)
+
+Progress tracking (percentage bar: 0–100%)
+
+Task dependencies (optional, for workflow control)
+
+8. Dashboard Integration
+Show each user a widget with:
+
+Tasks assigned to them
+
+Tasks due soon or overdue
+
+Tasks completed this month
+
+Breakdown of tasks by status (e.g., To Do, In Progress, Done)
+
+Optionally separate:
+
+"My Project Tasks" vs. "My General Tasks"
+
