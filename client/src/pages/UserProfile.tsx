@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Key
 } from "lucide-react";
+import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User as UserType, Employee } from "@shared/schema";
@@ -39,6 +40,7 @@ export default function UserProfile() {
     phone: "",
     jobTitle: "",
     department: "",
+    profileImageUrl: "",
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -177,9 +179,15 @@ export default function UserProfile() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-8 w-8 text-primary" />
-                    </div>
+                    <ProfilePictureUpload
+                      currentImage={user.profileImageUrl}
+                      initials={`${user.employee?.firstName?.[0] || user.firstName?.[0] || 'U'}${user.employee?.lastName?.[0] || user.lastName?.[0] || ''}`}
+                      onImageChange={(imageUrl) => {
+                        setFormData(prev => ({ ...prev, profileImageUrl: imageUrl || "" }));
+                      }}
+                      size="lg"
+                      editable={true}
+                    />
                     <div>
                       <CardTitle className="text-2xl">
                         {user.employee?.firstName} {user.employee?.lastName}
