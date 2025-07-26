@@ -6,6 +6,7 @@ import { setupDatabaseRoutes } from "./database-routes";
 import { registerExpenseRoutes } from "./expense-routes";
 import { registerPaymentSourceRoutes } from "./payment-source-routes";
 import { registerUserManagementRoutes } from "./user-management-routes";
+import { registerKpiRoutes } from "./kpi-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
@@ -116,6 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerExpenseRoutes(app);
   registerPaymentSourceRoutes(app);
   registerUserManagementRoutes(app);
+  registerKpiRoutes(app);
 
   // Seed user management data
   try {

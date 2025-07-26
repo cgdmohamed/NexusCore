@@ -75,6 +75,25 @@ export const users = pgTable("users", {
   createdBy: varchar("created_by"),
 });
 
+// KPI status enum
+export const kpiStatusEnum = pgEnum("kpi_status", ["on_track", "below_target", "exceeded", "not_evaluated"]);
+
+// Employee KPIs table
+export const employeeKpis = pgTable("employee_kpis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").references(() => employees.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  targetValue: varchar("target_value"), // Flexible string to accommodate different types
+  actualValue: varchar("actual_value"),
+  evaluationPeriod: varchar("evaluation_period").notNull(), // e.g., "July 2025", "Q2 2025", "Jan 1 - Mar 31, 2025"
+  status: kpiStatusEnum("status").notNull().default("not_evaluated"),
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Audit log for tracking user actions
 export const auditLogs = pgTable("audit_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -246,6 +265,18 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
   }),
   createdBy: one(users, {
     fields: [employees.createdBy],
+    references: [users.id],
+  }),
+  kpis: many(employeeKpis),
+}));
+
+export const employeeKpisRelations = relations(employeeKpis, ({ one }) => ({
+  employee: one(employees, {
+    fields: [employeeKpis.employeeId],
+    references: [employees.id],
+  }),
+  createdBy: one(users, {
+    fields: [employeeKpis.createdBy],
     references: [users.id],
   }),
 }));
@@ -420,6 +451,12 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   createdAt: true,
 });
 
+export const insertEmployeeKpiSchema = createInsertSchema(employeeKpis).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
@@ -432,6 +469,9 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+export type EmployeeKpi = typeof employeeKpis.$inferSelect;
+export type InsertEmployeeKpi = z.infer<typeof insertEmployeeKpiSchema>;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 // Payment Sources table for managing company financial accounts
