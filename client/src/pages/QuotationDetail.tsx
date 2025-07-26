@@ -69,11 +69,6 @@ export default function QuotationDetail() {
       return apiRequest(`/api/quotations/${id}/items`, "POST", itemData);
     },
     onSuccess: async () => {
-      // Update the quotation amount after adding item
-      const items = await fetch(`/api/quotations/${id}/items`).then(r => r.json());
-      const totalAmount = items.reduce((sum: number, item: any) => sum + parseFloat(item.totalPrice), 0);
-      await apiRequest(`/api/quotations/${id}`, "PATCH", { amount: totalAmount.toFixed(2) });
-      
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       setIsAddingItem(false);
@@ -666,7 +661,7 @@ export default function QuotationDetail() {
                       </TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
                       <TableCell className="text-right">${parseFloat(item.unitPrice).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{parseFloat(item.discount).toFixed(1)}%</TableCell>
+                      <TableCell className="text-right">{parseFloat(item.discount || '0').toFixed(1)}%</TableCell>
                       <TableCell className="text-right font-medium">
                         ${parseFloat(item.totalPrice).toFixed(2)}
                       </TableCell>

@@ -472,6 +472,15 @@ export function setupDatabaseRoutes(app: Express) {
       };
 
       const [newItem] = await db.insert(quotationItems).values(itemData).returning();
+      
+      // Recalculate and update quotation amount
+      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      
+      await db.update(quotations)
+        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id));
+      
       res.status(201).json(newItem);
     } catch (error) {
       console.error("Error creating quotation item:", error);
