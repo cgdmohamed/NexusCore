@@ -251,14 +251,21 @@ export function registerExpenseRoutes(app: Express) {
       
       console.log("Received expense payload:", JSON.stringify(req.body, null, 2));
       
+      // Convert date strings to Date objects
       const expenseData: InsertExpense = {
         ...req.body,
+        expenseDate: new Date(req.body.expenseDate),
         createdBy: userId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      console.log("Final expense data for DB:", JSON.stringify(expenseData, null, 2));
+      console.log("Final expense data for DB (dates converted):", {
+        ...expenseData,
+        expenseDate: expenseData.expenseDate.toISOString(),
+        createdAt: expenseData.createdAt.toISOString(),
+        updatedAt: expenseData.updatedAt.toISOString(),
+      });
 
       // Validate mandatory attachment
       if (!expenseData.attachmentUrl || !expenseData.attachmentType) {

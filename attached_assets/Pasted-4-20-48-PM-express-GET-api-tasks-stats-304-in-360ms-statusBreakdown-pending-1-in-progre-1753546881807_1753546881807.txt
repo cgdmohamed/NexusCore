@@ -1,0 +1,56 @@
+4:20:48 PM [express] GET /api/tasks/stats 304 in 360ms :: {"statusBreakdown":{"pending":1,"in_progre…
+Received expense payload: {
+  "title": "الايجار",
+  "description": "",
+  "amount": 7500,
+  "categoryId": "8cc38551-2f33-4f09-9bd6-bb9c34b9792e",
+  "type": "fixed",
+  "expenseDate": "2025-06-30T21:00:00.000Z",
+  "paymentMethod": "bank_transfer",
+  "status": "submitted",
+  "isRecurring": true,
+  "attachmentUrl": "/uploads/01_story.jpg",
+  "attachmentType": "receipt",
+  "relatedClientId": null
+}
+Final expense data for DB: {
+  "title": "الايجار",
+  "description": "",
+  "amount": 7500,
+  "categoryId": "8cc38551-2f33-4f09-9bd6-bb9c34b9792e",
+  "type": "fixed",
+  "expenseDate": "2025-06-30T21:00:00.000Z",
+  "paymentMethod": "bank_transfer",
+  "status": "submitted",
+  "isRecurring": true,
+  "attachmentUrl": "/uploads/01_story.jpg",
+  "attachmentType": "receipt",
+  "relatedClientId": null,
+  "createdBy": "1",
+  "createdAt": "2025-07-26T16:21:00.237Z",
+  "updatedAt": "2025-07-26T16:21:00.237Z"
+}
+Error creating expense: TypeError: value.toISOString is not a function
+    at PgTimestamp.mapToDriverValue (/home/runner/workspace/node_modules/src/pg-core/columns/timestamp.ts:66:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:223:69)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:170:17)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:174:17)
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (/home/runner/workspace/node_modules/src/sql/sql.ts:148:30)
+    at <anonymous> (/home/runner/workspace/node_modules/src/sql/sql.ts:124:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at SQL.toQuery (/home/runner/workspace/node_modules/src/sql/sql.ts:123:17)
+    at PgDialect.sqlToQuery (/home/runner/workspace/node_modules/src/pg-core/dialect.ts:591:14)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/insert.ts:405:19)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at QueryPromise._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/insert.ts:400:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/insert.ts:422:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at QueryPromise.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/insert.ts:421:17)
+    at QueryPromise.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+4:21:00 PM [express] POST /api/expenses 500 in 13ms :: {"message":"Failed to create expense"}
