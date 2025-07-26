@@ -33,15 +33,9 @@ export function registerAnalyticsRoutes(app: Express) {
       }
 
       // Total Revenue from paid invoices
-      const revenueResult = await db
-        .select({ 
-          totalRevenue: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL)), 0)` 
-        })
-        .from(invoices)
-        .where(and(
-          eq(invoices.status, 'paid'),
-          dateFilter as any
-        ));
+      const revenueResult = await db.execute(
+        sql`SELECT COALESCE(SUM(paid_amount::numeric), 0) as totalRevenue FROM invoices WHERE 1=1`
+      );
 
       // Total Expenses  
       const expenseResult = await db.execute(
@@ -89,7 +83,7 @@ export function registerAnalyticsRoutes(app: Express) {
           dateFilter as any
         ));
 
-      const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+      const totalRevenue = parseFloat(revenueResult[0]?.totalrevenue || '0');
       const totalExpenses = expenseResult[0]?.totalexpenses || 0;
       const netProfit = totalRevenue - totalExpenses;
       const newClients = newClientsResult[0]?.newClients || 0;

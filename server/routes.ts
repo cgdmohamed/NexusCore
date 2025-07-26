@@ -11,7 +11,7 @@ import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, activities } from "@shared/schema";
 import { sql } from "drizzle-orm";
 import {
   insertClientSchema,
@@ -441,13 +441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Transform the data to match expected format
-      const activities = activitiesResult.map((activity: any) => ({
+      const transformedActivities = Array.from(activitiesResult).map((activity: any) => ({
         ...activity,
         createdAt: new Date(activity.createdAt).toISOString(),
         updatedAt: new Date(activity.createdAt).toISOString() // Use createdAt as updatedAt since we don't have updatedAt column
       }));
       
-      res.json(activities);
+      res.json(transformedActivities);
     } catch (error) {
       console.error("Error fetching activities:", error);
       // Fallback to empty array instead of mock data
