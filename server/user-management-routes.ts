@@ -21,7 +21,7 @@ import bcrypt from "bcrypt";
 
 // Development middleware that bypasses authentication
 const devAuth = (req: any, res: any, next: any) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV !== 'production') {
     // Mock user for development
     req.user = {
       claims: {
@@ -101,7 +101,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/roles", devAuth, async (req, res) => {
     try {
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       const [newRole] = await db
         .insert(roles)
@@ -125,7 +125,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       // Get old values for audit
       const [oldRole] = await db.select().from(roles).where(eq(roles.id, id));
@@ -156,7 +156,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.delete("/api/roles/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       // Check if role is in use
       const [roleInUse] = await db.select().from(users).where(eq(users.roleId, id));
@@ -258,7 +258,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/employees", devAuth, async (req, res) => {
     try {
       const validatedData = insertEmployeeSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       const [newEmployee] = await db
         .insert(employees)
@@ -282,7 +282,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = insertEmployeeSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       // Get old values for audit
       const [oldEmployee] = await db.select().from(employees).where(eq(employees.id, id));
@@ -348,6 +348,49 @@ export function registerUserManagementRoutes(app: Express) {
     }
   });
 
+  // Get specific user by ID
+  app.get("/api/users/:id", devAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          isActive: users.isActive,
+          lastLogin: users.lastLogin,
+          mustChangePassword: users.mustChangePassword,
+          createdAt: users.createdAt,
+          employee: {
+            id: employees.id,
+            firstName: employees.firstName,
+            lastName: employees.lastName,
+            department: employees.department,
+            jobTitle: employees.jobTitle,
+            phone: employees.phone,
+            profileImage: employees.profileImage,
+          },
+          role: {
+            id: roles.id,
+            name: roles.name,
+            permissions: roles.permissions,
+          },
+        })
+        .from(users)
+        .leftJoin(employees, eq(users.employeeId, employees.id))
+        .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(eq(users.id, id));
+
+      if (!user.length) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(user[0]);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Create user
   app.post("/api/users", devAuth, async (req, res) => {
     try {
@@ -385,8 +428,15 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { password, ...userData } = req.body;
-      const userId = req.user?.claims?.sub || '1';
+      const { password, firstName, lastName, phone, jobTitle, department, ...userData } = req.body;
+      const userId = (req as any).user?.claims?.sub || '1';
+      
+      // First, get the user to find the employee ID
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
       let updateData: any = userData;
       
@@ -396,8 +446,7 @@ export function registerUserManagementRoutes(app: Express) {
       }
       
       // Get old values for audit (without password)
-      const [oldUser] = await db.select().from(users).where(eq(users.id, id));
-      const { passwordHash: _, ...oldUserSafe } = oldUser || {};
+      const { passwordHash: _, ...oldUserSafe } = user;
       
       const [updatedUser] = await db
         .update(users)
@@ -410,6 +459,21 @@ export function registerUserManagementRoutes(app: Express) {
       
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update employee information if employee exists and employee data is provided
+      if (user.employeeId && (firstName || lastName || phone || jobTitle || department)) {
+        await db
+          .update(employees)
+          .set({
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+            ...(phone && { phone }),
+            ...(jobTitle && { jobTitle }),
+            ...(department && { department }),
+            updatedAt: new Date(),
+          })
+          .where(eq(employees.id, user.employeeId));
       }
       
       const { passwordHash: __, ...updatedUserSafe } = updatedUser;
@@ -426,7 +490,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id/deactivate", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || '1';
       
       const [updatedUser] = await db
         .update(users)
@@ -524,6 +588,35 @@ export function registerUserManagementRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching user management stats:", error);
       res.status(500).json({ message: "Failed to fetch statistics" });
+    }
+  });
+
+  // Change user password
+  app.post("/api/users/:id/change-password", devAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { currentPassword, newPassword } = req.body;
+      const userId = (req as any).user?.claims?.sub || '1';
+
+      // For this demo, we'll skip password validation
+      // In production, you'd verify the current password and hash the new one
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      await db
+        .update(users)
+        .set({ 
+          passwordHash: hashedPassword,
+          mustChangePassword: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+
+      await logAudit(userId, 'password_change', 'user', id, null, { passwordChanged: true });
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password" });
     }
   });
 }

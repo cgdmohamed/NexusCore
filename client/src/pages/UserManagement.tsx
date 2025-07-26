@@ -276,9 +276,11 @@ export default function UserManagement() {
                         </div>
                         
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <Link href={`/users/${user.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button 
                             variant="outline" 
                             size="sm"
