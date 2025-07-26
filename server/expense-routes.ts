@@ -305,7 +305,12 @@ export function registerExpenseRoutes(app: Express) {
     try {
       const { id } = req.params;
       const userId = '1'; // Development user ID
-      const updates = { ...req.body, updatedAt: new Date() };
+      // Convert date fields to Date objects for updates
+      const updates = { 
+        ...req.body, 
+        expenseDate: req.body.expenseDate ? new Date(req.body.expenseDate) : undefined,
+        updatedAt: new Date() 
+      };
 
       const [expense] = await db
         .update(expenses)

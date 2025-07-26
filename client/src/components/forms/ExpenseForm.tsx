@@ -151,7 +151,11 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         queryClient.invalidateQueries({ queryKey: ["/api/expenses", expense.id] });
         setLocation(`/expenses/${expense.id}`);
       } else {
-        setLocation(`/expenses/${(data as any).id}`);
+        // Ensure we have a valid expense ID from the response
+        const newExpenseId = data?.id || (data as any)?.id;
+        if (newExpenseId) {
+          setLocation(`/expenses/${newExpenseId}`);
+        }
       }
       onClose();
     },
