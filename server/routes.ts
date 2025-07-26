@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./replitAuth";
 import { setupDatabaseRoutes } from "./database-routes";
+import { registerExpenseRoutes } from "./expense-routes";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
 import { sql } from "drizzle-orm";
@@ -109,6 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup database routes for all CRUD operations
   setupDatabaseRoutes(app);
+  
+  // Setup expense routes
+  registerExpenseRoutes(app);
 
   app.get('/api/clients/:id', async (req, res) => {
     try {

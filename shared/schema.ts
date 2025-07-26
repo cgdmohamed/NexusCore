@@ -156,21 +156,7 @@ export const clientCreditHistory = pgTable("client_credit_history", {
   createdBy: varchar("created_by").references(() => users.id),
 });
 
-// Expenses table
-export const expenses = pgTable("expenses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: text("title").notNull(),
-  description: text("description"),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  category: varchar("category").notNull(), // travel, office, equipment, etc.
-  status: varchar("status").notNull().default("pending"), // pending, approved, rejected
-  receiptUrl: varchar("receipt_url"),
-  expenseDate: timestamp("expense_date").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by").references(() => users.id),
-  approvedBy: varchar("approved_by").references(() => users.id),
-});
+
 
 // Tasks table
 export const tasks = pgTable("tasks", {
@@ -269,16 +255,7 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   }),
 }));
 
-export const expensesRelations = relations(expenses, ({ one }) => ({
-  createdBy: one(users, {
-    fields: [expenses.createdBy],
-    references: [users.id],
-  }),
-  approvedBy: one(users, {
-    fields: [expenses.approvedBy],
-    references: [users.id],
-  }),
-}));
+
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
   assignedTo: one(users, {
@@ -327,11 +304,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   paidAmount: true,
 });
 
-export const insertExpenseSchema = createInsertSchema(expenses).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
@@ -432,16 +405,120 @@ export const clientNotesRelations = relations(clientNotes, ({ one }) => ({
   }),
 }));
 
+// Expense Categories table
+export const expenseCategories = pgTable("expense_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#3B82F6"), // Hex color for UI display
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Expenses table
+export const expenses = pgTable("expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  categoryId: varchar("category_id").references(() => expenseCategories.id).notNull(),
+  type: varchar("type").notNull(), // 'fixed', 'variable'
+  frequency: varchar("frequency"), // 'monthly', 'quarterly', 'yearly' - only for fixed expenses
+  startDate: timestamp("start_date"),
+  dueDate: timestamp("due_date"),
+  expenseDate: timestamp("expense_date").notNull(),
+  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer, credit_card, check
+  paymentReference: varchar("payment_reference"), // reference number for bank transfers, check numbers, etc.
+  status: varchar("status").notNull().default("pending"), // pending, paid, overdue, cancelled
+  paidDate: timestamp("paid_date"),
+  attachmentUrl: varchar("attachment_url").notNull(), // Mandatory attachment
+  attachmentType: varchar("attachment_type").notNull(), // receipt, invoice, bank_statement, photo
+  notes: text("notes"),
+  // Optional project/client linking for internal reporting
+  relatedProjectId: varchar("related_project_id"),
+  relatedClientId: varchar("related_client_id").references(() => clients.id),
+  // Recurring expense tracking
+  isRecurring: boolean("is_recurring").default(false),
+  parentExpenseId: varchar("parent_expense_id").references(() => expenses.id),
+  nextDueDate: timestamp("next_due_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Expense Payments table (for tracking payment history of recurring expenses)
+export const expensePayments = pgTable("expense_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  expenseId: varchar("expense_id").references(() => expenses.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date").notNull(),
+  paymentMethod: varchar("payment_method").notNull(),
+  paymentReference: varchar("payment_reference"),
+  attachmentUrl: varchar("attachment_url").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Schema validation
+const insertExpenseCategorySchema = createInsertSchema(expenseCategories);
+const insertExpenseSchema = createInsertSchema(expenses);
+const insertExpensePaymentSchema = createInsertSchema(expensePayments);
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Quotation = typeof quotations.$inferSelect;
 export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
 
+export type ExpenseCategory = typeof expenseCategories.$inferSelect;
+export type InsertExpenseCategory = z.infer<typeof insertExpenseCategorySchema>;
+
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export type ExpensePayment = typeof expensePayments.$inferSelect;
+export type InsertExpensePayment = z.infer<typeof insertExpensePaymentSchema>;
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+// Add relations for expense tables
+export const expenseCategoriesRelations = relations(expenseCategories, ({ many }) => ({
+  expenses: many(expenses),
+}));
+
+export const expensesRelations = relations(expenses, ({ one, many }) => ({
+  category: one(expenseCategories, {
+    fields: [expenses.categoryId],
+    references: [expenseCategories.id],
+  }),
+  relatedClient: one(clients, {
+    fields: [expenses.relatedClientId],
+    references: [clients.id],
+  }),
+  createdBy: one(users, {
+    fields: [expenses.createdBy],
+    references: [users.id],
+  }),
+  parentExpense: one(expenses, {
+    fields: [expenses.parentExpenseId],
+    references: [expenses.id],
+  }),
+  childExpenses: many(expenses),
+  payments: many(expensePayments),
+}));
+
+export const expensePaymentsRelations = relations(expensePayments, ({ one }) => ({
+  expense: one(expenses, {
+    fields: [expensePayments.expenseId],
+    references: [expenses.id],
+  }),
+  createdBy: one(users, {
+    fields: [expensePayments.createdBy],
+    references: [users.id],
+  }),
+}));
