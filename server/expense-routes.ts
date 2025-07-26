@@ -248,10 +248,17 @@ export function registerExpenseRoutes(app: Express) {
   app.post("/api/expenses", async (req, res) => {
     try {
       const userId = '1'; // Development user ID
+      
+      console.log("Received expense payload:", JSON.stringify(req.body, null, 2));
+      
       const expenseData: InsertExpense = {
         ...req.body,
         createdBy: userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+
+      console.log("Final expense data for DB:", JSON.stringify(expenseData, null, 2));
 
       // Validate mandatory attachment
       if (!expenseData.attachmentUrl || !expenseData.attachmentType) {

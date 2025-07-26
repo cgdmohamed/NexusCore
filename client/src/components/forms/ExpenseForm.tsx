@@ -116,13 +116,21 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       }
 
       const payload = {
-        ...data,
+        title: data.title,
+        description: data.description,
         amount: parseFloat(data.amount),
-        expenseDate: new Date(data.expenseDate),
+        categoryId: data.categoryId,
+        type: data.type,
+        expenseDate: data.expenseDate, // Keep as Date object
+        paymentMethod: data.paymentMethod,
+        status: data.status,
+        isRecurring: data.isRecurring,
         attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || "/uploads/default-receipt.pdf",
         attachmentType,
-        projectId: data.projectId === "none" ? null : data.projectId,
+        relatedClientId: data.projectId === "none" ? null : data.projectId,
       };
+
+      console.log("Expense payload being sent:", payload);
 
       if (expense) {
         return await apiRequest("PUT", `/api/expenses/${expense.id}`, payload);
