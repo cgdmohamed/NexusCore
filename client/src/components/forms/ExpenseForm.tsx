@@ -123,7 +123,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         queryClient.invalidateQueries({ queryKey: ["/api/expenses", expense.id] });
         setLocation(`/expenses/${expense.id}`);
       } else {
-        setLocation(`/expenses/${data.id}`);
+        setLocation(`/expenses/${(data as any).id}`);
       }
       onClose();
     },
@@ -278,7 +278,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {categories?.map((category: any) => (
+                    {Array.isArray(categories) && categories.map((category: any) => (
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center gap-2">
                           <div 
@@ -379,8 +379,8 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No Project</SelectItem>
-                    {clients?.map((client: any) => (
+                    <SelectItem value="none">No Project</SelectItem>
+                    {Array.isArray(clients) && clients.map((client: any) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
                       </SelectItem>
