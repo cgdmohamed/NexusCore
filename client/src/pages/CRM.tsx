@@ -36,7 +36,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientForm } from "@/components/forms/ClientForm";
-import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import { DataExportButton } from "@/components/DataExportButton";
 import { Link } from "wouter";
 import type { Client, Quotation, Invoice } from "@shared/schema";
@@ -83,7 +82,7 @@ export default function CRM() {
   const clientList = clients as Client[];
 
   // Check if user is admin (can delete clients)
-  const isAdmin = user?.role === 'admin' || user?.department === 'management';
+  const isAdmin = (user as any)?.role === 'admin' || (user as any)?.department === 'management';
 
   // Delete client mutation with cascade delete
   const deleteClientMutation = useMutation({
@@ -501,17 +500,6 @@ export default function CRM() {
                                   View
                                 </Button>
                               </Link>
-                              <StatusUpdateForm
-                                entityType="client"
-                                entityId={client.id}
-                                currentStatus={client.status}
-                                trigger={
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="w-3 h-3 mr-1" />
-                                    Status
-                                  </Button>
-                                }
-                              />
                               {isAdmin && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
@@ -635,16 +623,6 @@ export default function CRM() {
                               View Profile
                             </Button>
                           </Link>
-                          <StatusUpdateForm
-                            entityType="client"
-                            entityId={client.id}
-                            currentStatus={client.status}
-                            trigger={
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                            }
-                          />
                           {isAdmin && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
