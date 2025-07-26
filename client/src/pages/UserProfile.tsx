@@ -67,6 +67,7 @@ export default function UserProfile() {
       setShowEditDialog(false);
       queryClient.invalidateQueries({ queryKey: ["/api/users", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error: Error) => {
       toast({
@@ -109,6 +110,7 @@ export default function UserProfile() {
         phone: user.employee.phone || "",
         jobTitle: user.employee.jobTitle || "",
         department: user.employee.department || "",
+        profileImageUrl: user.employee.profileImage || "",
       });
       setShowEditDialog(true);
     }
@@ -180,10 +182,12 @@ export default function UserProfile() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <ProfilePictureUpload
-                      currentImage={user.profileImageUrl}
+                      currentImage={user.employee?.profileImage || user.profileImageUrl}
                       initials={`${user.employee?.firstName?.[0] || user.firstName?.[0] || 'U'}${user.employee?.lastName?.[0] || user.lastName?.[0] || ''}`}
                       onImageChange={(imageUrl) => {
-                        setFormData(prev => ({ ...prev, profileImageUrl: imageUrl || "" }));
+                        // Immediately update the profile picture
+                        const updateData = { profileImageUrl: imageUrl || "" };
+                        updateProfileMutation.mutate(updateData);
                       }}
                       size="lg"
                       editable={true}

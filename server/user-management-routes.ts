@@ -425,7 +425,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { password, firstName, lastName, phone, jobTitle, department, ...userData } = req.body;
+      const { password, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
       const userId = (req as any).user?.claims?.sub || '1';
       
       // First, get the user to find the employee ID
@@ -457,7 +457,7 @@ export function registerUserManagementRoutes(app: Express) {
       }
       
       // Update employee information if employee exists and employee data is provided
-      if (user.employeeId && (firstName || lastName || phone || jobTitle || department)) {
+      if (user.employeeId && (firstName || lastName || phone || jobTitle || department || profileImageUrl !== undefined)) {
         await db
           .update(employees)
           .set({
@@ -466,6 +466,7 @@ export function registerUserManagementRoutes(app: Express) {
             ...(phone && { phone }),
             ...(jobTitle && { jobTitle }),
             ...(department && { department }),
+            ...(profileImageUrl !== undefined && { profileImage: profileImageUrl }),
             updatedAt: new Date(),
           })
           .where(eq(employees.id, user.employeeId));
