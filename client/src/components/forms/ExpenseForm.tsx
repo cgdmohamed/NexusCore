@@ -459,11 +459,13 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                   accept="image/*,.pdf"
                   onChange={handleFileSelect}
                 />
-                <label htmlFor="file-upload" className="cursor-pointer inline-block">
-                  <Button type="button" variant="outline">
-                    Choose File
-                  </Button>
-                </label>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  Choose File
+                </Button>
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 Supported formats: JPEG, PNG, GIF, PDF (max 5MB)
