@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock } from "lucide-react";
+import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function KPICards() {
@@ -11,7 +11,12 @@ export function KPICards() {
     queryKey: ["/api/dashboard/kpis"],
   });
 
+  const { data: taskStats } = useQuery({
+    queryKey: ["/api/tasks/stats"],
+  });
+
   const kpiData = kpis as any;
+  const taskData = taskStats as any;
 
   if (isLoading) {
     return (
@@ -38,7 +43,7 @@ export function KPICards() {
     {
       title: t('dashboard.totalRevenue'),
       value: `$${kpiData?.totalRevenue?.toLocaleString() || '0'}`,
-      change: "+12.5% from last month",
+      change: "Monthly revenue tracked",
       icon: DollarSign,
       iconBg: "bg-green-100",
       iconColor: "text-secondary",
@@ -47,26 +52,25 @@ export function KPICards() {
     {
       title: t('dashboard.activeClients'),
       value: kpiData?.activeClients?.toString() || '0',
-      change: "+8 new this week",
+      change: "Clients managed",
       icon: Users,
       iconBg: "bg-blue-100",
       iconColor: "text-primary",
       changeColor: "text-secondary",
     },
     {
-      title: t('dashboard.pendingInvoices'),
-      value: `$${kpiData?.pendingInvoices?.toLocaleString() || '0'}`,
-      change: "3 overdue",
-      icon: AlertTriangle,
-      iconBg: "bg-red-100",
-      iconColor: "text-accent",
-      changeColor: "text-accent",
-      changeIcon: Clock,
+      title: "Active Tasks",
+      value: taskData?.totalTasks?.toString() || '0',
+      change: `${taskData?.statusBreakdown?.pending || 0} pending`,
+      icon: CheckSquare,
+      iconBg: "bg-yellow-100",
+      iconColor: "text-yellow-600",
+      changeColor: (taskData?.statusBreakdown?.pending || 0) > 0 ? "text-yellow-600" : "text-secondary",
     },
     {
       title: t('dashboard.teamPerformance'),
-      value: `${kpiData?.teamPerformance || 0}%`,
-      change: "Above target",
+      value: `${Math.round(((taskData?.statusBreakdown?.completed || 0) / (taskData?.totalTasks || 1)) * 100)}%`,
+      change: "Task completion rate",
       icon: TrendingUp,
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
@@ -78,7 +82,7 @@ export function KPICards() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {kpiCards.map((kpi, index) => {
         const Icon = kpi.icon;
-        const ChangeIcon = kpi.changeIcon || ArrowUp;
+        const ChangeIcon = ArrowUp;
         
         return (
           <Card key={index} className="border border-gray-200">

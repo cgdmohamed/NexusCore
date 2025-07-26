@@ -14,7 +14,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
 
   const currentUser = user as User | undefined;
-  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '';
+  const userName = currentUser?.email ? currentUser.email.split('@')[0] : 'User';
   
   return (
     <div className="space-y-6">
