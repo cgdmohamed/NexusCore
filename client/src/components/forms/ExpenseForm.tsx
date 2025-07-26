@@ -119,6 +119,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       
       if (expense) {
         queryClient.invalidateQueries({ queryKey: ["/api/expenses", expense.id] });

@@ -148,37 +148,7 @@ export function setupDatabaseRoutes(app: Express) {
 
   // Tasks routes moved to task-management-routes.ts
 
-  // Expenses - using real database
-  app.get('/api/expenses', async (req: any, res) => {
-    try {
-      const expensesData = await db.select().from(expenses);
-      res.json(expensesData);
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      res.status(500).json({ message: "Failed to fetch expenses" });
-    }
-  });
-
-  app.post('/api/expenses', async (req: any, res) => {
-    try {
-      const expenseData = {
-        title: req.body.title,
-        category: req.body.category,
-        amount: req.body.amount,
-        description: req.body.description,
-        status: 'pending',
-        expenseDate: new Date(), // Add required expense date
-        receiptUrl: null,
-        createdBy: '1', // Development user ID
-      };
-
-      const [newExpense] = await db.insert(expenses).values(expenseData).returning();
-      res.status(201).json(newExpense);
-    } catch (error) {
-      console.error("Error creating expense:", error);
-      res.status(500).json({ message: "Failed to create expense" });
-    }
-  });
+  // Expenses routes are handled by expense-routes.ts
 
   // Quotations - using real database
   app.get('/api/quotations', async (req: any, res) => {

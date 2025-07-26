@@ -49,7 +49,10 @@ export default function ExpenseDetail() {
         title: "Success",
         description: "Expense deleted successfully",
       });
+      // Invalidate all expense-related queries to update statistics
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       setLocation("/expenses");
     },
     onError: (error: any) => {
