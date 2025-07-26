@@ -450,18 +450,20 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
               <p className="text-gray-500 mb-4">
                 Attach receipt, invoice, or supporting document
               </p>
-              <Label htmlFor="file-upload" className="cursor-pointer">
-                <Button type="button" variant="outline">
-                  Choose File
-                </Button>
-                <Input
+              <div>
+                <input
                   id="file-upload"
                   type="file"
                   className="hidden"
                   accept="image/*,.pdf"
                   onChange={handleFileSelect}
                 />
-              </Label>
+                <label htmlFor="file-upload" className="cursor-pointer inline-block">
+                  <Button type="button" variant="outline">
+                    Choose File
+                  </Button>
+                </label>
+              </div>
               <p className="text-xs text-gray-400 mt-2">
                 Supported formats: JPEG, PNG, GIF, PDF (max 5MB)
               </p>
