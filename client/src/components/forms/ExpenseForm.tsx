@@ -13,7 +13,8 @@ import {
   CreditCard,
   Tag,
   FileText,
-  DollarSign
+  DollarSign,
+  Wallet
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const expenseFormSchema = z.object({
   type: z.enum(["fixed", "variable"]),
   status: z.enum(["pending", "paid", "overdue", "cancelled"]),
   categoryId: z.string().min(1, "Category is required"),
+  paymentSourceId: z.string().min(1, "Payment source is required"),
   expenseDate: z.date(),
   paymentMethod: z.enum(["cash", "credit_card", "debit_card", "bank_transfer", "check"]),
   isRecurring: z.boolean().default(false),
@@ -80,6 +82,10 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
     queryKey: ["/api/clients"],
   });
 
+  const { data: paymentSources } = useQuery({
+    queryKey: ["/api/payment-sources"],
+  });
+
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
@@ -89,6 +95,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       type: expense?.type || "variable",
       status: expense?.status || "pending",
       categoryId: expense?.categoryId || "",
+      paymentSourceId: expense?.paymentSourceId || "",
       expenseDate: expense ? new Date(expense.expenseDate) : new Date(),
       paymentMethod: expense?.paymentMethod || "credit_card",
       isRecurring: expense?.isRecurring || false,
@@ -120,6 +127,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         description: data.description,
         amount: parseFloat(data.amount),
         categoryId: data.categoryId,
+        paymentSourceId: data.paymentSourceId,
         type: data.type,
         expenseDate: data.expenseDate, // Keep as Date object
         paymentMethod: data.paymentMethod,
@@ -328,6 +336,40 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                             style={{ backgroundColor: category.color }}
                           />
                           {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Payment Source */}
+          <FormField
+            control={form.control}
+            name="paymentSourceId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Payment Source *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment source" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Array.isArray(paymentSources) && paymentSources.map((source: any) => (
+                      <SelectItem key={source.id} value={source.id}>
+                        <div className="flex items-center gap-2">
+                          <Wallet className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">{source.name}</div>
+                            <div className="text-sm text-gray-500">
+                              Balance: ${parseFloat(source.currentBalance || "0").toFixed(2)}
+                            </div>
+                          </div>
                         </div>
                       </SelectItem>
                     ))}

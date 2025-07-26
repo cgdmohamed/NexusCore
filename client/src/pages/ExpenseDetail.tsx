@@ -13,6 +13,7 @@ import {
   User,
   FileText,
   DollarSign,
+  Wallet,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,10 @@ export default function ExpenseDetail() {
 
   const { data: categories = [] } = useQuery<ExpenseCategory[]>({
     queryKey: ["/api/expense-categories"],
+  });
+
+  const { data: paymentSources = [] } = useQuery<any[]>({
+    queryKey: ["/api/payment-sources"],
   });
 
   const deleteMutation = useMutation({
@@ -121,6 +126,11 @@ export default function ExpenseDetail() {
   const getCategoryInfo = (categoryId: string) => {
     if (!categories) return null;
     return categories.find((cat: any) => cat.id === categoryId);
+  };
+
+  const getPaymentSourceInfo = (paymentSourceId: string) => {
+    if (!paymentSources || !paymentSourceId) return null;
+    return paymentSources.find((source: any) => source.id === paymentSourceId);
   };
 
   const handleDelete = () => {
@@ -285,6 +295,18 @@ export default function ExpenseDetail() {
                           <span className="text-sm text-gray-500">
                             {categoryInfo.name}
                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {getPaymentSourceInfo(expense.paymentSourceId) && (
+                    <div className="flex items-center gap-3">
+                      <Wallet className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <div className="font-medium">Payment Source</div>
+                        <div className="text-sm text-gray-500">
+                          {getPaymentSourceInfo(expense.paymentSourceId)?.name}
                         </div>
                       </div>
                     </div>

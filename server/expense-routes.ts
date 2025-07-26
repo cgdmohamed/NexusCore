@@ -5,13 +5,61 @@ import {
   expenses, 
   expenseCategories, 
   expensePayments,
+  paymentSources,
+  paymentSourceTransactions,
   type Expense,
   type ExpenseCategory,
   type ExpensePayment,
   type InsertExpense,
   type InsertExpenseCategory,
-  type InsertExpensePayment
+  type InsertExpensePayment,
+  type InsertPaymentSourceTransaction
 } from "@shared/schema";
+
+// Helper function to handle payment source transactions
+async function handlePaymentSourceTransaction(
+  paymentSourceId: string, 
+  amount: string, 
+  expenseId: string, 
+  expenseTitle: string, 
+  userId: string
+) {
+  // Get current payment source balance
+  const [paymentSource] = await db
+    .select()
+    .from(paymentSources)
+    .where(eq(paymentSources.id, paymentSourceId));
+
+  if (!paymentSource) {
+    throw new Error("Payment source not found");
+  }
+
+  const balanceBefore = parseFloat(paymentSource.currentBalance || "0");
+  const expenseAmount = parseFloat(amount);
+  const balanceAfter = balanceBefore - expenseAmount;
+
+  // Update payment source balance
+  await db
+    .update(paymentSources)
+    .set({ 
+      currentBalance: balanceAfter.toString(),
+      updatedAt: new Date()
+    })
+    .where(eq(paymentSources.id, paymentSourceId));
+
+  // Create transaction record
+  await db.insert(paymentSourceTransactions).values({
+    paymentSourceId,
+    type: "expense",
+    amount: expenseAmount.toString(),
+    description: `Expense payment: ${expenseTitle}`,
+    referenceId: expenseId,
+    referenceType: "expense",
+    balanceBefore: balanceBefore.toString(),
+    balanceAfter: balanceAfter.toString(),
+    createdBy: userId,
+  });
+}
 
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
@@ -262,9 +310,9 @@ export function registerExpenseRoutes(app: Express) {
 
       console.log("Final expense data for DB (dates converted):", {
         ...expenseData,
-        expenseDate: expenseData.expenseDate.toISOString(),
-        createdAt: expenseData.createdAt.toISOString(),
-        updatedAt: expenseData.updatedAt.toISOString(),
+        expenseDate: expenseData.expenseDate?.toISOString(),
+        createdAt: expenseData.createdAt?.toISOString(),
+        updatedAt: expenseData.updatedAt?.toISOString(),
       });
 
       // Validate mandatory attachment
@@ -278,6 +326,11 @@ export function registerExpenseRoutes(app: Express) {
         .insert(expenses)
         .values(expenseData)
         .returning();
+
+      // If expense is marked as paid on creation or has a payment source, handle payment source transaction
+      if (expense.status === "paid" && expense.paymentSourceId) {
+        await handlePaymentSourceTransaction(expense.paymentSourceId, expense.amount, expense.id, expense.title, userId);
+      }
 
       // If it's a recurring expense, create the first payment record
       if (expense.isRecurring && expense.status === "paid") {
@@ -318,7 +371,7 @@ export function registerExpenseRoutes(app: Express) {
       console.log("Final update data for DB (dates converted):", {
         ...updates,
         expenseDate: updates.expenseDate?.toISOString(),
-        updatedAt: updates.updatedAt.toISOString(),
+        updatedAt: updates.updatedAt?.toISOString(),
       });
 
       const [expense] = await db
@@ -358,6 +411,16 @@ export function registerExpenseRoutes(app: Express) {
         });
       }
 
+      // Get the expense first to check payment source
+      const [existingExpense] = await db
+        .select()
+        .from(expenses)
+        .where(eq(expenses.id, id));
+
+      if (!existingExpense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+
       // Update expense status
       const [expense] = await db
         .update(expenses)
@@ -369,8 +432,15 @@ export function registerExpenseRoutes(app: Express) {
         .where(eq(expenses.id, id))
         .returning();
 
-      if (!expense) {
-        return res.status(404).json({ message: "Expense not found" });
+      // Handle payment source transaction if payment source is linked
+      if (expense.paymentSourceId) {
+        await handlePaymentSourceTransaction(
+          expense.paymentSourceId, 
+          expense.amount, 
+          expense.id, 
+          expense.title, 
+          userId
+        );
       }
 
       // Create payment record
