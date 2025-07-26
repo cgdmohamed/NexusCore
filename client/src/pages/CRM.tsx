@@ -16,6 +16,7 @@ import {
 import { ClientForm } from "@/components/forms/ClientForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import { DataExportButton } from "@/components/DataExportButton";
+import { Link } from "wouter";
 import type { Client } from "@shared/schema";
 
 export default function CRM() {
@@ -97,6 +98,9 @@ export default function CRM() {
                       <TableCell>${parseFloat(client.totalValue || "0").toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Link href={`/crm/${client.id}`}>
+                            <Button variant="outline" size="sm">View Profile</Button>
+                          </Link>
                           <StatusUpdateForm
                             entityType="client"
                             entityId={client.id}

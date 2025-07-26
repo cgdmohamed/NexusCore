@@ -17,6 +17,7 @@ import {
 import { QuotationForm } from "@/components/forms/QuotationForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import { DataExportButton } from "@/components/DataExportButton";
+import { Link } from "wouter";
 import type { Quotation } from "@shared/schema";
 
 export default function Quotations() {
@@ -99,6 +100,9 @@ export default function Quotations() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Link href={`/quotations/${quotation.id}`}>
+                            <Button variant="outline" size="sm">View Details</Button>
+                          </Link>
                           <StatusUpdateForm
                             entityType="quotation"
                             entityId={quotation.id}

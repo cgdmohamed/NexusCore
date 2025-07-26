@@ -15,6 +15,8 @@ import Expenses from "@/pages/Expenses";
 import Employees from "@/pages/Employees";
 import Tasks from "@/pages/Tasks";
 import Analytics from "@/pages/Analytics";
+import ClientProfile from "@/pages/ClientProfile";
+import QuotationDetail from "@/pages/QuotationDetail";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,7 +48,9 @@ function Router() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/crm" component={CRM} />
+          <Route path="/crm/:id" component={ClientProfile} />
           <Route path="/quotations" component={Quotations} />
+          <Route path="/quotations/:id" component={QuotationDetail} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/expenses" component={Expenses} />
           <Route path="/employees" component={Employees} />

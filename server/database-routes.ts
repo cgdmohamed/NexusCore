@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, users } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, users, quotationItems, services, clientNotes } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
@@ -332,6 +332,150 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error creating employee:", error);
       res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  // Enhanced Client Profile Routes
+  app.get('/api/clients/:id', async (req: any, res) => {
+    try {
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      res.json(client);
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Failed to fetch client" });
+    }
+  });
+
+  app.patch('/api/clients/:id', async (req: any, res) => {
+    try {
+      const [updatedClient] = await db.update(clients)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(clients.id, req.params.id))
+        .returning();
+      res.json(updatedClient);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      res.status(500).json({ message: "Failed to update client" });
+    }
+  });
+
+  // Client Related Data Routes
+  app.get('/api/clients/:id/quotations', async (req: any, res) => {
+    try {
+      const clientQuotations = await db.select().from(quotations).where(eq(quotations.clientId, req.params.id));
+      res.json(clientQuotations);
+    } catch (error) {
+      console.error("Error fetching client quotations:", error);
+      res.status(500).json({ message: "Failed to fetch quotations" });
+    }
+  });
+
+  app.get('/api/clients/:id/invoices', async (req: any, res) => {
+    try {
+      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, req.params.id));
+      res.json(clientInvoices);
+    } catch (error) {
+      console.error("Error fetching client invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get('/api/clients/:id/notes', async (req: any, res) => {
+    try {
+      const clientNotesList = await db.select().from(clientNotes).where(eq(clientNotes.clientId, req.params.id));
+      res.json(clientNotesList);
+    } catch (error) {
+      console.error("Error fetching client notes:", error);
+      res.status(500).json({ message: "Failed to fetch notes" });
+    }
+  });
+
+  app.post('/api/clients/:id/notes', async (req: any, res) => {
+    try {
+      const noteData = {
+        clientId: req.params.id,
+        note: req.body.note,
+        type: req.body.type || 'note',
+        createdBy: '1', // Development user ID
+      };
+
+      const [newNote] = await db.insert(clientNotes).values(noteData).returning();
+      res.status(201).json(newNote);
+    } catch (error) {
+      console.error("Error creating client note:", error);
+      res.status(500).json({ message: "Failed to create note" });
+    }
+  });
+
+  // Services Management Routes
+  app.get('/api/services', async (req: any, res) => {
+    try {
+      const servicesList = await db.select().from(services).where(eq(services.isActive, true));
+      res.json(servicesList);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
+  // Initialize Default Services
+  app.post('/api/services/initialize', async (req: any, res) => {
+    try {
+      const existingServices = await db.select().from(services);
+      if (existingServices.length === 0) {
+        const defaultServices = [
+          { name: 'Web Design', description: 'Custom website design', defaultPrice: '2500.00', category: 'web-design' },
+          { name: 'Web Development', description: 'Full-stack web development', defaultPrice: '5000.00', category: 'development' },
+          { name: 'Mobile App Development', description: 'iOS and Android app development', defaultPrice: '8000.00', category: 'development' },
+          { name: 'SEO Optimization', description: 'Search engine optimization services', defaultPrice: '1500.00', category: 'marketing' },
+          { name: 'Digital Marketing', description: 'Comprehensive digital marketing campaign', defaultPrice: '3000.00', category: 'marketing' },
+          { name: 'Business Consulting', description: 'Strategic business consultation', defaultPrice: '200.00', category: 'consulting' },
+          { name: 'UI/UX Design', description: 'User interface and experience design', defaultPrice: '1800.00', category: 'web-design' },
+          { name: 'E-commerce Solution', description: 'Complete e-commerce platform setup', defaultPrice: '6000.00', category: 'development' },
+        ];
+
+        await db.insert(services).values(defaultServices);
+        res.json({ message: 'Default services initialized' });
+      } else {
+        res.json({ message: 'Services already exist' });
+      }
+    } catch (error) {
+      console.error("Error initializing services:", error);
+      res.status(500).json({ message: "Failed to initialize services" });
+    }
+  });
+
+  // Quotation Items Management
+  app.get('/api/quotations/:id/items', async (req: any, res) => {
+    try {
+      const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching quotation items:", error);
+      res.status(500).json({ message: "Failed to fetch quotation items" });
+    }
+  });
+
+  app.post('/api/quotations/:id/items', async (req: any, res) => {
+    try {
+      const itemData = {
+        quotationId: req.params.id,
+        serviceId: req.body.serviceId,
+        description: req.body.description,
+        quantity: req.body.quantity,
+        unitPrice: req.body.unitPrice,
+        totalPrice: req.body.totalPrice,
+        discount: req.body.discount || '0.00',
+      };
+
+      const [newItem] = await db.insert(quotationItems).values(itemData).returning();
+      res.status(201).json(newItem);
+    } catch (error) {
+      console.error("Error creating quotation item:", error);
+      res.status(500).json({ message: "Failed to create quotation item" });
     }
   });
 }
