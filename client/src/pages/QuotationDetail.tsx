@@ -20,7 +20,7 @@ export default function QuotationDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddingItem, setIsAddingItem] = useState(false);
-  const [selectedService, setSelectedService] = useState("");
+  const [selectedService, setSelectedService] = useState("custom");
   const [customDescription, setCustomDescription] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("0");
@@ -68,7 +68,12 @@ export default function QuotationDetail() {
     mutationFn: async (itemData: any) => {
       return apiRequest(`/api/quotations/${id}/items`, "POST", itemData);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Update the quotation amount after adding item
+      const items = await fetch(`/api/quotations/${id}/items`).then(r => r.json());
+      const totalAmount = items.reduce((sum: number, item: any) => sum + parseFloat(item.totalPrice), 0);
+      await apiRequest(`/api/quotations/${id}`, "PATCH", { amount: totalAmount.toFixed(2) });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       setIsAddingItem(false);
@@ -78,17 +83,18 @@ export default function QuotationDetail() {
         description: "Quotation item has been added successfully.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Add item error:", error);
       toast({
         title: "Failed to add item",
-        description: "Could not add the quotation item.",
+        description: error.message || "Could not add the quotation item.",
         variant: "destructive",
       });
     },
   });
 
   const resetForm = () => {
-    setSelectedService("");
+    setSelectedService("custom");
     setCustomDescription("");
     setQuantity("1");
     setUnitPrice("0");
@@ -97,7 +103,7 @@ export default function QuotationDetail() {
 
   const handleServiceChange = (serviceId: string) => {
     setSelectedService(serviceId);
-    if (serviceId) {
+    if (serviceId && serviceId !== "custom") {
       const service = services.find(s => s.id === serviceId);
       if (service) {
         setCustomDescription(service.description || "");
@@ -128,7 +134,7 @@ export default function QuotationDetail() {
     }
 
     const itemData = {
-      serviceId: selectedService || null,
+      serviceId: selectedService && selectedService !== "custom" ? selectedService : null,
       description: customDescription,
       quantity: quantity,
       unitPrice: unitPrice,
@@ -173,9 +179,18 @@ export default function QuotationDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       toast({
         title: "Status updated",
         description: "Quotation status has been updated.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Status update error:", error);
+      toast({
+        title: "Failed to update status",
+        description: error.message || "Could not update quotation status.",
+        variant: "destructive",
       });
     },
   });
@@ -524,7 +539,7 @@ export default function QuotationDetail() {
                         <SelectValue placeholder="Select a service or enter custom" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Custom Item</SelectItem>
+                        <SelectItem value="custom">Custom Item</SelectItem>
                         {services.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.name} - ${service.defaultPrice}

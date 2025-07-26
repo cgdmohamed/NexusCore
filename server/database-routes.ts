@@ -495,10 +495,20 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/quotations/:id', async (req: any, res) => {
     try {
+      const updateData = { ...req.body, updatedAt: new Date() };
+      
+      // If updating amount, recalculate from items
+      if (req.body.status && !req.body.amount) {
+        const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+        const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+        updateData.amount = totalAmount.toFixed(2);
+      }
+
       const [updatedQuotation] = await db.update(quotations)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(quotations.id, req.params.id))
         .returning();
+      
       res.json(updatedQuotation);
     } catch (error) {
       console.error("Error updating quotation:", error);
