@@ -51,7 +51,7 @@ const expenseFormSchema = z.object({
   description: z.string().optional(),
   amount: z.string().min(1, "Amount is required"),
   type: z.enum(["fixed", "variable"]),
-  status: z.enum(["draft", "submitted", "approved", "rejected"]),
+  status: z.enum(["pending", "paid", "overdue", "cancelled"]),
   categoryId: z.string().min(1, "Category is required"),
   expenseDate: z.date(),
   paymentMethod: z.enum(["cash", "credit_card", "debit_card", "bank_transfer", "check"]),
@@ -87,7 +87,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       description: expense?.description || "",
       amount: expense?.amount || "",
       type: expense?.type || "variable",
-      status: expense?.status || "draft",
+      status: expense?.status || "pending",
       categoryId: expense?.categoryId || "",
       expenseDate: expense ? new Date(expense.expenseDate) : new Date(),
       paymentMethod: expense?.paymentMethod || "credit_card",
@@ -295,10 +295,10 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

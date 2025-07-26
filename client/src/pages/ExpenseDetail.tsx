@@ -64,16 +64,55 @@ export default function ExpenseDetail() {
     },
   });
 
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", `/api/expenses/${id}/pay`, {
+        amount: expense?.amount,
+        paymentMethod: expense?.paymentMethod,
+        attachmentUrl: expense?.attachmentUrl,
+        notes: `Payment for expense: ${expense?.title}`,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Expense marked as paid successfully",
+      });
+      // Invalidate all expense-related queries to update statistics
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark expense as paid",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     const variants = {
-      draft: "outline",
-      submitted: "secondary",
-      approved: "default",
-      rejected: "destructive",
+      pending: "secondary",
+      paid: "default",
+      overdue: "destructive",
+      cancelled: "outline",
+    } as const;
+
+    const colors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      paid: "bg-green-100 text-green-800",
+      overdue: "bg-red-100 text-red-800",
+      cancelled: "bg-gray-100 text-gray-800",
     } as const;
 
     return (
-      <Badge variant={variants[status as keyof typeof variants] || "outline"}>
+      <Badge 
+        variant={variants[status as keyof typeof variants] || "outline"}
+        className={colors[status as keyof typeof colors] || ""}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
@@ -91,6 +130,16 @@ export default function ExpenseDetail() {
       )
     ) {
       deleteMutation.mutate();
+    }
+  };
+
+  const handleMarkAsPaid = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to mark this expense as paid? This will update the expense status.",
+      )
+    ) {
+      paymentMutation.mutate();
     }
   };
 
@@ -297,6 +346,18 @@ export default function ExpenseDetail() {
                   Edit Expense
                 </Button>
               </Link>
+
+              {expense.status !== "paid" && (
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={handleMarkAsPaid}
+                  disabled={paymentMutation.isPending}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  {paymentMutation.isPending ? "Processing..." : "Mark as Paid"}
+                </Button>
+              )}
 
               <Button
                 className="w-full"
