@@ -14,7 +14,6 @@ import {
   Wallet,
   CheckSquare,
   TrendingUp,
-  Building,
   UserCog,
 } from "lucide-react";
 
@@ -79,35 +78,6 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-white shadow-lg flex-shrink-0 border-r border-gray-200">
       <div className="p-5">
-        {/* Logo */}
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Building className="text-white text-sm" />
-          </div>
-          <h1 className="text-xl font-semibold text-text">CompanyOS</h1>
-        </div>
-        
-        {/* User Profile Section */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-3">
-            <img 
-              src={currentUser?.profileImageUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100"} 
-              alt="Profile Picture" 
-              className="w-10 h-10 rounded-full object-cover" 
-            />
-            <div>
-              <p className="font-medium text-text text-sm">
-                {currentUser?.email?.split('@')[0] || 'User'}
-              </p>
-              <p className="text-xs text-neutral">
-                {currentUser?.email || 'staff@company.com'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-
-
         {/* Navigation Menu */}
         <nav className="space-y-2">
           {navigation.map((item) => {
