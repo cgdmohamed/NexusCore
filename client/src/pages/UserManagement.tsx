@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Users, 
   UserPlus, 
@@ -317,11 +318,15 @@ export default function UserManagement() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <img
-                          src={employee.profileImageUrl || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                          alt="Profile"
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage 
+                            src={employee.profileImage} 
+                            alt={`${employee.firstName} ${employee.lastName}`}
+                          />
+                          <AvatarFallback className="bg-primary text-white font-medium">
+                            {employee.firstName?.[0]}{employee.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <h3 className="font-semibold">
                             {employee.firstName} {employee.lastName}
