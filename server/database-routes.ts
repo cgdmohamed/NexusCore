@@ -92,19 +92,19 @@ export function setupDatabaseRoutes(app: Express) {
   // Sidebar counters endpoint
   app.get('/api/sidebar/counters', async (req, res) => {
     try {
-      const [clientsCount] = await db.execute(sql`SELECT COUNT(*) as count FROM clients`);
-      const [quotationsCount] = await db.execute(sql`SELECT COUNT(*) as count FROM quotations`);
-      const [invoicesCount] = await db.execute(sql`SELECT COUNT(*) as count FROM invoices`);
-      const [expensesCount] = await db.execute(sql`SELECT COUNT(*) as count FROM expenses`);
-      const [tasksCount] = await db.execute(sql`SELECT COUNT(*) as count FROM tasks`);
+      const clientsCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients`);
+      const quotationsCount = await db.execute(sql`SELECT COUNT(*) as count FROM quotations`);
+      const invoicesCount = await db.execute(sql`SELECT COUNT(*) as count FROM invoices`);
+      const expensesCount = await db.execute(sql`SELECT COUNT(*) as count FROM expenses`);
+      const tasksCount = await db.execute(sql`SELECT COUNT(*) as count FROM tasks`);
       
       const counters = {
-        clients: parseInt(clientsCount?.count?.toString() || '0'),
-        quotations: parseInt(quotationsCount?.count?.toString() || '0'),
-        invoices: parseInt(invoicesCount?.count?.toString() || '0'),
-        expenses: parseInt(expensesCount?.count?.toString() || '0'),
+        clients: parseInt(clientsCount[0]?.count?.toString() || '0'),
+        quotations: parseInt(quotationsCount[0]?.count?.toString() || '0'),
+        invoices: parseInt(invoicesCount[0]?.count?.toString() || '0'),
+        expenses: parseInt(expensesCount[0]?.count?.toString() || '0'),
         employees: 2, // Mock data for employees
-        tasks: parseInt(tasksCount?.count?.toString() || '0'),
+        tasks: parseInt(tasksCount[0]?.count?.toString() || '0'),
       };
       
       res.json(counters);

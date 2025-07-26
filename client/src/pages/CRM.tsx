@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { ClientForm } from "@/components/forms/ClientForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
+import { DataExportButton } from "@/components/DataExportButton";
 import type { Client } from "@shared/schema";
 
 export default function CRM() {
@@ -102,7 +103,11 @@ export default function CRM() {
                             currentStatus={client.status}
                             trigger={<Button variant="outline" size="sm">Status</Button>}
                           />
-                          <Button variant="outline" size="sm">View</Button>
+                          <DataExportButton 
+                            data={[client]} 
+                            filename={`client-${client.name.replace(/\s+/g, '-').toLowerCase()}`} 
+                            type="csv" 
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

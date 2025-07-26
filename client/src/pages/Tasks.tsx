@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { TaskForm } from "@/components/forms/TaskForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
+import { DataExportButton } from "@/components/DataExportButton";
 import type { Task } from "@shared/schema";
 
 export default function Tasks() {
@@ -119,7 +120,11 @@ export default function Tasks() {
                             currentStatus={task.status}
                             trigger={<Button variant="outline" size="sm">Status</Button>}
                           />
-                          <Button variant="outline" size="sm">View</Button>
+                          <DataExportButton 
+                            data={[task]} 
+                            filename={`task-${task.title.replace(/\s+/g, '-').toLowerCase()}`} 
+                            type="csv" 
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
+import { DataExportButton } from "@/components/DataExportButton";
 import type { Expense } from "@shared/schema";
 
 export default function Expenses() {
@@ -106,7 +107,11 @@ export default function Expenses() {
                             currentStatus={expense.status}
                             trigger={<Button variant="outline" size="sm">Status</Button>}
                           />
-                          <Button variant="outline" size="sm">View</Button>
+                          <DataExportButton 
+                            data={[expense]} 
+                            filename={`expense-${expense.title.replace(/\s+/g, '-').toLowerCase()}`} 
+                            type="csv" 
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

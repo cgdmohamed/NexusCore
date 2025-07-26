@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { QuotationForm } from "@/components/forms/QuotationForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
+import { DataExportButton } from "@/components/DataExportButton";
 import type { Quotation } from "@shared/schema";
 
 export default function Quotations() {
@@ -104,7 +105,11 @@ export default function Quotations() {
                             currentStatus={quotation.status}
                             trigger={<Button variant="outline" size="sm">Status</Button>}
                           />
-                          <Button variant="outline" size="sm">Export</Button>
+                          <DataExportButton 
+                            data={[quotation]} 
+                            filename={`quotation-${quotation.quotationNumber}`} 
+                            type="csv" 
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

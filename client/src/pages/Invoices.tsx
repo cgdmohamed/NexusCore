@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
 import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
+import { DataExportButton } from "@/components/DataExportButton";
 import type { Invoice } from "@shared/schema";
 
 export default function Invoices() {
@@ -104,7 +105,11 @@ export default function Invoices() {
                             currentStatus={invoice.status}
                             trigger={<Button variant="outline" size="sm">Status</Button>}
                           />
-                          <Button variant="outline" size="sm">Export</Button>
+                          <DataExportButton 
+                            data={[invoice]} 
+                            filename={`invoice-${invoice.invoiceNumber}`} 
+                            type="csv" 
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

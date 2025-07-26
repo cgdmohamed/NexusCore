@@ -14,12 +14,14 @@ interface CountersData {
 }
 
 export function SidebarCounters({ currentPath }: SidebarCountersProps) {
-  const { data: counters = {} as CountersData } = useQuery({
+  const { data: counters } = useQuery<CountersData>({
     queryKey: ["/api/sidebar/counters"],
     staleTime: 30000, // Refresh every 30 seconds
   });
 
   const getCountForPath = (path: string): number => {
+    if (!counters) return 0;
+    
     switch (path) {
       case '/crm':
         return counters.clients || 0;
