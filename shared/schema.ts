@@ -55,6 +55,7 @@ export const clients = pgTable("clients", {
   country: varchar("country"),
   status: varchar("status").notNull().default("active"), // active, inactive, pending
   totalValue: decimal("total_value", { precision: 10, scale: 2 }).default("0"),
+  creditBalance: decimal("credit_balance", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -121,11 +122,31 @@ export const payments = pgTable("payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   invoiceId: varchar("invoice_id").references(() => invoices.id).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  overpaymentAmount: decimal("overpayment_amount", { precision: 10, scale: 2 }).default("0"),
+  isOverpayment: boolean("is_overpayment").default(false),
+  adminApproved: boolean("admin_approved").default(false),
   paymentDate: timestamp("payment_date").notNull(),
-  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer
+  paymentMethod: varchar("payment_method").notNull(), // cash, bank_transfer, credit_card, check, other
   bankTransferNumber: varchar("bank_transfer_number"),
   attachmentUrl: varchar("attachment_url"),
   notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+});
+
+// Client Credit Balance History
+export const clientCreditHistory = pgTable("client_credit_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").references(() => clients.id).notNull(),
+  type: varchar("type").notNull(), // credit_added, credit_used, credit_refunded
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  relatedInvoiceId: varchar("related_invoice_id").references(() => invoices.id),
+  relatedPaymentId: varchar("related_payment_id").references(() => payments.id),
+  description: text("description").notNull(),
+  notes: text("notes"),
+  previousBalance: decimal("previous_balance", { precision: 10, scale: 2 }).notNull(),
+  newBalance: decimal("new_balance", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });
@@ -323,13 +344,20 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-// Invoice types
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = typeof clients.$inferInsert;
+
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = typeof invoices.$inferInsert;
+
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
 export type InsertInvoiceItem = typeof invoiceItems.$inferInsert;
+
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = typeof payments.$inferInsert;
+
+export type ClientCreditHistory = typeof clientCreditHistory.$inferSelect;
+export type InsertClientCreditHistory = typeof clientCreditHistory.$inferInsert;
 
 // Quotation line items
 export const quotationItems = pgTable("quotation_items", {
@@ -401,14 +429,8 @@ export const clientNotesRelations = relations(clientNotes, ({ one }) => ({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type Client = typeof clients.$inferSelect;
-export type InsertClient = z.infer<typeof insertClientSchema>;
-
 export type Quotation = typeof quotations.$inferSelect;
 export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
-
-export type Invoice = typeof invoices.$inferSelect;
-export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;

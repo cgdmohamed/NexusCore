@@ -60,6 +60,7 @@ interface PaymentFormData {
   paymentMethod: string;
   bankTransferNumber: string;
   notes: string;
+  adminApproved: boolean;
 }
 
 export default function InvoiceDetail() {
@@ -79,8 +80,11 @@ export default function InvoiceDetail() {
     paymentDate: new Date().toISOString().split('T')[0],
     paymentMethod: 'bank_transfer',
     bankTransferNumber: '',
-    notes: ''
+    notes: '',
+    adminApproved: false
   });
+  const [overpaymentWarning, setOverpaymentWarning] = useState<any>(null);
+  const [showCreditInfo, setShowCreditInfo] = useState(false);
 
   const { data: invoice, isLoading: invoiceLoading } = useQuery<Invoice>({
     queryKey: [`/api/invoices/${id}`],
@@ -99,6 +103,11 @@ export default function InvoiceDetail() {
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+  });
+
+  const { data: clientCredit } = useQuery({
+    queryKey: [`/api/clients/${invoice?.clientId}/credit`],
+    enabled: !!invoice?.clientId,
   });
 
   const addItemMutation = useMutation({
@@ -128,28 +137,49 @@ export default function InvoiceDetail() {
     mutationFn: async (paymentData: PaymentFormData) => {
       return apiRequest("POST", `/api/invoices/${id}/payments`, paymentData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
       setIsAddingPayment(false);
+      setOverpaymentWarning(null);
       setPaymentForm({
         amount: 0,
         paymentDate: new Date().toISOString().split('T')[0],
         paymentMethod: 'bank_transfer',
         bankTransferNumber: '',
-        notes: ''
+        notes: '',
+        adminApproved: false
       });
+      
+      let message = "Payment recorded successfully";
+      if (data.overpaymentHandled && data.creditAdded > 0) {
+        message += `. $${data.creditAdded} added to client credit balance.`;
+      }
+      
       toast({
         title: "Success",
-        description: "Payment recorded successfully",
+        description: message,
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to record payment",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error.message.includes('OVERPAYMENT_DETECTED')) {
+        try {
+          const errorData = JSON.parse(error.message.split('400: ')[1]);
+          setOverpaymentWarning(errorData);
+        } catch {
+          setOverpaymentWarning({
+            message: error.message,
+            details: { overpaymentAmount: 0 }
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to record payment",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -244,8 +274,42 @@ export default function InvoiceDetail() {
 
   const handleAddPayment = () => {
     if (paymentForm.amount <= 0) return;
+    setOverpaymentWarning(null);
     addPaymentMutation.mutate(paymentForm);
   };
+
+  const handleOverpaymentApproval = () => {
+    if (!overpaymentWarning) return;
+    const approvedPayment = { ...paymentForm, adminApproved: true };
+    setOverpaymentWarning(null);
+    addPaymentMutation.mutate(approvedPayment);
+  };
+
+  const applyCreditMutation = useMutation({
+    mutationFn: async (creditAmount: number) => {
+      return apiRequest("POST", `/api/invoices/${id}/apply-credit`, {
+        clientId: invoice?.clientId,
+        creditAmount: creditAmount
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
+      setShowCreditInfo(false);
+      toast({
+        title: "Success",
+        description: "Client credit applied to invoice successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to apply credit to invoice",
+        variant: "destructive",
+      });
+    },
+  });
 
   const isOverdue = invoice.status !== 'paid' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
 
@@ -341,6 +405,22 @@ export default function InvoiceDetail() {
                 <div>
                   <Label className="text-sm text-gray-600">Address</Label>
                   <p>{client.address}</p>
+                </div>
+              )}
+              {clientCredit && parseFloat(clientCredit.currentBalance) > 0 && (
+                <div>
+                  <Label className="text-sm text-gray-600">Available Credit</Label>
+                  <p className="font-semibold text-green-600">
+                    ${parseFloat(clientCredit.currentBalance).toLocaleString()}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-1"
+                    onClick={() => setShowCreditInfo(true)}
+                  >
+                    View Credit History
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -628,6 +708,44 @@ export default function InvoiceDetail() {
                         placeholder="Payment notes"
                       />
                     </div>
+                    {/* Overpayment Warning */}
+                    {overpaymentWarning && (
+                      <div className="p-4 border border-red-200 bg-red-50 rounded-md">
+                        <div className="flex items-start space-x-2">
+                          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-red-800">Overpayment Detected</h4>
+                            <p className="text-sm text-red-700 mt-1">
+                              {overpaymentWarning.message}
+                            </p>
+                            {overpaymentWarning.details && (
+                              <div className="text-xs text-red-600 mt-2 space-y-1">
+                                <p>Payment Amount: ${overpaymentWarning.details.paymentAmount}</p>
+                                <p>Remaining Balance: ${overpaymentWarning.details.remainingAmount}</p>
+                                <p>Overpayment: ${overpaymentWarning.details.overpaymentAmount}</p>
+                              </div>
+                            )}
+                            <div className="flex space-x-2 mt-3">
+                              <Button 
+                                size="sm"
+                                onClick={handleOverpaymentApproval}
+                                disabled={addPaymentMutation.isPending}
+                              >
+                                Approve & Add to Credit
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setOverpaymentWarning(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex space-x-2">
                       <Button 
                         onClick={handleAddPayment} 
@@ -672,7 +790,21 @@ export default function InvoiceDetail() {
                       <TableRow key={payment.id}>
                         <TableCell>{format(new Date(payment.paymentDate), 'MMM dd, yyyy')}</TableCell>
                         <TableCell className="font-medium">${parseFloat(payment.amount).toFixed(2)}</TableCell>
-                        <TableCell className="capitalize">{payment.paymentMethod.replace('_', ' ')}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <span className="capitalize">{payment.paymentMethod.replace('_', ' ')}</span>
+                            {payment.isOverpayment && (
+                              <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+                                Overpayment
+                              </Badge>
+                            )}
+                            {payment.paymentMethod === 'credit_balance' && (
+                              <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                Credit
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{payment.bankTransferNumber || '-'}</TableCell>
                         <TableCell>{payment.notes || '-'}</TableCell>
                       </TableRow>
@@ -684,6 +816,75 @@ export default function InvoiceDetail() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Credit Balance Dialog */}
+      <Dialog open={showCreditInfo} onOpenChange={setShowCreditInfo}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <CreditCard className="w-5 h-5" />
+              <span>Client Credit Balance</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {clientCredit && (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm text-green-700">Current Credit Balance</Label>
+                    <p className="text-2xl font-bold text-green-800">
+                      ${parseFloat(clientCredit.currentBalance).toLocaleString()}
+                    </p>
+                  </div>
+                  {parseFloat(clientCredit.currentBalance) > 0 && remainingAmount > 0 && (
+                    <Button
+                      onClick={() => {
+                        const creditToApply = Math.min(parseFloat(clientCredit.currentBalance), remainingAmount);
+                        applyCreditMutation.mutate(creditToApply);
+                      }}
+                      disabled={applyCreditMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {applyCreditMutation.isPending ? "Applying..." : "Apply to Invoice"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {clientCredit.history && clientCredit.history.length > 0 && (
+                <div>
+                  <Label className="text-lg font-semibold">Credit History</Label>
+                  <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                    {clientCredit.history.map((entry: any) => (
+                      <div key={entry.id} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={entry.type === 'credit_added' ? 'default' : 'outline'}>
+                              {entry.type.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                            <span className="font-medium">
+                              ${parseFloat(entry.amount).toFixed(2)}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {format(new Date(entry.createdAt), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{entry.description}</p>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Previous: ${parseFloat(entry.previousBalance).toFixed(2)}</span>
+                          <span>New: ${parseFloat(entry.newBalance).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

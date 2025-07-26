@@ -522,6 +522,11 @@ export default function CRM() {
                             <div>
                               <p className="text-xs text-gray-500">Total Value</p>
                               <p className="text-lg font-bold">${parseFloat(client.totalValue || "0").toLocaleString()}</p>
+                              {parseFloat(client.creditBalance || "0") > 0 && (
+                                <p className="text-xs text-green-600 font-medium">
+                                  Credit: ${parseFloat(client.creditBalance || "0").toLocaleString()}
+                                </p>
+                              )}
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Activity</p>

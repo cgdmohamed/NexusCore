@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, users, quotationItems, services, clientNotes } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
@@ -396,49 +396,248 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/invoices/:id/payments', async (req: any, res) => {
     try {
+      const paymentAmount = parseFloat(req.body.amount);
+      const isAdminApproved = req.body.adminApproved || false;
+      
+      // Get current invoice and payment information
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      const currentPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
+      const currentPaidAmount = currentPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const invoiceAmount = parseFloat(invoice.amount);
+      const remainingAmount = invoiceAmount - currentPaidAmount;
+      
+      // Check for overpayment
+      const overpaymentAmount = Math.max(0, paymentAmount - remainingAmount);
+      const isOverpayment = overpaymentAmount > 0;
+      
+      // If overpayment and not admin approved, return error with warning
+      if (isOverpayment && !isAdminApproved) {
+        return res.status(400).json({ 
+          error: "OVERPAYMENT_DETECTED",
+          message: `Payment amount ($${paymentAmount}) exceeds remaining balance ($${remainingAmount}). Overpayment of $${overpaymentAmount} detected.`,
+          details: {
+            paymentAmount,
+            remainingAmount,
+            overpaymentAmount,
+            invoiceAmount,
+            currentPaidAmount
+          }
+        });
+      }
+      
+      // Create payment record with overpayment information
       const paymentData = {
         invoiceId: req.params.id,
-        amount: req.body.amount,
+        amount: paymentAmount.toFixed(2),
+        overpaymentAmount: overpaymentAmount.toFixed(2),
+        isOverpayment,
+        adminApproved: isOverpayment && isAdminApproved,
         paymentDate: new Date(req.body.paymentDate),
         paymentMethod: req.body.paymentMethod,
         bankTransferNumber: req.body.bankTransferNumber || null,
         attachmentUrl: req.body.attachmentUrl || null,
         notes: req.body.notes || null,
         createdBy: '1', // Development user ID
+        approvedBy: isOverpayment && isAdminApproved ? '1' : null,
       };
 
       const [newPayment] = await db.insert(payments).values(paymentData).returning();
       
-      // Recalculate paid amount and update invoice status
-      const allPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
-      const totalPaid = allPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      // Calculate new totals including this payment
+      const newTotalPaid = currentPaidAmount + paymentAmount;
+      const actualInvoicePayment = Math.min(paymentAmount, remainingAmount);
+      const newInvoicePaidAmount = currentPaidAmount + actualInvoicePayment;
       
-      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
-      const invoiceAmount = parseFloat(invoice.amount);
-      
+      // Update invoice status
       let newStatus = invoice.status;
       let paidDate = invoice.paidDate;
       
-      if (totalPaid >= invoiceAmount) {
+      if (newInvoicePaidAmount >= invoiceAmount) {
         newStatus = 'paid';
         paidDate = new Date();
-      } else if (totalPaid > 0) {
+      } else if (newInvoicePaidAmount > 0) {
         newStatus = 'partially_paid';
       }
       
       await db.update(invoices)
         .set({ 
-          paidAmount: totalPaid.toFixed(2),
+          paidAmount: newInvoicePaidAmount.toFixed(2),
           status: newStatus,
           paidDate: paidDate,
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.id));
       
-      res.status(201).json(newPayment);
+      // Handle overpayment as client credit
+      if (isOverpayment && isAdminApproved) {
+        // Get client's current credit balance
+        const [client] = await db.select().from(clients).where(eq(clients.id, invoice.clientId));
+        const previousCreditBalance = parseFloat(client.creditBalance || "0");
+        const newCreditBalance = previousCreditBalance + overpaymentAmount;
+        
+        // Update client credit balance
+        await db.update(clients)
+          .set({ 
+            creditBalance: newCreditBalance.toFixed(2),
+            updatedAt: new Date()
+          })
+          .where(eq(clients.id, invoice.clientId));
+        
+        // Record credit history
+        await db.insert(clientCreditHistory).values({
+          clientId: invoice.clientId,
+          type: 'credit_added',
+          amount: overpaymentAmount.toFixed(2),
+          relatedInvoiceId: invoice.id,
+          relatedPaymentId: newPayment.id,
+          description: `Overpayment credit from invoice ${invoice.invoiceNumber}`,
+          notes: `Payment amount: $${paymentAmount}, Invoice balance: $${remainingAmount}`,
+          previousBalance: previousCreditBalance.toFixed(2),
+          newBalance: newCreditBalance.toFixed(2),
+          createdBy: '1',
+        });
+      }
+      
+      res.status(201).json({
+        payment: newPayment,
+        overpaymentHandled: isOverpayment && isAdminApproved,
+        creditAdded: isOverpayment && isAdminApproved ? overpaymentAmount : 0
+      });
     } catch (error) {
       console.error("Error recording payment:", error);
       res.status(500).json({ message: "Failed to record payment" });
+    }
+  });
+
+  // Get client credit balance and history
+  app.get('/api/clients/:id/credit', async (req: any, res) => {
+    try {
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      const creditHistory = await db.select().from(clientCreditHistory)
+        .where(eq(clientCreditHistory.clientId, req.params.id))
+        .orderBy(sql`${clientCreditHistory.createdAt} DESC`);
+      
+      res.json({
+        currentBalance: parseFloat(client.creditBalance || "0"),
+        history: creditHistory
+      });
+    } catch (error) {
+      console.error("Error fetching client credit:", error);
+      res.status(500).json({ message: "Failed to fetch client credit" });
+    }
+  });
+
+  // Apply client credit to invoice
+  app.post('/api/invoices/:invoiceId/apply-credit', async (req: any, res) => {
+    try {
+      const { clientId, creditAmount } = req.body;
+      const creditAmountNum = parseFloat(creditAmount);
+      
+      // Validate client and credit balance
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      const currentCreditBalance = parseFloat(client.creditBalance || "0");
+      if (creditAmountNum > currentCreditBalance) {
+        return res.status(400).json({ 
+          message: "Insufficient credit balance",
+          availableCredit: currentCreditBalance,
+          requestedCredit: creditAmountNum
+        });
+      }
+      
+      // Get invoice information
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      const currentPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.invoiceId));
+      const currentPaidAmount = currentPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const remainingAmount = parseFloat(invoice.amount) - currentPaidAmount;
+      
+      const actualCreditUsed = Math.min(creditAmountNum, remainingAmount);
+      
+      // Create credit payment record
+      const creditPayment = {
+        invoiceId: req.params.invoiceId,
+        amount: actualCreditUsed.toFixed(2),
+        overpaymentAmount: "0",
+        isOverpayment: false,
+        adminApproved: true,
+        paymentDate: new Date(),
+        paymentMethod: 'credit_balance',
+        bankTransferNumber: null,
+        attachmentUrl: null,
+        notes: `Applied client credit balance: $${actualCreditUsed}`,
+        createdBy: '1',
+        approvedBy: '1',
+      };
+      
+      const [newPayment] = await db.insert(payments).values(creditPayment).returning();
+      
+      // Update client credit balance
+      const newCreditBalance = currentCreditBalance - actualCreditUsed;
+      await db.update(clients)
+        .set({ 
+          creditBalance: newCreditBalance.toFixed(2),
+          updatedAt: new Date()
+        })
+        .where(eq(clients.id, clientId));
+      
+      // Record credit history
+      await db.insert(clientCreditHistory).values({
+        clientId: clientId,
+        type: 'credit_used',
+        amount: actualCreditUsed.toFixed(2),
+        relatedInvoiceId: invoice.id,
+        relatedPaymentId: newPayment.id,
+        description: `Credit applied to invoice ${invoice.invoiceNumber}`,
+        notes: `Credit balance applied to outstanding invoice`,
+        previousBalance: currentCreditBalance.toFixed(2),
+        newBalance: newCreditBalance.toFixed(2),
+        createdBy: '1',
+      });
+      
+      // Update invoice status
+      const newPaidAmount = currentPaidAmount + actualCreditUsed;
+      let newStatus = invoice.status;
+      let paidDate = invoice.paidDate;
+      
+      if (newPaidAmount >= parseFloat(invoice.amount)) {
+        newStatus = 'paid';
+        paidDate = new Date();
+      } else if (newPaidAmount > 0) {
+        newStatus = 'partially_paid';
+      }
+      
+      await db.update(invoices)
+        .set({ 
+          paidAmount: newPaidAmount.toFixed(2),
+          status: newStatus,
+          paidDate: paidDate,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.invoiceId));
+      
+      res.json({
+        payment: newPayment,
+        creditUsed: actualCreditUsed,
+        remainingCredit: newCreditBalance
+      });
+    } catch (error) {
+      console.error("Error applying credit:", error);
+      res.status(500).json({ message: "Failed to apply credit" });
     }
   });
 
