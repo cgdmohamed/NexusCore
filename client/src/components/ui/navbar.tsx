@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -40,6 +41,38 @@ export function Navbar() {
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const currentUser = user as UserType | undefined;
+
+  // Get user's display name and initials
+  const getUserDisplayName = () => {
+    // Check if user has employee data with name
+    if (currentUser && 'employee' in currentUser && currentUser.employee) {
+      const employee = currentUser.employee as any;
+      if (employee.firstName && employee.lastName) {
+        return `${employee.firstName} ${employee.lastName}`;
+      }
+    }
+    // Fallback to firstName/lastName from user directly
+    if (currentUser?.firstName && currentUser?.lastName) {
+      return `${currentUser.firstName} ${currentUser.lastName}`;
+    }
+    return currentUser?.email?.split('@')[0] || 'User';
+  };
+
+  const getUserInitials = () => {
+    // Check if user has employee data with name
+    if (currentUser && 'employee' in currentUser && currentUser.employee) {
+      const employee = currentUser.employee as any;
+      if (employee.firstName && employee.lastName) {
+        return `${employee.firstName[0]}${employee.lastName[0]}`.toUpperCase();
+      }
+    }
+    // Fallback to firstName/lastName from user directly
+    if (currentUser?.firstName && currentUser?.lastName) {
+      return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();
+    }
+    const email = currentUser?.email || 'User';
+    return email[0].toUpperCase() + (email[1] || '').toUpperCase();
+  };
 
   // Fetch data for search functionality
   const { data: clients = [] } = useQuery({
@@ -333,10 +366,15 @@ export function Navbar() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 px-3">
-                <User className="h-4 w-4 mr-2" />
-                <span className="text-sm">
-                  {currentUser?.email?.split('@')[0] || 'User'}
+              <Button variant="ghost" className="h-9 px-3 gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={currentUser?.profileImageUrl || undefined} />
+                  <AvatarFallback className="text-xs font-medium">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">
+                  {getUserDisplayName()}
                 </span>
               </Button>
             </DropdownMenuTrigger>
