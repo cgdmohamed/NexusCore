@@ -491,6 +491,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Employee routes
+  app.get('/api/employees', async (req, res) => {
+    try {
+      // Return mock data for development
+      const employees = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe@company.com',
+          phone: '+1 555-0101',
+          position: 'Software Engineer',
+          department: 'operations',
+          salary: '75000',
+          status: 'active',
+          createdAt: new Date('2024-01-10'),
+          updatedAt: new Date('2024-01-10')
+        },
+        {
+          id: '2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane.smith@company.com',
+          phone: '+1 555-0102',
+          position: 'Marketing Manager',
+          department: 'sales',
+          salary: '85000',
+          status: 'active',
+          createdAt: new Date('2024-01-12'),
+          updatedAt: new Date('2024-01-12')
+        }
+      ];
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.post('/api/employees', async (req, res) => {
+    try {
+      // Mock employee creation for development
+      const newEmployee = {
+        id: Date.now().toString(),
+        firstName: req.body.firstName || 'John',
+        lastName: req.body.lastName || 'Doe',
+        email: req.body.email || 'employee@company.com',
+        phone: req.body.phone || '',
+        position: req.body.position || 'Employee',
+        department: req.body.department || 'operations',
+        salary: req.body.salary || '50000',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      res.status(201).json(newEmployee);
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

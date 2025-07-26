@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { InvoiceForm } from "@/components/forms/InvoiceForm";
 import type { Invoice } from "@shared/schema";
 
 export default function Invoices() {
@@ -37,10 +38,7 @@ export default function Invoices() {
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text">All Invoices</h3>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create Invoice
-              </Button>
+              <InvoiceForm />
             </div>
           </CardHeader>
           <CardContent className="p-0">

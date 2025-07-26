@@ -92,10 +92,10 @@ export default function Expenses() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(expense.expenseDate), { addSuffix: true })}
+                        {expense.createdAt ? formatDistanceToNow(new Date(expense.createdAt), { addSuffix: true }) : 'No date'}
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(expense.createdAt), { addSuffix: true })}
+                        {expense.createdAt ? formatDistanceToNow(new Date(expense.createdAt), { addSuffix: true }) : 'No date'}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">

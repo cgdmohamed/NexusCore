@@ -105,10 +105,10 @@ export default function Tasks() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {task.dueDate ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : 'No due date'}
+                        {task.dueDate && new Date(task.dueDate).toString() !== 'Invalid Date' ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : 'No due date'}
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}
+                        {task.createdAt && new Date(task.createdAt).toString() !== 'Invalid Date' ? formatDistanceToNow(new Date(task.createdAt), { addSuffix: true }) : 'No date'}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">

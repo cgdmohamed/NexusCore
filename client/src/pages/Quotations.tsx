@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { QuotationForm } from "@/components/forms/QuotationForm";
 import type { Quotation } from "@shared/schema";
 
 export default function Quotations() {
@@ -37,10 +38,7 @@ export default function Quotations() {
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-text">All Quotations</h3>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Create Quotation
-              </Button>
+              <QuotationForm />
             </div>
           </CardHeader>
           <CardContent className="p-0">
