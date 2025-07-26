@@ -137,7 +137,7 @@ export default function ExpenseDetail() {
   const categoryInfo = getCategoryInfo(expense.categoryId);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="border-b border-gray-200 pb-4 mb-6">
         <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
           <Link href="/expenses" className="hover:text-gray-700">Expenses</Link>

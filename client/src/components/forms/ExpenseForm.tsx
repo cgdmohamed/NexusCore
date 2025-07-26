@@ -92,7 +92,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       expenseDate: expense ? new Date(expense.expenseDate) : new Date(),
       paymentMethod: expense?.paymentMethod || "credit_card",
       isRecurring: expense?.isRecurring || false,
-      projectId: expense?.projectId || "",
+      projectId: expense?.projectId || "none",
     },
   });
 
@@ -103,6 +103,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         amount: parseFloat(data.amount),
         expenseDate: data.expenseDate.toISOString(),
         attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl,
+        projectId: data.projectId === "none" ? null : data.projectId,
       };
 
       if (expense) {
