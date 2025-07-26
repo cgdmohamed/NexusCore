@@ -368,7 +368,10 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-9 px-3 gap-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={currentUser?.profileImageUrl || undefined} />
+                  <AvatarImage 
+                    src={currentUser?.profileImageUrl || (currentUser && 'employee' in currentUser && currentUser.employee ? (currentUser.employee as any).profileImage : undefined) || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"} 
+                    alt={getUserDisplayName()}
+                  />
                   <AvatarFallback className="text-xs font-medium">
                     {getUserInitials()}
                   </AvatarFallback>

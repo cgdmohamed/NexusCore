@@ -122,7 +122,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <Users className="h-8 w-8 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalEmployees}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.totalEmployees) || 0}</p>
                   <p className="text-xs text-gray-600">Total Employees</p>
                 </div>
               </div>
@@ -134,7 +134,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <UserCheck className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.activeEmployees}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.activeEmployees) || 0}</p>
                   <p className="text-xs text-gray-600">Active Employees</p>
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-purple-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.totalUsers) || 0}</p>
                   <p className="text-xs text-gray-600">System Users</p>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <UserCheck className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.activeUsers}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.activeUsers) || 0}</p>
                   <p className="text-xs text-gray-600">Active Users</p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <Settings className="h-8 w-8 text-gray-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.totalRoles}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.totalRoles) || 0}</p>
                   <p className="text-xs text-gray-600">Active Roles</p>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function UserManagement() {
               <div className="flex items-center space-x-2">
                 <UserX className="h-8 w-8 text-orange-600" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.employeesWithoutAccounts}</p>
+                  <p className="text-2xl font-bold">{parseInt(stats.employeesWithoutAccounts) || 0}</p>
                   <p className="text-xs text-gray-600">No User Account</p>
                 </div>
               </div>
