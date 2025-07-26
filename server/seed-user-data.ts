@@ -138,12 +138,23 @@ export async function seedUserData() {
     // Create default employees
     const defaultEmployees = [
       {
+        firstName: "Test",
+        lastName: "User",
+        email: "test@company.com",
+        phone: "+1-555-0001",
+        jobTitle: "System Administrator",  
+        department: "operations" as const,
+        hiringDate: new Date("2024-01-01"),
+        status: "active" as const,
+        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
+      },
+      {
         firstName: "System",
         lastName: "Administrator",
         email: "admin@company.com",
-        phone: "+1-555-0001",
+        phone: "+1-555-0002",
         jobTitle: "System Administrator",
-        department: "it" as const,
+        department: "operations" as const,
         hiringDate: new Date("2024-01-01"),
         status: "active" as const,
       },
@@ -173,17 +184,26 @@ export async function seedUserData() {
     console.log(`Created ${createdEmployees.length} default employees`);
 
     // Create default users with system access
+    const testEmployee = createdEmployees.find(e => e.email === "test@company.com");
     const adminEmployee = createdEmployees.find(e => e.email === "admin@company.com");
     const managerEmployee = createdEmployees.find(e => e.email === "john.manager@company.com");
     const financeEmployee = createdEmployees.find(e => e.email === "sarah.finance@company.com");
 
-    if (!adminEmployee || !managerEmployee || !financeEmployee) {
+    if (!testEmployee || !adminEmployee || !managerEmployee || !financeEmployee) {
       throw new Error("Required employees not found");
     }
 
     const defaultPassword = await bcrypt.hash("admin123", 10);
 
     const defaultUsers = [
+      {
+        email: "test@company.com",
+        passwordHash: defaultPassword,
+        employeeId: testEmployee.id,
+        roleId: adminRole.id,
+        isActive: true,
+        mustChangePassword: false, // Don't force password change for test user
+      },
       {
         email: "admin@company.com",
         passwordHash: defaultPassword,

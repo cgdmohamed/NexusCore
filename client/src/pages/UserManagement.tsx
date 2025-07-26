@@ -204,56 +204,20 @@ export default function UserManagement() {
         </div>
         
         <div className="flex space-x-2">
-          <Dialog open={showEmployeeForm} onOpenChange={setShowEmployeeForm}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Employee
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEmployee ? "Edit Employee" : "Add New Employee"}
-                </DialogTitle>
-              </DialogHeader>
-              <EmployeeForm employee={editingEmployee} onClose={closeEmployeeForm} />
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setShowEmployeeForm(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
           
-          <Dialog open={showUserForm} onOpenChange={setShowUserForm}>
-            <DialogTrigger asChild>
-              <Button>
-                <Shield className="h-4 w-4 mr-2" />
-                Create User Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingUser ? "Edit User Account" : "Create User Account"}
-                </DialogTitle>
-              </DialogHeader>
-              <UserForm user={editingUser} onClose={closeUserForm} />
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setShowUserForm(true)}>
+            <Shield className="h-4 w-4 mr-2" />
+            Create User Account
+          </Button>
           
-          <Dialog open={showRoleForm} onOpenChange={setShowRoleForm}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Roles
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingRole ? "Edit Role" : "Create New Role"}
-                </DialogTitle>
-              </DialogHeader>
-              <RoleForm role={editingRole} onClose={closeRoleForm} />
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" onClick={() => setShowRoleForm(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Roles
+          </Button>
         </div>
       </div>
 
