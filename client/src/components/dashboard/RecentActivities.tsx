@@ -19,6 +19,7 @@ export function RecentActivities() {
   
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["/api/activities"],
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const activityList = activities as Activity[];

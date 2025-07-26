@@ -432,46 +432,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity routes
   app.get('/api/activities', async (req: any, res) => {
     try {
-      // Return mock data for development
-      const activities = [
-        {
-          id: '1',
-          type: 'client_added',
-          title: 'New client registered',
-          description: 'TechCorp Solutions',
-          entityType: 'client',
-          entityId: '1',
-          createdBy: '1',
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-15')
-        },
-        {
-          id: '2',
-          type: 'quotation_created',
-          title: 'Quotation created',
-          description: 'QUO-2024-001',
-          entityType: 'quotation',
-          entityId: '1',
-          createdBy: '1',
-          createdAt: new Date('2024-01-16'),
-          updatedAt: new Date('2024-01-16')
-        },
-        {
-          id: '3',
-          type: 'invoice_created',
-          title: 'Invoice created',
-          description: 'INV-2024-001',
-          entityType: 'invoice',
-          entityId: '1',
-          createdBy: '1',
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ];
+      // Fetch real activities from database
+      const activitiesResult = await db.execute(
+        sql`SELECT id, type, title, description, entity_type as "entityType", entity_id as "entityId", created_by as "createdBy", created_at as "createdAt" 
+            FROM activities 
+            ORDER BY created_at DESC 
+            LIMIT 10`
+      );
+      
+      // Transform the data to match expected format
+      const activities = activitiesResult.map((activity: any) => ({
+        ...activity,
+        createdAt: new Date(activity.createdAt).toISOString(),
+        updatedAt: new Date(activity.createdAt).toISOString() // Use createdAt as updatedAt since we don't have updatedAt column
+      }));
+      
       res.json(activities);
     } catch (error) {
       console.error("Error fetching activities:", error);
-      res.status(500).json({ message: "Failed to fetch activities" });
+      // Fallback to empty array instead of mock data
+      res.json([]);
     }
   });
 

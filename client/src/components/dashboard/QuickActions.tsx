@@ -22,9 +22,13 @@ export function QuickActions() {
     queryKey: ["/api/invoices"],
   });
 
-  const pendingTasks = taskStats?.statusBreakdown?.pending || 0;
-  const activeClients = clients.filter((client: any) => client.status === 'active').length;
-  const overdueInvoices = invoices.filter((inv: any) => 
+  const taskData = taskStats as any;
+  const clientsData = clients as any[];
+  const invoicesData = invoices as any[];
+  
+  const pendingTasks = taskData?.statusBreakdown?.pending || 0;
+  const activeClients = clientsData.filter((client: any) => client.status === 'active').length;
+  const overdueInvoices = invoicesData.filter((inv: any) => 
     inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid')
   ).length;
 
