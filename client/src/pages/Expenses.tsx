@@ -44,13 +44,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Header } from "@/components/ui/header";
+import { Header } from "@/components/dashboard/Header";
 // import { DataExportButton } from "@/components/ui/data-export-button";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { Link } from "wouter";
+import { useTranslation } from "@/lib/i18n";
 import type { Expense, ExpenseCategory, Client } from "@shared/schema";
 
 export default function Expenses() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -155,7 +157,7 @@ export default function Expenses() {
     return (
       <div className="space-y-6">
         <Header 
-          title="Expenses"
+          title={t('nav.expenses')}
           subtitle="Track and manage company expenses and payments"
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -178,7 +180,7 @@ export default function Expenses() {
   return (
     <div className="space-y-6">
       <Header 
-        title="Expenses"
+        title={t('nav.expenses')}
         subtitle="Track and manage company expenses and payments"
       />
       
