@@ -1,9 +1,119 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
+  // Status update endpoints for all entities
+  app.patch('/api/clients/:id/status', async (req, res) => {
+    try {
+      const [updatedClient] = await db.update(clients)
+        .set({ status: req.body.status, updatedAt: new Date() })
+        .where(eq(clients.id, req.params.id))
+        .returning();
+      res.json(updatedClient);
+    } catch (error) {
+      console.error("Error updating client status:", error);
+      res.status(500).json({ message: "Failed to update client status" });
+    }
+  });
+
+  app.patch('/api/tasks/:id/status', async (req, res) => {
+    try {
+      const updateData: any = { 
+        status: req.body.status, 
+        updatedAt: new Date() 
+      };
+      
+      if (req.body.status === 'completed') {
+        updateData.completedDate = new Date();
+      }
+
+      const [updatedTask] = await db.update(tasks)
+        .set(updateData)
+        .where(eq(tasks.id, req.params.id))
+        .returning();
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      res.status(500).json({ message: "Failed to update task status" });
+    }
+  });
+
+  app.patch('/api/expenses/:id/status', async (req, res) => {
+    try {
+      const [updatedExpense] = await db.update(expenses)
+        .set({ status: req.body.status, updatedAt: new Date() })
+        .where(eq(expenses.id, req.params.id))
+        .returning();
+      res.json(updatedExpense);
+    } catch (error) {
+      console.error("Error updating expense status:", error);
+      res.status(500).json({ message: "Failed to update expense status" });
+    }
+  });
+
+  app.patch('/api/quotations/:id/status', async (req, res) => {
+    try {
+      const [updatedQuotation] = await db.update(quotations)
+        .set({ status: req.body.status, updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id))
+        .returning();
+      res.json(updatedQuotation);
+    } catch (error) {
+      console.error("Error updating quotation status:", error);
+      res.status(500).json({ message: "Failed to update quotation status" });
+    }
+  });
+
+  app.patch('/api/invoices/:id/status', async (req, res) => {
+    try {
+      const updateData: any = { 
+        status: req.body.status, 
+        updatedAt: new Date() 
+      };
+      
+      if (req.body.status === 'paid') {
+        updateData.paidDate = new Date();
+        updateData.paidAmount = updateData.amount;
+      }
+
+      const [updatedInvoice] = await db.update(invoices)
+        .set(updateData)
+        .where(eq(invoices.id, req.params.id))
+        .returning();
+      res.json(updatedInvoice);
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+      res.status(500).json({ message: "Failed to update invoice status" });
+    }
+  });
+
+  // Sidebar counters endpoint
+  app.get('/api/sidebar/counters', async (req, res) => {
+    try {
+      const [clientsCount] = await db.execute(sql`SELECT COUNT(*) as count FROM clients`);
+      const [quotationsCount] = await db.execute(sql`SELECT COUNT(*) as count FROM quotations`);
+      const [invoicesCount] = await db.execute(sql`SELECT COUNT(*) as count FROM invoices`);
+      const [expensesCount] = await db.execute(sql`SELECT COUNT(*) as count FROM expenses`);
+      const [tasksCount] = await db.execute(sql`SELECT COUNT(*) as count FROM tasks`);
+      
+      const counters = {
+        clients: parseInt(clientsCount?.count?.toString() || '0'),
+        quotations: parseInt(quotationsCount?.count?.toString() || '0'),
+        invoices: parseInt(invoicesCount?.count?.toString() || '0'),
+        expenses: parseInt(expensesCount?.count?.toString() || '0'),
+        employees: 2, // Mock data for employees
+        tasks: parseInt(tasksCount?.count?.toString() || '0'),
+      };
+      
+      res.json(counters);
+    } catch (error) {
+      console.error("Error fetching sidebar counters:", error);
+      res.status(500).json({ message: "Failed to fetch counters" });
+    }
+  });
+
   // Clients - using real database
   app.get('/api/clients', async (req: any, res) => {
     try {

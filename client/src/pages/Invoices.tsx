@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
+import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import type { Invoice } from "@shared/schema";
 
 export default function Invoices() {
@@ -93,11 +94,16 @@ export default function Invoices() {
                         {invoice.dueDate ? formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true }) : 'No due date'}
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(invoice.createdAt), { addSuffix: true })}
+                        {invoice.createdAt ? formatDistanceToNow(new Date(invoice.createdAt), { addSuffix: true }) : 'No date'}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <StatusUpdateForm
+                            entityType="invoice"
+                            entityId={invoice.id}
+                            currentStatus={invoice.status}
+                            trigger={<Button variant="outline" size="sm">Status</Button>}
+                          />
                           <Button variant="outline" size="sm">Export</Button>
                         </div>
                       </TableCell>

@@ -77,15 +77,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/dashboard/kpis', async (req: any, res) => {
     try {
       // Calculate real KPIs from database
-      const [clientsResult] = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE status = 'active'`);
-      const [revenueResult] = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'paid'`);
-      const [pendingResult] = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'pending'`);
-      const [tasksResult] = await db.execute(sql`SELECT COUNT(*) as completed, (SELECT COUNT(*) FROM tasks) as total FROM tasks WHERE status = 'completed'`);
+      const clientsResult = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE status = 'active'`);
+      const revenueResult = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'paid'`);
+      const pendingResult = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'pending'`);
+      const tasksResult = await db.execute(sql`SELECT COUNT(*) as completed, (SELECT COUNT(*) FROM tasks) as total FROM tasks WHERE status = 'completed'`);
       
-      const activeClients = clientsResult?.count || 0;
-      const totalRevenue = revenueResult?.total || 0;
-      const pendingInvoices = pendingResult?.total || 0;
-      const teamPerformance = tasksResult?.total > 0 ? Math.round((tasksResult?.completed / tasksResult?.total) * 100) : 0;
+      const activeClients = clientsResult[0]?.count || 0;
+      const totalRevenue = revenueResult[0]?.total || 0;
+      const pendingInvoices = pendingResult[0]?.total || 0;
+      const teamPerformance = tasksResult[0]?.total > 0 ? Math.round((tasksResult[0]?.completed / tasksResult[0]?.total) * 100) : 0;
 
       const kpis = {
         totalRevenue: parseFloat(totalRevenue.toString()),

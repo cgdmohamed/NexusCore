@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientForm } from "@/components/forms/ClientForm";
+import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import type { Client } from "@shared/schema";
 
 export default function CRM() {
@@ -95,7 +96,12 @@ export default function CRM() {
                       <TableCell>${parseFloat(client.totalValue || "0").toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <StatusUpdateForm
+                            entityType="client"
+                            entityId={client.id}
+                            currentStatus={client.status}
+                            trigger={<Button variant="outline" size="sm">Status</Button>}
+                          />
                           <Button variant="outline" size="sm">View</Button>
                         </div>
                       </TableCell>

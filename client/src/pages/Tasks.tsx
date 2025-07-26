@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TaskForm } from "@/components/forms/TaskForm";
+import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import type { Task } from "@shared/schema";
 
 export default function Tasks() {
@@ -112,7 +113,12 @@ export default function Tasks() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <StatusUpdateForm
+                            entityType="task"
+                            entityId={task.id}
+                            currentStatus={task.status}
+                            trigger={<Button variant="outline" size="sm">Status</Button>}
+                          />
                           <Button variant="outline" size="sm">View</Button>
                         </div>
                       </TableCell>

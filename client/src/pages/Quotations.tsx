@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { QuotationForm } from "@/components/forms/QuotationForm";
+import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import type { Quotation } from "@shared/schema";
 
 export default function Quotations() {
@@ -93,11 +94,16 @@ export default function Quotations() {
                         {quotation.validUntil ? formatDistanceToNow(new Date(quotation.validUntil), { addSuffix: true }) : 'No expiry'}
                       </TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(quotation.createdAt), { addSuffix: true })}
+                        {quotation.createdAt ? formatDistanceToNow(new Date(quotation.createdAt), { addSuffix: true }) : 'No date'}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <StatusUpdateForm
+                            entityType="quotation"
+                            entityId={quotation.id}
+                            currentStatus={quotation.status}
+                            trigger={<Button variant="outline" size="sm">Status</Button>}
+                          />
                           <Button variant="outline" size="sm">Export</Button>
                         </div>
                       </TableCell>

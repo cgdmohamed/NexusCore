@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
+import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import type { Expense } from "@shared/schema";
 
 export default function Expenses() {
@@ -99,7 +100,12 @@ export default function Expenses() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <StatusUpdateForm
+                            entityType="expense"
+                            entityId={expense.id}
+                            currentStatus={expense.status}
+                            trigger={<Button variant="outline" size="sm">Status</Button>}
+                          />
                           <Button variant="outline" size="sm">View</Button>
                         </div>
                       </TableCell>
