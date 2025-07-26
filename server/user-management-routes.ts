@@ -203,12 +203,12 @@ export function registerUserManagementRoutes(app: Express) {
           department: employees.department,
           hiringDate: employees.hiringDate,
           status: employees.status,
-          profileImageUrl: employees.profileImageUrl,
+          profileImage: employees.profileImage,
+          notes: employees.notes,
           createdAt: employees.createdAt,
-          hasUserAccount: sql<boolean>`CASE WHEN ${users.id} IS NOT NULL THEN true ELSE false END`,
+          hasUserAccount: sql<boolean>`false`, // Simplified for now
         })
-        .from(employees)
-        .leftJoin(users, eq(employees.id, users.employeeId));
+        .from(employees);
       
       if (search) {
         query = query.where(
@@ -239,14 +239,8 @@ export function registerUserManagementRoutes(app: Express) {
       const { id } = req.params;
       
       const [employee] = await db
-        .select({
-          employee: employees,
-          user: users,
-          role: roles,
-        })
+        .select()
         .from(employees)
-        .leftJoin(users, eq(employees.id, users.employeeId))
-        .leftJoin(roles, eq(users.roleId, roles.id))
         .where(eq(employees.id, id));
       
       if (!employee) {
