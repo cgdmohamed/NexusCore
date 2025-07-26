@@ -1,11 +1,11 @@
-import { Header } from "@/components/dashboard/Header";
+// import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "@/lib/i18n";
+
 import { useState, useMemo } from "react";
 import { 
   Plus, 
@@ -37,12 +37,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DataExportButton } from "@/components/DataExportButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Header } from "@/components/ui/header";
+// import { DataExportButton } from "@/components/ui/data-export-button";
+import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { Link } from "wouter";
 import type { Expense, ExpenseCategory, Client } from "@shared/schema";
 
 export default function Expenses() {
-  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -50,6 +58,7 @@ export default function Expenses() {
   const [sortBy, setSortBy] = useState("expenseDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const { data: expenses = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/expenses"],
@@ -146,7 +155,7 @@ export default function Expenses() {
     return (
       <div className="space-y-6">
         <Header 
-          title={t('nav.expenses')}
+          title="Expenses"
           subtitle="Track and manage company expenses and payments"
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -167,9 +176,9 @@ export default function Expenses() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <Header 
-        title={t('nav.expenses')}
+        title="Expenses"
         subtitle="Track and manage company expenses and payments"
       />
       
@@ -258,14 +267,23 @@ export default function Expenses() {
           </div>
           
           <div className="flex items-center gap-3">
-            <DataExportButton 
-              data={filteredExpenses} 
-              filename="expenses"
-            />
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
+            <Button variant="outline" size="lg">
+              Export Data
             </Button>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Expense</DialogTitle>
+                </DialogHeader>
+                <ExpenseForm onClose={() => setIsCreateDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -604,10 +622,12 @@ export default function Expenses() {
                         View
                       </Button>
                     </Link>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
+                    <Link href={`/expenses/${expense.id}/edit`}>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
@@ -624,10 +644,20 @@ export default function Expenses() {
                   : "Get started by adding your first expense record"
                 }
               </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Expense
-              </Button>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Expense
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New Expense</DialogTitle>
+                  </DialogHeader>
+                  <ExpenseForm onClose={() => setIsCreateDialogOpen(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
           )}
           </div>

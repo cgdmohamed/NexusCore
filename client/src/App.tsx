@@ -12,6 +12,8 @@ import CRM from "@/pages/CRM";
 import Quotations from "@/pages/Quotations";
 import Invoices from "@/pages/Invoices";
 import Expenses from "@/pages/Expenses";
+import ExpenseDetail from "@/pages/ExpenseDetail";
+import ExpenseEdit from "@/pages/ExpenseEdit";
 import Employees from "@/pages/Employees";
 import Tasks from "@/pages/Tasks";
 import Analytics from "@/pages/Analytics";
@@ -57,6 +59,8 @@ function Router() {
           <Route path="/invoices" component={Invoices} />
           <Route path="/invoices/:id" component={InvoiceDetail} />
           <Route path="/expenses" component={Expenses} />
+          <Route path="/expenses/:id" component={ExpenseDetail} />
+          <Route path="/expenses/:id/edit" component={ExpenseEdit} />
           <Route path="/employees" component={Employees} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/analytics" component={Analytics} />
