@@ -110,6 +110,32 @@ export default function InvoiceDetail() {
     enabled: !!invoice?.clientId,
   });
 
+  const applyCreditMutation = useMutation({
+    mutationFn: async (creditAmount: number) => {
+      return apiRequest("POST", `/api/invoices/${id}/apply-credit`, {
+        clientId: invoice?.clientId,
+        creditAmount: creditAmount
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
+      setShowCreditInfo(false);
+      toast({
+        title: "Success",
+        description: "Client credit applied to invoice successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to apply credit to invoice",
+        variant: "destructive",
+      });
+    },
+  });
+
   const addItemMutation = useMutation({
     mutationFn: async (itemData: InvoiceItemFormData) => {
       return apiRequest("POST", `/api/invoices/${id}/items`, itemData);
@@ -153,8 +179,8 @@ export default function InvoiceDetail() {
       });
       
       let message = "Payment recorded successfully";
-      if (data.overpaymentHandled && data.creditAdded > 0) {
-        message += `. $${data.creditAdded} added to client credit balance.`;
+      if ((data as any)?.overpaymentHandled && (data as any)?.creditAdded > 0) {
+        message += `. $${(data as any).creditAdded} added to client credit balance.`;
       }
       
       toast({
@@ -285,32 +311,6 @@ export default function InvoiceDetail() {
     addPaymentMutation.mutate(approvedPayment);
   };
 
-  const applyCreditMutation = useMutation({
-    mutationFn: async (creditAmount: number) => {
-      return apiRequest("POST", `/api/invoices/${id}/apply-credit`, {
-        clientId: invoice?.clientId,
-        creditAmount: creditAmount
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
-      setShowCreditInfo(false);
-      toast({
-        title: "Success",
-        description: "Client credit applied to invoice successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to apply credit to invoice",
-        variant: "destructive",
-      });
-    },
-  });
-
   const isOverdue = invoice.status !== 'paid' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
 
   return (
@@ -407,11 +407,11 @@ export default function InvoiceDetail() {
                   <p>{client.address}</p>
                 </div>
               )}
-              {clientCredit && parseFloat(clientCredit.currentBalance) > 0 && (
+              {clientCredit && parseFloat((clientCredit as any)?.currentBalance || "0") > 0 ? (
                 <div>
                   <Label className="text-sm text-gray-600">Available Credit</Label>
                   <p className="font-semibold text-green-600">
-                    ${parseFloat(clientCredit.currentBalance).toLocaleString()}
+                    ${parseFloat((clientCredit as any).currentBalance).toLocaleString()}
                   </p>
                   <Button 
                     variant="outline" 
@@ -422,7 +422,7 @@ export default function InvoiceDetail() {
                     View Credit History
                   </Button>
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
@@ -827,20 +827,20 @@ export default function InvoiceDetail() {
             </DialogTitle>
           </DialogHeader>
           
-          {clientCredit && (
+          {clientCredit ? (
             <div className="space-y-4">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm text-green-700">Current Credit Balance</Label>
                     <p className="text-2xl font-bold text-green-800">
-                      ${parseFloat(clientCredit.currentBalance).toLocaleString()}
+                      ${parseFloat((clientCredit as any)?.currentBalance || "0").toLocaleString()}
                     </p>
                   </div>
-                  {parseFloat(clientCredit.currentBalance) > 0 && remainingAmount > 0 && (
+                  {parseFloat((clientCredit as any)?.currentBalance || "0") > 0 && remainingAmount > 0 ? (
                     <Button
                       onClick={() => {
-                        const creditToApply = Math.min(parseFloat(clientCredit.currentBalance), remainingAmount);
+                        const creditToApply = Math.min(parseFloat((clientCredit as any).currentBalance || "0"), remainingAmount);
                         applyCreditMutation.mutate(creditToApply);
                       }}
                       disabled={applyCreditMutation.isPending}
@@ -848,15 +848,15 @@ export default function InvoiceDetail() {
                     >
                       {applyCreditMutation.isPending ? "Applying..." : "Apply to Invoice"}
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
               
-              {clientCredit.history && clientCredit.history.length > 0 && (
+              {(clientCredit as any)?.history && (clientCredit as any)?.history.length > 0 ? (
                 <div>
                   <Label className="text-lg font-semibold">Credit History</Label>
                   <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
-                    {clientCredit.history.map((entry: any) => (
+                    {(clientCredit as any).history.map((entry: any) => (
                       <div key={entry.id} className="p-3 border rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
@@ -880,9 +880,9 @@ export default function InvoiceDetail() {
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
