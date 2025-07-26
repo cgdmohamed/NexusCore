@@ -76,8 +76,8 @@ export default function Tasks() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
-    status: "",
-    priority: "",
+    status: undefined as string | undefined,
+    priority: undefined as string | undefined,
     assignedTo: "",
     myTasks: false,
   });
@@ -415,10 +415,9 @@ export default function Tasks() {
 
             <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -428,10 +427,9 @@ export default function Tasks() {
 
             <Select value={filters.priority} onValueChange={(value) => setFilters({ ...filters, priority: value })}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Priority" />
+                <SelectValue placeholder="All Priorities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Priorities</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>
@@ -446,6 +444,20 @@ export default function Tasks() {
               />
               <Label htmlFor="myTasks">My Tasks Only</Label>
             </div>
+
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setFilters({
+                search: "",
+                status: undefined,
+                priority: undefined,
+                assignedTo: "",
+                myTasks: false,
+              })}
+            >
+              Clear Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
