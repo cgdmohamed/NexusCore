@@ -60,19 +60,22 @@ export const employees = pgTable("employees", {
   createdBy: varchar("created_by"),
 });
 
-// Users table for system access
+// Users table for system access - matching actual database structure
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").notNull().unique(),
-  passwordHash: varchar("password_hash").notNull(),
-  employeeId: varchar("employee_id").references(() => employees.id).notNull(),
-  roleId: varchar("role_id").references(() => roles.id).notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role"),
+  department: varchar("department"),
+  employeeId: varchar("employee_id").references(() => employees.id),
+  roleId: varchar("role_id").references(() => roles.id),
   isActive: boolean("is_active").notNull().default(true),
   lastLogin: timestamp("last_login"),
   mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by"),
 });
 
 // KPI status enum
@@ -320,10 +323,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
     fields: [users.roleId],
     references: [roles.id],
-  }),
-  createdBy: one(users, {
-    fields: [users.createdBy],
-    references: [users.id],
   }),
   clients: many(clients),
   quotations: many(quotations),
