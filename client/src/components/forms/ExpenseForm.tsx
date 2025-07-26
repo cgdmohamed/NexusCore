@@ -98,11 +98,29 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
 
   const expenseMutation = useMutation({
     mutationFn: async (data: ExpenseFormData) => {
+      // Validate that file is selected for new expenses
+      if (!expense && !selectedFile) {
+        throw new Error("Please select a receipt or attachment file");
+      }
+
+      // Determine attachment type based on file
+      let attachmentType = expense?.attachmentType || 'receipt';
+      if (selectedFile) {
+        if (selectedFile.type.startsWith('image/')) {
+          attachmentType = 'receipt';
+        } else if (selectedFile.type === 'application/pdf') {
+          attachmentType = 'invoice';
+        } else {
+          attachmentType = 'other';
+        }
+      }
+
       const payload = {
         ...data,
         amount: parseFloat(data.amount),
         expenseDate: data.expenseDate.toISOString(),
-        attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl,
+        attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || "/uploads/default-receipt.pdf",
+        attachmentType,
         projectId: data.projectId === "none" ? null : data.projectId,
       };
 
@@ -172,6 +190,16 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
   };
 
   const onSubmit = (data: ExpenseFormData) => {
+    // Check for attachment before submitting
+    if (!expense && !selectedFile) {
+      toast({
+        title: "Missing Attachment",
+        description: "Please select a receipt or attachment file before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     expenseMutation.mutate(data);
   };
 
