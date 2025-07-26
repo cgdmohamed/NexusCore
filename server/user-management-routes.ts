@@ -565,20 +565,23 @@ export function registerUserManagementRoutes(app: Express) {
         activeUsers,
         totalRoles
       ] = await Promise.all([
-        db.select({ count: sql<number>`count(*)` }).from(employees),
-        db.select({ count: sql<number>`count(*)` }).from(employees).where(eq(employees.status, 'active')),
-        db.select({ count: sql<number>`count(*)` }).from(users),
-        db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.isActive, true)),
-        db.select({ count: sql<number>`count(*)` }).from(roles).where(eq(roles.isActive, true))
+        db.select({ count: sql<number>`count(*)::int` }).from(employees),
+        db.select({ count: sql<number>`count(*)::int` }).from(employees).where(eq(employees.status, 'active')),
+        db.select({ count: sql<number>`count(*)::int` }).from(users),
+        db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.isActive, true)),
+        db.select({ count: sql<number>`count(*)::int` }).from(roles).where(eq(roles.isActive, true))
       ]);
       
+      const totalEmpCount = parseInt(String(totalEmployees[0]?.count)) || 0;
+      const totalUserCount = parseInt(String(totalUsers[0]?.count)) || 0;
+      
       res.json({
-        totalEmployees: totalEmployees[0]?.count || 0,
-        activeEmployees: activeEmployees[0]?.count || 0,
-        totalUsers: totalUsers[0]?.count || 0,
-        activeUsers: activeUsers[0]?.count || 0,
-        totalRoles: totalRoles[0]?.count || 0,
-        employeesWithoutAccounts: (totalEmployees[0]?.count || 0) - (totalUsers[0]?.count || 0),
+        totalEmployees: totalEmpCount,
+        activeEmployees: parseInt(String(activeEmployees[0]?.count)) || 0,
+        totalUsers: totalUserCount,
+        activeUsers: parseInt(String(activeUsers[0]?.count)) || 0,
+        totalRoles: parseInt(String(totalRoles[0]?.count)) || 0,
+        employeesWithoutAccounts: Math.max(0, totalEmpCount - totalUserCount),
       });
     } catch (error) {
       console.error("Error fetching user management stats:", error);
