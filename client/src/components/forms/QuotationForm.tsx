@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -31,13 +32,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import { useLocation } from "wouter";
+import type { Client } from "@shared/schema";
 
 const quotationFormSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   clientId: z.string().min(1, "Please select a client"),
-  amount: z.string().min(1, "Amount is required"),
   validUntil: z.string().optional(),
   description: z.string().optional(),
+  notes: z.string().optional(),
+  terms: z.string().optional(),
 });
 
 type QuotationFormData = z.infer<typeof quotationFormSchema>;
@@ -50,9 +54,10 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Fetch clients for dropdown
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
 
@@ -61,34 +66,29 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
     defaultValues: {
       title: "",
       clientId: "",
-      amount: "",
       validUntil: "",
       description: "",
+      notes: "",
+      terms: "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
-      const response = await fetch("/api/quotations", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create quotation");
-      }
+      const response = await apiRequest("POST", "/api/quotations", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Quotation created",
-        description: "The quotation has been successfully created.",
+        description: "The quotation has been successfully created. You can now add items to it.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       form.reset();
       setOpen(false);
+      
+      // Navigate to the new quotation detail page
+      setLocation(`/quotations/${data.id}`);
     },
     onError: (error) => {
       console.error("Error creating quotation:", error);
@@ -114,11 +114,11 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Quotation</DialogTitle>
           <DialogDescription>
-            Create a new quotation for a client. Fill in the details below.
+            Create a new quotation for a client. After creation, you'll be able to add items and configure pricing.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -149,7 +149,7 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {clients.map((client: any) => (
+                      {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
                         </SelectItem>
@@ -160,19 +160,7 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount ($) *</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="validUntil"
@@ -191,12 +179,48 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Internal Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Describe the quotation..." 
+                      placeholder="Internal description for this quotation..." 
                       className="resize-none" 
-                      rows={3}
+                      rows={2}
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Internal Notes</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Internal notes for team members..." 
+                      className="resize-none" 
+                      rows={2}
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="terms"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Terms & Conditions</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Terms and conditions for this quotation..." 
+                      className="resize-none" 
+                      rows={2}
                       {...field} 
                     />
                   </FormControl>

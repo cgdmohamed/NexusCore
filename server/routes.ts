@@ -203,27 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quotations', async (req: any, res) => {
-    try {
-      // Mock quotation creation for development
-      const newQuotation = {
-        id: Date.now().toString(),
-        quotationNumber: `QUO-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-        title: req.body.title || 'New Quotation',
-        clientId: req.body.clientId || '1',
-        amount: req.body.amount || '0',
-        status: 'pending',
-        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      res.status(201).json(newQuotation);
-    } catch (error) {
-      console.error("Error creating quotation:", error);
-      res.status(500).json({ message: "Failed to create quotation" });
-    }
-  });
+  // Quotation creation is handled by database-routes.ts
 
   // Invoice routes
   app.get('/api/invoices', async (req: any, res) => {

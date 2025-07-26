@@ -227,9 +227,11 @@ export function setupDatabaseRoutes(app: Express) {
         clientId: req.body.clientId,
         title: req.body.title,
         description: req.body.description,
-        amount: req.body.amount,
+        amount: 0, // Start with 0, will be calculated from items
         status: 'draft',
         validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
+        notes: req.body.notes || null,
+        terms: req.body.terms || null,
         createdBy: '1', // Development user ID
       };
 
