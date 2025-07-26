@@ -4,14 +4,17 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// Simple inline header for now
+import { Header } from "@/components/dashboard/Header";
+import { useTranslation } from "@/lib/i18n";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
+import type { Expense } from "@shared/schema";
 
 export default function ExpenseEdit() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
-  const { data: expense, isLoading } = useQuery({
+  const { data: expense, isLoading } = useQuery<Expense>({
     queryKey: ["/api/expenses", id],
     enabled: !!id,
   });
@@ -23,10 +26,10 @@ export default function ExpenseEdit() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="border-b border-gray-200 pb-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Loading...</h1>
-          <p className="text-gray-600 mt-1">Please wait while we load the expense details</p>
-        </div>
+        <Header 
+          title="Loading..."
+          subtitle="Please wait while we load the expense details"
+        />
         <Card>
           <CardHeader>
             <div className="h-6 bg-gray-200 rounded animate-pulse" />
@@ -44,10 +47,10 @@ export default function ExpenseEdit() {
   if (!expense) {
     return (
       <div className="space-y-6">
-        <div className="border-b border-gray-200 pb-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Expense Not Found</h1>
-          <p className="text-gray-600 mt-1">The requested expense could not be found</p>
-        </div>
+        <Header 
+          title="Expense Not Found"
+          subtitle="The requested expense could not be found"
+        />
         <Card>
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Expense Not Found</h3>
@@ -65,18 +68,16 @@ export default function ExpenseEdit() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-gray-200 pb-4 mb-6">
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-          <Link href="/expenses" className="hover:text-gray-700">Expenses</Link>
-          <span className="mx-2">→</span>
-          <Link href={`/expenses/${id}`} className="hover:text-gray-700">{expense.title}</Link>
-          <span className="mx-2">→</span>
-          <span className="text-gray-900 font-medium">Edit</span>
-        </nav>
-        <h1 className="text-3xl font-bold text-gray-900">Edit Expense</h1>
-        <p className="text-gray-600 mt-1">Editing: {expense.title}</p>
-      </div>
+    <div className="space-y-6">
+      <Header 
+        title="Edit Expense"
+        subtitle={`Editing: ${expense.title}`}
+        breadcrumbs={[
+          { label: "Expenses", href: "/expenses" },
+          { label: expense.title, href: `/expenses/${id}` },
+          { label: "Edit" }
+        ]}
+      />
 
       <Card>
         <CardHeader>

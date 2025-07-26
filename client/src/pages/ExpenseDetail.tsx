@@ -19,21 +19,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Header } from "@/components/dashboard/Header";
 import { useToast } from "@/hooks/use-toast";
-// Simple inline header for now
+import { useTranslation } from "@/lib/i18n";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Expense, ExpenseCategory } from "@shared/schema";
 
 export default function ExpenseDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const { data: expense, isLoading } = useQuery({
+  const { data: expense, isLoading } = useQuery<Expense>({
     queryKey: ["/api/expenses", id],
     enabled: !!id,
   });
 
-  const { data: categories } = useQuery({
+  const { data: categories = [] } = useQuery<ExpenseCategory[]>({
     queryKey: ["/api/expense-categories"],
   });
 
@@ -87,10 +90,10 @@ export default function ExpenseDetail() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="border-b border-gray-200 pb-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Loading...</h1>
-          <p className="text-gray-600 mt-1">Please wait while we load the expense details</p>
-        </div>
+        <Header 
+          title="Loading..."
+          subtitle="Please wait while we load the expense details"
+        />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -111,10 +114,10 @@ export default function ExpenseDetail() {
   if (!expense) {
     return (
       <div className="space-y-6">
-        <div className="border-b border-gray-200 pb-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Expense Not Found</h1>
-          <p className="text-gray-600 mt-1">The requested expense could not be found</p>
-        </div>
+        <Header 
+          title="Expense Not Found"
+          subtitle="The requested expense could not be found"
+        />
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -137,16 +140,15 @@ export default function ExpenseDetail() {
   const categoryInfo = getCategoryInfo(expense.categoryId);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-gray-200 pb-4 mb-6">
-        <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-          <Link href="/expenses" className="hover:text-gray-700">Expenses</Link>
-          <span className="mx-2">→</span>
-          <span className="text-gray-900 font-medium">{expense.title}</span>
-        </nav>
-        <h1 className="text-3xl font-bold text-gray-900">{expense.title}</h1>
-        <p className="text-gray-600 mt-1">Expense #{expense.id.slice(0, 8)}</p>
-      </div>
+    <div className="space-y-6">
+      <Header 
+        title={expense.title}
+        subtitle={`Expense #${expense.id.slice(0, 8)}`}
+        breadcrumbs={[
+          { label: "Expenses", href: "/expenses" },
+          { label: expense.title }
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
