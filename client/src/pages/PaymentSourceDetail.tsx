@@ -16,6 +16,7 @@ import {
   Activity,
   Settings,
 } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +49,7 @@ export default function PaymentSourceDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
 
   const { data: paymentSource, isLoading } = useQuery<PaymentSource>({
     queryKey: ["/api/payment-sources", id],
@@ -85,17 +87,17 @@ export default function PaymentSourceDetail() {
     },
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (isActive: boolean | null) => {
+    const status = isActive ? "active" : "inactive";
+    
     const variants = {
       active: "default",
       inactive: "secondary",
-      suspended: "destructive",
     } as const;
 
     const colors = {
       active: "bg-green-50 text-green-700 border-green-200",
       inactive: "bg-gray-50 text-gray-700 border-gray-200",
-      suspended: "bg-red-50 text-red-700 border-red-200",
     } as const;
 
     return (
@@ -108,7 +110,7 @@ export default function PaymentSourceDetail() {
     );
   };
 
-  const getTypeBadge = (type: string) => {
+  const getTypeBadge = (accountType: string) => {
     const icons = {
       bank_account: <Building className="h-3 w-3" />,
       credit_card: <CreditCard className="h-3 w-3" />,
@@ -118,8 +120,8 @@ export default function PaymentSourceDetail() {
 
     return (
       <div className="flex items-center gap-2">
-        {icons[type as keyof typeof icons]}
-        <span className="capitalize">{type.replace("_", " ")}</span>
+        {icons[accountType as keyof typeof icons] || <Wallet className="h-3 w-3" />}
+        <span className="capitalize">{accountType.replace("_", " ")}</span>
       </div>
     );
   };
@@ -204,10 +206,7 @@ export default function PaymentSourceDetail() {
       <Header
         title={paymentSource.name}
         subtitle={`Payment Source #${paymentSource.id.slice(0, 8)}`}
-        breadcrumbs={[
-          { label: "Payment Sources", href: "/payment-sources" },
-          { label: paymentSource.name },
-        ]}
+
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
@@ -222,9 +221,9 @@ export default function PaymentSourceDetail() {
                     {paymentSource.name}
                   </CardTitle>
                   <div className="flex items-center gap-2 mt-2">
-                    {getStatusBadge(paymentSource.status)}
+                    {getStatusBadge(paymentSource.isActive)}
                     <Badge variant="outline">
-                      {getTypeBadge(paymentSource.type)}
+                      {getTypeBadge(paymentSource.accountType)}
                     </Badge>
                   </div>
                 </div>
@@ -257,32 +256,30 @@ export default function PaymentSourceDetail() {
                     <div>
                       <div className="font-medium">Created Date</div>
                       <div className="text-sm text-gray-500">
-                        {format(new Date(paymentSource.createdAt), "MMMM dd, yyyy")}
+                        {paymentSource.createdAt ? format(new Date(paymentSource.createdAt), "MMMM dd, yyyy") : "N/A"}
                       </div>
                     </div>
                   </div>
 
-                  {paymentSource.accountNumber && (
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <div className="font-medium">Account Number</div>
-                        <div className="text-sm text-gray-500">
-                          ****{paymentSource.accountNumber.slice(-4)}
-                        </div>
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <div className="font-medium">Account Type</div>
+                      <div className="text-sm text-gray-500 capitalize">
+                        {paymentSource.accountType.replace("_", " ")}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="space-y-4">
-                  {paymentSource.bankName && (
+                  {paymentSource.currency && (
                     <div className="flex items-center gap-3">
                       <Building className="h-5 w-5 text-gray-400" />
                       <div>
-                        <div className="font-medium">Bank Name</div>
+                        <div className="font-medium">Currency</div>
                         <div className="text-sm text-gray-500">
-                          {paymentSource.bankName}
+                          {paymentSource.currency}
                         </div>
                       </div>
                     </div>
@@ -349,7 +346,7 @@ export default function PaymentSourceDetail() {
                           ${parseFloat(transaction.balanceAfter).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-sm text-gray-500">
-                          {format(new Date(transaction.createdAt), "MMM dd, yyyy")}
+                          {transaction.createdAt ? format(new Date(transaction.createdAt), "MMM dd, yyyy") : "N/A"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -452,7 +449,7 @@ export default function PaymentSourceDetail() {
                 </Button>
               </Link>
               
-              <Dialog>
+              <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="w-full" variant="outline">
                     <Settings className="h-4 w-4 mr-2" />
@@ -465,7 +462,8 @@ export default function PaymentSourceDetail() {
                   </DialogHeader>
                   <BalanceAdjustmentForm 
                     paymentSource={paymentSource}
-                    onSuccess={() => {
+                    onClose={() => {
+                      setIsAdjustDialogOpen(false);
                       queryClient.invalidateQueries({ 
                         queryKey: ["/api/payment-sources", id] 
                       });
