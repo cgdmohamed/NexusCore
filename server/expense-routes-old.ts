@@ -47,6 +47,83 @@ export function registerExpenseRoutes(app: Express) {
     }
   });
 
+  // Get all expenses with filters
+  app.get("/api/expenses", async (req, res) => {
+    try {
+      const {
+        type,
+        categoryId,
+        status,
+        startDate,
+        endDate,
+        search,
+        clientId,
+      } = req.query;
+
+      let baseQuery = db
+        .select({
+          expense: expenses,
+          category: expenseCategories,
+        })
+        .from(expenses)
+        .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id));
+
+      // Apply filters
+      const conditions = [];
+
+      if (type) {
+        conditions.push(eq(expenses.type, type as string));
+      }
+
+      if (categoryId) {
+        conditions.push(eq(expenses.categoryId, categoryId as string));
+      }
+
+      if (status) {
+        conditions.push(eq(expenses.status, status as string));
+      }
+
+      if (clientId) {
+        conditions.push(eq(expenses.relatedClientId, clientId as string));
+      }
+
+      if (startDate) {
+        conditions.push(gte(expenses.expenseDate, new Date(startDate as string)));
+      }
+
+      if (endDate) {
+        conditions.push(lte(expenses.expenseDate, new Date(endDate as string)));
+      }
+
+      if (search) {
+        conditions.push(
+          or(
+            ilike(expenses.title, `%${search}%`),
+            ilike(expenses.description, `%${search}%`)
+          )
+        );
+      }
+
+      let query = baseQuery;
+      if (conditions.length > 0) {
+        query = baseQuery.where(and(...conditions));
+      }
+
+      const results = await query.orderBy(desc(expenses.createdAt));
+
+      // Transform results to include category information
+      const expensesWithCategories = results.map(({ expense, category }) => ({
+        ...expense,
+        category,
+      }));
+
+      res.json(expensesWithCategories);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      res.status(500).json({ message: "Failed to fetch expenses" });
+    }
+  });
+
   // Get expense statistics (must be before parameterized routes)
   app.get("/api/expenses/stats", async (req, res) => {
     try {
@@ -134,83 +211,6 @@ export function registerExpenseRoutes(app: Express) {
     } catch (error) {
       console.error("Error calculating expense statistics:", error);
       res.status(500).json({ message: "Failed to calculate expense statistics" });
-    }
-  });
-
-  // Get all expenses with filters
-  app.get("/api/expenses", async (req, res) => {
-    try {
-      const {
-        type,
-        categoryId,
-        status,
-        startDate,
-        endDate,
-        search,
-        clientId,
-      } = req.query;
-
-      let baseQuery = db
-        .select({
-          expense: expenses,
-          category: expenseCategories,
-        })
-        .from(expenses)
-        .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id));
-
-      // Apply filters
-      const conditions = [];
-
-      if (type) {
-        conditions.push(eq(expenses.type, type as string));
-      }
-
-      if (categoryId) {
-        conditions.push(eq(expenses.categoryId, categoryId as string));
-      }
-
-      if (status) {
-        conditions.push(eq(expenses.status, status as string));
-      }
-
-      if (clientId) {
-        conditions.push(eq(expenses.relatedClientId, clientId as string));
-      }
-
-      if (startDate) {
-        conditions.push(gte(expenses.expenseDate, new Date(startDate as string)));
-      }
-
-      if (endDate) {
-        conditions.push(lte(expenses.expenseDate, new Date(endDate as string)));
-      }
-
-      if (search) {
-        conditions.push(
-          or(
-            ilike(expenses.title, `%${search}%`),
-            ilike(expenses.description, `%${search}%`)
-          )
-        );
-      }
-
-      let query = baseQuery;
-      if (conditions.length > 0) {
-        query = baseQuery.where(and(...conditions));
-      }
-
-      const results = await query.orderBy(desc(expenses.createdAt));
-
-      // Transform results to include category info
-      const expensesWithCategories = results.map(result => ({
-        ...result.expense,
-        category: result.category,
-      }));
-
-      res.json(expensesWithCategories);
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      res.status(500).json({ message: "Failed to fetch expenses" });
     }
   });
 
@@ -333,9 +333,11 @@ export function registerExpenseRoutes(app: Express) {
       // Update expense status
       const [expense] = await db
         .update(expenses)
-        .set({ 
-          status: "paid", 
+        .set({
+          status: "paid",
           paidDate: new Date(),
+          paymentMethod,
+          paymentReference,
           updatedAt: new Date(),
         })
         .where(eq(expenses.id, id))
@@ -408,6 +410,107 @@ export function registerExpenseRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching expense payments:", error);
       res.status(500).json({ message: "Failed to fetch expense payments" });
+    }
+  });
+
+  // Get expense statistics
+  app.get("/api/expenses/stats", async (req, res) => {
+    try {
+      const { period = "month" } = req.query;
+      
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (period) {
+        case "week":
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case "month":
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case "quarter":
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case "year":
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+
+      // Get all expenses in period
+      const expenseResults = await db
+        .select({
+          expense: expenses,
+          category: expenseCategories,
+        })
+        .from(expenses)
+        .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+        .where(
+          and(
+            gte(expenses.expenseDate, startDate),
+            lte(expenses.expenseDate, now)
+          )
+        );
+      
+      const allExpenses = Array.isArray(expenseResults) ? expenseResults : [];
+
+      // Calculate statistics
+      const totalExpenses = allExpenses.length;
+      const totalAmount = allExpenses.reduce((sum, { expense }) => 
+        sum + parseFloat(expense.amount), 0
+      );
+      
+      const paidExpenses = allExpenses.filter(({ expense }) => 
+        expense.status === "paid"
+      );
+      const paidAmount = paidExpenses.reduce((sum, { expense }) => 
+        sum + parseFloat(expense.amount), 0
+      );
+
+      const pendingExpenses = allExpenses.filter(({ expense }) => 
+        expense.status === "pending"
+      );
+      const pendingAmount = pendingExpenses.reduce((sum, { expense }) => 
+        sum + parseFloat(expense.amount), 0
+      );
+
+      const overdueExpenses = allExpenses.filter(({ expense }) => 
+        expense.status === "overdue" || 
+        (expense.dueDate && new Date(expense.dueDate) < now && expense.status === "pending")
+      );
+
+      // Category breakdown
+      const categoryBreakdown = allExpenses.reduce((acc, { expense, category }) => {
+        if (!category) return acc;
+        
+        if (!acc[category.name]) {
+          acc[category.name] = {
+            name: category.name,
+            color: category.color,
+            amount: 0,
+            count: 0,
+          };
+        }
+        
+        acc[category.name].amount += parseFloat(expense.amount);
+        acc[category.name].count += 1;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      res.json({
+        totalExpenses,
+        totalAmount,
+        paidExpenses: paidExpenses.length,
+        paidAmount,
+        pendingExpenses: pendingExpenses.length,
+        pendingAmount,
+        overdueExpenses: overdueExpenses.length,
+        categoryBreakdown: Object.values(categoryBreakdown),
+      });
+    } catch (error) {
+      console.error("Error calculating expense statistics:", error);
+      res.status(500).json({ message: "Failed to calculate expense statistics" });
     }
   });
 
