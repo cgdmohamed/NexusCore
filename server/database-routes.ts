@@ -86,6 +86,7 @@ export function setupDatabaseRoutes(app: Express) {
         amount: req.body.amount,
         description: req.body.description,
         status: 'pending',
+        expenseDate: new Date(), // Add required expense date
         receiptUrl: null,
         createdBy: '1', // Development user ID
       };

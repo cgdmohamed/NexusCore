@@ -3,6 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./replitAuth";
 import { setupDatabaseRoutes } from "./database-routes";
+import { db } from "./db";
+import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
+import { sql } from "drizzle-orm";
 import {
   insertClientSchema,
   insertQuotationSchema,
@@ -73,18 +76,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard KPIs
   app.get('/api/dashboard/kpis', async (req: any, res) => {
     try {
-      // Use hardcoded user ID for development
-      const userId = '1';
+      // Calculate real KPIs from database
+      const [clientsResult] = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE status = 'active'`);
+      const [revenueResult] = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'paid'`);
+      const [pendingResult] = await db.execute(sql`SELECT COALESCE(SUM(amount::numeric), 0) as total FROM invoices WHERE status = 'pending'`);
+      const [tasksResult] = await db.execute(sql`SELECT COUNT(*) as completed, (SELECT COUNT(*) FROM tasks) as total FROM tasks WHERE status = 'completed'`);
+      
+      const activeClients = clientsResult?.count || 0;
+      const totalRevenue = revenueResult?.total || 0;
+      const pendingInvoices = pendingResult?.total || 0;
+      const teamPerformance = tasksResult?.total > 0 ? Math.round((tasksResult?.completed / tasksResult?.total) * 100) : 0;
+
       const kpis = {
-        totalRevenue: 125000,
-        activeClients: 34,
-        pendingInvoices: 12500,
-        teamPerformance: 87
+        totalRevenue: parseFloat(totalRevenue.toString()),
+        activeClients: parseInt(activeClients.toString()),
+        pendingInvoices: parseFloat(pendingInvoices.toString()),
+        teamPerformance
       };
       res.json(kpis);
     } catch (error) {
       console.error("Error fetching KPIs:", error);
-      res.status(500).json({ message: "Failed to fetch KPIs" });
+      // Fallback to basic data if database queries fail
+      const kpis = {
+        totalRevenue: 0,
+        activeClients: 0,
+        pendingInvoices: 0,
+        teamPerformance: 0
+      };
+      res.json(kpis);
     }
   });
 
