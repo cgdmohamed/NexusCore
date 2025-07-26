@@ -137,7 +137,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### January 26, 2025 - Complete Quotation System Integration
+### January 26, 2025 - Complete Quotation System Integration & Enhanced List View
+- **Advanced Quotations List Interface**: Completely redesigned quotations list with professional dashboard-style layout featuring statistics cards, advanced filtering, sorting, and dual view modes
+- **Real-time Statistics Dashboard**: Live KPI cards showing total quotations, status breakdowns (Draft/Sent/Accepted), total value, and average quotation value with color-coded icons
+- **Powerful Search & Filter System**: Multi-criteria search by title, quotation number, or client name with status filtering and advanced sorting options (by date, amount, title, status)
+- **Dual View Modes**: Toggle between detailed table view with sortable columns and card view for better visual browsing experience
+- **Enhanced Table Features**: Clickable column headers for sorting, hover effects, status icons, client name resolution, and improved date formatting
+- **Professional Card Layout**: Elegant card view showing key quotation information with quick action buttons and status indicators
+- **Interactive UI Elements**: Responsive design with loading states, empty states, and filtered results counter
 - **Enhanced Quotation Creation Form**: Updated form to work with enhanced quotation system, including notes, terms, and automatic navigation to detail page
 - **Fixed Backend Route Conflicts**: Resolved duplicate quotation creation routes causing database insertion failures
 - **Corrected Amount Field Handling**: Fixed amount field initialization (set to 0) for quotations that start empty and calculate totals from added items
