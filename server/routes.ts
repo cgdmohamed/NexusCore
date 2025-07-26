@@ -12,7 +12,8 @@ import { registerTaskManagementRoutes } from "./task-management-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, activities } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import {
   insertClientSchema,
   insertQuotationSchema,
@@ -178,13 +179,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/clients/:id', async (req, res) => {
+  app.delete('/api/clients/:id', async (req: any, res) => {
     try {
-      await storage.deleteClient(req.params.id);
-      res.status(204).send();
+      const clientId = req.params.id;
+      
+      // Check if client exists first
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      if (!client) {
+        return res.status(404).json({ error: 'Client not found' });
+      }
+
+      // Delete all related data in proper order to avoid foreign key constraints
+      
+      // 1. Delete payment records first (they reference invoices)
+      await db.execute(
+        sql`DELETE FROM payments WHERE invoice_id IN (
+          SELECT id FROM invoices WHERE client_id = ${clientId}
+        )`
+      );
+
+      // 2. Delete invoice items (they reference invoices)
+      await db.execute(
+        sql`DELETE FROM invoice_items WHERE invoice_id IN (
+          SELECT id FROM invoices WHERE client_id = ${clientId}
+        )`
+      );
+
+      // 3. Delete quotation items (they reference quotations)
+      await db.execute(
+        sql`DELETE FROM quotation_items WHERE quotation_id IN (
+          SELECT id FROM quotations WHERE client_id = ${clientId}
+        )`
+      );
+
+      // 4. Delete client credit history
+      await db.execute(
+        sql`DELETE FROM client_credit_history WHERE client_id = ${clientId}`
+      );
+
+      // 5. Delete invoices
+      await db.execute(
+        sql`DELETE FROM invoices WHERE client_id = ${clientId}`
+      );
+
+      // 6. Delete quotations
+      await db.execute(
+        sql`DELETE FROM quotations WHERE client_id = ${clientId}`
+      );
+
+      // 7. Delete client notes
+      await db.execute(
+        sql`DELETE FROM client_notes WHERE client_id = ${clientId}`
+      );
+
+      // 8. Delete activities related to this client
+      await db.execute(
+        sql`DELETE FROM activities WHERE entity_type = 'client' AND entity_id = ${clientId}`
+      );
+
+      // 9. Finally delete the client
+      await db.execute(
+        sql`DELETE FROM clients WHERE id = ${clientId}`
+      );
+
+      // Log the deletion activity
+      try {
+        await db.execute(
+          sql`INSERT INTO activities (id, type, title, description, entity_type, entity_id, created_by, created_at)
+              VALUES (
+                ${randomUUID()},
+                'client_deleted',
+                'Client Deleted',
+                ${`Client "${client.name}" and all related data have been permanently deleted`},
+                'system',
+                ${clientId},
+                ${req.user?.id || '1'},
+                ${new Date().toISOString()}
+              )`
+        );
+      } catch (activityError) {
+        console.error('Failed to log deletion activity:', activityError);
+        // Don't fail the deletion if activity logging fails
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Client "${client.name}" and all related data have been permanently deleted` 
+      });
     } catch (error) {
-      console.error("Error deleting client:", error);
-      res.status(500).json({ message: "Failed to delete client" });
+      console.error('Error deleting client:', error);
+      res.status(500).json({ error: 'Failed to delete client and related data' });
     }
   });
 

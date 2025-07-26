@@ -23,7 +23,8 @@ import {
   UserX,
   Calendar,
   Building,
-  Globe
+  Globe,
+  Trash2
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import {
@@ -39,9 +40,28 @@ import { StatusUpdateForm } from "@/components/forms/StatusUpdateForm";
 import { DataExportButton } from "@/components/DataExportButton";
 import { Link } from "wouter";
 import type { Client, Quotation, Invoice } from "@shared/schema";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CRM() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
@@ -61,6 +81,35 @@ export default function CRM() {
   });
 
   const clientList = clients as Client[];
+
+  // Check if user is admin (can delete clients)
+  const isAdmin = user?.role === 'admin' || user?.department === 'management';
+
+  // Delete client mutation with cascade delete
+  const deleteClientMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      const response = await apiRequest("DELETE", `/api/clients/${clientId}`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Client Deleted",
+        description: data.message,
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete client and related data",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Enhanced filtering and sorting
   const filteredAndSortedClients = useMemo(() => {
@@ -463,6 +512,42 @@ export default function CRM() {
                                   </Button>
                                 }
                               />
+                              {isAdmin && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                      <Trash2 className="w-3 h-3 mr-1" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Client - Permanent Action</AlertDialogTitle>
+                                      <AlertDialogDescription className="space-y-2">
+                                        <p>You are about to permanently delete <strong>{client.name}</strong> and ALL related data including:</p>
+                                        <ul className="list-disc list-inside space-y-1 text-sm">
+                                          <li>All quotations and quotation items</li>
+                                          <li>All invoices and invoice items</li>
+                                          <li>All payment records</li>
+                                          <li>All client notes and activity history</li>
+                                          <li>All credit balance history</li>
+                                        </ul>
+                                        <p className="font-medium text-red-600">This action cannot be undone.</p>
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteClientMutation.mutate(client.id)}
+                                        disabled={deleteClientMutation.isPending}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        {deleteClientMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -560,6 +645,41 @@ export default function CRM() {
                               </Button>
                             }
                           />
+                          {isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Client - Permanent Action</AlertDialogTitle>
+                                  <AlertDialogDescription className="space-y-2">
+                                    <p>You are about to permanently delete <strong>{client.name}</strong> and ALL related data including:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-sm">
+                                      <li>All quotations and quotation items</li>
+                                      <li>All invoices and invoice items</li>
+                                      <li>All payment records</li>
+                                      <li>All client notes and activity history</li>
+                                      <li>All credit balance history</li>
+                                    </ul>
+                                    <p className="font-medium text-red-600">This action cannot be undone.</p>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteClientMutation.mutate(client.id)}
+                                    disabled={deleteClientMutation.isPending}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    {deleteClientMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
