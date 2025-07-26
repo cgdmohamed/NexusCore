@@ -322,6 +322,69 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// Payment Sources table for managing company financial accounts
+export const paymentSources = pgTable("payment_sources", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: varchar("description"),
+  accountType: varchar("account_type").notNull().default("bank"), // cash, bank, wallet
+  currency: varchar("currency").default("USD"),
+  initialBalance: varchar("initial_balance").default("0"),
+  currentBalance: varchar("current_balance").default("0"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PaymentSource = typeof paymentSources.$inferSelect;
+export type InsertPaymentSource = typeof paymentSources.$inferInsert;
+
+// Payment Source Transactions table for tracking all balance changes
+export const paymentSourceTransactions = pgTable("payment_source_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  paymentSourceId: varchar("payment_source_id").notNull().references(() => paymentSources.id, { onDelete: "cascade" }),
+  type: varchar("type").notNull(), // expense, income, adjustment
+  amount: varchar("amount").notNull(),
+  description: varchar("description"),
+  referenceId: varchar("reference_id"), // expense ID, income ID, etc.
+  referenceType: varchar("reference_type"), // "expense", "income", "manual_adjustment"
+  balanceBefore: varchar("balance_before").notNull(),
+  balanceAfter: varchar("balance_after").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+export type PaymentSourceTransaction = typeof paymentSourceTransactions.$inferSelect;
+export type InsertPaymentSourceTransaction = typeof paymentSourceTransactions.$inferInsert;
+
+// Relations for Payment Sources
+export const paymentSourcesRelations = relations(paymentSources, ({ many }) => ({
+  transactions: many(paymentSourceTransactions),
+  expenses: many(expenses),
+}));
+
+export const paymentSourceTransactionsRelations = relations(paymentSourceTransactions, ({ one }) => ({
+  paymentSource: one(paymentSources, {
+    fields: [paymentSourceTransactions.paymentSourceId],
+    references: [paymentSources.id],
+  }),
+  createdByUser: one(users, {
+    fields: [paymentSourceTransactions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertPaymentSourceSchema = createInsertSchema(paymentSources).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentSourceTransactionSchema = createInsertSchema(paymentSourceTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
 
@@ -441,6 +504,8 @@ export const expenses = pgTable("expenses", {
   // Recurring expense tracking
   isRecurring: boolean("is_recurring").default(false),
   parentExpenseId: varchar("parent_expense_id").references(() => expenses.id),
+  // Payment source tracking
+  paymentSourceId: varchar("payment_source_id").references(() => paymentSources.id),
   nextDueDate: timestamp("next_due_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -510,6 +575,10 @@ export const expensesRelations = relations(expenses, ({ one, many }) => ({
   }),
   childExpenses: many(expenses),
   payments: many(expensePayments),
+  paymentSource: one(paymentSources, {
+    fields: [expenses.paymentSourceId],
+    references: [paymentSources.id],
+  }),
 }));
 
 export const expensePaymentsRelations = relations(expensePayments, ({ one }) => ({

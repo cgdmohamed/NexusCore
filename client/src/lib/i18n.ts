@@ -15,6 +15,7 @@ const translations: Translations = {
   'nav.quotations': { en: 'Quotations', ar: 'عروض الأسعار' },
   'nav.invoices': { en: 'Invoices', ar: 'الفواتير' },
   'nav.expenses': { en: 'Expenses', ar: 'المصروفات' },
+  'nav.payment_sources': { en: 'Payment Sources', ar: 'مصادر الدفع' },
   'nav.employees': { en: 'Employees', ar: 'الموظفون' },
   'nav.tasks': { en: 'Tasks', ar: 'المهام' },
   'nav.analytics': { en: 'Analytics', ar: 'التحليلات' },

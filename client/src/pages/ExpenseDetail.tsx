@@ -12,7 +12,7 @@ import {
   Tag,
   User,
   FileText,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -64,11 +64,11 @@ export default function ExpenseDetail() {
   const getStatusBadge = (status: string) => {
     const variants = {
       draft: "outline",
-      submitted: "secondary", 
+      submitted: "secondary",
       approved: "default",
-      rejected: "destructive"
+      rejected: "destructive",
     } as const;
-    
+
     return (
       <Badge variant={variants[status as keyof typeof variants] || "outline"}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -82,7 +82,11 @@ export default function ExpenseDetail() {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this expense? This action cannot be undone.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this expense? This action cannot be undone.",
+      )
+    ) {
       deleteMutation.mutate();
     }
   };
@@ -90,7 +94,7 @@ export default function ExpenseDetail() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Header 
+        <Header
           title="Loading..."
           subtitle="Please wait while we load the expense details"
         />
@@ -114,14 +118,16 @@ export default function ExpenseDetail() {
   if (!expense) {
     return (
       <div className="space-y-6">
-        <Header 
+        <Header
           title="Expense Not Found"
           subtitle="The requested expense could not be found"
         />
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Expense Not Found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Expense Not Found
+            </h3>
             <p className="text-gray-500 mb-4">
               The expense you're looking for doesn't exist or has been deleted.
             </p>
@@ -141,16 +147,16 @@ export default function ExpenseDetail() {
 
   return (
     <div className="space-y-6">
-      <Header 
+      <Header
         title={expense.title}
         subtitle={`Expense #${expense.id.slice(0, 8)}`}
         breadcrumbs={[
           { label: "Expenses", href: "/expenses" },
-          { label: expense.title }
+          { label: expense.title },
         ]}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Expense Overview */}
@@ -173,7 +179,9 @@ export default function ExpenseDetail() {
                     ${parseFloat(expense.amount).toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {expense.type.charAt(0).toUpperCase() + expense.type.slice(1)} Expense
+                    {expense.type.charAt(0).toUpperCase() +
+                      expense.type.slice(1)}{" "}
+                    Expense
                   </div>
                 </div>
               </div>
@@ -181,7 +189,9 @@ export default function ExpenseDetail() {
             <CardContent className="space-y-6">
               {expense.description && (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Description
+                  </h4>
                   <p className="text-gray-600">{expense.description}</p>
                 </div>
               )}
@@ -216,11 +226,13 @@ export default function ExpenseDetail() {
                       <div>
                         <div className="font-medium">Category</div>
                         <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
+                          <div
+                            className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: categoryInfo.color }}
                           />
-                          <span className="text-sm text-gray-500">{categoryInfo.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {categoryInfo.name}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -282,9 +294,9 @@ export default function ExpenseDetail() {
                   Edit Expense
                 </Button>
               </Link>
-              
-              <Button 
-                className="w-full" 
+
+              <Button
+                className="w-full"
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
@@ -311,7 +323,9 @@ export default function ExpenseDetail() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Amount</span>
-                  <span className="font-medium">${parseFloat(expense.amount).toLocaleString()}</span>
+                  <span className="font-medium">
+                    ${parseFloat(expense.amount).toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Status</span>
