@@ -478,4 +478,192 @@ export function setupDatabaseRoutes(app: Express) {
       res.status(500).json({ message: "Failed to create quotation item" });
     }
   });
+
+  // Enhanced Quotation Management Routes
+  app.get('/api/quotations/:id', async (req: any, res) => {
+    try {
+      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+      res.json(quotation);
+    } catch (error) {
+      console.error("Error fetching quotation:", error);
+      res.status(500).json({ message: "Failed to fetch quotation" });
+    }
+  });
+
+  app.patch('/api/quotations/:id', async (req: any, res) => {
+    try {
+      const [updatedQuotation] = await db.update(quotations)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id))
+        .returning();
+      res.json(updatedQuotation);
+    } catch (error) {
+      console.error("Error updating quotation:", error);
+      res.status(500).json({ message: "Failed to update quotation" });
+    }
+  });
+
+  // Convert quotation to invoice
+  app.post('/api/quotations/:id/convert-to-invoice', async (req: any, res) => {
+    try {
+      // Get quotation details
+      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Get quotation items
+      const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      
+      // Calculate total from items
+      const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+
+      // Create invoice
+      const invoiceData = {
+        invoiceNumber: `INV-2024-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        clientId: quotation.clientId,
+        quotationId: quotation.id,
+        amount: totalAmount.toFixed(2),
+        paidAmount: '0.00',
+        status: 'pending',
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        createdBy: '1', // Development user ID
+      };
+
+      const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
+
+      // Update quotation status to invoiced
+      await db.update(quotations)
+        .set({ status: 'invoiced', updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id));
+
+      res.status(201).json({ invoice: newInvoice, message: "Quotation converted to invoice successfully" });
+    } catch (error) {
+      console.error("Error converting quotation to invoice:", error);
+      res.status(500).json({ message: "Failed to convert quotation to invoice" });
+    }
+  });
+
+  // Export quotation as PDF
+  app.get('/api/quotations/:id/export-pdf', async (req: any, res) => {
+    try {
+      // Get quotation with client and items
+      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      const [client] = await db.select().from(clients).where(eq(clients.id, quotation.clientId));
+      const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+
+      const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+
+      // Generate HTML for PDF (simplified version)
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Quotation ${quotation.quotationNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 40px; }
+            .company-info { margin-bottom: 30px; }
+            .client-info { margin-bottom: 30px; }
+            .quotation-details { margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            .total-row { font-weight: bold; background-color: #f9f9f9; }
+            .footer { margin-top: 40px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>QUOTATION</h1>
+            <p>Quotation Number: ${quotation.quotationNumber}</p>
+          </div>
+          
+          <div class="company-info">
+            <h3>CompanyOS</h3>
+            <p>123 Business Street<br>
+            Business City, BC 12345<br>
+            Phone: (555) 123-4567<br>
+            Email: info@companyos.com</p>
+          </div>
+          
+          <div class="client-info">
+            <h3>Bill To:</h3>
+            <p><strong>${client?.name || 'N/A'}</strong><br>
+            ${client?.email || ''}<br>
+            ${client?.phone || ''}<br>
+            ${client?.city || ''}, ${client?.country || ''}</p>
+          </div>
+          
+          <div class="quotation-details">
+            <p><strong>Date:</strong> ${new Date(quotation.createdAt).toLocaleDateString()}</p>
+            <p><strong>Valid Until:</strong> ${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</p>
+            <p><strong>Status:</strong> ${quotation.status.toUpperCase()}</p>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Discount</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.description}</td>
+                  <td>${item.quantity}</td>
+                  <td>$${parseFloat(item.unitPrice).toFixed(2)}</td>
+                  <td>${parseFloat(item.discount).toFixed(1)}%</td>
+                  <td>$${parseFloat(item.totalPrice).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="4"><strong>TOTAL</strong></td>
+                <td><strong>$${totalAmount.toFixed(2)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <p><strong>Terms & Conditions:</strong></p>
+            <p>Payment due within 30 days of quotation acceptance. All prices are in USD. This quotation is valid for 30 days from the date of issue.</p>
+            <br>
+            <p>Thank you for your business!</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `inline; filename="quotation-${quotation.quotationNumber}.html"`);
+      res.send(htmlContent);
+    } catch (error) {
+      console.error("Error exporting quotation:", error);
+      res.status(500).json({ message: "Failed to export quotation" });
+    }
+  });
+
+  // Delete quotation item
+  app.delete('/api/quotations/:id/items/:itemId', async (req: any, res) => {
+    try {
+      await db.delete(quotationItems)
+        .where(eq(quotationItems.id, req.params.itemId));
+      res.json({ message: "Item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quotation item:", error);
+      res.status(500).json({ message: "Failed to delete quotation item" });
+    }
+  });
 }

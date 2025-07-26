@@ -68,8 +68,10 @@ export const quotations = pgTable("quotations", {
   title: text("title").notNull(),
   description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status").notNull().default("draft"), // draft, sent, accepted, rejected, expired
+  status: varchar("status").notNull().default("draft"), // draft, sent, accepted, rejected, expired, invoiced
   validUntil: timestamp("valid_until"),
+  notes: text("notes"), // Internal notes
+  terms: text("terms"), // Terms and conditions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),

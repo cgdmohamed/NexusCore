@@ -134,3 +134,15 @@ Preferred communication style: Simple, everyday language.
 - **Required Variables**: DATABASE_URL, SESSION_SECRET, REPL_ID
 - **Optional Variables**: ISSUER_URL for custom OIDC provider
 - **Security**: HTTP-only cookies, secure session configuration
+
+## Recent Changes
+
+### January 26, 2025 - Complete Quotation Module Implementation
+- **Enhanced Quotation Detail Pages**: Full interactive quotation management with line item addition, editing, and professional PDF export functionality
+- **Status Workflow Management**: Complete quotation lifecycle from Draft → Sent → Accepted → Rejected → Invoiced with manual status controls
+- **Quotation-to-Invoice Conversion**: Automatic invoice generation from accepted quotations with full data transfer and relationship tracking
+- **Professional PDF Export**: Clean, branded quotation documents with company information, client details, itemized services, and terms
+- **Admin Quotation Management Dashboard**: Comprehensive overview with statistics, status distribution, and bulk management capabilities
+- **Enhanced Client Profiles**: Integrated quotation history, invoice relationships, and activity tracking with cross-module navigation
+- **Predefined Services System**: Service catalog with default pricing for quick quotation item creation
+- **Database Enhancements**: Added quotation-invoice relationships, notes/terms fields, and comprehensive audit trails

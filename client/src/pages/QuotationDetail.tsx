@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, FileText, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,6 +25,9 @@ export default function QuotationDetail() {
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("0");
   const [discount, setDiscount] = useState("0");
+  const [isEditing, setIsEditing] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [terms, setTerms] = useState("");
 
   const { data: quotation, isLoading: quotationLoading } = useQuery<Quotation>({
     queryKey: ["/api/quotations", id],
@@ -47,8 +50,13 @@ export default function QuotationDetail() {
   useEffect(() => {
     const initializeServices = async () => {
       try {
-        await apiRequest("/api/services/initialize", "POST", {});
-        queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+        const response = await fetch("/api/services/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (response.ok) {
+          queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+        }
       } catch (error) {
         console.error("Failed to initialize services:", error);
       }
@@ -131,6 +139,51 @@ export default function QuotationDetail() {
     addItemMutation.mutate(itemData);
   };
 
+  const updateQuotationMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest(`/api/quotations/${id}`, "PATCH", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      setIsEditing(false);
+      toast({
+        title: "Quotation updated",
+        description: "Quotation has been updated successfully.",
+      });
+    },
+  });
+
+  const convertToInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/quotations/${id}/convert-to-invoice`, "POST", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      toast({
+        title: "Converted to invoice",
+        description: "Quotation has been successfully converted to an invoice.",
+      });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      return apiRequest(`/api/quotations/${id}`, "PATCH", { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      toast({
+        title: "Status updated",
+        description: "Quotation status has been updated.",
+      });
+    },
+  });
+
+  const handleExportPDF = () => {
+    window.open(`/api/quotations/${id}/export-pdf`, '_blank');
+  };
+
   const quotationTotal = quotationItems.reduce((sum, item) => {
     return sum + parseFloat(item.totalPrice);
   }, 0);
@@ -184,9 +237,35 @@ export default function QuotationDetail() {
             <p className="text-gray-600">{quotation.title}</p>
           </div>
         </div>
-        <Badge className={getStatusColor(quotation.status)}>
-          {quotation.status}
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <Badge className={getStatusColor(quotation.status)}>
+            {quotation.status}
+          </Badge>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            {quotation.status === 'accepted' && (
+              <Button 
+                size="sm" 
+                onClick={() => convertToInvoiceMutation.mutate()}
+                disabled={convertToInvoiceMutation.isPending}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Convert to Invoice
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Quotation Overview */}
@@ -281,6 +360,141 @@ export default function QuotationDetail() {
                   }
                 </p>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status Actions */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Status Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={quotation.status === 'draft' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => updateStatusMutation.mutate('draft')}
+              disabled={updateStatusMutation.isPending}
+            >
+              Draft
+            </Button>
+            <Button
+              variant={quotation.status === 'sent' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => updateStatusMutation.mutate('sent')}
+              disabled={updateStatusMutation.isPending}
+            >
+              Sent
+            </Button>
+            <Button
+              variant={quotation.status === 'accepted' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => updateStatusMutation.mutate('accepted')}
+              disabled={updateStatusMutation.isPending}
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Accepted
+            </Button>
+            <Button
+              variant={quotation.status === 'rejected' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => updateStatusMutation.mutate('rejected')}
+              disabled={updateStatusMutation.isPending}
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Rejected
+            </Button>
+            <Button
+              variant={quotation.status === 'invoiced' ? 'default' : 'outline'}
+              size="sm"
+              disabled={true}
+            >
+              Invoiced
+            </Button>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Current status: <span className="font-medium capitalize">{quotation.status}</span>
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Notes and Terms */}
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Notes & Terms</CardTitle>
+            <Dialog open={isEditing} onOpenChange={setIsEditing}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Notes
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Quotation Notes & Terms</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="notes">Internal Notes</Label>
+                    <textarea
+                      id="notes"
+                      className="w-full p-3 border rounded-md"
+                      rows={4}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Internal notes (not visible to client)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="terms">Terms & Conditions</Label>
+                    <textarea
+                      id="terms"
+                      className="w-full p-3 border rounded-md"
+                      rows={6}
+                      value={terms}
+                      onChange={(e) => setTerms(e.target.value)}
+                      placeholder="Terms and conditions for this quotation"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => {
+                        updateQuotationMutation.mutate({
+                          description: quotation.description,
+                          notes: notes,
+                          terms: terms,
+                        });
+                      }}
+                      disabled={updateQuotationMutation.isPending}
+                      className="flex-1"
+                    >
+                      {updateQuotationMutation.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Internal Notes</Label>
+              <p className="text-lg mt-1">{quotation.description || "No internal notes"}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Terms & Conditions</Label>
+              <p className="text-lg mt-1">Standard terms apply. Payment due within 30 days of invoice date.</p>
             </div>
           </div>
         </CardContent>
@@ -443,16 +657,26 @@ export default function QuotationDetail() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="border-t-2">
-                    <TableCell colSpan={4} className="text-right font-bold">
-                      Grand Total:
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-lg">
-                      ${quotationTotal.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
+              
+              {/* Quotation Summary */}
+              <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-600">Subtotal</p>
+                    <p className="text-xl font-bold">${quotationTotal.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Tax (0%)</p>
+                    <p className="text-xl font-bold">$0.00</p>
+                  </div>
+                  <div className="bg-primary text-white p-4 rounded-lg">
+                    <p className="text-sm opacity-90">Total Amount</p>
+                    <p className="text-2xl font-bold">${quotationTotal.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </CardContent>
