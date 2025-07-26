@@ -26,22 +26,69 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User roles and permissions
-export const roleEnum = pgEnum("role", ["admin", "manager", "employee", "finance", "hr", "sales"]);
-export const departmentEnum = pgEnum("department", ["operations", "finance", "hr", "sales", "management"]);
+// Enums
+export const departmentEnum = pgEnum("department", ["operations", "finance", "hr", "sales", "management", "it", "marketing"]);
+export const employeeStatusEnum = pgEnum("employee_status", ["active", "inactive", "terminated", "on_leave"]);
 
-// Users table
-export const users = pgTable("users", {
+// Roles table for dynamic role management
+export const roles = pgTable("roles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  role: roleEnum("role").notNull().default("employee"),
-  department: departmentEnum("department").notNull().default("operations"),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions").notNull(), // JSON object with module permissions
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by"),
+});
+
+// Employees table for comprehensive employee management
+export const employees = pgTable("employees", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").unique(),
+  phone: varchar("phone"),
+  jobTitle: varchar("job_title"),
+  department: departmentEnum("department").notNull(),
+  hiringDate: timestamp("hiring_date"),
+  status: employeeStatusEnum("status").notNull().default("active"),
+  profileImageUrl: varchar("profile_image_url"),
+  address: text("address"),
+  emergencyContact: text("emergency_contact"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by"),
+});
+
+// Users table for system access
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull().unique(),
+  passwordHash: varchar("password_hash").notNull(),
+  employeeId: varchar("employee_id").references(() => employees.id).notNull(),
+  roleId: varchar("role_id").references(() => roles.id).notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  lastLogin: timestamp("last_login"),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by"),
+});
+
+// Audit log for tracking user actions
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  action: varchar("action").notNull(), // create, update, delete, approve, etc.
+  entityType: varchar("entity_type").notNull(), // user, employee, role, client, etc.
+  entityId: varchar("entity_id"),
+  oldValues: jsonb("old_values"),
+  newValues: jsonb("new_values"),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Clients table
@@ -186,13 +233,52 @@ export const activities = pgTable("activities", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  users: many(users),
+  createdBy: one(users, {
+    fields: [roles.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const employeesRelations = relations(employees, ({ one, many }) => ({
+  user: one(users, {
+    fields: [employees.id],
+    references: [users.employeeId],
+  }),
+  createdBy: one(users, {
+    fields: [employees.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  employee: one(employees, {
+    fields: [users.employeeId],
+    references: [employees.id],
+  }),
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+  createdBy: one(users, {
+    fields: [users.createdBy],
+    references: [users.id],
+  }),
   clients: many(clients),
   quotations: many(quotations),
   invoices: many(invoices),
   expenses: many(expenses),
   tasks: many(tasks),
   activities: many(activities),
+  auditLogs: many(auditLogs),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -276,10 +362,28 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 }));
 
 // Insert schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  lastLogin: true,
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -319,8 +423,18 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+
+export type Employee = typeof employees.$inferSelect;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 // Payment Sources table for managing company financial accounts
 export const paymentSources = pgTable("payment_sources", {

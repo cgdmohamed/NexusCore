@@ -22,6 +22,7 @@ import ClientProfile from "@/pages/ClientProfile";
 import QuotationDetail from "@/pages/QuotationDetail";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import QuotationManagement from "@/pages/QuotationManagement";
+import UserManagement from "@/pages/UserManagement";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -64,6 +65,7 @@ function Router() {
           <Route path="/expenses/:id/edit" component={ExpenseEdit} />
           <Route path="/payment-sources" component={PaymentSources} />
           <Route path="/employees" component={Employees} />
+          <Route path="/user-management" component={UserManagement} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/analytics" component={Analytics} />
           <Route component={NotFound} />

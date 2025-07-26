@@ -5,6 +5,8 @@ import { setupAuth } from "./replitAuth";
 import { setupDatabaseRoutes } from "./database-routes";
 import { registerExpenseRoutes } from "./expense-routes";
 import { registerPaymentSourceRoutes } from "./payment-source-routes";
+import { registerUserManagementRoutes } from "./user-management-routes";
+import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices } from "@shared/schema";
 import { sql } from "drizzle-orm";
@@ -111,12 +113,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup database routes for all CRUD operations
   setupDatabaseRoutes(app);
-  
-  // Setup expense routes
   registerExpenseRoutes(app);
-  
-  // Setup payment source routes
   registerPaymentSourceRoutes(app);
+  registerUserManagementRoutes(app);
+
+  // Seed user management data
+  try {
+    await seedUserData();
+  } catch (error) {
+    console.error("Failed to seed user data:", error);
+  }
 
   app.get('/api/clients/:id', async (req, res) => {
     try {
@@ -525,6 +531,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create employee" });
     }
   });
+
+
 
   const httpServer = createServer(app);
   return httpServer;
