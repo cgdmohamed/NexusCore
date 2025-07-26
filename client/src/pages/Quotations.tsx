@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Quotation } from "@shared/schema";
 
 export default function Quotations() {
   const { t } = useTranslation();
@@ -21,6 +22,8 @@ export default function Quotations() {
   const { data: quotations = [], isLoading } = useQuery({
     queryKey: ["/api/quotations"],
   });
+
+  const quotationList = quotations as Quotation[];
 
   return (
     <div className="space-y-6">
@@ -45,7 +48,7 @@ export default function Quotations() {
               <div className="text-center py-8">
                 <p className="text-neutral">{t('common.loading')}</p>
               </div>
-            ) : quotations.length === 0 ? (
+            ) : quotationList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No quotations found</p>
                 <Button variant="outline">
@@ -67,7 +70,7 @@ export default function Quotations() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quotations.map((quotation: any) => (
+                  {quotationList.map((quotation) => (
                     <TableRow key={quotation.id}>
                       <TableCell className="font-medium">{quotation.quotationNumber}</TableCell>
                       <TableCell>{quotation.title}</TableCell>

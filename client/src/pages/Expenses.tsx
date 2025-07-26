@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Expense } from "@shared/schema";
 
 export default function Expenses() {
   const { t } = useTranslation();
@@ -21,6 +22,8 @@ export default function Expenses() {
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ["/api/expenses"],
   });
+
+  const expenseList = expenses as Expense[];
 
   return (
     <div className="space-y-6">
@@ -45,7 +48,7 @@ export default function Expenses() {
               <div className="text-center py-8">
                 <p className="text-neutral">{t('common.loading')}</p>
               </div>
-            ) : expenses.length === 0 ? (
+            ) : expenseList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No expenses found</p>
                 <Button variant="outline">
@@ -67,7 +70,7 @@ export default function Expenses() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.map((expense: any) => (
+                  {expenseList.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell className="font-medium">{expense.title}</TableCell>
                       <TableCell className="capitalize">{expense.category}</TableCell>

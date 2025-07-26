@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Invoice } from "@shared/schema";
 
 export default function Invoices() {
   const { t } = useTranslation();
@@ -21,6 +22,8 @@ export default function Invoices() {
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["/api/invoices"],
   });
+
+  const invoiceList = invoices as Invoice[];
 
   return (
     <div className="space-y-6">
@@ -45,7 +48,7 @@ export default function Invoices() {
               <div className="text-center py-8">
                 <p className="text-neutral">{t('common.loading')}</p>
               </div>
-            ) : invoices.length === 0 ? (
+            ) : invoiceList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No invoices found</p>
                 <Button variant="outline">
@@ -67,7 +70,7 @@ export default function Invoices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice: any) => (
+                  {invoiceList.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                       <TableCell>${parseFloat(invoice.amount).toLocaleString()}</TableCell>

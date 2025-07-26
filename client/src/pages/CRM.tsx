@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Client } from "@shared/schema";
 
 export default function CRM() {
   const { t } = useTranslation();
@@ -20,6 +21,8 @@ export default function CRM() {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["/api/clients"],
   });
+
+  const clientList = clients as Client[];
 
   return (
     <div className="space-y-6">
@@ -44,7 +47,7 @@ export default function CRM() {
               <div className="text-center py-8">
                 <p className="text-neutral">{t('common.loading')}</p>
               </div>
-            ) : clients.length === 0 ? (
+            ) : clientList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No clients found</p>
                 <Button variant="outline">
@@ -65,7 +68,7 @@ export default function CRM() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((client: any) => (
+                  {clientList.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-medium">{client.name}</TableCell>
                       <TableCell>

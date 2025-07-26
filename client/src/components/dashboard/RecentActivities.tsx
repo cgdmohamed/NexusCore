@@ -5,6 +5,7 @@ import { useTranslation } from "@/lib/i18n";
 import { formatDistanceToNow } from "date-fns";
 import { Check, UserPlus, FileText, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Activity } from "@shared/schema";
 
 const activityIcons = {
   invoice_paid: { icon: Check, bg: "bg-green-100", color: "text-secondary" },
@@ -19,6 +20,8 @@ export function RecentActivities() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["/api/activities"],
   });
+
+  const activityList = activities as Activity[];
 
   if (isLoading) {
     return (
@@ -59,12 +62,12 @@ export function RecentActivities() {
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-4">
-          {activities.length === 0 ? (
+          {activityList.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-neutral">No recent activities</p>
             </div>
           ) : (
-            activities.map((activity: any) => {
+            activityList.map((activity) => {
               const activityType = activityIcons[activity.type as keyof typeof activityIcons] || activityIcons.client_added;
               const Icon = activityType.icon;
               

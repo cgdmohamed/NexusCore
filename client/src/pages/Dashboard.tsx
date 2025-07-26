@@ -7,12 +7,14 @@ import { ClientsTable } from "@/components/dashboard/ClientsTable";
 import { TasksTable } from "@/components/dashboard/TasksTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import type { User } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  const userName = user ? `${user.firstName} ${user.lastName}` : '';
+  const currentUser = user as User | undefined;
+  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '';
   
   return (
     <div className="space-y-6">

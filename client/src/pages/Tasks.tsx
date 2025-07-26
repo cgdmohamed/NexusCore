@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Task } from "@shared/schema";
 
 export default function Tasks() {
   const { t } = useTranslation();
@@ -21,6 +22,8 @@ export default function Tasks() {
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["/api/tasks"],
   });
+
+  const taskList = tasks as Task[];
 
   return (
     <div className="space-y-6">
@@ -45,7 +48,7 @@ export default function Tasks() {
               <div className="text-center py-8">
                 <p className="text-neutral">{t('common.loading')}</p>
               </div>
-            ) : tasks.length === 0 ? (
+            ) : taskList.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-neutral mb-4">No tasks found</p>
                 <Button variant="outline">
@@ -66,7 +69,7 @@ export default function Tasks() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tasks.map((task: any) => (
+                  {taskList.map((task) => (
                     <TableRow key={task.id}>
                       <TableCell className="font-medium">{task.title}</TableCell>
                       <TableCell>

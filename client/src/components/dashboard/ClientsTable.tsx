@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Client } from "@shared/schema";
 
 export function ClientsTable() {
   const { t } = useTranslation();
@@ -19,6 +20,8 @@ export function ClientsTable() {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["/api/clients"],
   });
+
+  const clientList = clients as Client[];
 
   if (isLoading) {
     return (
@@ -52,7 +55,7 @@ export function ClientsTable() {
     );
   }
 
-  const recentClients = clients.slice(0, 3);
+  const recentClients = clientList.slice(0, 3);
 
   return (
     <Card>
@@ -90,7 +93,7 @@ export function ClientsTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentClients.map((client: any) => (
+              {recentClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="px-6 py-4">
                     <div>

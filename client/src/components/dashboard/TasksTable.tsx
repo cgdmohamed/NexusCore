@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Task } from "@shared/schema";
 
 export function TasksTable() {
   const { t } = useTranslation();
@@ -12,6 +13,8 @@ export function TasksTable() {
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["/api/tasks"],
   });
+
+  const taskList = tasks as Task[];
 
   if (isLoading) {
     return (
@@ -45,7 +48,7 @@ export function TasksTable() {
     );
   }
 
-  const pendingTasks = tasks.filter((task: any) => task.status === 'pending').slice(0, 3);
+  const pendingTasks = taskList.filter((task) => task.status === 'pending').slice(0, 3);
 
   return (
     <Card>
@@ -69,7 +72,7 @@ export function TasksTable() {
           </div>
         ) : (
           <div className="space-y-4">
-            {pendingTasks.map((task: any) => (
+            {pendingTasks.map((task) => (
               <div 
                 key={task.id} 
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"

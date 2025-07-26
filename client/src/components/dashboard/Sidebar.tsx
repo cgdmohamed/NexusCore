@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/ui/language-toggle";
+import type { User } from "@shared/schema";
 import {
   BarChart3,
   Users,
@@ -30,6 +31,8 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t, language } = useTranslation();
+  
+  const currentUser = user as User | undefined;
 
   return (
     <aside className="w-64 bg-white shadow-lg flex-shrink-0 border-r border-gray-200">
@@ -46,16 +49,16 @@ export function Sidebar() {
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <div className="flex items-center space-x-3">
             <img 
-              src={user?.profileImageUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100"} 
+              src={currentUser?.profileImageUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100"} 
               alt="Profile Picture" 
               className="w-10 h-10 rounded-full object-cover" 
             />
             <div>
               <p className="font-medium text-text text-sm">
-                {user?.firstName} {user?.lastName}
+                {currentUser?.firstName} {currentUser?.lastName}
               </p>
               <p className="text-xs text-neutral">
-                {user?.role} - {user?.department}
+                {currentUser?.role} - {currentUser?.department}
               </p>
             </div>
           </div>
@@ -107,10 +110,10 @@ export function Sidebar() {
         {/* Role-based Access Indicator */}
         <div className="mt-8 p-3 bg-blue-50 rounded-lg">
           <p className="text-xs text-blue-600 font-medium">
-            Access Level: {user?.role}
+            Access Level: {currentUser?.role}
           </p>
           <p className="text-xs text-blue-500">
-            {user?.department}
+            {currentUser?.department}
           </p>
         </div>
       </div>

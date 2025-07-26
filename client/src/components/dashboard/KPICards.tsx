@@ -11,6 +11,8 @@ export function KPICards() {
     queryKey: ["/api/dashboard/kpis"],
   });
 
+  const kpiData = kpis as any;
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -32,10 +34,10 @@ export function KPICards() {
     );
   }
 
-  const kpiData = [
+  const kpiCards = [
     {
       title: t('dashboard.totalRevenue'),
-      value: `$${kpis?.totalRevenue?.toLocaleString() || '0'}`,
+      value: `$${kpiData?.totalRevenue?.toLocaleString() || '0'}`,
       change: "+12.5% from last month",
       icon: DollarSign,
       iconBg: "bg-green-100",
@@ -44,7 +46,7 @@ export function KPICards() {
     },
     {
       title: t('dashboard.activeClients'),
-      value: kpis?.activeClients?.toString() || '0',
+      value: kpiData?.activeClients?.toString() || '0',
       change: "+8 new this week",
       icon: Users,
       iconBg: "bg-blue-100",
@@ -53,7 +55,7 @@ export function KPICards() {
     },
     {
       title: t('dashboard.pendingInvoices'),
-      value: `$${kpis?.pendingInvoices?.toLocaleString() || '0'}`,
+      value: `$${kpiData?.pendingInvoices?.toLocaleString() || '0'}`,
       change: "3 overdue",
       icon: AlertTriangle,
       iconBg: "bg-red-100",
@@ -63,7 +65,7 @@ export function KPICards() {
     },
     {
       title: t('dashboard.teamPerformance'),
-      value: `${kpis?.teamPerformance || 0}%`,
+      value: `${kpiData?.teamPerformance || 0}%`,
       change: "Above target",
       icon: TrendingUp,
       iconBg: "bg-purple-100",
@@ -74,7 +76,7 @@ export function KPICards() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {kpiData.map((kpi, index) => {
+      {kpiCards.map((kpi, index) => {
         const Icon = kpi.icon;
         const ChangeIcon = kpi.changeIcon || ArrowUp;
         
