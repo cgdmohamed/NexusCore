@@ -48,8 +48,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Development logout route
-      app.post('/api/auth/logout', async (req, res) => {
-        res.json({ success: true, message: 'Logged out successfully (dev mode)' });
+      app.post('/api/auth/logout', async (req: any, res: any) => {
+        // Clear any session data
+        if (req.session) {
+          req.session.destroy((err: any) => {
+            if (err) {
+              console.error('Session destruction error:', err);
+            }
+          });
+        }
+        res.clearCookie('connect.sid');
+        res.json({ success: true, message: 'Logged out successfully', redirect: true });
       });
     } else {
       const { isAuthenticated } = await setupAuth(app);
