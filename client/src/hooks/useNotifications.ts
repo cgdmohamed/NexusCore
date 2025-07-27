@@ -8,20 +8,20 @@ export interface Notification {
   type: string;
   title: string;
   message: string;
-  status: "unread" | "read" | "archived";
-  priority: "low" | "medium" | "high" | "urgent";
+  isRead: boolean;
+  priority?: "low" | "medium" | "high" | "urgent";
   entityType?: string;
   entityId?: string;
   entityUrl?: string;
   metadata?: any;
-  emailSent: boolean;
+  emailSent?: boolean;
   emailSentAt?: string;
   emailError?: string;
   scheduledFor?: string;
   expiresAt?: string;
   readAt?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   createdBy?: string;
 }
 
@@ -51,7 +51,7 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
   // Fetch notifications with pagination
   const notificationsQuery = useQuery({
     queryKey: ["/api/notifications", { page, limit, unreadOnly }],
-    queryFn: async (): Promise<NotificationResponse> => {
+    queryFn: async (): Promise<Notification[]> => {
       const res = await apiRequest("GET", `/api/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
       return await res.json();
     },
@@ -145,7 +145,7 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
 
   return {
     // Data
-    notifications: notificationsQuery.data?.data || [],
+    notifications: notificationsQuery.data || [],
     pagination: notificationsQuery.data?.pagination || {
       page: 1,
       limit: 20,

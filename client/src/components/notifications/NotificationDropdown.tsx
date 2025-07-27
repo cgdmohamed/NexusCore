@@ -97,7 +97,7 @@ export function NotificationDropdown() {
 
   const handleNotificationClick = (notification: Notification) => {
     // Mark as read if unread
-    if (notification.status === "unread") {
+    if (!notification.isRead) {
       markAsRead(notification.id);
     }
 
@@ -109,7 +109,7 @@ export function NotificationDropdown() {
   };
 
   const handleMarkAllAsRead = () => {
-    const unreadNotifications = notifications.filter(n => n.status === "unread");
+    const unreadNotifications = notifications.filter(n => !n.isRead);
     if (unreadNotifications.length > 0) {
       markMultipleAsRead(unreadNotifications.map(n => n.id));
     }
@@ -185,7 +185,7 @@ export function NotificationDropdown() {
                 <DropdownMenuItem
                   key={notification.id}
                   className={`p-3 cursor-pointer space-y-1 focus:bg-gray-50 dark:focus:bg-gray-800 ${
-                    notification.status === "unread" 
+                    !notification.isRead 
                       ? "bg-blue-50 dark:bg-blue-950/20 border-l-2 border-blue-500" 
                       : ""
                   }`}
@@ -202,10 +202,10 @@ export function NotificationDropdown() {
                           {notification.title}
                         </p>
                         <div className="flex items-center space-x-1 ml-2">
-                          {notification.priority !== "medium" && (
+                          {notification.priority && notification.priority !== "medium" && (
                             <div className={`w-2 h-2 rounded-full ${getPriorityColor(notification.priority)}`} />
                           )}
-                          {notification.status === "unread" && (
+                          {!notification.isRead && (
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                           )}
                         </div>
@@ -221,7 +221,7 @@ export function NotificationDropdown() {
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </span>
                         
-                        {notification.status === "unread" && (
+                        {!notification.isRead && (
                           <Button
                             variant="ghost"
                             size="sm"
