@@ -1,0 +1,71 @@
+Task:
+Replace the default OpenID Connect (OIDC) authentication interface with a fully customized login UI that integrates with the existing authentication and session infrastructure of the internal management system.
+
+Frontend Context:
+React 18 + TypeScript, Vite, Shadcn/UI components, Tailwind CSS, Wouter routing, React Hook Form, and full Arabic/English RTL support.
+
+Backend Context:
+Express.js with TypeScript, PostgreSQL (Neon), Drizzle ORM, OIDC for authentication, and express-session for session handling.
+
+Requirements:
+
+Custom Login Page UI
+
+Create a dedicated login screen that uses the existing component system and styling.
+
+The design must reflect the company’s branding (colors, logo, layout).
+
+The UI should include:
+
+A welcome message and company identity
+
+A login button that starts the OIDC authentication flow
+
+Language direction support (RTL for Arabic, LTR for English)
+
+Optional elements: background image, dark mode toggle, language switch
+
+OIDC Authentication Integration
+
+The login button must initiate the OpenID Connect login flow (using the configured provider such as Replit).
+
+On successful login, redirect the user back to the app and create a secure session using express-session.
+
+The user’s identity should be persisted in the session and linked to the internal employee record by unique ID or email.
+
+Session Management and Routing
+
+If the user is already logged in, redirect them to the dashboard automatically when accessing the login page.
+
+If the user is not authenticated, restrict access to all protected routes and redirect them to the login screen.
+
+Implement a logout flow that clears the session and returns the user to the login screen.
+
+Access Protection
+
+All internal pages must be protected via middleware or route guards to prevent unauthorized access.
+
+Ensure consistent authentication checks across client and server.
+
+User Linking and Role Mapping
+
+After authentication, map the OIDC user to the internal system user (employee record).
+
+Ensure the correct role and permissions are assigned based on the linked user.
+
+Security Considerations
+
+Secure session cookies should be used in production (httpOnly, secure, sameSite).
+
+Prevent any unauthorized access to backend routes or sensitive operations.
+
+Sanitize and validate all user data before use.
+
+Optional Enhancements
+
+Implement login audit logging (e.g., who logged in, when, from where).
+
+Add UI feedback for login errors or invalid sessions.
+
+Make the system ready for future support of additional providers (e.g., company SSO or Google Workspace).
+
