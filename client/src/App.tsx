@@ -27,6 +27,7 @@ import QuotationManagement from "@/pages/QuotationManagement";
 import UserManagement from "@/pages/UserManagement";
 import UserProfile from "@/pages/UserProfile";
 import EmployeeProfile from "@/pages/EmployeeProfile";
+import Notifications from "@/pages/Notifications";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -77,6 +78,7 @@ function Router() {
             <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/tasks" component={Tasks} />
             <Route path="/reports-kpis" component={Analytics} />
+            <Route path="/notifications" component={Notifications} />
             <Route component={NotFound} />
           </Switch>
         </main>
