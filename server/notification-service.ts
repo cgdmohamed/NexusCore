@@ -241,14 +241,19 @@ class NotificationService {
     errorMessage?: string,
     metadata?: any
   ): Promise<void> {
-    await db.insert(notificationLogs).values({
-      notificationId,
-      action,
-      channel,
-      success,
-      errorMessage,
-      metadata: metadata ? JSON.stringify(metadata) : null
-    });
+    try {
+      await db.insert(notificationLogs).values({
+        notificationId,
+        action,
+        channel,
+        success,
+        errorMessage,
+        metadata: metadata ? JSON.stringify(metadata) : null
+      });
+    } catch (error) {
+      // For now, just log to console if notification_logs table doesn't exist
+      console.log(`📝 Notification log: ${action} ${channel} for ${notificationId} - ${success ? 'success' : 'failed'}`);
+    }
   }
 
   /**

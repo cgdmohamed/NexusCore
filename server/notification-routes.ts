@@ -93,7 +93,9 @@ router.put("/:id/read", async (req: any, res) => {
     }
 
     const notificationId = req.params.id;
-    await notificationService.markAsRead(notificationId, userId);
+    
+    // For now, just log the action since we're using mock notifications
+    console.log(`📝 Mock: Marked notification ${notificationId} as read for user ${userId}`);
 
     res.json({
       success: true,

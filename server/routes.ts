@@ -408,7 +408,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/notifications/:id/read', async (req: any, res) => {
     try {
-      // In real app, this would update the database
+      // For mock notifications, we'll just return success
+      // In a real app with database, this would update the notification record
+      console.log(`📝 Mock: Marked notification ${req.params.id} as read`);
       res.json({ success: true });
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -418,7 +420,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/notifications/mark-all-read', async (req: any, res) => {
     try {
-      // In real app, this would update all notifications for the user
+      // For mock notifications, we'll just return success
+      // In a real app with database, this would update all notifications for the user
+      console.log(`📝 Mock: Marked all notifications as read for user`);
       res.json({ success: true });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
