@@ -9,21 +9,23 @@ CompanyOS is a comprehensive internal company management system that can be depl
 1. [Prerequisites](#prerequisites)
 2. [Environment Configuration](#environment-configuration)
 3. [Replit Deployment](#replit-deployment)
-4. [Docker Deployment](#docker-deployment)
-5. [Cloud Platform Deployment](#cloud-platform-deployment)
-6. [Traditional Server Deployment](#traditional-server-deployment)
-7. [Database Setup](#database-setup)
-8. [Security Configuration](#security-configuration)
-9. [Performance Optimization](#performance-optimization)
-10. [Monitoring and Logging](#monitoring-and-logging)
-11. [Troubleshooting](#troubleshooting)
+4. [cPanel Deployment](#cpanel-deployment)
+5. [Docker Deployment](#docker-deployment)
+6. [Cloud Platform Deployment](#cloud-platform-deployment)
+7. [Traditional Server Deployment](#traditional-server-deployment)
+8. [Database Setup](#database-setup)
+9. [Security Configuration](#security-configuration)
+10. [Performance Optimization](#performance-optimization)
+11. [Monitoring and Logging](#monitoring-and-logging)
+12. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
-- Node.js 20.x or higher
-- PostgreSQL 15.x or higher
+- Node.js 18.x or higher
+- PostgreSQL 13.x or higher
 - SSL certificates (for production)
 - Domain name (optional but recommended)
+- Admin credentials for initial access
 
 ## Environment Configuration
 
@@ -43,11 +45,6 @@ PGPASSWORD=your-password
 # Session Configuration
 SESSION_SECRET=your-super-secret-session-key-min-32-chars
 
-# Authentication Configuration (Replit OIDC)
-REPL_ID=your-repl-id
-ISSUER_URL=https://replit.com/oidc
-REPLIT_DOMAINS=your-domain.replit.app,custom-domain.com
-
 # Server Configuration
 NODE_ENV=production
 PORT=5000
@@ -62,15 +59,13 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 |----------|-------------|----------|---------|
 | `DATABASE_URL` | Full PostgreSQL connection string | Yes | `postgresql://user:pass@host:5432/db` |
 | `SESSION_SECRET` | Secret key for session encryption (min 32 chars) | Yes | Random 32+ character string |
-| `REPL_ID` | Replit application ID for OIDC | Yes | From Replit dashboard |
-| `REPLIT_DOMAINS` | Comma-separated list of allowed domains | Yes | `domain.replit.app,custom.com` |
 | `NODE_ENV` | Application environment | Yes | `production` |
 | `PORT` | Server port | No | `5000` (default) |
 | `ALLOWED_ORIGINS` | CORS allowed origins | No | Comma-separated URLs |
 
 ## Replit Deployment
 
-CompanyOS is optimized for Replit deployment with built-in OIDC authentication.
+CompanyOS is optimized for Replit deployment with built-in features.
 
 ### Steps:
 
@@ -82,7 +77,7 @@ CompanyOS is optimized for Replit deployment with built-in OIDC authentication.
 2. **Set Environment Variables**
    - Go to Replit Secrets (Environment Variables)
    - Add all required variables from the list above
-   - `REPL_ID` is automatically available in Replit environment
+   - Generate a secure SESSION_SECRET
 
 3. **Provision Database**
    ```bash
@@ -95,13 +90,17 @@ CompanyOS is optimized for Replit deployment with built-in OIDC authentication.
    npm run db:push
    ```
 
-5. **Start Application**
+5. **Create Admin User**
+   - Access the database through Replit's database interface
+   - Run the admin user creation SQL (see Database Setup section)
+
+6. **Start Application**
    ```bash
    npm run dev  # Development
    npm run start  # Production
    ```
 
-6. **Enable Deployments**
+7. **Enable Deployments**
    - Go to Replit Deployments tab
    - Configure custom domain (optional)
    - Deploy with automatic SSL
@@ -109,9 +108,43 @@ CompanyOS is optimized for Replit deployment with built-in OIDC authentication.
 ### Replit-Specific Features:
 - Automatic HTTPS/SSL
 - Built-in PostgreSQL
-- OIDC authentication integration
+- Admin authentication system
 - Zero-config deployment
 - Automatic scaling
+
+## cPanel Deployment
+
+For detailed cPanel deployment instructions, see **[CPANEL_DEPLOYMENT.md](./CPANEL_DEPLOYMENT.md)**.
+
+### Quick Overview:
+
+1. **Build Application Locally**
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. **Upload to cPanel**
+   - Create production package with `dist/` folder
+   - Upload via File Manager
+   - Set proper permissions
+
+3. **Configure Node.js App**
+   - Use Node.js 18+ 
+   - Set startup file: `dist/index.js`
+   - Configure environment variables
+
+4. **Setup Database**
+   - Create PostgreSQL database
+   - Run schema migrations
+   - Create admin user
+
+5. **Authentication System**
+   - Admin-only login system
+   - Username: `admin`
+   - Default password: `admin123` (change after first login)
+
+**Note:** cPanel deployment uses traditional username/password authentication instead of OIDC. See the complete guide in CPANEL_DEPLOYMENT.md for detailed step-by-step instructions.
 
 ## Docker Deployment
 
@@ -176,6 +209,7 @@ This will start:
 
 1. **Prepare Application**
    ```bash
+   npm install
    npm run build
    zip -r companyos.zip . -x "node_modules/*" ".git/*"
    ```
@@ -282,6 +316,8 @@ This will start:
    # Run migrations
    npm run db:push
 
+   # Create admin user (see Database Setup section for SQL)
+
    # Start with PM2
    pm2 start ecosystem.config.js
    pm2 save
@@ -331,7 +367,30 @@ This will start:
    ALTER USER companyos_user CREATEDB;
    ```
 
-2. **Configure Connection Pool**
+2. **Create Admin User**
+   After running migrations, create the admin user:
+   ```sql
+   -- First, generate password hash locally:
+   -- const bcrypt = require('bcrypt');
+   -- const hash = bcrypt.hashSync('admin123', 10);
+   
+   INSERT INTO users (
+     id, username, password_hash, email, 
+     first_name, last_name, role, department, is_active
+   ) VALUES (
+     gen_random_uuid(),
+     'admin',
+     '$2b$10$[YOUR_GENERATED_HASH_HERE]',
+     'admin@yourcompany.com',
+     'System',
+     'Administrator',
+     'admin',
+     'management',
+     true
+   );
+   ```
+
+3. **Configure Connection Pool**
    ```bash
    # In postgresql.conf
    max_connections = 100
@@ -341,7 +400,7 @@ This will start:
    maintenance_work_mem = 64MB
    ```
 
-3. **Run Migrations**
+4. **Run Migrations**
    ```bash
    npm run db:push
    ```
@@ -405,7 +464,8 @@ Nginx configuration includes rate limiting:
 
 ### Authentication Security
 
-- OIDC integration with Replit
+- Admin-only authentication system
+- bcrypt password hashing
 - Session-based authentication
 - HTTP-only cookies
 - CSRF protection
@@ -537,10 +597,11 @@ Nginx configuration includes rate limiting:
    Error: Unauthorized 401
    ```
    **Solutions:**
-   - Verify REPL_ID configuration
-   - Check REPLIT_DOMAINS setting
-   - Validate SESSION_SECRET
+   - Verify admin user exists in database
+   - Check username/password credentials
+   - Validate SESSION_SECRET configuration
    - Clear browser cookies
+   - Ensure bcrypt password hash is correct
 
 3. **Build Failures**
    ```
