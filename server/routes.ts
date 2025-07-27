@@ -398,7 +398,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper function to update global mock notification count
   function updateMockNotificationCount() {
-    (global as any).mockNotificationCount = mockNotifications.filter(n => !n.isRead).length;
+    const count = mockNotifications.filter(n => !n.isRead).length;
+    (global as any).mockNotificationCount = count;
+    console.log(`🔄 Updated mock notification count to: ${count}`);
+    console.log('📋 Current notification statuses:', mockNotifications.map(n => ({ id: n.id.slice(0, 8), isRead: n.isRead })));
   }
 
   // Initialize the count
