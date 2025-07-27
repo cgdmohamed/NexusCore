@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a test user for development
       app.get('/api/auth/user', async (req, res) => {
         const testUser = {
-          id: '1',
+          id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
           email: 'test@company.com',
           firstName: 'Test',
           lastName: 'User',
@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Fallback to development auth if setup fails
     app.get('/api/auth/user', async (req, res) => {
       const testUser = {
-        id: '1',
+        id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         email: 'test@company.com',
         firstName: 'Test',
         lastName: 'User',
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ${`Client "${client.name}" and all related data have been permanently deleted`},
                 'system',
                 ${clientId},
-                ${req.user?.id || '1'},
+                ${req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0'},
                 ${new Date().toISOString()}
               )`
         );
