@@ -362,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mock notifications data - in real app, this would be a database table
       const notifications = [
         {
-          id: '1',
+          id: '936f1c8b-25f9-4551-b79b-cf8da902b8d3',
           type: 'invoice.paid',
           title: 'Invoice INV-2024-001 paid',
           message: 'Payment of $1,500 received from TechCorp Solutions',
@@ -371,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
-          id: '2',
+          id: 'ddd0c61a-a585-4c8f-a421-e5bdefd171d0',
           type: 'client.added',
           title: 'New client registered',
           message: 'TechCorp Solutions has been added to CRM',
@@ -380,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
-          id: '3',
+          id: 'ce8e75fc-0ff3-45ca-ad45-43fb35df561b',
           type: 'task.assigned',
           title: 'Task assigned',
           message: 'Website redesign project has been assigned to you',
@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
-          id: '4',
+          id: '772c4ac7-0f45-47c7-8b00-bf4cae35da6f',
           type: 'quotation.accepted',
           title: 'Quotation accepted',
           message: 'Quotation QUO-2024-005 has been accepted by client',
