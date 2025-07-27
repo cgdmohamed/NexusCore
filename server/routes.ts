@@ -356,50 +356,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Task creation and updates - handled by task-management-routes.ts
 
+  // In-memory mock notification state (for development only)
+  const mockNotifications = [
+    {
+      id: '936f1c8b-25f9-4551-b79b-cf8da902b8d3',
+      type: 'invoice.paid',
+      title: 'Invoice INV-2024-001 paid',
+      message: 'Payment of $1,500 received from TechCorp Solutions',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+    },
+    {
+      id: 'ddd0c61a-a585-4c8f-a421-e5bdefd171d0',
+      type: 'client.added',
+      title: 'New client registered',
+      message: 'TechCorp Solutions has been added to CRM',
+      isRead: false,
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+    },
+    {
+      id: 'ce8e75fc-0ff3-45ca-ad45-43fb35df561b',
+      type: 'task.assigned',
+      title: 'Task assigned',
+      message: 'Website redesign project has been assigned to you',
+      isRead: true,
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+    },
+    {
+      id: '772c4ac7-0f45-47c7-8b00-bf4cae35da6f',
+      type: 'quotation.accepted',
+      title: 'Quotation accepted',
+      message: 'Quotation QUO-2024-005 has been accepted by client',
+      isRead: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+    },
+  ];
+
+  // Helper function to update global mock notification count
+  function updateMockNotificationCount() {
+    (global as any).mockNotificationCount = mockNotifications.filter(n => !n.isRead).length;
+  }
+
+  // Initialize the count
+  updateMockNotificationCount();
+
   // Notification routes for navbar
   app.get('/api/notifications', async (req: any, res) => {
     try {
-      // Mock notifications data - in real app, this would be a database table
-      const notifications = [
-        {
-          id: '936f1c8b-25f9-4551-b79b-cf8da902b8d3',
-          type: 'invoice.paid',
-          title: 'Invoice INV-2024-001 paid',
-          message: 'Payment of $1,500 received from TechCorp Solutions',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        },
-        {
-          id: 'ddd0c61a-a585-4c8f-a421-e5bdefd171d0',
-          type: 'client.added',
-          title: 'New client registered',
-          message: 'TechCorp Solutions has been added to CRM',
-          isRead: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        },
-        {
-          id: 'ce8e75fc-0ff3-45ca-ad45-43fb35df561b',
-          type: 'task.assigned',
-          title: 'Task assigned',
-          message: 'Website redesign project has been assigned to you',
-          isRead: true,
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        },
-        {
-          id: '772c4ac7-0f45-47c7-8b00-bf4cae35da6f',
-          type: 'quotation.accepted',
-          title: 'Quotation accepted',
-          message: 'Quotation QUO-2024-005 has been accepted by client',
-          isRead: true,
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        },
-      ];
-
-      res.json(notifications);
+      res.json(mockNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -408,9 +416,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/notifications/:id/read', async (req: any, res) => {
     try {
-      // For mock notifications, we'll just return success
-      // In a real app with database, this would update the notification record
-      console.log(`📝 Mock: Marked notification ${req.params.id} as read`);
+      // Find and update the mock notification
+      const notification = mockNotifications.find(n => n.id === req.params.id);
+      if (notification) {
+        notification.isRead = true;
+        updateMockNotificationCount(); // Update the global count
+        console.log(`📝 Mock: Marked notification ${req.params.id} as read`);
+      }
       res.json({ success: true });
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -420,8 +432,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/notifications/mark-all-read', async (req: any, res) => {
     try {
-      // For mock notifications, we'll just return success
-      // In a real app with database, this would update all notifications for the user
+      // Mark all mock notifications as read
+      mockNotifications.forEach(n => n.isRead = true);
+      updateMockNotificationCount(); // Update the global count
       console.log(`📝 Mock: Marked all notifications as read for user`);
       res.json({ success: true });
     } catch (error) {
