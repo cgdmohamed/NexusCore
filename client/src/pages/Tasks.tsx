@@ -41,6 +41,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/dashboard/Header";
+import { useTranslation } from "@/lib/i18n";
 
 // Task form schema - simplified for existing database
 const taskFormSchema = z.object({
@@ -71,6 +73,7 @@ const statusColors = {
 
 export default function Tasks() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -201,14 +204,13 @@ export default function Tasks() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Task Management</h1>
-          <p className="text-muted-foreground">
-            Assign, track, and evaluate tasks across all departments
-          </p>
-        </div>
+    <div className="space-y-6">
+      <Header 
+        title={t('nav.tasks')} 
+        subtitle="Assign, track, and evaluate tasks across all departments"
+      />
+      
+      <div className="flex justify-between items-center">
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
