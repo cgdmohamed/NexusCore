@@ -1,117 +1,227 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Notification {
   id: string;
-  type: 'invoice.paid' | 'client.added' | 'task.assigned' | 'quotation.accepted' | 'system' | 'warning';
+  userId: string;
+  type: string;
   title: string;
   message: string;
-  isRead: boolean;
+  status: "unread" | "read" | "archived";
+  priority: "low" | "medium" | "high" | "urgent";
+  entityType?: string;
+  entityId?: string;
+  entityUrl?: string;
+  metadata?: any;
+  emailSent: boolean;
+  emailSentAt?: string;
+  emailError?: string;
+  scheduledFor?: string;
+  expiresAt?: string;
+  readAt?: string;
   createdAt: string;
-  userId?: string;
+  updatedAt: string;
+  createdBy?: string;
 }
 
-export function useNotifications() {
+export interface NotificationResponse {
+  success: boolean;
+  data: Notification[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  unreadCount: number;
+}
+
+export interface UnreadCountResponse {
+  success: boolean;
+  data: {
+    unreadCount: number;
+  };
+}
+
+export function useNotifications(page: number = 1, limit: number = 20, unreadOnly: boolean = false) {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Fetch notifications
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+
+  // Fetch notifications with pagination
+  const notificationsQuery = useQuery({
+    queryKey: ["/api/notifications", { page, limit, unreadOnly }],
+    queryFn: async (): Promise<NotificationResponse> => {
+      const res = await apiRequest("GET", `/api/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
+      return await res.json();
+    },
+    staleTime: 30000, // 30 seconds
+    refetchInterval: unreadOnly ? 30000 : 60000, // More frequent updates for unread notifications
   });
 
-  // Mark notification as read
+  // Fetch unread count separately for navbar badge
+  const unreadCountQuery = useQuery({
+    queryKey: ["/api/notifications/unread-count"],
+    queryFn: async (): Promise<UnreadCountResponse> => {
+      const res = await apiRequest("GET", "/api/notifications/unread-count");
+      return await res.json();
+    },
+    staleTime: 10000, // 10 seconds
+    refetchInterval: 15000, // Update every 15 seconds
+  });
+
+  // Mark single notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-      });
-      if (!response.ok) throw new Error('Failed to mark notification as read');
-      return response.json();
+      const res = await apiRequest("PUT", `/api/notifications/${notificationId}/read`);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      // Invalidate notifications and unread count
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive",
+      });
     },
   });
 
-  // Mark all notifications as read
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'PATCH',
+  // Mark multiple notifications as read
+  const markMultipleAsReadMutation = useMutation({
+    mutationFn: async (notificationIds: string[]) => {
+      const res = await apiRequest("PUT", "/api/notifications/read-multiple", {
+        notificationIds
       });
-      if (!response.ok) throw new Error('Failed to mark all notifications as read');
-      return response.json();
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+      toast({
+        title: "Success",
+        description: "Notifications marked as read",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
     },
   });
 
-  // Create notification (for internal use)
-  const createNotificationMutation = useMutation({
-    mutationFn: async (notification: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => {
-      const response = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notification),
-      });
-      if (!response.ok) throw new Error('Failed to create notification');
-      return response.json();
+  // Test notification (admin only)
+  const testNotificationMutation = useMutation({
+    mutationFn: async (payload: {
+      type: string;
+      title: string;
+      message: string;
+      targetUserId?: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/notifications/test", payload);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+      toast({
+        title: "Success",
+        description: "Test notification sent",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to send test notification",
+        variant: "destructive",
+      });
     },
   });
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return {
-    notifications,
-    unreadCount,
-    isLoading,
+    // Data
+    notifications: notificationsQuery.data?.data || [],
+    pagination: notificationsQuery.data?.pagination || {
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+    },
+    allNotificationsUnreadCount: notificationsQuery.data?.unreadCount || 0,
+    unreadCount: unreadCountQuery.data?.data?.unreadCount || 0,
+    
+    // Loading states
+    isLoading: notificationsQuery.isLoading,
+    isUnreadCountLoading: unreadCountQuery.isLoading,
+    
+    // Error states
+    error: notificationsQuery.error,
+    unreadCountError: unreadCountQuery.error,
+    
+    // Mutations
     markAsRead: markAsReadMutation.mutate,
-    markAllAsRead: markAllAsReadMutation.mutate,
-    createNotification: createNotificationMutation.mutate,
+    markMultipleAsRead: markMultipleAsReadMutation.mutate,
+    testNotification: testNotificationMutation.mutate,
+    
+    // Mutation states
     isMarkingAsRead: markAsReadMutation.isPending,
-    isMarkingAllAsRead: markAllAsReadMutation.isPending,
+    isMarkingMultipleAsRead: markMultipleAsReadMutation.isPending,
+    isSendingTest: testNotificationMutation.isPending,
+    
+    // Refetch functions
+    refetch: notificationsQuery.refetch,
+    refetchUnreadCount: unreadCountQuery.refetch,
   };
 }
 
-// Notification context for global toast notifications
-export function useToastNotification() {
-  const { createNotification } = useNotifications();
+export function useNotificationSettings() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const showSuccess = (title: string, message: string) => {
-    createNotification({
-      type: 'system',
-      title,
-      message,
-      userId: '1', // Current user - in real app this would come from auth
-    });
-  };
+  // Fetch notification settings
+  const settingsQuery = useQuery({
+    queryKey: ["/api/notifications/settings"],
+    staleTime: 300000, // 5 minutes
+  });
 
-  const showError = (title: string, message: string) => {
-    createNotification({
-      type: 'warning',
-      title,
-      message,
-      userId: '1',
-    });
-  };
-
-  const showInfo = (title: string, message: string) => {
-    createNotification({
-      type: 'system',
-      title,
-      message,
-      userId: '1',
-    });
-  };
+  // Update notification settings
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (settings: {
+      notificationType: string;
+      inAppEnabled?: boolean;
+      emailEnabled?: boolean;
+      pushEnabled?: boolean;
+    }) => {
+      const res = await apiRequest("PUT", "/api/notifications/settings", settings);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/settings"] });
+      toast({
+        title: "Success",
+        description: "Notification settings updated",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings",
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
-    showSuccess,
-    showError,
-    showInfo,
+    settings: settingsQuery.data?.data || [],
+    isLoading: settingsQuery.isLoading,
+    error: settingsQuery.error,
+    updateSettings: updateSettingsMutation.mutate,
+    isUpdating: updateSettingsMutation.isPending,
+    refetch: settingsQuery.refetch,
   };
 }

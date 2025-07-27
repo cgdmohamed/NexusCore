@@ -190,6 +190,7 @@ const translations: Translations = {
   'notifications.title': { en: 'Notifications', ar: 'الإشعارات' },
   'notifications.markAllRead': { en: 'Mark all as read', ar: 'تحديد الكل كمقروء' },
   'notifications.empty': { en: 'No notifications', ar: 'لا توجد إشعارات' },
+  'notifications.viewAll': { en: 'View all notifications', ar: 'عرض جميع الإشعارات' },
   'notifications.new': { en: 'New', ar: 'جديد' },
   'notifications.invoice.paid': { en: 'Invoice {{number}} has been paid', ar: 'تم دفع الفاتورة {{number}}' },
   'notifications.client.added': { en: 'New client {{name}} has been added', ar: 'تم إضافة عميل جديد {{name}}' },

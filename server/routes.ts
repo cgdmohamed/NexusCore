@@ -426,6 +426,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification routes
+  const notificationRoutes = await import("./notification-routes");
+  app.use("/api/notifications", notificationRoutes.default);
+
   // Activity routes
   app.get('/api/activities', async (req: any, res) => {
     try {
