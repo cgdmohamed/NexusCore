@@ -1,0 +1,38 @@
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+4:56:19 AM [vite] warning: Duplicate key "services.title" in object literal
+282|  
+283|    // Services & Offerings
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+   |    ^
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:56:19 AM [vite] warning: Duplicate key "services.subtitle" in object literal
+283|    // Services & Offerings
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+   |    ^
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:56:19 AM [vite] warning: Duplicate key "services.add_service" in object literal
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+   |    ^
+4:56:19 AM [vite] warning: Duplicate key "services.update_error" in object literal
+308|    'services.update_success': { en: 'Service Updated', ar: 'تم تحديث الخدمة' },
+309|    'services.service_updated': { en: 'Service has been successfully updated', ar: 'تم تحديث الخدمة بنجاح' },
+310|    'services.update_error': { en: 'Failed to update service', ar: 'فشل في تحديث الخدمة' },
+   |    ^
+311|  };
+312|  
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
