@@ -27,7 +27,7 @@ export function registerAnalyticsRoutes(app: Express) {
     try {
       const { startDate, endDate, period = 'month' } = req.query;
       
-      let dateFilter = sql`1=1`;
+      let dateFilter: any = undefined;
       if (startDate && endDate) {
         dateFilter = and(
           gte(invoices.createdAt, new Date(startDate as string)),
@@ -36,14 +36,19 @@ export function registerAnalyticsRoutes(app: Express) {
       }
 
       // Total Revenue from paid invoices
-      const revenueResult = await db.execute(
-        sql`SELECT COALESCE(SUM(paid_amount::numeric), 0) as totalRevenue FROM invoices WHERE 1=1`
-      );
+      const revenueResult = await db
+        .select({ 
+          totalRevenue: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
+        })
+        .from(invoices);
 
       // Total Expenses  
-      const expenseResult = await db.execute(
-        sql`SELECT COALESCE(SUM(CAST(amount AS DECIMAL)), 0) as totalExpenses FROM expenses WHERE status = 'approved'`
-      );
+      const expenseResult = await db
+        .select({ 
+          totalExpenses: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)` 
+        })
+        .from(expenses)
+        .where(eq(expenses.status, 'approved'));
 
       // New Clients
       const newClientsResult = await db
@@ -51,7 +56,7 @@ export function registerAnalyticsRoutes(app: Express) {
           newClients: count() 
         })
         .from(clients)
-        .where(dateFilter as any);
+;
 
       // Invoice Status Breakdown
       const invoiceStatusResult = await db
@@ -61,7 +66,6 @@ export function registerAnalyticsRoutes(app: Express) {
           totalAmount: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL)), 0)`
         })
         .from(invoices)
-        .where(dateFilter as any)
         .groupBy(invoices.status);
 
       // Quotation Conversion Rate
@@ -72,7 +76,6 @@ export function registerAnalyticsRoutes(app: Express) {
           totalValue: sql<number>`COALESCE(SUM(CAST(${quotations.amount} AS DECIMAL)), 0)`
         })
         .from(quotations)
-        .where(dateFilter as any)
         .groupBy(quotations.status);
 
       // Completed Tasks
@@ -81,10 +84,7 @@ export function registerAnalyticsRoutes(app: Express) {
           completedTasks: count() 
         })
         .from(tasks)
-        .where(and(
-          eq(tasks.status, 'completed'),
-          dateFilter as any
-        ));
+        .where(eq(tasks.status, 'completed'));
 
       const totalRevenue = parseFloat(revenueResult[0]?.totalrevenue || '0');
       const totalExpenses = expenseResult[0]?.totalexpenses || 0;
@@ -166,16 +166,14 @@ export function registerAnalyticsRoutes(app: Express) {
 
       } else if (type === 'expenses') {
         // Simple expense summary
-        const expenseData = await db.execute(
-          sql`
-            SELECT 
-              'General' as category,
-              SUM(CAST(amount AS DECIMAL)) as totalAmount,
-              COUNT(*) as count
-            FROM expenses 
-            WHERE status = 'approved'
-          `
-        );
+        const expenseData = await db
+          .select({
+            category: sql<string>`'General'`,
+            totalAmount: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)`,
+            count: count()
+          })
+          .from(expenses)
+          .where(eq(expenses.status, 'approved'));
 
         const expensesByCategory = expenseData.map(row => ({
           category: row.category,
