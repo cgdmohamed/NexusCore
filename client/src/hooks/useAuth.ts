@@ -29,6 +29,9 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      // Immediately set user to null to trigger UI update
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
@@ -37,23 +40,16 @@ export function useAuth() {
         },
       });
       
-      // Always clear data regardless of response
+      // Clear all cached data
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
       
-      // Invalidate the auth query to trigger re-render
-      queryClient.setQueryData(["/api/auth/user"], null);
-      
-      // Force refetch to ensure auth state is updated
-      refetch();
-      
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear data and refetch
-      queryClient.clear();
+      // Still clear data and set user to null
       queryClient.setQueryData(["/api/auth/user"], null);
-      refetch();
+      queryClient.clear();
     }
   };
 
