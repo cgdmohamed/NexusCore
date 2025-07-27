@@ -3,8 +3,43 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Production optimizations
+async function setupProductionMiddleware() {
+  if (process.env.NODE_ENV === 'production') {
+    const { default: helmet } = await import("helmet");
+    const { default: compression } = await import("compression");
+    const { default: cors } = await import("cors");
+    
+    // Security middleware
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:"],
+          scriptSrc: ["'self'"],
+          connectSrc: ["'self'", "wss:", "https:"],
+        },
+      },
+    }));
+    
+    // Gzip compression
+    app.use(compression());
+    
+    // CORS configuration
+    app.use(cors({
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5000'],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }));
+  }
+}
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -37,6 +72,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await setupProductionMiddleware();
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

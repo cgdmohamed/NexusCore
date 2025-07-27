@@ -25,6 +25,37 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint (no auth required)
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      version: process.env.npm_package_version || '1.0.0'
+    });
+  });
+
+  // Readiness check (includes database connectivity)
+  app.get('/api/ready', async (req, res) => {
+    try {
+      // Test database connection
+      await db.select().from(users).limit(1);
+      res.status(200).json({ 
+        status: 'ready', 
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(503).json({ 
+        status: 'not ready', 
+        database: 'disconnected',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Auth middleware
   try {
     if (process.env.NODE_ENV === 'development') {
