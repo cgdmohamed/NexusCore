@@ -4,12 +4,9 @@ import bcrypt from "bcrypt";
 
 export async function seedUserData() {
   try {
-    console.log("Seeding user management data...");
-
     // Check if data already exists
     const existingRoles = await db.select().from(roles).limit(1);
     if (existingRoles.length > 0) {
-      console.log("User management data already exists, skipping seed.");
       return;
     }
 

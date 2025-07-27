@@ -124,33 +124,7 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
     },
   });
 
-  // Test notification (admin only)
-  const testNotificationMutation = useMutation({
-    mutationFn: async (payload: {
-      type: string;
-      title: string;
-      message: string;
-      targetUserId?: string;
-    }) => {
-      const res = await apiRequest("POST", "/api/notifications/test", payload);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
-      toast({
-        title: "Success",
-        description: "Test notification sent",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: "Failed to send test notification",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   return {
     // Data
@@ -175,12 +149,10 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
     // Mutations
     markAsRead: markAsReadMutation.mutate,
     markMultipleAsRead: markMultipleAsReadMutation.mutate,
-    testNotification: testNotificationMutation.mutate,
     
     // Mutation states
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingMultipleAsRead: markMultipleAsReadMutation.isPending,
-    isSendingTest: testNotificationMutation.isPending,
     
     // Refetch functions
     refetch: notificationsQuery.refetch,
