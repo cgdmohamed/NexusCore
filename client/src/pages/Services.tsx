@@ -181,9 +181,28 @@ export default function Services() {
     }
   };
 
-  const services = servicesData || [];
-  const totalServices = services.length;
-  const activeServices = services.filter((s: Service) => s.isActive).length;
+  // Filter services based on search and category
+  const allServices = servicesData || [];
+  const filteredServices = allServices.filter((service: Service) => {
+    const matchesSearch = !search || 
+      service.name?.toLowerCase().includes(search.toLowerCase()) ||
+      service.description?.toLowerCase().includes(search.toLowerCase());
+    
+    const matchesCategory = !selectedCategory || service.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const services = filteredServices;
+  const totalServices = allServices.length;
+  const activeServices = allServices.filter((s: Service) => s.isActive).length;
+  
+  // Get unique categories for filter dropdown
+  const categories = Array.from(new Set(
+    allServices
+      .map((s: Service) => s.category)
+      .filter((category): category is string => Boolean(category))
+  ));
 
   return (
     <div className="p-6 space-y-6">
@@ -351,7 +370,7 @@ export default function Services() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Set(services.filter((s: Service) => s.category).map((s: Service) => s.category)).size}
+              {categories.length}
             </div>
           </CardContent>
         </Card>
@@ -362,13 +381,12 @@ export default function Services() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              ${services.length > 0 ? 
-                (services
+              ${allServices.length > 0 ? 
+                (allServices
                   .filter((s: Service) => s.defaultPrice)
-                  .reduce((sum: number, s: Service) => sum + parseFloat(s.defaultPrice || "0"), 0) / 
-                  services.filter((s: Service) => s.defaultPrice).length || 0
-                ).toFixed(0) : "0"
-              }
+                  .reduce((sum: number, s: Service) => sum + parseFloat(s.defaultPrice || '0'), 0) / 
+                 allServices.filter((s: Service) => s.defaultPrice).length
+                ).toFixed(2) : '0.00'}
             </div>
           </CardContent>
         </Card>
