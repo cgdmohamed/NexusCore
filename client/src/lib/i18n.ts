@@ -280,6 +280,14 @@ const translations: Translations = {
   'profile.contactInfo': { en: 'Contact Information', ar: 'معلومات الاتصال' },
   'profile.workInfo': { en: 'Work Information', ar: 'معلومات العمل' },
 
+  // Additional Services translations
+  'services.inactive_services': { en: 'Inactive Services', ar: 'الخدمات غير النشطة' },
+  'services.average_price': { en: 'Average Price', ar: 'متوسط السعر' },
+  'services.avg_price': { en: 'Average Price', ar: 'متوسط السعر' },
+  'services.status': { en: 'Status', ar: 'الحالة' },
+  'services.actions': { en: 'Actions', ar: 'الإجراءات' },
+  'services.active': { en: 'Active', ar: 'نشط' },
+  'services.inactive': { en: 'Inactive', ar: 'غير نشط' },
 
 };
 
