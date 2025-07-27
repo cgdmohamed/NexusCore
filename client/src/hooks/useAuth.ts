@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 export function useAuth() {
   const queryClient = useQueryClient();
   
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
     staleTime: 0, // Always refresh on mount
@@ -20,19 +20,23 @@ export function useAuth() {
         },
       });
       
-      if (response.ok) {
-        // Clear React Query cache
-        queryClient.clear();
-        // Clear local storage  
-        localStorage.clear();
-        sessionStorage.clear();
-        // Force page reload to reset all state
-        window.location.reload();
-      }
+      // Always clear data regardless of response
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Invalidate the auth query to trigger re-render
+      queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Force refetch to ensure auth state is updated
+      refetch();
+      
     } catch (error) {
       console.error('Logout error:', error);
-      // Force reload anyway
-      window.location.reload();
+      // Still clear data and refetch
+      queryClient.clear();
+      queryClient.setQueryData(["/api/auth/user"], null);
+      refetch();
     }
   };
 

@@ -31,8 +31,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Development bypass - create a test user
       console.log("Setting up development auth bypass...");
       
+      // Development session tracking
+      let devLoggedIn = true;
+      
       // Create a test user for development
       app.get('/api/auth/user', async (req, res) => {
+        if (!devLoggedIn) {
+          return res.status(401).json({ message: 'Unauthorized' });
+        }
+        
         const testUser = {
           id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
           email: 'test@company.com',
@@ -49,6 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Development logout route
       app.post('/api/auth/logout', async (req: any, res: any) => {
+        // Set logged out state for development
+        devLoggedIn = false;
+        
         // Clear any session data
         if (req.session) {
           req.session.destroy((err: any) => {
@@ -59,6 +69,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         res.clearCookie('connect.sid');
         res.json({ success: true, message: 'Logged out successfully', redirect: true });
+      });
+      
+      // Development login route to restore session
+      app.post('/api/auth/login', async (req: any, res: any) => {
+        devLoggedIn = true;
+        res.json({ success: true, message: 'Logged in successfully' });
       });
     } else {
       const { isAuthenticated } = await setupAuth(app);

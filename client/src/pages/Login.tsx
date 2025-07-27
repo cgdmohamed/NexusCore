@@ -54,8 +54,26 @@ export default function Login() {
   const handleLogin = async () => {
     setLoginLoading(true);
     try {
-      // Start OIDC authentication flow
-      window.location.href = "/api/login";
+      if (process.env.NODE_ENV === 'development') {
+        // Development mode - call the dev login endpoint
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          // Force a page reload to reset the auth state
+          window.location.reload();
+        } else {
+          setLoginLoading(false);
+        }
+      } else {
+        // Production mode - redirect to OIDC login endpoint
+        window.location.href = "/api/login";
+      }
     } catch (error) {
       console.error("Login error:", error);
       setLoginLoading(false);
