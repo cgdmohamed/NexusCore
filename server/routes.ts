@@ -56,8 +56,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auth middleware
+  // Auth middleware setup
   try {
+    console.log("Setting up authentication...");
+    await setupAuth(app);
+    console.log("Authentication setup complete");
+    
     if (process.env.NODE_ENV === 'development') {
       // Development bypass - create a test user
       console.log("Setting up development auth bypass...");

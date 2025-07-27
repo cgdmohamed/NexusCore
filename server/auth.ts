@@ -2,12 +2,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
 declare global {
   namespace Express {
@@ -15,34 +12,22 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
+
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  return await bcrypt.hash(password, 10);
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  return await bcrypt.compare(supplied, stored);
 }
 
 export function setupAuth(app: Express) {
-  // Session configuration
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({ 
-    pool, 
-    createTableIfMissing: true 
-  });
-
+  // Session configuration - use memory store to avoid database session issues
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this-in-production',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
