@@ -403,24 +403,6 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                onClick={() => {
-                  const credentials = {
-                    "Development Mode": "Auto-login enabled",
-                    "Test User": "Admin User",
-                    "Department": "Management", 
-                    "Role": "admin", 
-                    "Access": "Full system access",
-                    "Status": "Active session"
-                  };
-                  navigator.clipboard.writeText(JSON.stringify(credentials, null, 2));
-                  alert("Login credentials copied to clipboard!\n\nIn development mode, the system automatically logs you in as an admin user with full access to all modules.");
-                }}
-                className="text-blue-600 focus:text-blue-600"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Copy Login Info
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 {t('auth.logout')}
