@@ -408,109 +408,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const notificationRoutes = await import("./notification-routes");
   app.use("/api/notifications", notificationRoutes.default);
 
-  // Services & Offerings routes
-  app.get("/api/services", async (req, res) => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-      const search = req.query.search as string || "";
-      const category = req.query.category as string || "";
-      const activeOnly = req.query.activeOnly === "true";
-      const sortBy = req.query.sortBy as string || "nameEn";
-      const sortOrder = req.query.sortOrder as string || "asc";
+  // Services & Offerings routes - handled by services-routes.ts
+  const servicesRoutes = await import("./services-routes");
+  servicesRoutes.registerServicesRoutes(app);
 
-      const result = await storage.getServices({
-        page,
-        limit,
-        search,
-        category,
-        activeOnly,
-        sortBy,
-        sortOrder,
-      });
 
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      res.status(500).json({ error: "Failed to fetch services" });
-    }
-  });
 
-  app.get("/api/services/:id", async (req, res) => {
-    try {
-      const service = await storage.getService(req.params.id);
-      if (!service) {
-        return res.status(404).json({ error: "Service not found" });
-      }
-      res.json(service);
-    } catch (error) {
-      console.error("Error fetching service:", error);
-      res.status(500).json({ error: "Failed to fetch service" });
-    }
-  });
 
-  app.post("/api/services", async (req, res) => {
-    try {
-      const { nameEn, nameAr, descriptionEn, descriptionAr, defaultPrice, category } = req.body;
-      
-      if (!nameEn) {
-        return res.status(400).json({ error: "Service name (English) is required" });
-      }
 
-      const service = await storage.createService({
-        nameEn,
-        nameAr,
-        descriptionEn,
-        descriptionAr,
-        defaultPrice: defaultPrice ? parseFloat(defaultPrice) : null,
-        category,
-        createdBy: "8742bebf-9138-4247-85c8-fd2cb70e7d78", // Admin user ID
-      });
 
-      res.status(201).json(service);
-    } catch (error) {
-      console.error("Error creating service:", error);
-      res.status(500).json({ error: "Failed to create service" });
-    }
-  });
 
-  app.put("/api/services/:id", async (req, res) => {
-    try {
-      const { nameEn, nameAr, descriptionEn, descriptionAr, defaultPrice, category, isActive } = req.body;
-      
-      const service = await storage.updateService(req.params.id, {
-        nameEn,
-        nameAr,
-        descriptionEn,
-        descriptionAr,
-        defaultPrice: defaultPrice ? parseFloat(defaultPrice) : null,
-        category,
-        isActive,
-      });
 
-      if (!service) {
-        return res.status(404).json({ error: "Service not found" });
-      }
-
-      res.json(service);
-    } catch (error) {
-      console.error("Error updating service:", error);
-      res.status(500).json({ error: "Failed to update service" });
-    }
-  });
-
-  app.delete("/api/services/:id", async (req, res) => {
-    try {
-      const success = await storage.deleteService(req.params.id);
-      if (!success) {
-        return res.status(404).json({ error: "Service not found" });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting service:", error);
-      res.status(500).json({ error: "Failed to delete service" });
-    }
-  });
 
   // Activity routes
   app.get('/api/activities', async (req: any, res) => {
