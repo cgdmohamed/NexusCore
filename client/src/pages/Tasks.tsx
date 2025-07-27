@@ -76,28 +76,25 @@ export default function Tasks() {
   const { t } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    search: "",
-    status: undefined as string | undefined,
-    priority: undefined as string | undefined,
-    assignedTo: "",
-    myTasks: false,
-  });
 
-  // Fetch tasks
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["/api/tasks", filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value.toString());
-      });
-      
-      const response = await fetch(`/api/tasks?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch tasks");
-      return response.json();
-    }
+  // Fetch tasks with filtering
+  const { data: allTasks = [], isLoading } = useQuery({
+    queryKey: ["/api/tasks"],
+  });
+  
+  // Filter tasks based on current filters
+  const tasks = allTasks.filter((task: any) => {
+    const matchesSearch = !searchTerm || 
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+    
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   // Fetch task stats
@@ -210,24 +207,143 @@ export default function Tasks() {
         subtitle="Assign, track, and evaluate tasks across all departments"
       />
       
-      <div className="flex justify-between items-center">
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
-              <DialogDescription>
-                Create a new task and assign it to team members
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
+      <div className="p-6 space-y-6">
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <Briefcase className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Tasks</p>
+                    <p className="text-2xl font-bold">{stats.totalTasks || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Completed</p>
+                    <p className="text-2xl font-bold">{stats.statusBreakdown?.completed || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">In Progress</p>
+                    <p className="text-2xl font-bold">{stats.statusBreakdown?.in_progress || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold">{stats.statusBreakdown?.pending || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">High Priority</p>
+                    <p className="text-2xl font-bold">{stats.priorityBreakdown?.high || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4 text-gray-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Assigned</p>
+                    <p className="text-2xl font-bold">{tasks.filter((t: any) => t.assignedTo).length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Filters and Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('common.search')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('common.create')} Task
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Task</DialogTitle>
+                  <DialogDescription>
+                    Create a new task and assign it to team members
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
@@ -333,148 +449,31 @@ export default function Tasks() {
                   )}
                 />
 
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createTaskMutation.isPending}>
-                    {createTaskMutation.isPending ? "Creating..." : "Create Task"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Statistics Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.totalTasks || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {stats.statusBreakdown?.completed || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.statusBreakdown?.in_progress || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
-                {stats.statusBreakdown?.pending || 0}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tasks..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-
-            <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.priority} onValueChange={(value) => setFilters({ ...filters, priority: value })}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Priorities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="myTasks"
-                checked={filters.myTasks}
-                onCheckedChange={(checked) => setFilters({ ...filters, myTasks: !!checked })}
-              />
-              <Label htmlFor="myTasks">My Tasks Only</Label>
-            </div>
-
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setFilters({
-                search: "",
-                status: undefined,
-                priority: undefined,
-                assignedTo: "",
-                myTasks: false,
-              })}
-            >
-              Clear Filters
-            </Button>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createTaskMutation.isPending}>
+                        {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Tasks List */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="text-center py-8">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <Card>
+        {/* Tasks List */}
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-8">Loading tasks...</div>
+          ) : tasks.length === 0 ? (
+            <Card>
             <CardContent className="text-center py-8">
               <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No tasks found</h3>
@@ -487,8 +486,8 @@ export default function Tasks() {
               </Button>
             </CardContent>
           </Card>
-        ) : (
-          tasks.map((task: any) => (
+          ) : (
+            tasks.map((task: any) => (
             <Card key={task.id} className="hover:shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start mb-4">
@@ -568,8 +567,9 @@ export default function Tasks() {
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* Task Detail Dialog */}
