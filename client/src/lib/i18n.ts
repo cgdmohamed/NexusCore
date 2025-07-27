@@ -67,7 +67,10 @@ const translations: Translations = {
   'auth.login': { en: 'Login', ar: 'تسجيل الدخول' },
   'auth.logout': { en: 'Logout', ar: 'تسجيل الخروج' },
   'auth.welcome': { en: 'Welcome to CompanyOS', ar: 'مرحباً بك في CompanyOS' },
-  'auth.getStarted': { en: 'Get Started', ar: 'ابدأ الآن' },
+  'auth.getStarted': { en: 'Sign In to Continue', ar: 'سجل الدخول للمتابعة' },
+  'auth.signIn': { en: 'Sign In', ar: 'تسجيل الدخول' },
+  'auth.signingIn': { en: 'Signing in...', ar: 'جاري تسجيل الدخول...' },
+  'auth.secureLogin': { en: 'Secure Login', ar: 'تسجيل دخول آمن' },
   
   // CRM
   'crm.title': { en: 'Customer Relationship Management', ar: 'إدارة علاقات العملاء' },

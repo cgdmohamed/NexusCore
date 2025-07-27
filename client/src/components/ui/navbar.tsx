@@ -195,8 +195,29 @@ export function Navbar() {
     }
   };
 
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        // Clear any cached data and redirect to login
+        window.location.href = '/';
+      } else {
+        console.error('Logout failed');
+        // Fallback to direct logout URL
+        window.location.href = "/api/logout";
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback to direct logout URL
+      window.location.href = "/api/logout";
+    }
   };
 
   return (

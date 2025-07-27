@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Navbar } from "@/components/ui/navbar";
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import CRM from "@/pages/CRM";
 import Quotations from "@/pages/Quotations";
@@ -45,8 +45,8 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/" component={Landing} />
-        <Route component={Landing} />
+        <Route path="/" component={Login} />
+        <Route component={Login} />
       </Switch>
     );
   }

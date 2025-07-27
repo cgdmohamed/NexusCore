@@ -46,11 +46,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         res.json(testUser);
       });
+
+      // Development logout route
+      app.post('/api/auth/logout', async (req, res) => {
+        res.json({ success: true, message: 'Logged out successfully (dev mode)' });
+      });
     } else {
-      await setupAuth(app);
+      const { isAuthenticated } = await setupAuth(app);
       
       // Auth routes
-      app.get('/api/auth/user', async (req: any, res) => {
+      app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
         try {
           const userId = req.user.claims.sub;
           const user = await storage.getUser(userId);
@@ -58,6 +63,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
           console.error("Error fetching user:", error);
           res.status(500).json({ message: "Failed to fetch user" });
+        }
+      });
+
+      // Enhanced logout with audit logging
+      app.post('/api/auth/logout', isAuthenticated, async (req: any, res) => {
+        try {
+          const userId = req.user?.claims?.sub;
+          const userAgent = req.headers['user-agent'];
+          const ipAddress = req.ip || req.connection.remoteAddress;
+          
+          // Log logout activity
+          if (userId) {
+            try {
+              await storage.logActivity({
+                id: require('nanoid').nanoid(),
+                userId,
+                type: 'logout',
+                description: 'User logged out',
+                metadata: {
+                  userAgent,
+                  ipAddress,
+                  timestamp: new Date().toISOString()
+                },
+                timestamp: new Date()
+              });
+            } catch (logError) {
+              console.error('Failed to log logout activity:', logError);
+            }
+          }
+          
+          // Clear session and redirect to OIDC logout
+          req.logout(() => {
+            res.json({ success: true, message: 'Logged out successfully' });
+          });
+        } catch (error) {
+          console.error("Logout error:", error);
+          res.status(500).json({ message: "Failed to logout" });
         }
       });
     }
@@ -78,6 +120,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date(),
       };
       res.json(testUser);
+    });
+
+    // Fallback logout route
+    app.post('/api/auth/logout', async (req, res) => {
+      res.json({ success: true, message: 'Logged out successfully (fallback mode)' });
     });
   }
 
