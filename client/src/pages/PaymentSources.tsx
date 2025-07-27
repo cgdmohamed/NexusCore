@@ -186,7 +186,7 @@ export default function PaymentSources() {
     return (
       <div className="space-y-6">
         <Header 
-          title="Payment Sources"
+          title={t('nav.payments')}
           subtitle="Manage company financial accounts and track balances"
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -209,7 +209,7 @@ export default function PaymentSources() {
   return (
     <div className="space-y-6">
       <Header 
-        title="Payment Sources"
+        title={t('nav.payments')}
         subtitle="Manage company financial accounts and track balances"
       />
       

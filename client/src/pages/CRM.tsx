@@ -219,7 +219,7 @@ export default function CRM() {
   return (
     <div className="space-y-6">
       <Header 
-        title={t('nav.crm')}
+        title={t('nav.clients')}
         subtitle="Manage your client relationships and opportunities"
       />
       

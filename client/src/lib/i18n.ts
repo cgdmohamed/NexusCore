@@ -11,15 +11,14 @@ interface Translations {
 const translations: Translations = {
   // Navigation
   'nav.dashboard': { en: 'Dashboard', ar: 'لوحة القيادة' },
-  'nav.crm': { en: 'CRM', ar: 'إدارة العملاء' },
+  'nav.clients': { en: 'Clients', ar: 'العملاء' },
   'nav.quotations': { en: 'Quotations', ar: 'عروض الأسعار' },
   'nav.invoices': { en: 'Invoices', ar: 'الفواتير' },
+  'nav.payments': { en: 'Payments', ar: 'المدفوعات' },
   'nav.expenses': { en: 'Expenses', ar: 'المصروفات' },
-  'nav.payment_sources': { en: 'Payment Sources', ar: 'مصادر الدفع' },
-  'nav.employees': { en: 'Employees', ar: 'الموظفون' },
-  'nav.user_management': { en: 'User Management', ar: 'إدارة المستخدمين' },
   'nav.tasks': { en: 'Tasks', ar: 'المهام' },
-  'nav.analytics': { en: 'Analytics', ar: 'التحليلات' },
+  'nav.team_roles': { en: 'Team & Roles', ar: 'الفريق والأدوار' },
+  'nav.reports_kpis': { en: 'Reports & KPIs', ar: 'التقارير ومؤشرات الأداء' },
   'nav.notifications': { en: 'Notifications', ar: 'الإشعارات' },
   
   // Dashboard

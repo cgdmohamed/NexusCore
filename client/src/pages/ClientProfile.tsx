@@ -93,8 +93,8 @@ export default function ClientProfile() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Client Not Found</h2>
           <p className="text-gray-600 mb-4">The requested client could not be found.</p>
-          <Link href="/crm">
-            <Button>Back to CRM</Button>
+          <Link href="/clients">
+            <Button>Back to Clients</Button>
           </Link>
         </div>
       </div>
@@ -124,10 +124,10 @@ export default function ClientProfile() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <Link href="/crm">
+          <Link href="/clients">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to CRM
+              Back to Clients
             </Button>
           </Link>
           <div>

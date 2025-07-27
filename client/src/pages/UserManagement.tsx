@@ -109,7 +109,7 @@ export default function UserManagement() {
   return (
     <div className="space-y-6">
       <Header 
-        title="User & Employee Management" 
+        title={t('nav.team_roles')} 
         subtitle="Manage system users, employee profiles, and role-based access control"
       />
       

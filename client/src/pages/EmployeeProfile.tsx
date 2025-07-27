@@ -45,10 +45,10 @@ export default function EmployeeProfile() {
             <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Employee Not Found</h3>
             <p className="text-gray-600 mb-4">The requested employee could not be found.</p>
-            <Link href="/user-management">
+            <Link href="/team-roles">
               <Button>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to User Management
+                Back to Team & Roles
               </Button>
             </Link>
           </CardContent>
@@ -86,10 +86,10 @@ export default function EmployeeProfile() {
       
       <div className="p-6 space-y-6">
         {/* Back Button */}
-        <Link href="/user-management">
+        <Link href="/team-roles">
           <Button variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to User Management
+            Back to Team & Roles
           </Button>
         </Link>
 
@@ -139,7 +139,7 @@ export default function EmployeeProfile() {
                   <div className="flex items-center space-x-2 text-gray-600">
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm">
-                      Hired {format(new Date(employee.hiringDate), 'MMM d, yyyy')}
+                      Hired {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMM d, yyyy') : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -225,7 +225,7 @@ export default function EmployeeProfile() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Hiring Date:</span>
                         <span className="font-medium">
-                          {format(new Date(employee.hiringDate), 'MMMM d, yyyy')}
+                          {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMMM d, yyyy') : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -260,7 +260,7 @@ export default function EmployeeProfile() {
                       </div>
                       <p className="text-sm text-gray-600 capitalize">{employee.department} Department</p>
                       <p className="text-sm text-gray-500">
-                        {format(new Date(employee.hiringDate), 'MMMM yyyy')} - Present
+                        {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMMM yyyy') : 'N/A'} - Present
                       </p>
                     </div>
                   </div>

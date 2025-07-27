@@ -44,8 +44,8 @@ export function Sidebar() {
   const navigation = [
     { name: 'nav.dashboard', href: '/', icon: BarChart3 },
     { 
-      name: 'nav.crm', 
-      href: '/crm', 
+      name: 'nav.clients', 
+      href: '/clients', 
       icon: Users, 
       badge: clients.length > 0 ? clients.length.toString() : undefined,
       badgeColor: 'bg-blue-500'
@@ -60,9 +60,8 @@ export function Sidebar() {
         : undefined,
       badgeColor: 'bg-red-500'
     },
+    { name: 'nav.payments', href: '/payments', icon: Wallet },
     { name: 'nav.expenses', href: '/expenses', icon: CreditCard },
-    { name: 'nav.payment_sources', href: '/payment-sources', icon: Wallet },
-    { name: 'nav.user_management', href: '/user-management', icon: UserCog },
     { 
       name: 'nav.tasks', 
       href: '/tasks', 
@@ -72,7 +71,8 @@ export function Sidebar() {
         : undefined,
       badgeColor: 'bg-yellow-500'
     },
-    { name: 'nav.analytics', href: '/analytics', icon: TrendingUp },
+    { name: 'nav.team_roles', href: '/team-roles', icon: UserCog },
+    { name: 'nav.reports_kpis', href: '/reports-kpis', icon: TrendingUp },
   ];
 
   return (

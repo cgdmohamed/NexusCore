@@ -145,9 +145,9 @@ export default function UserProfile() {
       <div className="space-y-6">
         <Header title="User Not Found" subtitle="The requested user profile could not be found" />
         <div className="p-6">
-          <Button onClick={() => setLocation("/user-management")}>
+          <Button onClick={() => setLocation("/team-roles")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to User Management
+            Back to Team & Roles
           </Button>
         </div>
       </div>
@@ -163,9 +163,9 @@ export default function UserProfile() {
       
       <div className="p-6 space-y-6">
         {/* Back Navigation */}
-        <Button variant="outline" onClick={() => setLocation("/user-management")}>
+        <Button variant="outline" onClick={() => setLocation("/team-roles")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to User Management
+          Back to Team & Roles
         </Button>
 
         <Tabs defaultValue="profile" className="space-y-6">

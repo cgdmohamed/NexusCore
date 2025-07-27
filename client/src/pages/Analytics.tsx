@@ -181,7 +181,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
     return (
       <div className="space-y-6">
         <Header 
-          title={t('nav.analytics')}
+          title={t('nav.reports_kpis')}
           subtitle="Comprehensive business performance and reporting analytics"
         />
         <div className="p-6">
@@ -199,7 +199,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
   return (
     <div className="space-y-6">
       <Header 
-        title={t('nav.analytics')}
+        title={t('nav.reports_kpis')}
         subtitle="Comprehensive business performance and reporting analytics"
       />
       

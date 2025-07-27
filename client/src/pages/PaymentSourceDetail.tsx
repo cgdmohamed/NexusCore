@@ -76,7 +76,7 @@ export default function PaymentSourceDetail() {
         description: "Payment source deleted successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
-      setLocation("/payment-sources");
+      setLocation("/payments");
     },
     onError: (error: any) => {
       toast({
@@ -189,10 +189,10 @@ export default function PaymentSourceDetail() {
             <p className="text-gray-500 mb-4">
               The payment source you're looking for doesn't exist or has been deleted.
             </p>
-            <Link href="/payment-sources">
+            <Link href="/payments">
               <Button>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Payment Sources
+                Back to Payments
               </Button>
             </Link>
           </CardContent>
@@ -206,10 +206,18 @@ export default function PaymentSourceDetail() {
       <Header
         title={paymentSource.name}
         subtitle={`Payment Source #${paymentSource.id.slice(0, 8)}`}
-
       />
+      
+      <div className="p-6">
+        <Link href="/payments">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Payments
+          </Button>
+        </Link>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 pb-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Payment Source Overview */}

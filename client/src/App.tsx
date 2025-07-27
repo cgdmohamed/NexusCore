@@ -59,8 +59,8 @@ function Router() {
         <main className="flex-1 overflow-auto">
           <Switch>
             <Route path="/" component={Dashboard} />
-            <Route path="/crm" component={CRM} />
-            <Route path="/crm/:id" component={ClientProfile} />
+            <Route path="/clients" component={CRM} />
+            <Route path="/clients/:id" component={ClientProfile} />
             <Route path="/quotations" component={Quotations} />
             <Route path="/quotations/:id" component={QuotationDetail} />
             <Route path="/quotation-management" component={QuotationManagement} />
@@ -69,14 +69,14 @@ function Router() {
             <Route path="/expenses" component={Expenses} />
             <Route path="/expenses/:id" component={ExpenseDetail} />
             <Route path="/expenses/:id/edit" component={ExpenseEdit} />
-            <Route path="/payment-sources" component={PaymentSources} />
-            <Route path="/payment-sources/:id" component={PaymentSourceDetail} />
+            <Route path="/payments" component={PaymentSources} />
+            <Route path="/payments/:id" component={PaymentSourceDetail} />
 
-            <Route path="/user-management" component={UserManagement} />
+            <Route path="/team-roles" component={UserManagement} />
             <Route path="/users/:id" component={UserProfile} />
             <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/tasks" component={Tasks} />
-            <Route path="/analytics" component={Analytics} />
+            <Route path="/reports-kpis" component={Analytics} />
             <Route component={NotFound} />
           </Switch>
         </main>
