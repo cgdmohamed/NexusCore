@@ -75,6 +75,8 @@ const translations: Translations = {
   'common.loading': { en: 'Loading...', ar: 'جاري التحميل...' },
   'common.error': { en: 'Error', ar: 'خطأ' },
   'common.success': { en: 'Success', ar: 'نجح' },
+  'common.active': { en: 'Active', ar: 'نشط' },
+  'common.inactive': { en: 'Inactive', ar: 'غير نشط' },
   'common.noResults': { en: 'No results found', ar: 'لا توجد نتائج' },
   'common.viewAll': { en: 'View All', ar: 'عرض الكل' },
   'common.view': { en: 'View', ar: 'عرض' },
