@@ -175,7 +175,10 @@ export default function InvoiceDetail() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       setIsAddingPayment(false);
       setOverpaymentWarning(null);
       setPaymentForm({

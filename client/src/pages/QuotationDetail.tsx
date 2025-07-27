@@ -71,6 +71,9 @@ export default function QuotationDetail() {
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       setIsAddingItem(false);
       resetForm();
       toast({
@@ -146,6 +149,9 @@ export default function QuotationDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       setIsEditing(false);
       toast({
         title: "Quotation updated",
@@ -160,7 +166,10 @@ export default function QuotationDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Converted to invoice",
         description: "Quotation has been successfully converted to an invoice.",
@@ -175,6 +184,8 @@ export default function QuotationDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
         title: "Status updated",
         description: "Quotation status has been updated.",

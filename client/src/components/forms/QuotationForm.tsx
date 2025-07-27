@@ -84,6 +84,8 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
         description: "The quotation has been successfully created. You can now add items to it.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       form.reset();
       setOpen(false);
       

@@ -47,6 +47,10 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
       });
       queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/payment-sources/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources", paymentSource.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources", paymentSource.id, "transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       onClose();
     },
     onError: (error: any) => {

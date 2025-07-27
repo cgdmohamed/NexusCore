@@ -88,6 +88,8 @@ export default function ExpenseDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/expenses", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/expenses/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
     },
     onError: (error: any) => {
       toast({
@@ -212,10 +214,6 @@ export default function ExpenseDetail() {
       <Header
         title={expense.title}
         subtitle={`Expense #${expense.id.slice(0, 8)}`}
-        breadcrumbs={[
-          { label: "Expenses", href: "/expenses" },
-          { label: expense.title },
-        ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
@@ -290,10 +288,10 @@ export default function ExpenseDetail() {
                         <div className="flex items-center gap-2">
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: categoryInfo.color }}
+                            style={{ backgroundColor: categoryInfo?.color || '#gray' }}
                           />
                           <span className="text-sm text-gray-500">
-                            {categoryInfo.name}
+                            {categoryInfo?.name || 'Unknown'}
                           </span>
                         </div>
                       </div>
@@ -319,7 +317,7 @@ export default function ExpenseDetail() {
                     <div>
                       <div className="font-medium">Submitted By</div>
                       <div className="text-sm text-gray-500">
-                        {expense.submittedBy || "Unknown"}
+                        {"System User"}
                       </div>
                     </div>
                   </div>
@@ -337,13 +335,13 @@ export default function ExpenseDetail() {
                     </div>
                   )}
 
-                  {expense.projectId && (
+                  {expense.relatedClientId && (
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-gray-400" />
                       <div>
-                        <div className="font-medium">Project</div>
+                        <div className="font-medium">Related Client</div>
                         <div className="text-sm text-gray-500">
-                          Project #{expense.projectId.slice(0, 8)}
+                          Client #{expense.relatedClientId.slice(0, 8)}
                         </div>
                       </div>
                     </div>

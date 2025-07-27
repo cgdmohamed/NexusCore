@@ -86,6 +86,8 @@ export function ClientForm({ trigger }: ClientFormProps) {
         description: "The client has been successfully added.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       form.reset();
       setOpen(false);
     },

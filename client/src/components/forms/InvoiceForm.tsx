@@ -82,6 +82,8 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
         description: "The invoice has been successfully created.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       form.reset();
       setOpen(false);
     },
