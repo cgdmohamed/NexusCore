@@ -18,23 +18,35 @@ Before starting, ensure your cPanel hosting provider supports:
 # Install dependencies
 npm install
 
-# Build the frontend
+# Build both frontend and backend (this creates the dist folder)
 npm run build
 
-# Build the backend
-npm run build:server
+# Verify the build was successful
+ls -la dist/
+# Should show: index.js (server) and public/ (frontend files)
 ```
 
 ### 1.2 Create Production Package
-Create a ZIP file containing:
+Create a ZIP file containing these essential files:
 ```
 production-package/
-├── dist/           # Built application files
-├── package.json
-├── package-lock.json
-├── .env.example
-└── README_PRODUCTION.md
+├── dist/                    # Built application files
+│   ├── index.js            # Server bundle
+│   └── public/             # Frontend assets
+├── package.json            # Dependencies list
+├── package-lock.json       # Exact dependency versions
+├── .env.example           # Environment template
+├── README_PRODUCTION.md   # Production guide
+├── CPANEL_DEPLOYMENT.md   # This deployment guide
+└── shared/                # Shared schema (if needed)
+    └── schema.ts
 ```
+
+**Important Files to Include:**
+- `dist/index.js` - Your built server application
+- `dist/public/` - All frontend files (HTML, CSS, JS)
+- `package.json` - Required for npm install
+- `package-lock.json` - Ensures exact dependency versions
 
 ## Step 2: cPanel Database Setup
 
@@ -63,9 +75,31 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ## Step 3: Upload and Configure
 
 ### 3.1 Upload Files
-1. In cPanel File Manager, navigate to your domain's public folder
-2. Upload and extract your production package
-3. Ensure the `dist` folder is in the web root
+1. **Access File Manager:**
+   - Log into cPanel
+   - Open **File Manager**
+   - Navigate to your domain's root folder (usually `public_html/`)
+
+2. **Upload Production Package:**
+   - Click **Upload** and select your production ZIP file
+   - Wait for upload to complete
+   - Click **Extract** to unzip the files
+
+3. **Verify File Structure:**
+   ```
+   public_html/
+   ├── dist/
+   │   ├── index.js           # Server application
+   │   └── public/            # Frontend files
+   ├── package.json
+   ├── package-lock.json
+   ├── .env                   # Create this next
+   └── node_modules/          # Will be created by npm install
+   ```
+
+4. **Set Proper Permissions:**
+   - Right-click on `dist/index.js` → Change Permissions → 755
+   - Ensure all files are readable by the web server
 
 ### 3.2 Environment Configuration
 Create `.env` file in the root directory:
@@ -87,26 +121,87 @@ DOMAIN=yourdomain.com
 ## Step 4: Node.js Application Setup
 
 ### 4.1 Configure Node.js App in cPanel
-1. Go to **Node.js Apps** in cPanel
-2. Click **Create Application**
-3. Set the following:
-   - **Node.js Version**: 18.x or higher
-   - **Application Mode**: Production
-   - **Application Root**: Your domain folder
-   - **Application URL**: Your domain
+1. **Navigate to Node.js Apps:**
+   - In cPanel main interface, find **Software** section
+   - Click **Node.js Apps** (or **Node.js Selector**)
+
+2. **Create New Application:**
+   - Click **Create Application** button
+   
+3. **Configure Application Settings:**
+   - **Node.js Version**: Select `18.x` or higher (recommended: 18.17+)
+   - **Application Mode**: `Production`
+   - **Application Root**: `/home/yourusername/public_html/` (full path to your domain)
+   - **Application URL**: Leave blank or set to your domain
    - **Application Startup File**: `dist/index.js`
+   - **Environment Variables**: Leave empty for now (we'll add these next)
+
+4. **Advanced Settings:**
+   - **Memory Limit**: Set to at least 512MB if available
+   - **CPU Limit**: Use default unless specified by hosting provider
+   - **Restart Policy**: Enable automatic restart on failure
 
 ### 4.2 Install Dependencies
-In the Node.js app terminal:
-```bash
-npm install --production
-```
+1. **Access Node.js Terminal:**
+   - In your Node.js app configuration page
+   - Click **Open Terminal** or **SSH Access**
+   - Navigate to your application directory:
+     ```bash
+     cd public_html/
+     ```
+
+2. **Install Production Dependencies:**
+   ```bash
+   # Install only production dependencies (faster and smaller)
+   npm install --production
+   
+   # If you encounter permission issues, try:
+   npm install --production --no-optional
+   
+   # Verify installation
+   ls node_modules/
+   ```
+
+3. **Verify Critical Dependencies:**
+   ```bash
+   # Check if key packages are installed
+   npm list express drizzle-orm bcrypt @neondatabase/serverless
+   ```
+
+4. **Clean Up (Optional):**
+   ```bash
+   # Remove unnecessary files to save space
+   npm prune --production
+   ```
 
 ### 4.3 Environment Variables
-In the Node.js app interface, add these environment variables:
-- `DATABASE_URL`: Your PostgreSQL connection string
-- `SESSION_SECRET`: Your secure session secret
-- `NODE_ENV`: production
+1. **Method 1: Through cPanel Interface**
+   - In your Node.js app settings
+   - Find **Environment Variables** section
+   - Add each variable:
+
+   | Variable Name | Example Value |
+   |---------------|---------------|
+   | `DATABASE_URL` | `postgresql://dbuser:dbpass@localhost:5432/companyos_prod` |
+   | `SESSION_SECRET` | `your-super-secure-random-string-min-32-chars` |
+   | `NODE_ENV` | `production` |
+   | `PORT` | `3000` (or as specified by hosting provider) |
+
+2. **Method 2: Create .env File**
+   - Create `.env` file in your application root:
+   ```bash
+   # In File Manager, create new file: .env
+   DATABASE_URL=postgresql://dbuser:dbpass@localhost:5432/companyos_prod
+   SESSION_SECRET=your-super-secure-random-string-min-32-chars
+   NODE_ENV=production
+   PORT=3000
+   ```
+
+3. **Generate Secure SESSION_SECRET:**
+   ```bash
+   # In terminal, generate a random secret:
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
 
 ## Step 5: SSL and Domain Configuration
 
@@ -121,33 +216,88 @@ Ensure your domain points to the correct directory where your application is hos
 ## Step 6: Database Migration and Initial Setup
 
 ### 6.1 Run Database Migrations
-Connect to your database and ensure all tables are created properly.
+1. **Access Database:**
+   - In cPanel, go to **phpPgAdmin** (or **PostgreSQL Databases**)
+   - Connect to your `companyos_prod` database
+
+2. **Create Database Schema:**
+   - Run the following SQL commands to create all required tables:
+   ```sql
+   -- Enable UUID extension
+   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+   
+   -- Create sessions table for authentication
+   CREATE TABLE sessions (
+     sid VARCHAR PRIMARY KEY,
+     sess JSONB NOT NULL,
+     expire TIMESTAMP NOT NULL
+   );
+   CREATE INDEX IDX_session_expire ON sessions(expire);
+   
+   -- Create users table
+   CREATE TABLE users (
+     id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+     username VARCHAR UNIQUE NOT NULL,
+     password_hash VARCHAR NOT NULL,
+     email VARCHAR UNIQUE,
+     first_name VARCHAR,
+     last_name VARCHAR,
+     role VARCHAR DEFAULT 'user',
+     department VARCHAR DEFAULT 'operations',
+     is_active BOOLEAN DEFAULT true,
+     created_at TIMESTAMP DEFAULT NOW(),
+     updated_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   -- Add other tables as needed (clients, quotations, invoices, etc.)
+   -- Copy from your development database or use drizzle-kit
+   ```
+
+3. **Alternative: Use Drizzle Push (if available):**
+   ```bash
+   # In your application terminal
+   npm run db:push
+   ```
 
 ### 6.2 Create Admin User
-Run this SQL to create your admin user:
-```sql
-INSERT INTO users (
-  id, username, password_hash, email, 
-  firstName, lastName, role, department, isActive
-) VALUES (
-  gen_random_uuid(),
-  'admin',
-  '$2b$10$YourHashedPasswordHere',
-  'admin@yourcompany.com',
-  'System',
-  'Administrator',
-  'admin',
-  'operations',
-  true
-);
-```
+1. **Generate Password Hash:**
+   In your local terminal or Node.js environment:
+   ```javascript
+   const bcrypt = require('bcrypt');
+   const password = 'admin123'; // Change this to your desired password
+   const hash = bcrypt.hashSync(password, 10);
+   console.log('Password hash:', hash);
+   ```
 
-To generate the password hash, use:
-```javascript
-const bcrypt = require('bcrypt');
-const hash = bcrypt.hashSync('your-admin-password', 10);
-console.log(hash);
-```
+2. **Create Admin User in Database:**
+   Run this SQL in phpPgAdmin:
+   ```sql
+   INSERT INTO users (
+     id, username, password_hash, email, 
+     first_name, last_name, role, department, is_active
+   ) VALUES (
+     gen_random_uuid(),
+     'admin',
+     '$2b$10$[YOUR_GENERATED_HASH_HERE]',
+     'admin@yourcompany.com',
+     'System',
+     'Administrator',
+     'admin',
+     'management',
+     true
+   );
+   ```
+
+3. **Verify Admin User Creation:**
+   ```sql
+   SELECT username, email, role, department, is_active 
+   FROM users 
+   WHERE username = 'admin';
+   ```
+
+4. **Test Login Credentials:**
+   - Username: `admin`
+   - Password: `admin123` (or whatever you set)
 
 ## Step 7: Testing and Verification
 
@@ -224,12 +374,45 @@ Configure proper caching for static assets:
 - Environment configuration backups
 
 ### 9.3 Updates
-To update the application:
-1. Build new version locally
-2. Upload new files
-3. Restart Node.js application
-4. Run any database migrations
-5. Clear application cache
+**Step-by-Step Update Process:**
+
+1. **Prepare Update Locally:**
+   ```bash
+   # Build new version
+   npm install
+   npm run build
+   
+   # Create update package
+   zip -r companyos-update.zip dist/ package.json package-lock.json
+   ```
+
+2. **Backup Current Version:**
+   - In cPanel File Manager, create backup folder
+   - Copy current `dist/` folder to `dist-backup-YYYY-MM-DD/`
+   - Export database backup through phpPgAdmin
+
+3. **Upload New Version:**
+   - Upload `companyos-update.zip` to cPanel
+   - Extract to temporary folder
+   - Replace `dist/` folder with new version
+
+4. **Update Dependencies:**
+   ```bash
+   npm install --production
+   ```
+
+5. **Database Updates (if needed):**
+   - Run any new migration scripts
+   - Check for schema changes
+
+6. **Restart Application:**
+   - In Node.js Apps, click **Restart**
+   - Monitor logs for any startup errors
+
+7. **Verify Update:**
+   - Test login functionality
+   - Check all modules are working
+   - Monitor performance for 24 hours
 
 ## Troubleshooting
 
