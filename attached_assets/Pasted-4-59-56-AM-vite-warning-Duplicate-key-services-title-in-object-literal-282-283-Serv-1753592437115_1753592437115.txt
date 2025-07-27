@@ -1,0 +1,80 @@
+4:59:56 AM [vite] warning: Duplicate key "services.title" in object literal
+282|  
+283|    // Services & Offerings
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+   |    ^
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.subtitle" in object literal
+283|    // Services & Offerings
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+   |    ^
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.add_service" in object literal
+284|    'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+   |    ^
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+288|    'services.add_first_service': { en: 'Add Your First Service', ar: 'إضافة أول خدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.edit_service" in object literal
+285|    'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+   |    ^
+288|    'services.add_first_service': { en: 'Add Your First Service', ar: 'إضافة أول خدمة' },
+289|    'services.no_services': { en: 'No Services Yet', ar: 'لا توجد خدمات بعد' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.add_first_service" in object literal
+286|    'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+288|    'services.add_first_service': { en: 'Add Your First Service', ar: 'إضافة أول خدمة' },
+   |    ^
+289|    'services.no_services': { en: 'No Services Yet', ar: 'لا توجد خدمات بعد' },
+290|    'services.no_services_desc': { en: 'Get started by adding your first service offering', ar: 'ابدأ بإضافة أول عرض خدمة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.no_services" in object literal
+287|    'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
+288|    'services.add_first_service': { en: 'Add Your First Service', ar: 'إضافة أول خدمة' },
+289|    'services.no_services': { en: 'No Services Yet', ar: 'لا توجد خدمات بعد' },
+   |    ^
+290|    'services.no_services_desc': { en: 'Get started by adding your first service offering', ar: 'ابدأ بإضافة أول عرض خدمة' },
+291|    'services.total_services': { en: 'Total Services', ar: 'إجمالي الخدمات' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.no_services_desc" in object literal
+288|    'services.add_first_service': { en: 'Add Your First Service', ar: 'إضافة أول خدمة' },
+289|    'services.no_services': { en: 'No Services Yet', ar: 'لا توجد خدمات بعد' },
+290|    'services.no_services_desc': { en: 'Get started by adding your first service offering', ar: 'ابدأ بإضافة أول عرض خدمة' },
+   |    ^
+291|    'services.total_services': { en: 'Total Services', ar: 'إجمالي الخدمات' },
+292|    'services.active_services': { en: 'Active Services', ar: 'الخدمات النشطة' },
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
+4:59:56 AM [vite] warning: Duplicate key "services.update_error" in object literal
+308|    'services.update_success': { en: 'Service Updated', ar: 'تم تحديث الخدمة' },
+309|    'services.service_updated': { en: 'Service has been successfully updated', ar: 'تم تحديث الخدمة بنجاح' },
+310|    'services.update_error': { en: 'Failed to update service', ar: 'فشل في تحديث الخدمة' },
+   |    ^
+311|  };
+312|  
+
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/client/src/lib/i18n.ts
