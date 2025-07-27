@@ -53,7 +53,8 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
     queryKey: ["/api/notifications", { page, limit, unreadOnly }],
     queryFn: async (): Promise<Notification[]> => {
       const res = await apiRequest("GET", `/api/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
-      return await res.json();
+      const result = await res.json();
+      return result.success ? result.data : [];
     },
     staleTime: 0, // Always consider data stale for immediate updates
     refetchInterval: unreadOnly ? 5000 : 10000, // More frequent updates for real-time experience
@@ -154,14 +155,14 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
   return {
     // Data
     notifications: notificationsQuery.data || [],
-    pagination: notificationsQuery.data?.pagination || {
+    pagination: {
       page: 1,
       limit: 20,
       total: 0,
       totalPages: 0,
     },
-    allNotificationsUnreadCount: notificationsQuery.data?.unreadCount || 0,
-    unreadCount: unreadCountQuery.data?.data?.unreadCount || 0,
+    allNotificationsUnreadCount: 0,
+    unreadCount: (unreadCountQuery.data as any)?.data?.unreadCount || 0,
     
     // Loading states
     isLoading: notificationsQuery.isLoading,
@@ -225,7 +226,7 @@ export function useNotificationSettings() {
   });
 
   return {
-    settings: settingsQuery.data?.data || [],
+    settings: (settingsQuery.data as any)?.data || [],
     isLoading: settingsQuery.isLoading,
     error: settingsQuery.error,
     updateSettings: updateSettingsMutation.mutate,

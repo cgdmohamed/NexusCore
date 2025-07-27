@@ -78,7 +78,7 @@ export default function Notifications() {
     isMarkingMultipleAsRead,
   } = useNotifications(currentPage, 20, filterType === "unread");
 
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = (notifications || []).filter((notification: any) => {
     const matchesSearch = notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          notification.message.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -90,9 +90,9 @@ export default function Notifications() {
   });
 
   const handleMarkAllAsRead = () => {
-    const unreadNotifications = notifications.filter(n => !n.isRead);
+    const unreadNotifications = (notifications || []).filter((n: any) => !n.isRead);
     if (unreadNotifications.length > 0) {
-      markMultipleAsRead(unreadNotifications.map(n => n.id));
+      markMultipleAsRead(unreadNotifications.map((n: any) => n.id));
     }
   };
 
