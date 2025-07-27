@@ -280,21 +280,7 @@ const translations: Translations = {
   'profile.contactInfo': { en: 'Contact Information', ar: 'معلومات الاتصال' },
   'profile.workInfo': { en: 'Work Information', ar: 'معلومات العمل' },
 
-  // Services & Offerings
-  'services.title': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },
-  'services.subtitle': { en: 'Manage your service catalog and pricing', ar: 'إدارة كتالوج الخدمات والأسعار' },
-  'services.add_service': { en: 'Add Service', ar: 'إضافة خدمة' },
-  'services.edit_service': { en: 'Edit Service', ar: 'تعديل الخدمة' },
-  'services.name': { en: 'Service Name', ar: 'اسم الخدمة' },
-  'services.description': { en: 'Description', ar: 'الوصف' },
-  'services.category': { en: 'Category', ar: 'الفئة' },
-  'services.price': { en: 'Price', ar: 'السعر' },
-  'services.name_placeholder': { en: 'Enter service name', ar: 'أدخل اسم الخدمة' },
-  'services.description_placeholder': { en: 'Enter service description', ar: 'أدخل وصف الخدمة' },
-  'services.select_category': { en: 'Select category', ar: 'اختر الفئة' },
-  'services.create_success': { en: 'Service Created', ar: 'تم إنشاء الخدمة' },
-  'services.update_success': { en: 'Service Updated', ar: 'تم تحديث الخدمة' },
-  'services.delete_success': { en: 'Service Deleted', ar: 'تم حذف الخدمة' },
+
 };
 
 export function useTranslation() {
