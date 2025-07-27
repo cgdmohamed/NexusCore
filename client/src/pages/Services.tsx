@@ -181,7 +181,7 @@ export default function Services() {
     }
   };
 
-  const services = servicesData?.services || [];
+  const services = servicesData || [];
   const totalServices = services.length;
   const activeServices = services.filter((s: Service) => s.isActive).length;
 
