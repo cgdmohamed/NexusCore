@@ -7,23 +7,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import { Redirect } from "wouter";
-// import { useTranslation } from "react-i18next";
-import { Loader2, Eye, EyeOff, Building2, Shield, Globe, Users } from "lucide-react";
+import { Loader2, Eye, EyeOff, Building2, Shield, Globe, Users, KeyRound } from "lucide-react";
+
+// Translation strings
+const translations = {
+  "auth.welcome_message": "Professional company management system for internal operations",
+  "auth.login": "Login",
+  "auth.login_title": "Welcome Back",
+  "auth.login_description": "Sign in to access your company dashboard",
+  "auth.username": "Username",
+  "auth.password": "Password",
+  "auth.forgot_password": "Forgot Password?",
+  "auth.logging_in": "Signing in...",
+  "auth.validation.required_fields": "Please fill in all required fields",
+  "auth.login_failed": "Login failed. Please check your credentials.",
+  "auth.features.title": "Comprehensive Business Management",
+  "auth.features.subtitle": "Streamline your operations with our integrated platform",
+  "auth.features.crm.title": "Client Relationship Management",
+  "auth.features.crm.description": "Manage clients, quotations, and invoices efficiently",
+  "auth.features.business.title": "Business Operations",
+  "auth.features.business.description": "Track expenses, tasks, and team performance",
+  "auth.features.security.title": "Enterprise Security",
+  "auth.features.security.description": "Role-based access with secure authentication",
+  "auth.features.international.title": "Multi-language Support",
+  "auth.features.international.description": "Full Arabic and English interface support",
+  "auth.security.title": "Secure Access",
+  "auth.security.description": "Your data is protected with enterprise-grade security measures including encrypted passwords and secure session management.",
+  "auth.forgot_password.title": "Reset Password",
+  "auth.forgot_password.description": "Contact your system administrator to reset your password",
+  "auth.forgot_password.message": "Please contact the system administrator at admin@company.com to reset your password. Include your username in the request.",
+  "auth.back_to_login": "Back to Login"
+};
 
 export default function AuthPage() {
-  // const { t } = useTranslation();
-  const t = (key: string) => key; // Temporary fallback
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const t = (key: string) => translations[key as keyof typeof translations] || key;
+  const { user, isLoading, loginMutation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [registerData, setRegisterData] = useState({
-    username: "",
-    email: "",
-    firstName: "",
-    lastName: "",
-    password: "",
-    confirmPassword: ""
-  });
   const [error, setError] = useState("");
 
   // Redirect if already authenticated
@@ -47,26 +68,9 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true);
     setError("");
-    
-    if (!registerData.username || !registerData.email || !registerData.password || !registerData.firstName) {
-      setError(t("auth.validation.required_fields"));
-      return;
-    }
-
-    if (registerData.password !== registerData.confirmPassword) {
-      setError(t("auth.validation.passwords_match"));
-      return;
-    }
-
-    try {
-      const { confirmPassword, ...userData } = registerData;
-      await registerMutation.mutateAsync(userData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("auth.registration_failed"));
-    }
   };
 
   if (isLoading) {
@@ -94,14 +98,34 @@ export default function AuthPage() {
             </div>
 
             <Card className="mx-auto w-full max-w-md">
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
-                  <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
-                </TabsList>
-
-                {/* Login Tab */}
-                <TabsContent value="login">
+              {showForgotPassword ? (
+                // Forgot Password View
+                <div>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <KeyRound className="h-5 w-5" />
+                      <span>{t("auth.forgot_password.title")}</span>
+                    </CardTitle>
+                    <CardDescription>{t("auth.forgot_password.description")}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {t("auth.forgot_password.message")}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setShowForgotPassword(false)}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {t("auth.back_to_login")}
+                    </Button>
+                  </CardContent>
+                </div>
+              ) : (
+                // Login View
+                <div>
                   <CardHeader>
                     <CardTitle>{t("auth.login_title")}</CardTitle>
                     <CardDescription>{t("auth.login_description")}</CardDescription>
@@ -139,11 +163,25 @@ export default function AuthPage() {
                           </Button>
                         </div>
                       </div>
+                      
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={handleForgotPassword}
+                          className="px-0 text-sm text-muted-foreground hover:text-primary"
+                        >
+                          {t("auth.forgot_password")}
+                        </Button>
+                      </div>
+
                       {error && (
                         <Alert variant="destructive">
                           <AlertDescription>{error}</AlertDescription>
                         </Alert>
                       )}
+                      
                       <Button
                         type="submit"
                         className="w-full"
@@ -160,100 +198,8 @@ export default function AuthPage() {
                       </Button>
                     </form>
                   </CardContent>
-                </TabsContent>
-
-                {/* Register Tab */}
-                <TabsContent value="register">
-                  <CardHeader>
-                    <CardTitle>{t("auth.register_title")}</CardTitle>
-                    <CardDescription>{t("auth.register_description")}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleRegister} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">{t("auth.first_name")}</Label>
-                          <Input
-                            id="firstName"
-                            type="text"
-                            value={registerData.firstName}
-                            onChange={(e) => setRegisterData({ ...registerData, firstName: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">{t("auth.last_name")}</Label>
-                          <Input
-                            id="lastName"
-                            type="text"
-                            value={registerData.lastName}
-                            onChange={(e) => setRegisterData({ ...registerData, lastName: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="registerUsername">{t("auth.username")}</Label>
-                        <Input
-                          id="registerUsername"
-                          type="text"
-                          value={registerData.username}
-                          onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">{t("auth.email")}</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={registerData.email}
-                          onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="registerPassword">{t("auth.password")}</Label>
-                        <Input
-                          id="registerPassword"
-                          type="password"
-                          value={registerData.password}
-                          onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">{t("auth.confirm_password")}</Label>
-                        <Input
-                          id="confirmPassword"
-                          type="password"
-                          value={registerData.confirmPassword}
-                          onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                          required
-                        />
-                      </div>
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t("auth.registering")}
-                          </>
-                        ) : (
-                          t("auth.register")
-                        )}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
+                </div>
+              )}
             </Card>
           </div>
 
