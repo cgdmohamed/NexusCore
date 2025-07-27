@@ -43,7 +43,7 @@ export function ProtectedRoute({
   }
 
   // Check role-based access
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && (user as any).role !== requiredRole) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4 max-w-md p-8">
@@ -64,7 +64,7 @@ export function ProtectedRoute({
   }
 
   // Check department-based access
-  if (requiredDepartment && user.department !== requiredDepartment) {
+  if (requiredDepartment && (user as any).department !== requiredDepartment) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4 max-w-md p-8">
