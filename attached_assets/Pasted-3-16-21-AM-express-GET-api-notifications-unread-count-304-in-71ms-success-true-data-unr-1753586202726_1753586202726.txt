@@ -1,0 +1,68 @@
+3:16:21 AM [express] GET /api/notifications/unread-count 304 in 71ms :: {"success":true,"data":{"unr…
+Received expense payload: {
+  "title": "test",
+  "description": "",
+  "amount": 100,
+  "categoryId": "8cc38551-2f33-4f09-9bd6-bb9c34b9792e",
+  "paymentSourceId": "2c594a61-d6ba-4931-8869-5fd21c0f80db",
+  "type": "fixed",
+  "expenseDate": "2025-07-27T03:15:47.386Z",
+  "paymentMethod": "cash",
+  "status": "overdue",
+  "isRecurring": false,
+  "attachmentUrl": "/uploads/_EG11940-Edit copy.jpg",
+  "attachmentType": "receipt",
+  "relatedClientId": null
+}
+Final expense data for DB (dates converted): {
+  title: 'test',
+  description: '',
+  amount: 100,
+  categoryId: '8cc38551-2f33-4f09-9bd6-bb9c34b9792e',
+  paymentSourceId: '2c594a61-d6ba-4931-8869-5fd21c0f80db',
+  type: 'fixed',
+  expenseDate: '2025-07-27T03:15:47.386Z',
+  paymentMethod: 'cash',
+  status: 'overdue',
+  isRecurring: false,
+  attachmentUrl: '/uploads/_EG11940-Edit copy.jpg',
+  attachmentType: 'receipt',
+  relatedClientId: null,
+  createdBy: '1',
+  createdAt: '2025-07-27T03:16:22.569Z',
+  updatedAt: '2025-07-27T03:16:22.569Z'
+}
+Error creating expense: error: insert or update on table "expenses" violates foreign key constraint "expenses_created_by_users_id_fk"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/expense-routes.ts:325:25) {
+  length: 277,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (created_by)=(1) is not present in table "users".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'expenses',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'expenses_created_by_users_id_fk',
+  file: 'ri_triggers.c',
+  line: '2608',
+  routine: 'ri_ReportViolation'
+}
+3:16:22 AM [express] POST /api/expenses 500 in 103ms :: {"message":"Failed to create expense"}
+3:16:33 AM [express] GET /api/invoices 304 in 315ms :: []
+3:16:33 AM [express] GET /api/clients 304 in 380ms :: []
+3:16:33 AM [express] GET /api/activities 304 in 297ms :: []
+3:16:34 AM [express] GET /api/notifications/unread-count 304 in 74ms :: {"success":true,"data":{"unr…
+3:16:34 AM [express] GET /api/tasks/stats 304 in 369ms :: {"statusBreakdown":{},"priorityBreakdown":…
+3:16:35 AM [express] GET /api/notifications 200 in 1ms :: [{"id":"1","type":"invoice.paid","title":"…
+3:16:36 AM [express] GET /api/clients 304 in 75ms :: []
+3:16:36 AM [express] GET /api/invoices 304 in 73ms :: []
+3:16:36 AM [express] GET /api/notifications/unread-count 304 in 73ms :: {"success":true,"data":{"unr…
+3:16:37 AM [express] GET /api/tasks/stats 304 in 360ms :: {"statusBreakdown"
