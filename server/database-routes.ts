@@ -127,6 +127,9 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/clients', async (req: any, res) => {
     try {
+      // Get the actual user ID from the session or use the first available user
+      const userId = req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0';
+      
       const clientData = {
         name: req.body.name,
         email: req.body.email,
@@ -135,7 +138,7 @@ export function setupDatabaseRoutes(app: Express) {
         country: req.body.country,
         status: req.body.status || 'active',
         totalValue: req.body.totalValue || '0',
-        createdBy: '1', // Development user ID
+        createdBy: userId,
       };
 
       const [newClient] = await db.insert(clients).values(clientData).returning();
@@ -163,6 +166,9 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/quotations', async (req: any, res) => {
     try {
+      // Get the actual user ID from the session or use the first available user
+      const userId = req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0';
+      
       const quotationData = {
         quotationNumber: `QUO-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
         clientId: req.body.clientId,
@@ -173,7 +179,7 @@ export function setupDatabaseRoutes(app: Express) {
         validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
         notes: req.body.notes || null,
         terms: req.body.terms || null,
-        createdBy: '1', // Development user ID
+        createdBy: userId,
       };
 
       const [newQuotation] = await db.insert(quotations).values(quotationData).returning();
@@ -215,7 +221,7 @@ export function setupDatabaseRoutes(app: Express) {
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         notes: req.body.notes || null,
         paymentTerms: req.body.paymentTerms || null,
-        createdBy: '1', // Development user ID
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       };
 
       const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
@@ -382,8 +388,8 @@ export function setupDatabaseRoutes(app: Express) {
         bankTransferNumber: req.body.bankTransferNumber || null,
         attachmentUrl: req.body.attachmentUrl || null,
         notes: req.body.notes || null,
-        createdBy: '1', // Development user ID
-        approvedBy: isOverpayment && isAdminApproved ? '1' : null,
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+        approvedBy: isOverpayment && isAdminApproved ? (req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0') : null,
       };
 
       const [newPayment] = await db.insert(payments).values(paymentData).returning();
@@ -784,7 +790,7 @@ export function setupDatabaseRoutes(app: Express) {
         clientId: req.params.id,
         note: req.body.note,
         type: req.body.type || 'note',
-        createdBy: '1', // Development user ID
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       };
 
       const [newNote] = await db.insert(clientNotes).values(noteData).returning();
@@ -934,7 +940,7 @@ export function setupDatabaseRoutes(app: Express) {
         paidAmount: '0.00',
         status: 'pending',
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        createdBy: '1', // Development user ID
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       };
 
       const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
