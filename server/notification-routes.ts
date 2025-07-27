@@ -257,13 +257,27 @@ router.put("/settings", async (req: any, res) => {
  */
 router.post("/test", async (req: any, res) => {
   try {
-    // In development mode, use hardcoded values
-    const userId = process.env.NODE_ENV === 'development' 
-      ? 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' 
-      : req.user?.id;
-    const userRole = process.env.NODE_ENV === 'development' 
-      ? 'admin' 
-      : req.user?.role;
+    // Get current user from database
+    let userId = req.user?.id;
+    let userRole = req.user?.role;
+    
+    // In development mode, get the first admin user if not authenticated
+    if (process.env.NODE_ENV === 'development' && !userId) {
+      try {
+        const [adminUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.role, 'admin'))
+          .limit(1);
+        
+        if (adminUser) {
+          userId = adminUser.id;
+          userRole = adminUser.role;
+        }
+      } catch (error) {
+        console.error('Error getting admin user for test notification:', error);
+      }
+    }
     
     if (!userId || userRole !== "admin") {
       return res.status(403).json({ message: "Admin access required" });

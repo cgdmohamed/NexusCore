@@ -11,7 +11,7 @@ import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, activities } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, activities, users } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import {
@@ -34,24 +34,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Development session tracking
       let devLoggedIn = true;
       
-      // Create a test user for development
+      // Development auth using database users
       app.get('/api/auth/user', async (req, res) => {
         if (!devLoggedIn) {
           return res.status(401).json({ message: 'Unauthorized' });
         }
         
-        const testUser = {
-          id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-          email: 'test@company.com',
-          firstName: 'Test',
-          lastName: 'User',
-          profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100',
-          role: 'admin',
-          department: 'operations',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        res.json(testUser);
+        try {
+          // Get the first admin user from database
+          const [adminUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.role, 'admin'))
+            .limit(1);
+          
+          if (adminUser) {
+            res.json(adminUser);
+          } else {
+            // Create a default admin user if none exists
+            const [newUser] = await db
+              .insert(users)
+              .values({
+                email: 'admin@company.com',
+                firstName: 'System',
+                lastName: 'Administrator',
+                role: 'admin',
+                department: 'operations',
+                isActive: true,
+              })
+              .returning();
+            res.json(newUser);
+          }
+        } catch (error) {
+          console.error('Error getting auth user:', error);
+          res.status(500).json({ error: 'Failed to get user' });
+        }
       });
 
       // Development logout route
@@ -133,18 +150,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Fallback to development auth if setup fails
     app.get('/api/auth/user', async (req, res) => {
-      const testUser = {
-        id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        email: 'test@company.com',
-        firstName: 'Test',
-        lastName: 'User',
-        profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100',
+      try {
+        // Get the first admin user from database
+        const [adminUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.role, 'admin'))
+          .limit(1);
+        
+        if (adminUser) {
+          res.json(adminUser);
+        } else {
+          // Create a default admin user if none exists
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              email: 'admin@company.com',
+              firstName: 'System',
+              lastName: 'Administrator',
+              role: 'admin',
+              department: 'operations',
+              isActive: true,
+            })
+            .returning();
+          res.json(newUser);
+        }
+      } catch (error) {
+        console.error('Error getting auth user:', error);
+        // Fallback to basic user object
+        const fallbackUser = {
+        id: 'system-admin',
+        email: 'admin@company.com',
+        firstName: 'System',
+        lastName: 'Administrator',
+        profileImageUrl: null,
         role: 'admin',
         department: 'operations',
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
-      res.json(testUser);
+        };
+        res.json(fallbackUser);
+      }
     });
 
     // Fallback logout route
@@ -356,95 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Task creation and updates - handled by task-management-routes.ts
 
-  // In-memory mock notification state (for development only)
-  const mockNotifications = [
-    {
-      id: '936f1c8b-25f9-4551-b79b-cf8da902b8d3',
-      type: 'invoice.paid',
-      title: 'Invoice INV-2024-001 paid',
-      message: 'Payment of $1,500 received from TechCorp Solutions',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-    },
-    {
-      id: 'ddd0c61a-a585-4c8f-a421-e5bdefd171d0',
-      type: 'client.added',
-      title: 'New client registered',
-      message: 'TechCorp Solutions has been added to CRM',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-    },
-    {
-      id: 'ce8e75fc-0ff3-45ca-ad45-43fb35df561b',
-      type: 'task.assigned',
-      title: 'Task assigned',
-      message: 'Website redesign project has been assigned to you',
-      isRead: true,
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-    },
-    {
-      id: '772c4ac7-0f45-47c7-8b00-bf4cae35da6f',
-      type: 'quotation.accepted',
-      title: 'Quotation accepted',
-      message: 'Quotation QUO-2024-005 has been accepted by client',
-      isRead: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      userId: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-    },
-  ];
-
-  // Helper function to update global mock notification count
-  function updateMockNotificationCount() {
-    const count = mockNotifications.filter(n => !n.isRead).length;
-    (global as any).mockNotificationCount = count;
-    console.log(`🔄 Updated mock notification count to: ${count}`);
-    console.log('📋 Current notification statuses:', mockNotifications.map(n => ({ id: n.id.slice(0, 8), isRead: n.isRead })));
-  }
-
-  // Initialize the count
-  updateMockNotificationCount();
-
-  // Notification routes for navbar
-  app.get('/api/notifications', async (req: any, res) => {
-    try {
-      res.json(mockNotifications);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ error: 'Failed to fetch notifications' });
-    }
-  });
-
-  app.patch('/api/notifications/:id/read', async (req: any, res) => {
-    try {
-      // Find and update the mock notification
-      const notification = mockNotifications.find(n => n.id === req.params.id);
-      if (notification) {
-        notification.isRead = true;
-        updateMockNotificationCount(); // Update the global count
-        console.log(`📝 Mock: Marked notification ${req.params.id} as read`);
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      res.status(500).json({ error: 'Failed to mark notification as read' });
-    }
-  });
-
-  app.patch('/api/notifications/mark-all-read', async (req: any, res) => {
-    try {
-      // Mark all mock notifications as read
-      mockNotifications.forEach(n => n.isRead = true);
-      updateMockNotificationCount(); // Update the global count
-      console.log(`📝 Mock: Marked all notifications as read for user`);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      res.status(500).json({ error: 'Failed to mark all notifications as read' });
-    }
-  });
+  // All notification functionality is now handled by notification-routes.ts
 
   // Notification routes
   const notificationRoutes = await import("./notification-routes");

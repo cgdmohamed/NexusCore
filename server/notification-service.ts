@@ -350,12 +350,8 @@ class NotificationService {
       
       return Number((result.rows[0] as any)?.count || 0);
     } catch (error) {
-      console.log('🔄 Using mock notification count (notifications table not found)');
-      // For development, return dynamic mock count from global mockNotifications
-      // This will be updated by the mock notification system in routes.ts
-      const mockCount = (global as any).mockNotificationCount;
-      console.log(`📊 Mock unread count: ${mockCount}`);
-      return mockCount !== undefined ? mockCount : 2;
+      console.log('⚠️ Notifications table not found - returning 0 count');
+      return 0;
     }
   }
 

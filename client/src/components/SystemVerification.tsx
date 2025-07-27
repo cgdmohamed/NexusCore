@@ -66,26 +66,14 @@ export function SystemVerification() {
     }
   ];
 
-  const testMutation = useMutation({
+  const refreshMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'System Test Client',
-          email: 'test@system.com',
-          phone: '+1234567890',
-          city: 'Test City',
-          country: 'Test Country'
-        })
-      });
-      if (!response.ok) throw new Error('Failed to create test client');
-      return response.json();
+      // Invalidate all queries to refresh data
+      queryClient.invalidateQueries();
+      return Promise.resolve("Data refreshed");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      console.log("All data refreshed successfully");
     }
   });
 
@@ -138,20 +126,20 @@ export function SystemVerification() {
           ))}
           
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-2">Test Database Connection</h3>
-            <p className="text-sm text-blue-700 mb-3">Click to test creating a new client record in the database</p>
+            <h3 className="font-medium text-blue-900 mb-2">Refresh System Data</h3>
+            <p className="text-sm text-blue-700 mb-3">Click to refresh all module data from the database</p>
             <Button 
-              onClick={() => testMutation.mutate()}
-              disabled={testMutation.isPending}
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending}
               className="w-full"
             >
-              {testMutation.isPending ? 'Testing...' : 'Test Database Write'}
+              {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Data'}
             </Button>
-            {testMutation.isSuccess && (
-              <p className="text-sm text-green-600 mt-2">✅ Database write test successful!</p>
+            {refreshMutation.isSuccess && (
+              <p className="text-sm text-green-600 mt-2">✅ Data refresh successful!</p>
             )}
-            {testMutation.isError && (
-              <p className="text-sm text-red-600 mt-2">❌ Database write test failed</p>
+            {refreshMutation.isError && (
+              <p className="text-sm text-red-600 mt-2">❌ Data refresh failed</p>
             )}
           </div>
         </div>
