@@ -288,7 +288,16 @@ const translations: Translations = {
   'services.actions': { en: 'Actions', ar: 'الإجراءات' },
   'services.active': { en: 'Active', ar: 'نشط' },
   'services.inactive': { en: 'Inactive', ar: 'غير نشط' },
+  'services.categories': { en: 'Categories', ar: 'الفئات' },
+  'services.all_categories': { en: 'All Categories', ar: 'جميع الفئات' },
+  'services.search_placeholder': { en: 'Search services...', ar: 'البحث في الخدمات...' },
 
+  // Search and Filter Common
+  'common.search_and_filters': { en: 'Search & Filters', ar: 'البحث والفلاتر' },
+  'common.filter_by_category': { en: 'Filter by Category', ar: 'فلترة حسب الفئة' },
+  'common.view_mode': { en: 'View Mode', ar: 'وضع العرض' },
+  'common.grid_view': { en: 'Grid View', ar: 'عرض الشبكة' },
+  'common.table_view': { en: 'Table View', ar: 'عرض الجدول' },
 };
 
 export function useTranslation() {
