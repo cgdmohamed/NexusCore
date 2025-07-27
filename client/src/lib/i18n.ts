@@ -284,14 +284,12 @@ const translations: Translations = {
 
   // Additional Services translations
   'services.inactive_services': { en: 'Inactive Services', ar: 'الخدمات غير النشطة' },
-  'services.average_price': { en: 'Average Price', ar: 'متوسط السعر' },
   'services.avg_price': { en: 'Average Price', ar: 'متوسط السعر' },
   'services.status': { en: 'Status', ar: 'الحالة' },
   'services.actions': { en: 'Actions', ar: 'الإجراءات' },
   'services.active': { en: 'Active', ar: 'نشط' },
   'services.inactive': { en: 'Inactive', ar: 'غير نشط' },
   'services.categories': { en: 'Categories', ar: 'الفئات' },
-  'services.avg_price': { en: 'Average Price', ar: 'متوسط السعر' },
   'services.all_categories': { en: 'All Categories', ar: 'جميع الفئات' },
   'services.search_placeholder': { en: 'Search services...', ar: 'البحث في الخدمات...' },
 
