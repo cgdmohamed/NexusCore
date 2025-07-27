@@ -55,8 +55,8 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
       const res = await apiRequest("GET", `/api/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
       return await res.json();
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: unreadOnly ? 30000 : 60000, // More frequent updates for unread notifications
+    staleTime: 0, // Always consider data stale for immediate updates
+    refetchInterval: unreadOnly ? 5000 : 10000, // More frequent updates for real-time experience
   });
 
   // Fetch unread count separately for navbar badge
@@ -66,20 +66,24 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
       const res = await apiRequest("GET", "/api/notifications/unread-count");
       return await res.json();
     },
-    staleTime: 10000, // 10 seconds
-    refetchInterval: 15000, // Update every 15 seconds
+    staleTime: 0, // Always consider data stale for immediate updates
+    refetchInterval: 3000, // Update every 3 seconds for real-time badge
   });
 
   // Mark single notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      const res = await apiRequest("PUT", `/api/notifications/${notificationId}/read`);
+      const res = await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
       return await res.json();
     },
     onSuccess: () => {
-      // Invalidate notifications and unread count
+      // Invalidate notifications and unread count with more aggressive cache clearing
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: ["/api/notifications"] });
+      queryClient.refetchQueries({ queryKey: ["/api/notifications/unread-count"] });
     },
     onError: (error: Error) => {
       toast({
@@ -93,14 +97,18 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
   // Mark multiple notifications as read
   const markMultipleAsReadMutation = useMutation({
     mutationFn: async (notificationIds: string[]) => {
-      const res = await apiRequest("PUT", "/api/notifications/read-multiple", {
-        notificationIds
-      });
+      const res = await apiRequest("PATCH", "/api/notifications/mark-all-read");
       return await res.json();
     },
     onSuccess: () => {
+      // Invalidate and force refetch
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: ["/api/notifications"] });
+      queryClient.refetchQueries({ queryKey: ["/api/notifications/unread-count"] });
+      
       toast({
         title: "Success",
         description: "Notifications marked as read",
