@@ -96,6 +96,7 @@ export function setupDatabaseRoutes(app: Express) {
       const quotationsCount = await db.execute(sql`SELECT COUNT(*) as count FROM quotations`);
       const invoicesCount = await db.execute(sql`SELECT COUNT(*) as count FROM invoices`);
       const expensesCount = await db.execute(sql`SELECT COUNT(*) as count FROM expenses`);
+      const employeesCount = await db.execute(sql`SELECT COUNT(*) as count FROM employees`);
       const tasksCount = await db.execute(sql`SELECT COUNT(*) as count FROM tasks`);
       
       const counters = {
@@ -103,7 +104,7 @@ export function setupDatabaseRoutes(app: Express) {
         quotations: parseInt(quotationsCount[0]?.count?.toString() || '0'),
         invoices: parseInt(invoicesCount[0]?.count?.toString() || '0'),
         expenses: parseInt(expensesCount[0]?.count?.toString() || '0'),
-        employees: 2, // Mock data for employees
+        employees: parseInt(employeesCount[0]?.count?.toString() || '0'),
         tasks: parseInt(tasksCount[0]?.count?.toString() || '0'),
       };
       
@@ -445,7 +446,7 @@ export function setupDatabaseRoutes(app: Express) {
           notes: `Payment amount: $${paymentAmount}, Invoice balance: $${remainingAmount}`,
           previousBalance: previousCreditBalance.toFixed(2),
           newBalance: newCreditBalance.toFixed(2),
-          createdBy: '1',
+          createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         });
       }
       
@@ -577,7 +578,7 @@ export function setupDatabaseRoutes(app: Express) {
         refundReference: refundReference,
         previousBalance: availableCredit.toFixed(2),
         newBalance: newCreditBalance.toFixed(2),
-        createdBy: '1',
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       });
 
       res.json({ 
@@ -661,8 +662,8 @@ export function setupDatabaseRoutes(app: Express) {
         bankTransferNumber: null,
         attachmentUrl: null,
         notes: `Applied client credit balance: $${actualCreditUsed}`,
-        createdBy: '1',
-        approvedBy: '1',
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+        approvedBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       };
       
       const [newPayment] = await db.insert(payments).values(creditPayment).returning();
@@ -687,7 +688,7 @@ export function setupDatabaseRoutes(app: Express) {
         notes: `Credit balance applied to outstanding invoice`,
         previousBalance: currentCreditBalance.toFixed(2),
         newBalance: newCreditBalance.toFixed(2),
-        createdBy: '1',
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       });
       
       // Update invoice status

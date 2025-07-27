@@ -24,9 +24,10 @@ const devAuth = (req: any, res: any, next: any) => {
   if (process.env.NODE_ENV !== 'production') {
     // Mock user for development
     req.user = {
+      id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
       claims: {
-        sub: '1',
-        email: 'admin@company.com'
+        sub: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+        email: 'test@company.com'
       }
     };
   }

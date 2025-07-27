@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         country: req.body.country,
         status: req.body.status || 'active',
         totalValue: req.body.totalValue || '0',
-        createdBy: '1', // Use development user ID
+        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0', // Use actual user ID
       };
 
       const [newClient] = await db.insert(clients).values(clientData).returning();
@@ -272,246 +272,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quotation routes
-  app.get('/api/quotations', async (req: any, res) => {
-    try {
-      // Return mock data for development
-      const quotations = [
-        {
-          id: '1',
-          quotationNumber: 'QUO-2024-001',
-          title: 'Website Development Project',
-          clientId: '1',
-          amount: '15000',
-          status: 'pending',
-          validUntil: new Date('2024-02-15'),
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-15')
-        },
-        {
-          id: '2',
-          quotationNumber: 'QUO-2024-002',
-          title: 'Mobile App Development',
-          clientId: '2',
-          amount: '25000',
-          status: 'approved',
-          validUntil: new Date('2024-03-01'),
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ];
-      res.json(quotations);
-    } catch (error) {
-      console.error("Error fetching quotations:", error);
-      res.status(500).json({ message: "Failed to fetch quotations" });
-    }
-  });
+  // Quotation routes - handled by database-routes.ts
 
   // Quotation creation is handled by database-routes.ts
 
-  // Invoice routes
-  app.get('/api/invoices', async (req: any, res) => {
-    try {
-      // Return mock data for development
-      const invoices = [
-        {
-          id: '1',
-          invoiceNumber: 'INV-2024-001',
-          clientId: '1',
-          amount: '15000',
-          paidAmount: '15000',
-          status: 'paid',
-          dueDate: new Date('2024-02-15'),
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-30')
-        },
-        {
-          id: '2',
-          invoiceNumber: 'INV-2024-002',
-          clientId: '2',
-          amount: '25000',
-          paidAmount: '12500',
-          status: 'partially_paid',
-          dueDate: new Date('2024-03-01'),
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-25')
-        }
-      ];
-      res.json(invoices);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-      res.status(500).json({ message: "Failed to fetch invoices" });
-    }
-  });
+  // Invoice routes - handled by database-routes.ts
 
-  app.post('/api/invoices', async (req: any, res) => {
-    try {
-      // Mock invoice creation for development
-      const newInvoice = {
-        id: Date.now().toString(),
-        invoiceNumber: `INV-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-        clientId: req.body.clientId || '1',
-        amount: req.body.amount || '0',
-        paidAmount: '0',
-        status: 'pending',
-        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      res.status(201).json(newInvoice);
-    } catch (error) {
-      console.error("Error creating invoice:", error);
-      res.status(500).json({ message: "Failed to create invoice" });
-    }
-  });
+  // Expense routes - handled by expense-routes.ts
 
-  // Expense routes
-  app.get('/api/expenses', async (req: any, res) => {
-    try {
-      // Return mock data for development
-      const expenses = [
-        {
-          id: '1',
-          title: 'Office Supplies',
-          category: 'office',
-          amount: '450',
-          description: 'Printer paper, pens, and stationery',
-          status: 'approved',
-          receiptUrl: null,
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-16')
-        },
-        {
-          id: '2',
-          title: 'Client Meeting Dinner',
-          category: 'travel',
-          amount: '180',
-          description: 'Business dinner with potential client',
-          status: 'pending',
-          receiptUrl: null,
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ];
-      res.json(expenses);
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      res.status(500).json({ message: "Failed to fetch expenses" });
-    }
-  });
+  // Task routes - handled by task-management-routes.ts
 
-  app.post('/api/expenses', async (req: any, res) => {
-    try {
-      // Mock expense creation for development
-      const newExpense = {
-        id: Date.now().toString(),
-        title: req.body.title || 'New Expense',
-        category: req.body.category || 'office',
-        amount: req.body.amount || '0',
-        description: req.body.description || '',
-        status: 'pending',
-        receiptUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      res.status(201).json(newExpense);
-    } catch (error) {
-      console.error("Error creating expense:", error);
-      res.status(500).json({ message: "Failed to create expense" });
-    }
-  });
-
-  // Task routes
-  app.get('/api/tasks', async (req: any, res) => {
-    try {
-      // Return mock data for development
-      const tasks = [
-        {
-          id: '1',
-          title: 'Update website content',
-          description: 'Review and update the homepage content',
-          assignedTo: '1',
-          status: 'pending',
-          priority: 'high',
-          dueDate: new Date('2024-02-15'),
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-15')
-        },
-        {
-          id: '2',
-          title: 'Prepare client presentation',
-          description: 'Create slides for next weeks client meeting',
-          assignedTo: '2',
-          status: 'in_progress',
-          priority: 'medium',
-          dueDate: new Date('2024-02-10'),
-          createdAt: new Date('2024-01-18'),
-          updatedAt: new Date('2024-01-20')
-        },
-        {
-          id: '3',
-          title: 'Code review',
-          description: 'Review pull request for new feature',
-          assignedTo: '1',
-          status: 'completed',
-          priority: 'low',
-          dueDate: new Date('2024-01-25'),
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-25')
-        }
-      ];
-      res.json(tasks);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      res.status(500).json({ message: "Failed to fetch tasks" });
-    }
-  });
-
-  app.post('/api/tasks', async (req: any, res) => {
-    try {
-      // Mock task creation for development
-      const newTask = {
-        id: Date.now().toString(),
-        title: req.body.title || 'New Task',
-        description: req.body.description || '',
-        assignedTo: '1',
-        status: 'pending',
-        priority: req.body.priority || 'medium',
-        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      res.status(201).json(newTask);
-    } catch (error) {
-      console.error("Error creating task:", error);
-      res.status(500).json({ message: "Failed to create task" });
-    }
-  });
-
-  app.put('/api/tasks/:id', async (req: any, res) => {
-    try {
-      // Mock task update for development
-      const updatedTask = {
-        id: req.params.id,
-        title: req.body.title || 'Updated Task',
-        description: req.body.description || '',
-        assignedTo: req.body.assignedTo || '1',
-        status: req.body.status || 'pending',
-        priority: req.body.priority || 'medium',
-        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(),
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date()
-      };
-      
-      res.json(updatedTask);
-    } catch (error) {
-      console.error("Error updating task:", error);
-      res.status(500).json({ message: "Failed to update task" });
-    }
-  });
+  // Task creation and updates - handled by task-management-routes.ts
 
   // Notification routes for navbar
   app.get('/api/notifications', async (req: any, res) => {
@@ -525,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Payment of $1,500 received from TechCorp Solutions',
           isRead: false,
           createdAt: new Date().toISOString(),
-          userId: req.user?.id || '1',
+          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
           id: '2',
@@ -534,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'TechCorp Solutions has been added to CRM',
           isRead: false,
           createdAt: new Date(Date.now() - 3600000).toISOString(),
-          userId: req.user?.id || '1',
+          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
           id: '3',
@@ -543,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Website redesign project has been assigned to you',
           isRead: true,
           createdAt: new Date(Date.now() - 7200000).toISOString(),
-          userId: req.user?.id || '1',
+          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
         {
           id: '4',
@@ -552,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Quotation QUO-2024-005 has been accepted by client',
           isRead: true,
           createdAt: new Date(Date.now() - 86400000).toISOString(),
-          userId: req.user?.id || '1',
+          userId: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
         },
       ];
 

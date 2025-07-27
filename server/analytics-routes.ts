@@ -13,7 +13,10 @@ import {
 import { eq, gte, lte, and, sum, count, desc, sql } from "drizzle-orm";
 
 const devAuth = (req: any, res: any, next: any) => {
-  req.user = { claims: { sub: '1' } };
+  req.user = { 
+    id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+    claims: { sub: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' } 
+  };
   next();
 };
 
