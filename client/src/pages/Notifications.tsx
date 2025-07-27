@@ -245,7 +245,9 @@ export default function Notifications() {
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-xs text-gray-500 flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                          {notification.createdAt && !isNaN(new Date(notification.createdAt).getTime()) 
+                            ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })
+                            : "Just now"}
                         </span>
                         
                         {!notification.isRead && (
