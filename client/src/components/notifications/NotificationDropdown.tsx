@@ -109,9 +109,9 @@ export function NotificationDropdown() {
   };
 
   const handleMarkAllAsRead = () => {
-    const unreadNotifications = notifications.filter(n => !n.isRead);
+    const unreadNotifications = (notifications || []).filter((n: any) => !n.isRead);
     if (unreadNotifications.length > 0) {
-      markMultipleAsRead(unreadNotifications.map(n => n.id));
+      markMultipleAsRead(unreadNotifications.map((n: any) => n.id));
     }
   };
 
@@ -174,14 +174,14 @@ export function NotificationDropdown() {
                 </div>
               ))}
             </div>
-          ) : notifications.length === 0 ? (
+          ) : !notifications || !Array.isArray(notifications) || notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>{t("notifications.empty")}</p>
             </div>
           ) : (
             <div className="p-1">
-              {notifications.map((notification) => (
+              {(notifications || []).map((notification: any) => (
                 <DropdownMenuItem
                   key={notification.id}
                   className={`p-3 cursor-pointer space-y-1 focus:bg-gray-50 dark:focus:bg-gray-800 ${
