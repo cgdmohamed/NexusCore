@@ -60,9 +60,11 @@ export const employees = pgTable("employees", {
   createdBy: varchar("created_by"),
 });
 
-// Users table for system access - matching actual database structure
+// Users table for system access - updated for username/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username").unique().notNull(),
+  passwordHash: varchar("password_hash").notNull(),
   email: varchar("email").notNull().unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -497,8 +499,7 @@ export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type UpsertUser = typeof users.$inferInsert;
+export type InsertUser = typeof users.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 

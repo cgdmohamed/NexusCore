@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./replitAuth";
+import { setupAuth, requireAuth } from "./auth";
 import { setupDatabaseRoutes } from "./database-routes";
 import { registerExpenseRoutes } from "./expense-routes";
 import { registerPaymentSourceRoutes } from "./payment-source-routes";
