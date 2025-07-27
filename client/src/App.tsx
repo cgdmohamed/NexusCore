@@ -28,6 +28,7 @@ import UserManagement from "@/pages/UserManagement";
 import UserProfile from "@/pages/UserProfile";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import Notifications from "@/pages/Notifications";
+import Services from "@/pages/Services";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -77,6 +78,7 @@ function Router() {
             <Route path="/users/:id" component={UserProfile} />
             <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/tasks" component={Tasks} />
+            <Route path="/services" component={Services} />
             <Route path="/reports-kpis" component={Analytics} />
             <Route path="/notifications" component={Notifications} />
             <Route component={NotFound} />

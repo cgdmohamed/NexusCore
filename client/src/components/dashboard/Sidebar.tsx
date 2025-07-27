@@ -25,17 +25,17 @@ export function Sidebar() {
   const currentUser = user as User | undefined;
 
   // Fetch real-time data for badges
-  const { data: taskStats } = useQuery({
+  const { data: taskStats } = useQuery<any>({
     queryKey: ["/api/tasks/stats"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     refetchInterval: 30000,
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [] } = useQuery<any[]>({
     queryKey: ["/api/invoices"],
     refetchInterval: 30000,
   });
@@ -71,6 +71,7 @@ export function Sidebar() {
         : undefined,
       badgeColor: 'bg-yellow-500'
     },
+    { name: 'nav.services', href: '/services', icon: Receipt },
     { name: 'nav.team_roles', href: '/team-roles', icon: UserCog },
     { name: 'nav.reports_kpis', href: '/reports-kpis', icon: TrendingUp },
   ];

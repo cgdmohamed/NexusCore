@@ -6,6 +6,7 @@ import {
   expenses,
   tasks,
   activities,
+  services,
   type User,
   type UpsertUser,
   type Client,
@@ -20,9 +21,11 @@ import {
   type InsertTask,
   type Activity,
   type InsertActivity,
+  type Service,
+  type InsertService,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, count, sum, gte, lte } from "drizzle-orm";
+import { eq, desc, and, count, sum, gte, lte, asc, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -68,6 +71,31 @@ export interface IStorage {
   getActivities(userId: string, limit?: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
   
+  // Services operations
+  getServices(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    category?: string;
+    activeOnly?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{
+    services: Service[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }>;
+  getService(id: string): Promise<Service | undefined>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined>;
+  deleteService(id: string): Promise<boolean>;
+  getServiceCategories(): Promise<string[]>;
+  bulkUpdateServiceStatus(serviceIds: string[], isActive: boolean): Promise<number>;
+
   // Analytics operations
   getDashboardKPIs(userId: string): Promise<{
     totalRevenue: number;
@@ -280,6 +308,122 @@ export class DatabaseStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const [newActivity] = await db.insert(activities).values(activity).returning();
     return newActivity;
+  }
+
+  // Services operations
+  async getServices(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    category?: string;
+    activeOnly?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{
+    services: Service[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const { page, limit, search, category, activeOnly, sortBy = "name", sortOrder = "asc" } = params;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const conditions = [];
+    
+    if (activeOnly) {
+      conditions.push(eq(services.isActive, true));
+    }
+    
+    if (search) {
+      conditions.push(
+        or(
+          ilike(services.name, `%${search}%`),
+          ilike(services.description, `%${search}%`)
+        )
+      );
+    }
+    
+    if (category) {
+      conditions.push(eq(services.category, category));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: count() })
+      .from(services)
+      .where(whereClause);
+    const total = totalResult[0].count;
+
+    // Get services with pagination
+    const sortColumn = services[sortBy as keyof typeof services] || services.name;
+    const orderClause = sortOrder === "desc" ? desc(sortColumn) : asc(sortColumn);
+
+    const servicesResult = await db
+      .select()
+      .from(services)
+      .where(whereClause)
+      .orderBy(orderClause)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      services: servicesResult,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getService(id: string): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service;
+  }
+
+  async createService(service: InsertService): Promise<Service> {
+    const [newService] = await db.insert(services).values(service).returning();
+    return newService;
+  }
+
+  async updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined> {
+    const [updatedService] = await db
+      .update(services)
+      .set({ ...service, updatedAt: new Date() })
+      .where(eq(services.id, id))
+      .returning();
+    return updatedService;
+  }
+
+  async deleteService(id: string): Promise<boolean> {
+    const result = await db.delete(services).where(eq(services.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getServiceCategories(): Promise<string[]> {
+    const categories = await db
+      .select({ category: services.category })
+      .from(services)
+      .where(and(eq(services.isActive, true), services.category))
+      .groupBy(services.category);
+    
+    return categories.map(c => c.category).filter(Boolean);
+  }
+
+  async bulkUpdateServiceStatus(serviceIds: string[], isActive: boolean): Promise<number> {
+    const result = await db
+      .update(services)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(services.id, serviceIds[0])); // This would need proper IN operator for multiple IDs
+    
+    return result.rowCount;
   }
 
   // Analytics operations

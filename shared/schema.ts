@@ -597,13 +597,13 @@ export const quotationItems = pgTable("quotation_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Predefined services
+// Services & Offerings table
 export const services = pgTable("services", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   description: text("description"),
-  defaultPrice: decimal("default_price", { precision: 10, scale: 2 }).notNull(),
-  category: varchar("category").notNull(), // web-design, development, marketing, consulting
+  defaultPrice: decimal("default_price", { precision: 10, scale: 2 }),
+  category: varchar("category"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -622,6 +622,10 @@ export type QuotationItem = typeof quotationItems.$inferSelect;
 export type InsertQuotationItem = typeof quotationItems.$inferInsert;
 export type Service = typeof services.$inferSelect;
 export type InsertService = typeof services.$inferInsert;
+export const insertServiceSchema = createInsertSchema(services);
+export const updateServiceSchema = insertServiceSchema.partial().extend({
+  id: z.string()
+});
 export type ClientNote = typeof clientNotes.$inferSelect;
 export type InsertClientNote = typeof clientNotes.$inferInsert;
 
