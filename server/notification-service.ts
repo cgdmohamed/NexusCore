@@ -9,7 +9,7 @@ import {
   type InsertNotificationLog,
   type Notification
 } from "@shared/schema";
-import { eq, and, desc, count, inArray } from "drizzle-orm";
+import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
 
 export interface NotificationPayload {
   userId: string;
@@ -255,19 +255,11 @@ class NotificationService {
    * Mark notification as read
    */
   async markAsRead(notificationId: string, userId: string): Promise<void> {
-    await db
-      .update(notifications)
-      .set({
-        status: "read",
-        readAt: new Date(),
-        updatedAt: new Date()
-      })
-      .where(
-        and(
-          eq(notifications.id, notificationId),
-          eq(notifications.userId, userId)
-        )
-      );
+    await db.execute(sql`
+      UPDATE notifications 
+      SET is_read = true, updated_at = ${new Date().toISOString()}
+      WHERE id = ${notificationId} AND user_id = ${userId}
+    `);
 
     await this.logNotification(notificationId, "read", "in_app", true);
   }
@@ -276,19 +268,12 @@ class NotificationService {
    * Mark multiple notifications as read
    */
   async markMultipleAsRead(notificationIds: string[], userId: string): Promise<void> {
-    await db
-      .update(notifications)
-      .set({
-        status: "read",
-        readAt: new Date(),
-        updatedAt: new Date()
-      })
-      .where(
-        and(
-          inArray(notifications.id, notificationIds),
-          eq(notifications.userId, userId)
-        )
-      );
+    const idList = notificationIds.map(id => `'${id}'`).join(',');
+    await db.execute(sql`
+      UPDATE notifications 
+      SET is_read = true, updated_at = ${new Date().toISOString()}
+      WHERE id IN (${sql.raw(idList)}) AND user_id = ${userId}
+    `);
 
     // Log each notification
     for (const id of notificationIds) {
@@ -308,39 +293,42 @@ class NotificationService {
     const offset = (page - 1) * limit;
     
     const whereClause = unreadOnly 
-      ? and(eq(notifications.userId, userId), eq(notifications.status, "unread"))
-      : eq(notifications.userId, userId);
+      ? sql`user_id = ${userId} AND is_read = false`
+      : sql`user_id = ${userId}`;
 
-    // Get notifications
-    const userNotifications = await db
-      .select()
-      .from(notifications)
-      .where(whereClause)
-      .orderBy(desc(notifications.createdAt))
-      .limit(limit)
-      .offset(offset);
+    // Get notifications using raw SQL for consistency
+    const notificationsQuery = unreadOnly 
+      ? sql`SELECT * FROM notifications WHERE user_id = ${userId} AND is_read = false ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
+      : sql`SELECT * FROM notifications WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    
+    const notificationsResult = await db.execute(notificationsQuery);
+    const userNotifications = notificationsResult.rows as Notification[];
 
     // Get total count
-    const [totalResult] = await db
-      .select({ count: count() })
-      .from(notifications)
-      .where(eq(notifications.userId, userId));
+    const totalResult = await db.execute(sql`
+      SELECT COUNT(*) as count 
+      FROM notifications 
+      WHERE user_id = ${userId}
+    `);
+    const totalCount = Number((totalResult.rows[0] as any)?.count || 0);
 
-    // Get unread count
-    const [unreadResult] = await db
-      .select({ count: count() })
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          eq(notifications.status, "unread")
-        )
-      );
+    // Get unread count  
+    let unreadCount = 0;
+    try {
+      const unreadResult = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM notifications 
+        WHERE user_id = ${userId} AND is_read = false
+      `);
+      unreadCount = Number((unreadResult.rows[0] as any)?.count || 0);
+    } catch (error) {
+      console.error('Error getting unread count in getUserNotifications:', error);
+    }
 
     return {
       notifications: userNotifications,
-      total: totalResult.count,
-      unreadCount: unreadResult.count
+      total: totalCount,
+      unreadCount
     };
   }
 
@@ -348,17 +336,19 @@ class NotificationService {
    * Get unread count for user
    */
   async getUnreadCount(userId: string): Promise<number> {
-    const [result] = await db
-      .select({ count: count() })
-      .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          eq(notifications.status, "unread")
-        )
-      );
-
-    return result.count;
+    try {
+      const result = await db.execute(sql`
+        SELECT COUNT(*) as count 
+        FROM notifications 
+        WHERE user_id = ${userId} AND is_read = false
+      `);
+      
+      return Number((result.rows[0] as any)?.count || 0);
+    } catch (error) {
+      console.error('Error getting unread count:', error);
+      // Fallback to 0 if there's an error
+      return 0;
+    }
   }
 
   /**
