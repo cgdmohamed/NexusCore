@@ -44,12 +44,15 @@
    queryClient.clear(); // Clears all cached data on logout/login
    ```
 
-4. **Nginx Cache (If Applicable)**
+4. **Nginx Cache (CRITICAL - You Have Nginx)**
    ```bash
-   # On VPS if using Nginx caching
-   sudo nginx -s reload
-   # Or clear nginx cache directory
+   # Clear Nginx cache and reload configuration
    sudo rm -rf /var/cache/nginx/*
+   sudo nginx -t  # Test configuration
+   sudo nginx -s reload
+   
+   # Alternative: Full restart
+   sudo systemctl restart nginx
    ```
 
 ## ⚡ Quick Cache Clear Commands:
@@ -62,12 +65,20 @@
 4. Refresh page (F5)
 ```
 
-### For VPS Admin:
+### For VPS Admin (You Have Nginx):
 ```bash
-# Clear all caches on server
-pm2 restart companyos
-sudo nginx -s reload  # if using nginx
-sudo systemctl restart nginx  # alternative
+# Complete server cache clear sequence
+pm2 delete companyos
+pm2 start server/prod.cjs --name companyos
+pm2 save
+
+# Clear Nginx cache (IMPORTANT)
+sudo rm -rf /var/cache/nginx/*
+sudo nginx -s reload
+
+# Verify services
+pm2 status
+sudo nginx -t
 ```
 
 ## 🎯 Verification Steps:
