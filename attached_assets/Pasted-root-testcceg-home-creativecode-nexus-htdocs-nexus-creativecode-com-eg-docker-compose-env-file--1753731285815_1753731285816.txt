@@ -1,0 +1,76 @@
+root@testcceg:/home/creativecode-nexus/htdocs/nexus.creativecode.com.eg# docker-compose --env-file .env.docker up -d
+Creating network "nexuscreativecodecomeg_companyos-network" with driver "bridge"
+Creating volume "nexuscreativecodecomeg_postgres-data" with local driver
+Creating volume "nexuscreativecodecomeg_redis-data" with local driver
+Creating volume "nexuscreativecodecomeg_app-logs" with local driver
+Creating volume "nexuscreativecodecomeg_nginx-logs" with local driver
+Pulling postgres (postgres:15-alpine)...
+15-alpine: Pulling from library/postgres
+9824c27679d3: Pull complete
+2d24f7d1d290: Pull complete
+608e634a9332: Pull complete
+ec7962788232: Pull complete
+299375ace78d: Pull complete
+5b57d5761443: Pull complete
+d0aede649ee3: Pull complete
+4477580949b1: Pull complete
+7c314e1269bc: Pull complete
+d71e886fe3be: Pull complete
+9d240404d8bc: Pull complete
+Digest: sha256:1414298ea93186123a6dcf872f778ba3bd2347edcbd2f31aa7bb2d9814ff5393
+Status: Downloaded newer image for postgres:15-alpine
+Building app
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  1.841MB
+Step 1/20 : FROM node:18-alpine AS builder
+18-alpine: Pulling from library/node
+f18232174bc9: Pull complete
+dd71dde834b5: Pull complete
+1e5a4c89cee5: Pull complete
+25ff2da83641: Pull complete
+Digest: sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+Status: Downloaded newer image for node:18-alpine
+ ---> ee77c6cd7c18
+Step 2/20 : WORKDIR /app
+ ---> Running in ca7019e3fd73
+ ---> Removed intermediate container ca7019e3fd73
+ ---> ec26b3c98e22
+Step 3/20 : COPY package*.json ./
+ ---> 4238dd03bedb
+Step 4/20 : RUN npm ci --only=production && npm cache clean --force
+ ---> Running in 8e7c4835d961
+npm warn config only Use `--omit=dev` to omit dev dependencies from the install.
+
+added 407 packages, and audited 408 packages in 10s
+
+57 packages are looking for funding
+  run `npm fund` for details
+
+3 low severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.5.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+npm notice To update run: npm install -g npm@11.5.1
+npm notice
+npm warn using --force Recommended protections disabled.
+ ---> Removed intermediate container 8e7c4835d961
+ ---> 1ca4928ca9d6
+Step 5/20 : COPY . .
+ ---> a25d4169f90c
+Step 6/20 : RUN npm run build
+ ---> Running in 101c407ae74c
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+sh: vite: not found
+The command '/bin/sh -c npm run build' returned a non-zero code: 127
+ERROR: Service 'app' failed to build : Build failed
