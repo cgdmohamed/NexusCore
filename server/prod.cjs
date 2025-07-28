@@ -51,7 +51,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic API routes for production
+// Session management
+const session = require('express-session');
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-super-secure-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
+
+// Mock user for authentication
+const mockUser = {
+  id: 'admin-001',
+  username: 'admin',
+  password: 'admin123', // In production, this should be hashed
+  email: 'admin@company.com',
+  firstName: 'System',
+  lastName: 'Administrator',
+  profileImageUrl: null
+};
+
+// Authentication middleware
+function isAuthenticated(req, res, next) {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  return res.status(401).json({ message: 'Not authenticated' });
+}
+
+// API routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -60,6 +89,100 @@ app.get('/api/config', (req, res) => {
   res.json({
     companyName: process.env.COMPANY_NAME || 'Creative Code Nexus',
     companyTagline: process.env.COMPANY_TAGLINE || 'Digital Solutions & Innovation'
+  });
+});
+
+// Authentication routes
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  
+  if (username === mockUser.username && password === mockUser.password) {
+    req.session.user = {
+      id: mockUser.id,
+      username: mockUser.username,
+      email: mockUser.email,
+      firstName: mockUser.firstName,
+      lastName: mockUser.lastName,
+      profileImageUrl: mockUser.profileImageUrl
+    };
+    res.json(req.session.user);
+  } else {
+    res.status(401).json({ message: 'Invalid credentials' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: 'Could not log out' });
+    }
+    res.json({ message: 'Logged out successfully' });
+  });
+});
+
+app.get('/api/user', isAuthenticated, (req, res) => {
+  res.json(req.session.user);
+});
+
+// Basic protected routes that return empty data
+app.get('/api/clients', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/invoices', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/quotations', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/expenses', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/tasks', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/services', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/notifications', isAuthenticated, (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/notifications/unread-count', isAuthenticated, (req, res) => {
+  res.json({ count: 0 });
+});
+
+// Dashboard stats
+app.get('/api/tasks/stats', isAuthenticated, (req, res) => {
+  res.json({
+    total: 0,
+    statusBreakdown: { pending: 0, 'in-progress': 0, completed: 0 },
+    priorityBreakdown: { low: 0, medium: 0, high: 0 }
+  });
+});
+
+app.get('/api/clients/stats', isAuthenticated, (req, res) => {
+  res.json({
+    total: 0,
+    active: 0,
+    leads: 0,
+    inactive: 0
+  });
+});
+
+app.get('/api/invoices/stats', isAuthenticated, (req, res) => {
+  res.json({
+    total: 0,
+    paid: 0,
+    pending: 0,
+    overdue: 0,
+    totalAmount: 0,
+    paidAmount: 0
   });
 });
 
