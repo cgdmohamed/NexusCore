@@ -1,0 +1,28 @@
+root@nexus:~/NexusCore# pm2 logs companyos
+[TAILING] Tailing last 15 lines for [companyos] process (change the value with --lines option)
+/root/.pm2/logs/companyos-out.log last 15 lines:
+/root/.pm2/logs/companyos-error.log last 15 lines:
+0|companyo | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|companyo |     at file:///root/NexusCore/dist/index.js:902:9
+0|companyo |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|companyo |     at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+0|companyo |     at async importModuleDynamicallyWrapper (node:internal/vm/module:432:15)
+
+^C
+root@nexus:~/NexusCore# pm2 delete companyos
+[PM2] Applying action deleteProcessId on app [companyos](ids: [ 0 ])
+[PM2] [companyos](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@nexus:~/NexusCore# DATABASE_URL=postgresql://postgres:password@localhost:5432/companyos pm2 start dist/index.js --name companyos
+[PM2] Starting /root/NexusCore/dist/index.js in fork_mode (1 instance)
+[PM2] Done.
+┌────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ companyos    │ default     │ 1.0.0   │ fork    │ 64802    │ 0s     │ 0    │ online    │ 0%       │ 4.0kb    │ root     │ disabled │
+└────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@nexus:~/NexusCore# sudo lsof -i -P -n | grep 5000
+root@nexus:~/NexusCore# curl -I http://localhost:5000/api/health
+curl: (7) Failed to connect to localhost port 5000: Connection refused
