@@ -2,8 +2,74 @@
 require('dotenv/config');
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
+
+// Create logs directory if it doesn't exist
+const logsDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
+// Error logging function
+function logError(error, context = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level: 'ERROR',
+    message: error.message,
+    stack: error.stack,
+    context,
+    pid: process.pid
+  };
+  
+  const logLine = JSON.stringify(logEntry) + '\n';
+  
+  // Log to file
+  fs.appendFileSync(path.join(logsDir, 'error.log'), logLine);
+  
+  // Also log to console for immediate visibility
+  console.error(`[${timestamp}] ERROR:`, error.message);
+  if (error.stack) {
+    console.error('Stack:', error.stack);
+  }
+}
+
+// General info logging function
+function logInfo(message, data = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level: 'INFO',
+    message,
+    data,
+    pid: process.pid
+  };
+  
+  const logLine = JSON.stringify(logEntry) + '\n';
+  fs.appendFileSync(path.join(logsDir, 'app.log'), logLine);
+  console.log(`[${timestamp}] INFO:`, message);
+}
+
+// API access logging function
+function logApiAccess(req, res, duration) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level: 'API',
+    method: req.method,
+    path: req.path,
+    statusCode: res.statusCode,
+    duration: `${duration}ms`,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip || req.connection.remoteAddress,
+    userId: req.session?.user?.id || 'anonymous'
+  };
+  
+  const logLine = JSON.stringify(logEntry) + '\n';
+  fs.appendFileSync(path.join(logsDir, 'api.log'), logLine);
+}
 
 // Basic middleware
 app.use(express.json({ limit: '10mb' }));
@@ -39,13 +105,14 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// Logging middleware
+// Enhanced logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (req.path.startsWith("/api")) {
       console.log(`${new Date().toLocaleTimeString()} [express] ${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+      logApiAccess(req, res, duration);
     }
   });
   next();
@@ -74,10 +141,26 @@ const mockUser = {
 
 // Authentication middleware
 function isAuthenticated(req, res, next) {
-  if (req.session && req.session.user) {
-    return next();
+  try {
+    if (req.session && req.session.user) {
+      return next();
+    }
+    logError(new Error('Unauthorized access attempt'), {
+      endpoint: `${req.method} ${req.path}`,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      hasSession: !!req.session,
+      hasUser: !!req.session?.user
+    });
+    return res.status(401).json({ message: 'Not authenticated' });
+  } catch (error) {
+    logError(error, { 
+      endpoint: 'Authentication middleware',
+      path: req.path,
+      ip: req.ip 
+    });
+    return res.status(500).json({ message: 'Internal server error' });
   }
-  return res.status(401).json({ message: 'Not authenticated' });
 }
 
 // API routes
@@ -94,30 +177,74 @@ app.get('/api/config', (req, res) => {
 
 // Authentication routes
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  if (username === mockUser.username && password === mockUser.password) {
-    req.session.user = {
-      id: mockUser.id,
-      username: mockUser.username,
-      email: mockUser.email,
-      firstName: mockUser.firstName,
-      lastName: mockUser.lastName,
-      profileImageUrl: mockUser.profileImageUrl
-    };
-    res.json(req.session.user);
-  } else {
-    res.status(401).json({ message: 'Invalid credentials' });
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      logError(new Error('Login attempt with missing credentials'), { 
+        ip: req.ip, 
+        userAgent: req.get('User-Agent'),
+        providedUsername: username ? 'provided' : 'missing',
+        providedPassword: password ? 'provided' : 'missing'
+      });
+      return res.status(400).json({ message: 'Username and password required' });
+    }
+    
+    if (username === mockUser.username && password === mockUser.password) {
+      req.session.user = {
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        profileImageUrl: mockUser.profileImageUrl
+      };
+      logInfo('Successful login', { 
+        userId: mockUser.id, 
+        username: mockUser.username,
+        ip: req.ip 
+      });
+      res.json(req.session.user);
+    } else {
+      logError(new Error('Invalid login attempt'), { 
+        attemptedUsername: username,
+        ip: req.ip, 
+        userAgent: req.get('User-Agent')
+      });
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (error) {
+    logError(error, { 
+      endpoint: 'POST /api/login',
+      ip: req.ip,
+      body: req.body 
+    });
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ message: 'Could not log out' });
-    }
-    res.json({ message: 'Logged out successfully' });
-  });
+  try {
+    const userId = req.session?.user?.id;
+    req.session.destroy((err) => {
+      if (err) {
+        logError(err, { 
+          endpoint: 'POST /api/logout',
+          userId,
+          ip: req.ip 
+        });
+        return res.status(500).json({ message: 'Could not log out' });
+      }
+      logInfo('Successful logout', { userId, ip: req.ip });
+      res.json({ message: 'Logged out successfully' });
+    });
+  } catch (error) {
+    logError(error, { 
+      endpoint: 'POST /api/logout',
+      ip: req.ip 
+    });
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 app.get('/api/user', isAuthenticated, (req, res) => {
@@ -485,17 +612,60 @@ app.get('*', (req, res) => {
   res.sendFile(path.resolve(distPath, 'index.html'));
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
-  console.error(err);
+// Global error handler
+app.use((error, req, res, next) => {
+  logError(error, {
+    endpoint: `${req.method} ${req.path}`,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    userId: req.session?.user?.id
+  });
+  
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+});
+
+// Catch-all handler for SPA routing
+app.get('*', (req, res) => {
+  try {
+    res.sendFile(path.resolve(distPath, 'index.html'));
+  } catch (error) {
+    logError(error, { 
+      endpoint: 'SPA catchall',
+      path: req.path,
+      ip: req.ip 
+    });
+    res.status(500).send('Error loading application');
+  }
 });
 
 const port = parseInt(process.env.PORT || '5000', 10);
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logError(error, { type: 'uncaughtException' });
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logError(new Error(`Unhandled Rejection: ${reason}`), { 
+    type: 'unhandledRejection',
+    promise: promise.toString()
+  });
+  console.error('Unhandled Rejection:', reason);
+});
+
 const server = require('http').createServer(app);
 
 server.listen(port, '0.0.0.0', () => {
+  logInfo('Server started successfully', { 
+    port: port,
+    environment: process.env.NODE_ENV || 'development',
+    pid: process.pid
+  });
   console.log(`${new Date().toLocaleTimeString()} [express] serving on port ${port}`);
 });
