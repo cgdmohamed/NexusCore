@@ -18,6 +18,8 @@ services:
       - PORT=5000
       - DATABASE_URL=postgresql://companyos_user:${DB_PASSWORD:-companyos123}@postgres:5432/companyos
       - SESSION_SECRET=${SESSION_SECRET:-your-super-secure-session-secret-change-this-in-production}
+      - COMPANY_NAME=${COMPANY_NAME:-CompanyOS}
+      - COMPANY_TAGLINE=${COMPANY_TAGLINE:-Enterprise Management Platform}
     depends_on:
       postgres:
         condition: service_healthy
