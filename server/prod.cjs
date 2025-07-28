@@ -279,6 +279,9 @@ let services = [
 let users = [];
 let notifications = [];
 
+// Initialize global storage for quotation items
+global.quotationItems = global.quotationItems || [];
+
 // Helper function to generate IDs
 function generateId() {
   return Math.random().toString(36).substr(2, 9);
@@ -584,7 +587,11 @@ app.get('/api/payment-sources', isAuthenticated, (req, res) => {
 app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
   try {
     const quotationId = req.params.id;
-    const items = quotationItems.filter(item => item.quotationId === quotationId);
+    // Initialize quotationItems if not exists
+    if (!global.quotationItems) {
+      global.quotationItems = [];
+    }
+    const items = global.quotationItems.filter(item => item.quotationId === quotationId);
     logAPI(req, res);
     res.json(items);
   } catch (error) {
@@ -609,7 +616,11 @@ app.post('/api/quotations/:id/items', isAuthenticated, (req, res) => {
       total: (req.body.quantity || 1) * (req.body.price || 0)
     };
     
-    quotationItems.push(newItem);
+    // Initialize quotationItems if not exists
+    if (!global.quotationItems) {
+      global.quotationItems = [];
+    }
+    global.quotationItems.push(newItem);
     logAPI(req, res);
     res.status(201).json(newItem);
   } catch (error) {
@@ -618,6 +629,57 @@ app.post('/api/quotations/:id/items', isAuthenticated, (req, res) => {
       userId: req.session?.user?.id 
     });
     res.status(500).json({ message: 'Error creating quotation item' });
+  }
+});
+
+// PATCH quotation items - missing endpoint
+app.patch('/api/quotations/:quotationId/items/:id', isAuthenticated, (req, res) => {
+  try {
+    if (!global.quotationItems) {
+      global.quotationItems = [];
+    }
+    const item = global.quotationItems.find(item => 
+      item.id === req.params.id && item.quotationId === req.params.quotationId
+    );
+    if (!item) {
+      return res.status(404).json({ message: 'Quotation item not found' });
+    }
+    
+    Object.assign(item, req.body);
+    item.total = item.quantity * item.price;
+    logAPI(req, res);
+    res.json(item);
+  } catch (error) {
+    logError(error, { 
+      endpoint: `PATCH /api/quotations/${req.params.quotationId}/items/${req.params.id}`, 
+      userId: req.session?.user?.id 
+    });
+    res.status(500).json({ message: 'Error updating quotation item' });
+  }
+});
+
+// DELETE quotation items - missing endpoint
+app.delete('/api/quotations/:quotationId/items/:id', isAuthenticated, (req, res) => {
+  try {
+    if (!global.quotationItems) {
+      global.quotationItems = [];
+    }
+    const index = global.quotationItems.findIndex(item => 
+      item.id === req.params.id && item.quotationId === req.params.quotationId
+    );
+    if (index === -1) {
+      return res.status(404).json({ message: 'Quotation item not found' });
+    }
+    
+    global.quotationItems.splice(index, 1);
+    logAPI(req, res);
+    res.status(204).send();
+  } catch (error) {
+    logError(error, { 
+      endpoint: `DELETE /api/quotations/${req.params.quotationId}/items/${req.params.id}`, 
+      userId: req.session?.user?.id 
+    });
+    res.status(500).json({ message: 'Error deleting quotation item' });
   }
 });
 
@@ -690,23 +752,19 @@ app.use(express.static(distPath));
 
 // 404 handler for API routes only - must come before SPA catch-all
 app.use('/api', (req, res, next) => {
-  // Only handle actual API 404s, not homepage requests
-  if (req.path.startsWith('/api/')) {
-    logError(new Error(`404 - API Endpoint not found: ${req.method} ${req.path}`), {
-      endpoint: `${req.method} ${req.path}`,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-      userId: req.session?.user?.id,
-      type: '404_api_endpoint_missing'
-    });
-    
-    res.status(404).json({ 
-      message: `API endpoint not found: ${req.method} ${req.path}`,
-      timestamp: new Date().toISOString()
-    });
-  } else {
-    next();
-  }
+  // Log 404 API requests as errors for tracking
+  logError(new Error(`404 - API Endpoint not found: ${req.method} ${req.originalUrl}`), {
+    endpoint: `${req.method} ${req.originalUrl}`,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    userId: req.session?.user?.id,
+    type: '404_api_endpoint_missing'
+  });
+  
+  res.status(404).json({ 
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Global error handler
