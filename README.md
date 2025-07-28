@@ -194,39 +194,420 @@ These settings will automatically update:
 - **HTTPS Ready** - SSL certificate support and security headers
 - **Data Protection** - Input validation and SQL injection prevention
 
-## Deployment Options
+## Production Deployment
 
-{{COMPANY_NAME}} supports multiple deployment strategies:
+{{COMPANY_NAME}} supports multiple deployment strategies for different environments and requirements.
 
-### 📦 Docker Deployment
+### 📦 Docker Deployment (Recommended)
+
 **Best for**: Production environments, cloud deployment, scalability
-- Complete containerization with Docker Compose
-- Automated database setup and migrations
-- Nginx reverse proxy with SSL support
-- Health monitoring and automatic restarts
-- [→ Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
+
+Docker provides the most reliable and scalable deployment option with automated setup and health monitoring.
+
+#### Quick Setup
+
+```bash
+# Clone and configure
+git clone <repository-url>
+cd your-company-system
+
+# Configure company branding and environment
+cp .env.docker.example .env.docker
+# Edit .env.docker with your settings:
+# COMPANY_NAME=Your Company Name
+# COMPANY_TAGLINE=Your Company Tagline
+
+# Deploy with Docker Compose
+docker-compose --env-file .env.docker up -d
+```
+
+#### Complete Docker Configuration
+
+**Prerequisites:**
+- Docker Engine 20.x or higher
+- Docker Compose 2.x or higher
+- 2GB+ available RAM
+- 10GB+ available disk space
+
+**Environment Variables:**
+```bash
+# Company Branding
+COMPANY_NAME=Your Company Name
+COMPANY_TAGLINE=Your Company Tagline
+
+# Application
+NODE_ENV=production
+PORT=5000
+DOMAIN=yourdomain.com
+
+# Database (uses port 5433 to avoid conflicts)
+DB_PASSWORD=your-secure-password
+DB_PORT=5433
+
+# Redis (uses port 6380 to avoid conflicts)
+REDIS_PASSWORD=your-redis-password
+REDIS_PORT=6380
+
+# Security
+SESSION_SECRET=your-super-secure-session-secret-minimum-32-characters
+```
+
+**Deployment Commands:**
+```bash
+# Initial deployment
+docker-compose --env-file .env.docker up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f app
+
+# Update application
+git pull
+docker-compose --env-file .env.docker up -d --build
+
+# Stop services
+docker-compose down
+
+# Complete reset (removes all data)
+docker-compose down -v
+```
+
+**Troubleshooting Docker Issues:**
+
+*Port Conflicts:*
+```bash
+# If you get "port already in use" errors
+docker-compose down
+# Edit .env.docker to use different ports
+DB_PORT=5434
+REDIS_PORT=6381
+# Then redeploy
+docker-compose --env-file .env.docker up -d
+```
+
+*Build Failures:*
+```bash
+# Clear Docker cache and rebuild
+docker system prune -f
+docker-compose --env-file .env.docker up -d --build --force-recreate
+```
+
+*Database Issues:*
+```bash
+# Reset database
+docker-compose down -v
+docker-compose --env-file .env.docker up -d
+
+# Check database connection
+docker-compose exec postgres psql -U companyos_user -d companyos -c "SELECT version();"
+```
+
+**Production Hardening:**
+- Change default passwords in `.env.docker`
+- Use strong SESSION_SECRET (minimum 32 characters)
+- Configure SSL certificates in nginx service
+- Set up automated backups using the backup scripts
+- Enable monitoring with health checks
 
 ### 🌐 cPanel Hosting
+
 **Best for**: Traditional web hosting, shared hosting environments
-- Node.js hosting compatibility
-- Simple file upload deployment
-- Database configuration assistance
-- SSL certificate integration
-- [→ cPanel Deployment Guide](./CPANEL_DEPLOYMENT.md)
 
-### ☁️ Cloud Platforms
+cPanel deployment works with most hosting providers that support Node.js applications.
+
+#### Setup Requirements
+
+**Hosting Requirements:**
+- Node.js 18.x or higher support
+- PostgreSQL database access
+- File manager or SSH access
+- SSL certificate capability
+
+#### Deployment Steps
+
+**1. Prepare Files:**
+```bash
+# Build the application locally
+npm install
+npm run build
+
+# Create deployment package
+zip -r companyos-deployment.zip dist/ shared/ package.json package-lock.json
+```
+
+**2. Upload and Configure:**
+```bash
+# Via cPanel File Manager:
+# 1. Upload companyos-deployment.zip to public_html/
+# 2. Extract the zip file
+# 3. Set Node.js version to 18.x in cPanel
+
+# Create .env file with:
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+SESSION_SECRET=your-secure-session-secret
+COMPANY_NAME=Your Company Name
+COMPANY_TAGLINE=Your Company Tagline
+```
+
+**3. Database Setup:**
+```sql
+-- Create database and user in cPanel MySQL/PostgreSQL
+CREATE DATABASE companyos_db;
+CREATE USER companyos_user WITH PASSWORD 'secure-password';
+GRANT ALL PRIVILEGES ON DATABASE companyos_db TO companyos_user;
+```
+
+**4. Application Startup:**
+```bash
+# In cPanel Terminal or SSH:
+cd public_html
+npm install --production
+node dist/index.js
+
+# For persistent running, use PM2:
+npm install -g pm2
+pm2 start dist/index.js --name "companyos"
+pm2 save
+pm2 startup
+```
+
+**cPanel Troubleshooting:**
+
+*Node.js Version Issues:*
+- Ensure Node.js 18.x is selected in cPanel
+- Clear npm cache: `npm cache clean --force`
+- Reinstall dependencies: `rm -rf node_modules && npm install`
+
+*Database Connection Issues:*
+- Verify DATABASE_URL format
+- Check database user permissions
+- Ensure PostgreSQL is enabled in cPanel
+
+*Port Configuration:*
+- Use the port provided by hosting provider
+- Update PORT environment variable accordingly
+
+### ☁️ Cloud Platform Deployment
+
 **Best for**: Heroku, DigitalOcean, AWS, Google Cloud
-- Platform-specific optimization
-- Environment variable configuration
-- Database connection setup
-- Auto-scaling and load balancing
 
-### 🖥️ Traditional Servers
-**Best for**: VPS, dedicated servers, on-premises
-- Manual server configuration
-- Custom optimization
-- Advanced security hardening
-- Performance tuning
+#### Heroku Deployment
+
+```bash
+# Install Heroku CLI and login
+heroku login
+
+# Create application
+heroku create your-company-app
+
+# Configure environment variables
+heroku config:set NODE_ENV=production
+heroku config:set SESSION_SECRET=your-secure-session-secret
+heroku config:set COMPANY_NAME="Your Company Name"
+heroku config:set COMPANY_TAGLINE="Your Company Tagline"
+
+# Add PostgreSQL
+heroku addons:create heroku-postgresql:mini
+
+# Deploy
+git push heroku main
+
+# Run initial setup
+heroku run npm run db:push
+```
+
+#### DigitalOcean App Platform
+
+```yaml
+# .do/app.yaml
+name: companyos
+services:
+- name: web
+  source_dir: /
+  github:
+    repo: your-username/your-repo
+    branch: main
+  run_command: npm start
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: COMPANY_NAME
+    value: Your Company Name
+  - key: COMPANY_TAGLINE
+    value: Your Company Tagline
+databases:
+- name: companyos-db
+  engine: PG
+  version: "15"
+```
+
+### 🖥️ Traditional Server Deployment
+
+**Best for**: VPS, dedicated servers, on-premises installations
+
+#### Ubuntu/Debian Server Setup
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js 18.x
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install PostgreSQL
+sudo apt install postgresql postgresql-contrib -y
+
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE companyos;
+CREATE USER companyos_user WITH PASSWORD 'secure-password';
+GRANT ALL PRIVILEGES ON DATABASE companyos TO companyos_user;
+\q
+
+# Clone and setup application
+git clone <repository-url>
+cd your-company-system
+npm install --production
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Build application
+npm run build
+
+# Setup PM2 for process management
+npm install -g pm2
+pm2 start dist/index.js --name "companyos"
+pm2 save
+pm2 startup
+
+# Setup Nginx reverse proxy
+sudo apt install nginx -y
+```
+
+**Nginx Configuration (`/etc/nginx/sites-available/companyos`):**
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### SSL Certificate Setup
+
+**For Docker (Let's Encrypt):**
+```bash
+# Add to docker-compose.yml
+certbot:
+  image: certbot/certbot
+  volumes:
+    - ./certbot/conf:/etc/letsencrypt
+    - ./certbot/www:/var/www/certbot
+  command: certonly --webroot -w /var/www/certbot --email admin@yourdomain.com -d yourdomain.com --agree-tos
+```
+
+**For Traditional Server:**
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx -y
+
+# Obtain certificate
+sudo certbot --nginx -d yourdomain.com
+
+# Auto-renewal
+sudo crontab -e
+# Add: 0 12 * * * /usr/bin/certbot renew --quiet
+```
+
+### Production Checklist
+
+**Before Deployment:**
+- [ ] Change default admin password
+- [ ] Configure strong SESSION_SECRET
+- [ ] Set proper COMPANY_NAME and COMPANY_TAGLINE
+- [ ] Configure DATABASE_URL for production database
+- [ ] Set NODE_ENV=production
+- [ ] Configure SSL certificates
+- [ ] Set up automated backups
+- [ ] Configure monitoring and health checks
+- [ ] Test all functionality in staging environment
+
+**After Deployment:**
+- [ ] Verify application loads correctly
+- [ ] Test login functionality
+- [ ] Check database connections
+- [ ] Verify all modules work (CRM, Invoices, Tasks, etc.)
+- [ ] Test company branding display
+- [ ] Confirm SSL certificate is working
+- [ ] Set up monitoring alerts
+- [ ] Document access credentials securely
+
+### Support and Troubleshooting
+
+**Common Issues:**
+
+*Application Won't Start:*
+- Check environment variables are set correctly
+- Verify database connection string
+- Ensure proper Node.js version (18.x+)
+- Check port conflicts
+
+*Database Connection Errors:*
+- Verify DATABASE_URL format
+- Check database user permissions
+- Ensure PostgreSQL is running and accessible
+
+*Build Failures:*
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check Node.js and npm versions
+- Verify all dependencies are available
+
+*Authentication Issues:*
+- Verify SESSION_SECRET is set
+- Check admin user exists in database
+- Ensure proper session configuration
+
+**Getting Help:**
+For deployment issues, check the logs first:
+- Docker: `docker-compose logs -f app`
+- PM2: `pm2 logs companyos`
+- System: `journalctl -u your-service-name`
+
+**Performance Monitoring:**
+- Use health check endpoint: `/api/health`
+- Monitor database performance
+- Set up automated backups
+- Configure log rotation
+
+## Default Credentials
+
+**Admin Login:**
+- Username: `admin`
+- Password: `admin123`
+- Email: `admin@company.com`
+
+⚠️ **Important:** Change these credentials immediately after deployment for security.
 
 ## Development
 
@@ -341,11 +722,12 @@ Error responses include detailed information:
 
 ## Documentation
 
-- **[Production Checklist](./PRODUCTION_CHECKLIST.md)** - Pre-deployment verification
-- **[Docker Deployment](./DOCKER_DEPLOYMENT.md)** - Container deployment guide
-- **[cPanel Deployment](./CPANEL_DEPLOYMENT.md)** - Traditional hosting guide
-- **[Technology Stack](./TECH_STACK.md)** - Detailed technical overview
-- **[Production Guide](./README_PRODUCTION.md)** - Production-ready features
+All deployment and configuration information is included in this README. For additional technical details:
+
+- **[Technology Stack](./TECH_STACK.md)** - Detailed technical overview and architecture
+- **Production Deployment** - Complete deployment guide included above
+- **Company Configuration** - Environment variable setup and customization options
+- **Troubleshooting** - Common issues and solutions included in deployment sections
 
 ## Support
 
