@@ -1,0 +1,33 @@
+root@nexus:~/NexusCore# sudo rm -rf /var/cache/nginx/*
+root@nexus:~/NexusCore# sudo find /var -name "*nginx*cache*" -type d 2>/dev/null
+root@nexus:~/NexusCore# sudo find /tmp -name "*nginx*cache*" -type d 2>/dev/null
+root@nexus:~/NexusCore# sudo nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@nexus:~/NexusCore# sudo nginx -s reload
+root@nexus:~/NexusCore# sudo systemctl restart nginx
+root@nexus:~/NexusCore# sudo systemctl status nginx
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2025-07-28 23:57:27 UTC; 5s ago
+       Docs: man:nginx(8)
+    Process: 69366 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+    Process: 69383 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCESS)
+   Main PID: 69384 (nginx)
+      Tasks: 2 (limit: 2274)
+     Memory: 2.7M
+     CGroup: /system.slice/nginx.service
+             ├─69384 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+             └─69385 nginx: worker process
+
+Jul 28 23:57:27 nexus.creativecode.com.eg systemd[1]: nginx.service: Succeeded.
+Jul 28 23:57:27 nexus.creativecode.com.eg systemd[1]: Stopped A high performance web server and a reverse proxy server.
+Jul 28 23:57:27 nexus.creativecode.com.eg systemd[1]: Starting A high performance web server and a reverse proxy server...
+Jul 28 23:57:27 nexus.creativecode.com.eg systemd[1]: Started A high performance web server and a reverse proxy server.
+root@nexus:~/NexusCore# sudo cat /etc/nginx/sites-available/nexus.creativecode.com.eg | grep -i cache
+cat: /etc/nginx/sites-available/nexus.creativecode.com.eg: No such file or directory
+root@nexus:~/NexusCore# sudo cat /etc/nginx/nginx.conf | grep -i cache
+root@nexus:~/NexusCore# cd /etc/nginx/sites-available/
+root@nexus:/etc/nginx/sites-available# ls
+default  nexus
+root@nexus:/etc/nginx/sites-available#
