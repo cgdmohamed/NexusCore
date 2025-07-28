@@ -1,8 +1,8 @@
-# CompanyOS - Enterprise Management Platform
+# {{COMPANY_NAME}} - {{COMPANY_TAGLINE}}
 
 <div align="center">
 
-![CompanyOS Logo](https://via.placeholder.com/200x80/0066cc/ffffff?text=CompanyOS)
+![{{COMPANY_NAME}} Logo](https://via.placeholder.com/200x80/0066cc/ffffff?text={{COMPANY_NAME}})
 
 **A comprehensive internal company management system built with modern web technologies**
 
@@ -18,7 +18,7 @@
 
 ## Overview
 
-CompanyOS is a modern, full-featured enterprise management platform designed to streamline business operations across multiple departments. Built with React, TypeScript, Express.js, and PostgreSQL, it provides a comprehensive suite of tools for CRM, project management, financial tracking, and team collaboration.
+{{COMPANY_NAME}} is a modern, full-featured enterprise management platform designed to streamline business operations across multiple departments. Built with React, TypeScript, Express.js, and PostgreSQL, it provides a comprehensive suite of tools for CRM, project management, financial tracking, and team collaboration.
 
 ### Key Features
 
@@ -39,11 +39,13 @@ CompanyOS is a modern, full-featured enterprise management platform designed to 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd companyos
+cd your-company-system
 
-# Configure environment
+# Configure company branding
 cp .env.docker.example .env.docker
-# Edit .env.docker with your settings
+# Edit .env.docker with your company settings:
+# COMPANY_NAME=YourCompanyName
+# COMPANY_TAGLINE=Your Company Tagline
 
 # Deploy with Docker Compose
 docker-compose --env-file .env.docker up -d
@@ -62,7 +64,9 @@ npm install
 
 # Set up environment
 cp .env.example .env
-# Configure your database and session secret
+# Configure your database and company branding:
+# COMPANY_NAME=YourCompanyName
+# COMPANY_TAGLINE=Your Company Tagline
 
 # Start development server
 npm run dev
@@ -71,367 +75,304 @@ npm run dev
 open http://localhost:5000
 ```
 
-## Architecture
+## Company Configuration
 
-### Technology Stack
+{{COMPANY_NAME}} supports configurable company branding through environment variables:
 
-**Frontend:**
-- React 18 with TypeScript
-- Tailwind CSS + shadcn/ui components
-- TanStack Query for state management
-- Wouter for routing
-- React Hook Form with Zod validation
+### Environment Variables
 
-**Backend:**
-- Express.js with TypeScript
-- Drizzle ORM with PostgreSQL
-- Bcrypt authentication
-- Express sessions
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `COMPANY_NAME` | Your company's display name | `CompanyOS` | `Acme Corporation` |
+| `COMPANY_TAGLINE` | Your company's tagline/description | `Enterprise Management Platform` | `Building the Future Together` |
 
-**Infrastructure:**
-- Docker containerization
-- Nginx reverse proxy
-- PostgreSQL 15 database
-- Redis caching (optional)
-
-### Project Structure
-
-```
-companyos/
-├── client/                 # React frontend application
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Application pages
-│   │   ├── hooks/          # Custom React hooks
-│   │   └── lib/            # Utilities and configurations
-├── server/                 # Express.js backend
-│   ├── routes.ts           # API route definitions
-│   ├── auth.ts             # Authentication logic
-│   └── storage.ts          # Database operations
-├── shared/                 # Shared TypeScript schemas
-├── nginx/                  # Nginx configuration
-├── scripts/                # Deployment and utility scripts
-└── docs/                   # Documentation files
-```
-
-## Documentation
-
-### Deployment Guides
-
-- **[🐳 Docker Deployment](./DOCKER_DEPLOYMENT.md)** - Complete containerized deployment guide
-- **[🌐 cPanel Hosting](./CPANEL_DEPLOYMENT.md)** - Shared hosting deployment instructions
-- **[🚀 General Deployment](./DEPLOYMENT.md)** - Comprehensive deployment options
-- **[⚙️ Technical Stack](./TECH_STACK.md)** - Detailed technology overview
-
-### Development Guides
-
-- **[📋 Production Checklist](./PRODUCTION_CHECKLIST.md)** - Pre-deployment verification
-- **[🏗️ Project Architecture](./replit.md)** - System design and preferences
-
-## Docker Deployment
-
-### Production Environment
+### Configuration Examples
 
 ```bash
-# Quick production deployment
-cp .env.docker.example .env.docker
-docker-compose --env-file .env.docker up -d
+# Technology Company
+COMPANY_NAME=TechCorp Solutions
+COMPANY_TAGLINE=Innovation Through Technology
+
+# Consulting Firm
+COMPANY_NAME=Strategic Advisors
+COMPANY_TAGLINE=Excellence in Business Consulting
+
+# Manufacturing Company
+COMPANY_NAME=Industrial Systems Ltd
+COMPANY_TAGLINE=Quality Manufacturing Solutions
 ```
 
-### Development Environment
+These settings will automatically update:
+- Application title and branding
+- Login page company name
+- Navigation header
+- All user-facing interfaces
 
-```bash
-# Development with hot reload
-docker-compose -f docker-compose.dev.yml up -d
+## Technology Stack
 
-# Access services
-# - Application: http://localhost:5000
-# - Dev Server: http://localhost:5173
-# - Database Admin: http://localhost:8080 (with --profile with-adminer)
-```
+### Frontend Architecture
+- **React 18** with TypeScript for component-based UI
+- **Vite** for fast development and optimized production builds
+- **shadcn/ui** components built on Radix UI primitives
+- **Tailwind CSS** for utility-first styling with custom theming
+- **TanStack Query** for intelligent server state management
+- **Wouter** for lightweight client-side routing
+- **React Hook Form** with Zod validation for form handling
 
-### Available Docker Services
+### Backend Architecture
+- **Express.js** with TypeScript for robust API development
+- **PostgreSQL** with Drizzle ORM for type-safe database operations
+- **bcrypt** for secure password hashing and authentication
+- **express-session** with PostgreSQL store for session management
+- **Comprehensive API** with structured error handling and validation
 
-| Service | Description | Ports |
-|---------|-------------|-------|
-| **app** | CompanyOS application | 5000 |
-| **postgres** | PostgreSQL database | 5432 |
-| **redis** | Redis cache (optional) | 6379 |
-| **nginx** | Reverse proxy (optional) | 80, 443 |
-| **adminer** | Database admin (dev only) | 8080 |
+### Infrastructure & Deployment
+- **Docker** containerization with multi-stage builds
+- **Nginx** reverse proxy with SSL support and load balancing
+- **PostgreSQL 15** with automated backups and health monitoring
+- **Redis** caching for improved performance (optional)
+- **cPanel compatibility** for traditional hosting environments
+
+## Core Business Modules
+
+### Customer Relationship Management (CRM)
+- Client profiles and contact management
+- Lead tracking and conversion analytics
+- Client activity history and interaction logs
+- Status management and advanced filtering
+- Real-time client metrics and performance dashboards
+
+### Financial Management
+- **Quotations** - Create, send, and track business proposals with PDF export
+- **Invoices** - Generate invoices, track payments, manage overdue accounts
+- **Expenses** - Comprehensive expense tracking with receipt management
+- **Payments** - Payment source management and transaction history
+
+### Task Management
+- Task creation and assignment with priority levels
+- Status tracking and progress monitoring
+- Team collaboration tools and communication
+- Project organization and milestone tracking
+- Performance analytics and productivity insights
+
+### Human Resources
+- Employee profiles and comprehensive management
+- Performance tracking and KPI monitoring
+- Department organization and role management
+- Role-based access control and permissions
+- Employee onboarding and development tracking
+
+### Analytics & Reporting
+- Business intelligence dashboard with real-time KPIs
+- Financial reports and insights with data visualization
+- Performance metrics and trend analysis
+- Customizable reporting and data export capabilities
+- Predictive analytics and forecasting tools
+
+### Services Catalog
+- Service offerings management and organization
+- Pricing and category structure
+- Integration with quotation and invoice systems
+- Service performance tracking and optimization
+
+## Internationalization
+
+{{COMPANY_NAME}} supports full bilingual operation:
+
+- **Languages**: English and Arabic with complete translations
+- **RTL Support**: Complete right-to-left layout optimization for Arabic
+- **Cultural Adaptation**: Date formats, number formatting, and cultural conventions
+- **Font Integration**: Tajawal font for proper Arabic typography
+- **Dynamic Switching**: Real-time language switching without page reload
+
+## Authentication & Security
+
+- **Admin-Only Access** - Secure login system with no public registration
+- **Password Security** - bcrypt hashing with salt generation
+- **Session Management** - Secure server-side sessions with PostgreSQL storage
+- **Role-Based Access** - Department-based permissions and access control
+- **HTTPS Ready** - SSL certificate support and security headers
+- **Data Protection** - Input validation and SQL injection prevention
+
+## Deployment Options
+
+{{COMPANY_NAME}} supports multiple deployment strategies:
+
+### 📦 Docker Deployment
+**Best for**: Production environments, cloud deployment, scalability
+- Complete containerization with Docker Compose
+- Automated database setup and migrations
+- Nginx reverse proxy with SSL support
+- Health monitoring and automatic restarts
+- [→ Docker Deployment Guide](./DOCKER_DEPLOYMENT.md)
+
+### 🌐 cPanel Hosting
+**Best for**: Traditional web hosting, shared hosting environments
+- Node.js hosting compatibility
+- Simple file upload deployment
+- Database configuration assistance
+- SSL certificate integration
+- [→ cPanel Deployment Guide](./CPANEL_DEPLOYMENT.md)
+
+### ☁️ Cloud Platforms
+**Best for**: Heroku, DigitalOcean, AWS, Google Cloud
+- Platform-specific optimization
+- Environment variable configuration
+- Database connection setup
+- Auto-scaling and load balancing
+
+### 🖥️ Traditional Servers
+**Best for**: VPS, dedicated servers, on-premises
+- Manual server configuration
+- Custom optimization
+- Advanced security hardening
+- Performance tuning
 
 ## Development
 
 ### Prerequisites
+- Node.js 18.x or higher
+- PostgreSQL 13.x or higher
+- Git for version control
 
-- Node.js 18+
-- PostgreSQL 15+
-- npm or yarn
+### Development Setup
 
-### Setup
+```bash
+# Clone and setup
+git clone <repository-url>
+cd your-company-system
+npm install
 
-1. **Clone and Install**
-   ```bash
-   git clone <repository-url>
-   cd companyos
-   npm install
-   ```
+# Environment configuration
+cp .env.example .env
+# Configure DATABASE_URL, SESSION_SECRET, and company branding
 
-2. **Database Setup**
-   ```bash
-   # Create database
-   createdb companyos
+# Database setup
+npm run db:push
 
-   # Run migrations
-   npm run db:push
-   ```
-
-3. **Environment Configuration**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database URL and session secret
-   ```
-
-4. **Start Development**
-   ```bash
-   npm run dev
-   ```
+# Start development server
+npm run dev
+```
 
 ### Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run db:push` | Push database schema |
-| `npm run db:studio` | Open database studio |
-| `npm start` | Start production server |
+```bash
+npm run dev          # Start development server with hot reload
+npm run build        # Build for production
+npm run start        # Start production server
+npm run db:push      # Push database schema changes
+npm run db:studio    # Open database studio interface
+npm run type-check   # Run TypeScript type checking
+npm run lint         # Run ESLint code analysis
+```
 
-### Development Features
+### Development Workflow
 
-- **Hot Reload** - Automatic server and client restart
-- **TypeScript** - Full type safety across the stack
-- **Database Tools** - Drizzle Studio for database management
-- **API Testing** - Built-in health checks and endpoints
-- **Code Quality** - ESLint and Prettier configuration
-
-## Features & Modules
-
-### Dashboard
-- Real-time KPI cards and metrics
-- Recent activity feed
-- Quick action shortcuts
-- Team performance overview
-
-### Customer Relationship Management (CRM)
-- Client profiles and contact management
-- Lead tracking and conversion
-- Client activity history
-- Status management and filtering
-
-### Financial Management
-- **Quotations** - Create, send, and track business proposals
-- **Invoices** - Generate invoices, track payments, manage overdue accounts
-- **Expenses** - Expense tracking with receipt management
-- **Payments** - Payment source management and transaction history
-
-### Task Management
-- Task creation and assignment
-- Priority and status tracking
-- Team collaboration tools
-- Progress monitoring
-
-### Human Resources
-- Employee profiles and management
-- Performance tracking and KPIs
-- Department organization
-- Role-based access control
-
-### Analytics & Reporting
-- Business intelligence dashboard
-- Financial reports and insights
-- Performance metrics
-- Data export capabilities
-
-### Services Catalog
-- Service offerings management
-- Pricing and category organization
-- Integration with quotation system
-
-## Internationalization
-
-CompanyOS supports full bilingual operation:
-
-- **Languages**: English and Arabic
-- **RTL Support**: Complete right-to-left layout optimization
-- **Font Integration**: Tajawal font for proper Arabic rendering
-- **UI Translation**: All interface elements translated
-- **Business Terms**: Industry-specific terminology support
-
-## Security Features
-
-- **Admin-Only Access** - No user registration, admin-controlled access
-- **Secure Authentication** - bcrypt password hashing
-- **Session Management** - Express sessions with PostgreSQL storage
-- **Role-Based Access** - Department and role-based permissions
-- **Input Validation** - Zod schema validation throughout
-- **HTTPS Support** - SSL/TLS configuration ready
+1. **Feature Development** - Create feature branches for new functionality
+2. **Database Changes** - Update `shared/schema.ts` for data model changes
+3. **API Development** - Add new endpoints in `server/routes.ts`
+4. **Frontend Components** - Create reusable components in `client/src/components`
+5. **Testing** - Test all functionality before deployment
+6. **Documentation** - Update documentation for new features
 
 ## API Documentation
 
-### Authentication Endpoints
-
-- `POST /api/login` - Admin authentication
-- `POST /api/logout` - Session termination
-- `GET /api/user` - Current user information
-
-### Core API Routes
-
-- `/api/clients` - Customer management
-- `/api/quotations` - Business proposals
-- `/api/invoices` - Billing and payments
-- `/api/expenses` - Expense tracking
-- `/api/tasks` - Task management
-- `/api/users` - User management
-- `/api/services` - Service catalog
-- `/api/analytics` - Business intelligence
-
-### Health & Monitoring
-
-- `GET /api/health` - Application health check
-- Built-in logging and error tracking
-- Database connection monitoring
-
-## Deployment Options
-
-### 1. Docker (Recommended)
-- **Production**: Multi-stage builds with security hardening
-- **Development**: Hot reload with debugging tools
-- **Scaling**: Load balancer ready with health checks
-
-### 2. cPanel Hosting
-- **Shared Hosting**: Compatible with most cPanel providers
-- **Node.js Support**: Requires Node.js 18+ capability
-- **Database**: PostgreSQL or MySQL support
-
-### 3. Cloud Platforms
-- **VPS/Dedicated**: Full control deployment
-- **Container Services**: Docker-ready for cloud deployment
-- **Managed Databases**: External PostgreSQL support
-
-### 4. Traditional Servers
-- **Linux/Unix**: Standard deployment on any server
-- **Process Management**: PM2 or systemd integration
-- **Reverse Proxy**: Nginx/Apache configuration included
-
-## Environment Variables
-
-### Required Configuration
+### Core Endpoints
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/database
+# Authentication
+POST /api/login                    # Admin login
+POST /api/logout                   # User logout
+GET  /api/user                     # Get current user
 
-# Security
-SESSION_SECRET=your-super-secure-session-secret-32chars+
+# Configuration
+GET  /api/config                   # Get company configuration
 
-# Application
-NODE_ENV=production
-PORT=5000
+# Business Modules
+GET  /api/clients                  # Client management
+GET  /api/quotations              # Quotation system
+GET  /api/invoices                # Invoice management
+GET  /api/expenses                # Expense tracking
+GET  /api/tasks                   # Task management
+GET  /api/users                   # User management
+
+# System
+GET  /api/health                  # Health check
+GET  /api/ready                   # Readiness check
 ```
 
-### Optional Configuration
+### Request/Response Format
 
-```bash
-# Redis (for session storage)
-REDIS_URL=redis://localhost:6379
+All API responses follow a consistent structure:
 
-# Monitoring
-SENTRY_DSN=https://your-sentry-dsn
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation completed successfully"
+}
+```
 
-# Email (for notifications)
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=your-email@company.com
-SMTP_PASS=your-app-password
+Error responses include detailed information:
+
+```json
+{
+  "success": false,
+  "error": "Detailed error message",
+  "code": "ERROR_CODE"
+}
 ```
 
 ## Performance & Optimization
 
-### Built-in Optimizations
-- **Caching**: Redis integration for session and data caching
-- **Database**: Optimized queries with proper indexing
-- **Assets**: Gzip compression and static file optimization
-- **Monitoring**: Health checks and performance metrics
+- **Frontend Optimization** - Code splitting, lazy loading, and bundle optimization
+- **Database Optimization** - Indexed queries, connection pooling, and caching
+- **API Efficiency** - Response compression, rate limiting, and caching headers
+- **Resource Management** - Optimized images, fonts, and static assets
+- **Monitoring** - Built-in health checks and performance metrics
 
-### Scaling Considerations
-- **Horizontal Scaling**: Load balancer ready
-- **Database**: Connection pooling and optimization
-- **Caching**: Redis for distributed caching
-- **CDN**: Static asset optimization ready
+## Security Features
 
-## Backup & Maintenance
+- **Authentication Security** - bcrypt password hashing and secure sessions
+- **Data Protection** - Input validation and sanitization
+- **API Security** - Rate limiting and request validation
+- **Database Security** - Parameterized queries and access controls
+- **Infrastructure Security** - HTTPS enforcement and security headers
 
-### Automated Backups
-```bash
-# Database backup
-npm run backup:db
+## Documentation
 
-# Full application backup
-npm run backup:full
-```
-
-### Update Procedures
-1. Backup current data
-2. Deploy new version
-3. Run database migrations
-4. Verify functionality
-
-### Monitoring
-- Application health checks
-- Database performance monitoring
-- Error tracking and logging
-- User activity monitoring
+- **[Production Checklist](./PRODUCTION_CHECKLIST.md)** - Pre-deployment verification
+- **[Docker Deployment](./DOCKER_DEPLOYMENT.md)** - Container deployment guide
+- **[cPanel Deployment](./CPANEL_DEPLOYMENT.md)** - Traditional hosting guide
+- **[Technology Stack](./TECH_STACK.md)** - Detailed technical overview
+- **[Production Guide](./README_PRODUCTION.md)** - Production-ready features
 
 ## Support
 
+### Quick Troubleshooting
+
+1. **Application Won't Start**: Check environment variables and database connection
+2. **Authentication Issues**: Verify admin credentials and session configuration
+3. **Database Errors**: Ensure PostgreSQL is running and accessible
+4. **Build Failures**: Clear `node_modules` and reinstall dependencies
+
 ### Getting Help
 
-1. **Documentation**: Check the comprehensive guides in `/docs`
-2. **Issues**: Review common problems in troubleshooting guides
-3. **Community**: Join our discussion forums
-4. **Enterprise**: Contact support for enterprise assistance
+- **Documentation**: Check the relevant deployment guide for your platform
+- **Configuration**: Review environment variable setup
+- **Database**: Verify PostgreSQL connection and schema
+- **Performance**: Monitor system resources and database performance
 
-### Troubleshooting
+### Development Support
 
-- **[🔧 Common Issues](./DEPLOYMENT.md#troubleshooting)** - Deployment problems
-- **[🐳 Docker Issues](./DOCKER_DEPLOYMENT.md#troubleshooting)** - Container problems
-- **[🌐 cPanel Issues](./CPANEL_DEPLOYMENT.md#troubleshooting)** - Hosting problems
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built with modern web technologies
-- Inspired by Salesforce and Monday.com design principles
-- Optimized for business productivity and user experience
-- Designed for scalability and maintainability
+For development questions and feature requests:
+1. Check existing documentation
+2. Review the technology stack guide
+3. Examine the production checklist
+4. Consult the deployment guides
 
 ---
 
-<div align="center">
+**{{COMPANY_NAME}}** - Professional business management for the modern enterprise.
 
-**[🚀 Get Started](#quick-start)** • **[📖 Full Documentation](./DEPLOYMENT.md)** • **[🐳 Docker Guide](./DOCKER_DEPLOYMENT.md)**
-
-Made with ❤️ for modern businesses
-
-</div>
+*Built with modern web technologies for reliability, scalability, and performance.*

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfig } from "@/lib/config";
 import { useQuery } from "@tanstack/react-query";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { 
@@ -36,6 +37,7 @@ interface SearchResult {
 export function Navbar() {
   const { t, language, changeLanguage } = useTranslation();
   const { user, logout } = useAuth();
+  const { companyName } = useConfig();
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -178,7 +180,7 @@ export function Navbar() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Building2 className="text-white text-sm" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">CompanyOS</h1>
+              <h1 className="text-xl font-semibold text-gray-900">{companyName}</h1>
             </div>
           </Link>
         </div>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import config from "@/lib/config";
 import { useLocation } from "wouter";
 import { 
   Building, 
@@ -164,12 +165,12 @@ export default function Login() {
               </div>
               
               <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-4">
-                CompanyOS
+                {config.companyName}
               </h1>
               
               <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
                 {language === 'en' 
-                  ? 'Comprehensive internal company management system designed to streamline business operations with advanced employee management, financial tracking, and organizational insights.'
+                  ? config.companyTagline
                   : 'نظام إدارة داخلي شامل للشركات مصمم لتبسيط العمليات التجارية مع إدارة متقدمة للموظفين وتتبع مالي ورؤى تنظيمية.'
                 }
               </p>

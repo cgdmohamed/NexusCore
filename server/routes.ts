@@ -36,6 +36,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Configuration endpoint (no auth required)
+  app.get('/api/config', (req, res) => {
+    res.json({
+      companyName: process.env.COMPANY_NAME || 'CompanyOS',
+      companyTagline: process.env.COMPANY_TAGLINE || 'Enterprise Management Platform'
+    });
+  });
+
   // Readiness check (includes database connectivity)
   app.get('/api/ready', async (req, res) => {
     try {
