@@ -585,6 +585,7 @@ app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
   try {
     const quotationId = req.params.id;
     const items = quotationItems.filter(item => item.quotationId === quotationId);
+    logAPI(req, res);
     res.json(items);
   } catch (error) {
     logError(error, { 
@@ -592,6 +593,31 @@ app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
       userId: req.session?.user?.id 
     });
     res.status(500).json({ message: 'Error fetching quotation items' });
+  }
+});
+
+// POST quotation items - missing endpoint causing 404s
+app.post('/api/quotations/:id/items', isAuthenticated, (req, res) => {
+  try {
+    const quotationId = req.params.id;
+    const newItem = {
+      id: generateId(),
+      quotationId: quotationId,
+      description: req.body.description || '',
+      quantity: req.body.quantity || 1,
+      price: req.body.price || 0,
+      total: (req.body.quantity || 1) * (req.body.price || 0)
+    };
+    
+    quotationItems.push(newItem);
+    logAPI(req, res);
+    res.status(201).json(newItem);
+  } catch (error) {
+    logError(error, { 
+      endpoint: `POST /api/quotations/${req.params.id}/items`, 
+      userId: req.session?.user?.id 
+    });
+    res.status(500).json({ message: 'Error creating quotation item' });
   }
 });
 
@@ -662,9 +688,21 @@ app.get('/api/invoices/stats', isAuthenticated, (req, res) => {
 const distPath = path.resolve(process.cwd(), 'dist', 'public');
 app.use(express.static(distPath));
 
-// Catch-all handler for SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(distPath, 'index.html'));
+// 404 handler for API routes - must come before SPA catch-all
+app.use('/api/*', (req, res, next) => {
+  // Log 404 API requests as errors for tracking
+  logError(new Error(`404 - Endpoint not found: ${req.method} ${req.path}`), {
+    endpoint: `${req.method} ${req.path}`,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    userId: req.session?.user?.id,
+    type: '404_endpoint_missing'
+  });
+  
+  res.status(404).json({ 
+    message: `API endpoint not found: ${req.method} ${req.path}`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Global error handler
@@ -682,7 +720,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Catch-all handler for SPA routing
+// Catch-all handler for SPA routing (must be last)
 app.get('*', (req, res) => {
   try {
     res.sendFile(path.resolve(distPath, 'index.html'));

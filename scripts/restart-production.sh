@@ -13,12 +13,7 @@ pm2 delete companyos 2>/dev/null || echo "No existing process found"
 
 # Start new PM2 process with proper logging
 echo "🚀 Starting new PM2 process..."
-pm2 start server/prod.cjs \
-  --name companyos \
-  --log logs/pm2-combined.log \
-  --out-log logs/pm2-out.log \
-  --error-log logs/pm2-error.log \
-  --time
+pm2 start server/prod.cjs --name companyos
 
 # Save PM2 configuration
 echo "💾 Saving PM2 configuration..."

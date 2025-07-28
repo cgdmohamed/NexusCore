@@ -1,0 +1,110 @@
+root@nexus:~/NexusCore# ./scripts/restart-production.sh
+🔄 Restarting Creative Code Nexus Production Server
+==================================================
+🛑 Stopping existing PM2 process...
+[PM2] Applying action deleteProcessId on app [companyos](ids: [ 0 ])
+[PM2] [companyos](0) ✓
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+🚀 Starting new PM2 process...
+
+  error: unknown option `--out-log'
+
+💾 Saving PM2 configuration...
+[PM2] Saving current process list...
+[PM2][WARN] PM2 is not managing any process, skipping save...
+[PM2][WARN] To force saving use: pm2 save --force
+📊 Current PM2 status:
+┌────┬───────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name      │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+└────┴───────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+
+✅ Production server restarted successfully!
+
+Monitor logs with:
+  ./scripts/view-logs.sh live     # Application logs
+  pm2 logs companyos             # PM2 process logs
+  pm2 monit                      # Real-time monitoring
+
+Check system health:
+  ./scripts/log-analysis.sh health
+root@nexus:~/NexusCore# pm2 start server/prod.cjs   --name companyos
+[PM2] Starting /root/NexusCore/server/prod.cjs in fork_mode (1 instance)
+[PM2] Done.
+┌────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ companyos    │ default     │ 1.0.0   │ fork    │ 67770    │ 0s     │ 0    │ online    │ 0%       │ 4.0kb    │ root     │ disabled │
+└────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh 404
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+🔍 404 Error Analysis:
+---------------------
+📊 Most requested missing endpoints:
+  21 requests to: /api/tasks/stats
+  4 requests to: /api/quotations/bi9v001r0
+  3 requests to: /api/quotations/62rghf1kh
+  3 requests to: /api/expenses/stats
+  2 requests to: /api/quotations/p4it3vhoj
+  2 requests to: /api/quotations/62rghf1kh/items
+  1 requests to: /api/quotations/p4it3vhoj/items
+  1 requests to: /api/quotations/bi9v001r0/items
+  1 requests to: /api/payment-sources
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh health
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+💊 System Health Summary:
+------------------------
+✅ Server starts: 4
+🔐 Successful logins: 3
+🚪 Successful logouts: 0
+📈 Total API requests: 352
+❌ Error requests: 47
+✅ Success rate: 86.6%
+🚨 Total errors logged: 9
+root@nexus:~/NexusCore# ./scripts/view-logs.sh live
+📊 Creative Code Nexus - Log Viewer
+==================================
+
+Available log files:
+1. error.log - Application errors and failures
+2. app.log - General application info and events
+3. api.log - API request/response logs
+
+📡 Live log monitoring (Press Ctrl+C to stop)
+Watching all log files...
+==> logs/api.log <==
+{"timestamp":"2025-07-28T23:06:56.363Z","level":"API","method":"GET","path":"/api/notifications/unread-count","statusCode":304,"duration":"2ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:06:59.502Z","level":"API","method":"GET","path":"/api/notifications/unread-count","statusCode":304,"duration":"2ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:02.610Z","level":"API","method":"GET","path":"/api/clients","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:02.622Z","level":"API","method":"GET","path":"/api/notifications/unread-count","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:03.631Z","level":"API","method":"GET","path":"/api/invoices","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:04.056Z","level":"API","method":"GET","path":"/api/notifications","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:04.523Z","level":"API","method":"POST","path":"/api/quotations/p4it3vhoj/items","statusCode":404,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:05.729Z","level":"API","method":"GET","path":"/api/notifications/unread-count","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:06.670Z","level":"API","method":"GET","path":"/api/tasks/stats","statusCode":404,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+{"timestamp":"2025-07-28T23:07:08.835Z","level":"API","method":"GET","path":"/api/notifications/unread-count","statusCode":304,"duration":"1ms","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","ip":"127.0.0.1","userId":"admin-001"}
+
+==> logs/app.log <==
+{"timestamp":"2025-07-28T22:47:10.293Z","level":"INFO","message":"Server started successfully","data":{"port":5000,"environment":"production","pid":66654},"pid":66654}
+{"timestamp":"2025-07-28T22:47:16.419Z","level":"INFO","message":"Successful login","data":{"userId":"admin-001","username":"admin","ip":"127.0.0.1"},"pid":66654}
+{"timestamp":"2025-07-28T22:57:26.188Z","level":"INFO","message":"Server started successfully","data":{"port":5000,"environment":"production","pid":67304},"pid":67304}
+{"timestamp":"2025-07-28T22:57:44.578Z","level":"INFO","message":"Server started successfully","data":{"port":5000,"environment":"production","pid":67354},"pid":67354}
+{"timestamp":"2025-07-28T22:57:52.751Z","level":"INFO","message":"Successful login","data":{"userId":"admin-001","username":"admin","ip":"127.0.0.1"},"pid":67354}
+{"timestamp":"2025-07-28T23:05:38.916Z","level":"INFO","message":"Server started successfully","data":{"port":5000,"environment":"production","pid":67770},"pid":67770}
+{"timestamp":"2025-07-28T23:05:45.570Z","level":"INFO","message":"Successful login","data":{"userId":"admin-001","username":"admin","ip":"127.0.0.1"},"pid":67770}
+
+==> logs/error.log <==
+{"timestamp":"2025-07-28T22:47:14.530Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/notifications/unread-count","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":66654}
+{"timestamp":"2025-07-28T22:47:15.121Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/user","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":66654}
+{"timestamp":"2025-07-28T22:57:51.200Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/user","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67354}
+{"timestamp":"2025-07-28T23:05:42.712Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/notifications/unread-count","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
+{"timestamp":"2025-07-28T23:05:42.816Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/notifications","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
+{"timestamp":"2025-07-28T23:05:42.886Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/invoices","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
+{"timestamp":"2025-07-28T23:05:42.888Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/clients","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
+{"timestamp":"2025-07-28T23:05:42.912Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)","context":{"endpoint":"GET /api/tasks/stats","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
+{"timestamp":"2025-07-28T23:05:44.096Z","level":"ERROR","message":"Unauthorized access attempt","stack":"Error: Unauthorized access attempt\n    at isAuthenticated (/root/NexusCore/server/prod.cjs:148:14)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at next (/root/NexusCore/node_modules/express/lib/router/route.js:149:13)\n    at Route.dispatch (/root/NexusCore/node_modules/express/lib/router/route.js:119:3)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:284:15\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:346:12)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at Immediate._onImmediate (/root/NexusCore/node_modules/express-session/index.js:514:7)\n    at process.processImmediate (node:internal/timers:478:21)","context":{"endpoint":"GET /api/user","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36","hasSession":true,"hasUser":false},"pid":67770}
