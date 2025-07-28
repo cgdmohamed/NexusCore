@@ -1,0 +1,322 @@
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh health
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+💊 System Health Summary:
+------------------------
+✅ Server starts: 6
+🔐 Successful logins: 4
+🚪 Successful logouts: 0
+📈 Total API requests: 484
+❌ Error requests: 59
+✅ Success rate: 87.8%
+🚨 Total errors logged: 42
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh 404
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+🔍 404 Error Analysis:
+---------------------
+📊 Most requested missing endpoints:
+  29 requests to: /api/tasks/stats
+  4 requests to: /api/quotations/bi9v001r0
+  3 requests to: /api/quotations/62rghf1kh
+  3 requests to: /api/expenses/stats
+  2 requests to: /api/quotations/p4it3vhoj
+  2 requests to: /api/quotations/62rghf1kh/items
+  1 requests to: /api/quotations/p4it3vhoj/items
+  1 requests to: /api/quotations/bi9v001r0/items
+  1 requests to: /api/payment-sources
+root@nexus:~/NexusCore# ./scripts/view-logs.sh error
+📊 Creative Code Nexus - Log Viewer
+==================================
+
+Available log files:
+1. error.log - Application errors and failures
+2. app.log - General application info and events
+3. api.log - API request/response logs
+
+🔍 Last 20 lines from logs/error.log:
+----------------------------------------
+{
+    "timestamp": "2025-07-28T23:19:38.785Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:38.788Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:38.789Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:46.098Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:52.492Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:52.494Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:52.496Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:55.570Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:55.572Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:55.573Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:19:55.575Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:20.840Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:20.841Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:39.754Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: POST /",
+    "stack": "Error: 404 - Endpoint not found: POST /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at serveStatic (/root/NexusCore/node_modules/serve-static/index.js:75:16)\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)",
+    "context": {
+        "endpoint": "POST /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.436Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.437Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.438Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.440Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.444Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+{
+    "timestamp": "2025-07-28T23:20:47.446Z",
+    "level": "ERROR",
+    "message": "404 - Endpoint not found: GET /",
+    "stack": "Error: 404 - Endpoint not found: GET /\n    at /root/NexusCore/server/prod.cjs:694:12\n    at Layer.handle [as handle_request] (/root/NexusCore/node_modules/express/lib/router/layer.js:95:5)\n    at trim_prefix (/root/NexusCore/node_modules/express/lib/router/index.js:328:13)\n    at /root/NexusCore/node_modules/express/lib/router/index.js:286:9\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:365:14)\n    at param (/root/NexusCore/node_modules/express/lib/router/index.js:376:14)\n    at Function.process_params (/root/NexusCore/node_modules/express/lib/router/index.js:421:3)\n    at next (/root/NexusCore/node_modules/express/lib/router/index.js:280:10)\n    at SendStream.error (/root/NexusCore/node_modules/serve-static/index.js:121:7)\n    at SendStream.emit (node:events:517:28)",
+    "context": {
+        "endpoint": "GET /",
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "userId": "admin-001",
+        "type": "404_endpoint_missing"
+    },
+    "pid": 67972
+}
+
+root@nexus:~/NexusCore#

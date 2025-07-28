@@ -688,21 +688,25 @@ app.get('/api/invoices/stats', isAuthenticated, (req, res) => {
 const distPath = path.resolve(process.cwd(), 'dist', 'public');
 app.use(express.static(distPath));
 
-// 404 handler for API routes - must come before SPA catch-all
-app.use('/api/*', (req, res, next) => {
-  // Log 404 API requests as errors for tracking
-  logError(new Error(`404 - Endpoint not found: ${req.method} ${req.path}`), {
-    endpoint: `${req.method} ${req.path}`,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    userId: req.session?.user?.id,
-    type: '404_endpoint_missing'
-  });
-  
-  res.status(404).json({ 
-    message: `API endpoint not found: ${req.method} ${req.path}`,
-    timestamp: new Date().toISOString()
-  });
+// 404 handler for API routes only - must come before SPA catch-all
+app.use('/api', (req, res, next) => {
+  // Only handle actual API 404s, not homepage requests
+  if (req.path.startsWith('/api/')) {
+    logError(new Error(`404 - API Endpoint not found: ${req.method} ${req.path}`), {
+      endpoint: `${req.method} ${req.path}`,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      userId: req.session?.user?.id,
+      type: '404_api_endpoint_missing'
+    });
+    
+    res.status(404).json({ 
+      message: `API endpoint not found: ${req.method} ${req.path}`,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    next();
+  }
 });
 
 // Global error handler

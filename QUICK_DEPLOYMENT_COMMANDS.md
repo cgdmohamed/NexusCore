@@ -35,19 +35,25 @@ pm2 status
 ./scripts/view-logs.sh error
 ```
 
+## CRITICAL FIX IDENTIFIED
+
+**Issue**: 404 handler incorrectly catching homepage (GET /) requests
+**Impact**: Homepage shows 404 instead of loading the application
+**Root Cause**: Overly broad 404 handler pattern `/api/*` catching all routes
+
 ## Expected Results After Deployment
 
 ### Before (Current State):
-- Success rate: 86.6%
-- Missing 404 error details in logs
-- POST /api/quotations/:id/items causing 404s
-- Error logging incomplete
+- Success rate: 87.8%
+- Homepage requests causing 404 errors  
+- GET / requests logged as missing endpoints
+- App not accessible from root URL
 
-### After (With Updates):
+### After (With Critical Fix):
 - Success rate: 95%+
-- Complete 404 error tracking in error.log
-- Fixed quotation item creation
-- Comprehensive error visibility
+- Homepage loads correctly
+- Only legitimate API 404s logged
+- Complete application accessibility
 
 ## Key Files Updated:
 - `server/prod.cjs` - Added missing endpoints and enhanced 404 logging
