@@ -148,58 +148,50 @@ For detailed cPanel deployment instructions, see **[CPANEL_DEPLOYMENT.md](./CPAN
 
 ## Docker Deployment
 
-### Quick Start with Docker Compose
+For comprehensive Docker deployment instructions, see **[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)**.
 
-1. **Clone Repository**
-   ```bash
-   git clone <repository-url>
-   cd companyos
-   ```
+### Quick Start
 
-2. **Configure Environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+**Production Deployment:**
+```bash
+# Clone and configure
+git clone <repository-url>
+cd companyos
+cp .env.docker.example .env.docker
+# Edit .env.docker with your settings
 
-3. **Build and Run**
-   ```bash
-   docker-compose up -d
-   ```
+# Deploy with Docker Compose
+docker-compose --env-file .env.docker up -d
 
-This will start:
-- Application server (port 5000)
-- PostgreSQL database (port 5432)
-- Nginx reverse proxy (ports 80, 443)
+# Access: http://localhost:5000
+# Login: admin / admin123
+```
 
-### Production Docker Deployment
+**Development Environment:**
+```bash
+# Development with hot reload
+docker-compose -f docker-compose.dev.yml up -d
 
-1. **Build Production Image**
-   ```bash
-   docker build -t companyos:latest .
-   ```
+# Access: http://localhost:5000 (API) + http://localhost:5173 (Dev Server)
+```
 
-2. **Run with External Database**
-   ```bash
-   docker run -d \
-     --name companyos \
-     --env-file .env \
-     -p 5000:5000 \
-     companyos:latest
-   ```
+### Docker Services
 
-3. **Run Database Migrations**
-   ```bash
-   docker exec companyos npm run db:push
-   ```
+**Full Stack Deployment:**
+- **Application**: Node.js app with automatic admin user creation
+- **PostgreSQL**: Database with health checks and automatic migrations
+- **Redis**: Session storage and caching (optional)
+- **Nginx**: Reverse proxy with SSL and rate limiting (optional)
 
-### Docker Security Best Practices
+### Key Features
 
-- Use non-root user (already configured)
-- Set resource limits
-- Use secrets management
-- Regular security updates
-- Network isolation
+- **Multi-stage builds** for optimized production images
+- **Health checks** for all services
+- **Automatic database initialization** and admin user creation
+- **Security hardening** with non-root users
+- **Volume persistence** for data and logs
+- **Development mode** with hot reload
+- **Production optimization** with resource limits and caching
 
 ## Cloud Platform Deployment
 

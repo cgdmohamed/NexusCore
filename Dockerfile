@@ -1,55 +1,60 @@
-# Use Node.js 20 LTS as base image
-FROM node:20-alpine AS base
+# CompanyOS Docker Image
+# Multi-stage build for optimized production image
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Build stage
+FROM node:18-alpine AS builder
+
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Development dependencies for building
-FROM base AS dev-deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-
-# Build the application
-FROM base AS builder
-WORKDIR /app
-COPY --from=dev-deps /app/node_modules ./node_modules
+# Copy source code
 COPY . .
 
-# Build frontend and backend
+# Build the application
 RUN npm run build
 
-# Production image
-FROM base AS runner
+# Production stage
+FROM node:18-alpine AS production
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S companyos -u 1001
+
+# Set working directory
 WORKDIR /app
 
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder --chown=companyos:nodejs /app/dist ./dist
+COPY --from=builder --chown=companyos:nodejs /app/shared ./shared
+
+# Create necessary directories
+RUN mkdir -p logs && chown companyos:nodejs logs
+
+# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=5000
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-
-# Create logs directory
-RUN mkdir -p logs && chown nodejs:nodejs logs
-
-USER nodejs
-
+# Expose port
 EXPOSE 5000
+
+# Switch to non-root user
+USER companyos
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+    CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
+# Start the application
 CMD ["node", "dist/index.js"]
