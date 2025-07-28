@@ -14,9 +14,17 @@ Your Creative Code Nexus system now has comprehensive error logging. To update y
 
 ### 2. Restart Production Server
 ```bash
-# On your CloudPanel VPS:
+# Method 1: Use the restart script
+./scripts/restart-production.sh
+
+# Method 2: Manual PM2 commands
 pm2 delete companyos
-pm2 start server/prod.cjs --name companyos --log-file logs/pm2.log
+pm2 start server/prod.cjs \
+  --name companyos \
+  --log logs/pm2-combined.log \
+  --out-log logs/pm2-out.log \
+  --error-log logs/pm2-error.log \
+  --time
 pm2 save
 ```
 
