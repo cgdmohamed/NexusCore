@@ -124,65 +124,233 @@ app.get('/api/user', isAuthenticated, (req, res) => {
   res.json(req.session.user);
 });
 
-// Basic protected routes that return empty data
+// In-memory data storage
+let clients = [];
+let invoices = [];
+let quotations = [];
+let expenses = [];
+let tasks = [];
+let services = [
+  { id: '1', name: 'Web Development', description: 'Custom website development', category: 'development', price: 5000, isActive: true },
+  { id: '2', name: 'Mobile App Development', description: 'iOS and Android app development', category: 'development', price: 8000, isActive: true },
+  { id: '3', name: 'Digital Marketing', description: 'SEO and social media marketing', category: 'marketing', price: 2000, isActive: true },
+  { id: '4', name: 'UI/UX Design', description: 'User interface and experience design', category: 'design', price: 3000, isActive: true },
+];
+let users = [];
+let notifications = [];
+
+// Helper function to generate IDs
+function generateId() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+// CRUD routes for clients
 app.get('/api/clients', isAuthenticated, (req, res) => {
-  res.json([]);
+  res.json(clients);
 });
 
-app.get('/api/invoices', isAuthenticated, (req, res) => {
-  res.json([]);
+app.post('/api/clients', isAuthenticated, (req, res) => {
+  const client = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  clients.push(client);
+  res.status(201).json(client);
 });
 
-app.get('/api/quotations', isAuthenticated, (req, res) => {
-  res.json([]);
+app.put('/api/clients/:id', isAuthenticated, (req, res) => {
+  const index = clients.findIndex(c => c.id === req.params.id);
+  if (index !== -1) {
+    clients[index] = { ...clients[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(clients[index]);
+  } else {
+    res.status(404).json({ message: 'Client not found' });
+  }
 });
 
-app.get('/api/expenses', isAuthenticated, (req, res) => {
-  res.json([]);
+app.delete('/api/clients/:id', isAuthenticated, (req, res) => {
+  const index = clients.findIndex(c => c.id === req.params.id);
+  if (index !== -1) {
+    clients.splice(index, 1);
+    res.json({ message: 'Client deleted successfully' });
+  } else {
+    res.status(404).json({ message: 'Client not found' });
+  }
 });
 
+// CRUD routes for users
+app.get('/api/users', isAuthenticated, (req, res) => {
+  res.json(users);
+});
+
+app.post('/api/users', isAuthenticated, (req, res) => {
+  const user = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  users.push(user);
+  res.status(201).json(user);
+});
+
+app.put('/api/users/:id', isAuthenticated, (req, res) => {
+  const index = users.findIndex(u => u.id === req.params.id);
+  if (index !== -1) {
+    users[index] = { ...users[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(users[index]);
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
+// CRUD routes for tasks
 app.get('/api/tasks', isAuthenticated, (req, res) => {
-  res.json([]);
+  res.json(tasks);
 });
 
+app.post('/api/tasks', isAuthenticated, (req, res) => {
+  const task = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  tasks.push(task);
+  res.status(201).json(task);
+});
+
+app.put('/api/tasks/:id', isAuthenticated, (req, res) => {
+  const index = tasks.findIndex(t => t.id === req.params.id);
+  if (index !== -1) {
+    tasks[index] = { ...tasks[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(tasks[index]);
+  } else {
+    res.status(404).json({ message: 'Task not found' });
+  }
+});
+
+// CRUD routes for invoices
+app.get('/api/invoices', isAuthenticated, (req, res) => {
+  res.json(invoices);
+});
+
+app.post('/api/invoices', isAuthenticated, (req, res) => {
+  const invoice = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  invoices.push(invoice);
+  res.status(201).json(invoice);
+});
+
+// CRUD routes for quotations
+app.get('/api/quotations', isAuthenticated, (req, res) => {
+  res.json(quotations);
+});
+
+app.post('/api/quotations', isAuthenticated, (req, res) => {
+  const quotation = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  quotations.push(quotation);
+  res.status(201).json(quotation);
+});
+
+// CRUD routes for expenses
+app.get('/api/expenses', isAuthenticated, (req, res) => {
+  res.json(expenses);
+});
+
+app.post('/api/expenses', isAuthenticated, (req, res) => {
+  const expense = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  expenses.push(expense);
+  res.status(201).json(expense);
+});
+
+// Services routes
 app.get('/api/services', isAuthenticated, (req, res) => {
-  res.json([]);
+  res.json(services);
 });
 
+app.post('/api/services', isAuthenticated, (req, res) => {
+  const service = {
+    id: generateId(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  services.push(service);
+  res.status(201).json(service);
+});
+
+// Notifications
 app.get('/api/notifications', isAuthenticated, (req, res) => {
-  res.json([]);
+  res.json(notifications);
 });
 
 app.get('/api/notifications/unread-count', isAuthenticated, (req, res) => {
-  res.json({ count: 0 });
+  const unreadCount = notifications.filter(n => !n.read).length;
+  res.json({ count: unreadCount });
 });
 
-// Dashboard stats
+// Dashboard stats with real data
 app.get('/api/tasks/stats', isAuthenticated, (req, res) => {
+  const statusBreakdown = tasks.reduce((acc, task) => {
+    acc[task.status] = (acc[task.status] || 0) + 1;
+    return acc;
+  }, { pending: 0, 'in-progress': 0, completed: 0 });
+  
+  const priorityBreakdown = tasks.reduce((acc, task) => {
+    acc[task.priority] = (acc[task.priority] || 0) + 1;
+    return acc;
+  }, { low: 0, medium: 0, high: 0 });
+
   res.json({
-    total: 0,
-    statusBreakdown: { pending: 0, 'in-progress': 0, completed: 0 },
-    priorityBreakdown: { low: 0, medium: 0, high: 0 }
+    total: tasks.length,
+    statusBreakdown,
+    priorityBreakdown
   });
 });
 
 app.get('/api/clients/stats', isAuthenticated, (req, res) => {
+  const statusBreakdown = clients.reduce((acc, client) => {
+    acc[client.status] = (acc[client.status] || 0) + 1;
+    return acc;
+  }, { active: 0, lead: 0, inactive: 0 });
+
   res.json({
-    total: 0,
-    active: 0,
-    leads: 0,
-    inactive: 0
+    total: clients.length,
+    ...statusBreakdown
   });
 });
 
 app.get('/api/invoices/stats', isAuthenticated, (req, res) => {
+  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  
+  const statusBreakdown = invoices.reduce((acc, invoice) => {
+    acc[invoice.status] = (acc[invoice.status] || 0) + 1;
+    return acc;
+  }, { paid: 0, pending: 0, overdue: 0 });
+
   res.json({
-    total: 0,
-    paid: 0,
-    pending: 0,
-    overdue: 0,
-    totalAmount: 0,
-    paidAmount: 0
+    total: invoices.length,
+    ...statusBreakdown,
+    totalAmount,
+    paidAmount
   });
 });
 
