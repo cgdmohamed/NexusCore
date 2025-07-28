@@ -1,0 +1,145 @@
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh health
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+💊 System Health Summary:
+------------------------
+✅ Server starts: 3
+🔐 Successful logins: 2
+🚪 Successful logouts: 0
+📈 Total API requests: 245
+❌ Error requests: 30
+✅ Success rate: 87.8%
+🚨 Total errors logged: 3
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh performance
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+📊 API Performance Analysis:
+-----------------------------
+🚀 Fastest API responses:
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+
+🐌 Slowest API responses:
+  8ms - GET /api/notifications/unread-count (401)
+  7ms - GET /api/analytics/financial-reports (200)
+  6ms - GET /api/activities (200)
+  6ms - GET /api/activities (200)
+  5ms - GET /api/expense-categories (200)
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh users
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+👥 User Activity Analysis:
+-------------------------
+📊 Request distribution by user:
+    242 admin-001
+      3 anonymous
+
+🕐 Activity timeline (last 10 requests):
+  2025-07-28 23:00:07 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:09 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:12 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:15 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:17 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:18 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:22 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:25 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:27 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:28 - GET /api/notifications/unread-count (304) - admin-001
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh errors
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+🚨 Error Analysis:
+------------------
+📈 Error frequency by type:
+      3 Unauthorized access attempt
+
+🌐 Most common error sources (IP addresses):
+      3 127.0.0.1
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh 404
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+🔍 404 Error Analysis:
+---------------------
+📊 Most requested missing endpoints:
+  14 requests to: /api/tasks/stats
+  4 requests to: /api/quotations/bi9v001r0
+  3 requests to: /api/quotations/62rghf1kh
+  2 requests to: /api/quotations/62rghf1kh/items
+  2 requests to: /api/expenses/stats
+  1 requests to: /api/quotations/bi9v001r0/items
+  1 requests to: /api/payment-sources
+root@nexus:~/NexusCore# ./scripts/log-analysis.sh full
+🔍 Creative Code Nexus - Log Analysis
+=====================================
+
+💊 System Health Summary:
+------------------------
+✅ Server starts: 3
+🔐 Successful logins: 2
+🚪 Successful logouts: 0
+📈 Total API requests: 245
+❌ Error requests: 30
+✅ Success rate: 87.8%
+🚨 Total errors logged: 3
+
+📊 API Performance Analysis:
+-----------------------------
+🚀 Fastest API responses:
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+  0ms - GET /api/notifications/unread-count (304)
+
+🐌 Slowest API responses:
+  8ms - GET /api/notifications/unread-count (401)
+  7ms - GET /api/analytics/financial-reports (200)
+  6ms - GET /api/activities (200)
+  6ms - GET /api/activities (200)
+  5ms - GET /api/expense-categories (200)
+
+👥 User Activity Analysis:
+-------------------------
+📊 Request distribution by user:
+    242 admin-001
+      3 anonymous
+
+🕐 Activity timeline (last 10 requests):
+  2025-07-28 23:00:07 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:09 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:12 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:15 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:17 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:18 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:22 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:25 - GET /api/notifications/unread-count (304) - admin-001
+  2025-07-28 23:00:27 - GET /api/notifications (304) - admin-001
+  2025-07-28 23:00:28 - GET /api/notifications/unread-count (304) - admin-001
+
+🚨 Error Analysis:
+------------------
+📈 Error frequency by type:
+      3 Unauthorized access attempt
+
+🌐 Most common error sources (IP addresses):
+      3 127.0.0.1
+
+🔍 404 Error Analysis:
+---------------------
+📊 Most requested missing endpoints:
+  14 requests to: /api/tasks/stats
+  4 requests to: /api/quotations/bi9v001r0
+  3 requests to: /api/quotations/62rghf1kh
+  2 requests to: /api/quotations/62rghf1kh/items
+  2 requests to: /api/expenses/stats
+  1 requests to: /api/quotations/bi9v001r0/items
+  1 requests to: /api/payment-sources
+root@nexus:~/NexusCore#

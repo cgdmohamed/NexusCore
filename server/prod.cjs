@@ -545,6 +545,56 @@ app.post('/api/services/initialize', isAuthenticated, (req, res) => {
   res.json({ message: 'Services initialized', count: services.length });
 });
 
+// Missing endpoints that are causing 404 errors
+app.get('/api/expenses/stats', isAuthenticated, (req, res) => {
+  try {
+    const totalAmount = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+    const statusBreakdown = expenses.reduce((acc, expense) => {
+      const status = expense.status || 'pending';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, { pending: 0, approved: 0, paid: 0 });
+
+    res.json({
+      total: expenses.length,
+      totalAmount,
+      ...statusBreakdown
+    });
+  } catch (error) {
+    logError(error, { endpoint: 'GET /api/expenses/stats', userId: req.session?.user?.id });
+    res.status(500).json({ message: 'Error fetching expense statistics' });
+  }
+});
+
+app.get('/api/payment-sources', isAuthenticated, (req, res) => {
+  try {
+    // Mock payment sources data
+    const paymentSources = [
+      { id: '1', name: 'Primary Bank Account', type: 'bank', balance: 50000, isActive: true },
+      { id: '2', name: 'Petty Cash', type: 'cash', balance: 2000, isActive: true },
+      { id: '3', name: 'Credit Card', type: 'credit', balance: -1500, isActive: true }
+    ];
+    res.json(paymentSources);
+  } catch (error) {
+    logError(error, { endpoint: 'GET /api/payment-sources', userId: req.session?.user?.id });
+    res.status(500).json({ message: 'Error fetching payment sources' });
+  }
+});
+
+app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
+  try {
+    const quotationId = req.params.id;
+    const items = quotationItems.filter(item => item.quotationId === quotationId);
+    res.json(items);
+  } catch (error) {
+    logError(error, { 
+      endpoint: `GET /api/quotations/${req.params.id}/items`, 
+      userId: req.session?.user?.id 
+    });
+    res.status(500).json({ message: 'Error fetching quotation items' });
+  }
+});
+
 // Notifications
 app.get('/api/notifications', isAuthenticated, (req, res) => {
   res.json(notifications);
@@ -557,21 +607,26 @@ app.get('/api/notifications/unread-count', isAuthenticated, (req, res) => {
 
 // Dashboard stats with real data
 app.get('/api/tasks/stats', isAuthenticated, (req, res) => {
-  const statusBreakdown = tasks.reduce((acc, task) => {
-    acc[task.status] = (acc[task.status] || 0) + 1;
-    return acc;
-  }, { pending: 0, 'in-progress': 0, completed: 0 });
-  
-  const priorityBreakdown = tasks.reduce((acc, task) => {
-    acc[task.priority] = (acc[task.priority] || 0) + 1;
-    return acc;
-  }, { low: 0, medium: 0, high: 0 });
+  try {
+    const statusBreakdown = tasks.reduce((acc, task) => {
+      acc[task.status] = (acc[task.status] || 0) + 1;
+      return acc;
+    }, { pending: 0, 'in-progress': 0, completed: 0 });
+    
+    const priorityBreakdown = tasks.reduce((acc, task) => {
+      acc[task.priority] = (acc[task.priority] || 0) + 1;
+      return acc;
+    }, { low: 0, medium: 0, high: 0 });
 
-  res.json({
-    total: tasks.length,
-    statusBreakdown,
-    priorityBreakdown
-  });
+    res.json({
+      total: tasks.length,
+      statusBreakdown,
+      priorityBreakdown
+    });
+  } catch (error) {
+    logError(error, { endpoint: 'GET /api/tasks/stats', userId: req.session?.user?.id });
+    res.status(500).json({ message: 'Error fetching task statistics' });
+  }
 });
 
 app.get('/api/clients/stats', isAuthenticated, (req, res) => {
