@@ -207,19 +207,28 @@ Docker provides the most reliable and scalable deployment option with automated 
 #### Quick Setup
 
 ```bash
-# Clone and configure
+# 1. Install Docker (if not already installed)
+curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+# Logout and login again
+
+# 2. Clone and configure
 git clone <repository-url>
 cd your-company-system
-
-# Configure company branding and environment
 cp .env.docker.example .env.docker
-# Edit .env.docker with your settings:
-# COMPANY_NAME=Your Company Name
-# COMPANY_TAGLINE=Your Company Tagline
 
-# Deploy with Docker Compose
+# 3. Edit environment file with your company details
+nano .env.docker
+# Set: COMPANY_NAME, COMPANY_TAGLINE, SESSION_SECRET, DB_PASSWORD
+
+# 4. Deploy
 docker-compose --env-file .env.docker up -d
+
+# 5. Access: http://YOUR_SERVER_IP:5000
+# Login: admin / admin123
 ```
+
+**📋 [→ Complete Step-by-Step Guide](./SIMPLE_DEPLOYMENT.md)**
 
 #### Complete Docker Configuration
 
