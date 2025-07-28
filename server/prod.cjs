@@ -124,6 +124,19 @@ app.get('/api/user', isAuthenticated, (req, res) => {
   res.json(req.session.user);
 });
 
+app.get('/api/users/:id', isAuthenticated, (req, res) => {
+  if (req.params.id === req.session.user.id) {
+    res.json(req.session.user);
+  } else {
+    const user = users.find(u => u.id === req.params.id);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  }
+});
+
 // In-memory data storage
 let clients = [];
 let invoices = [];
@@ -211,6 +224,15 @@ app.get('/api/tasks', isAuthenticated, (req, res) => {
   res.json(tasks);
 });
 
+app.get('/api/tasks/:id', isAuthenticated, (req, res) => {
+  const task = tasks.find(t => t.id === req.params.id);
+  if (task) {
+    res.json(task);
+  } else {
+    res.status(404).json({ message: 'Task not found' });
+  }
+});
+
 app.post('/api/tasks', isAuthenticated, (req, res) => {
   const task = {
     id: generateId(),
@@ -232,9 +254,28 @@ app.put('/api/tasks/:id', isAuthenticated, (req, res) => {
   }
 });
 
+app.delete('/api/tasks/:id', isAuthenticated, (req, res) => {
+  const index = tasks.findIndex(t => t.id === req.params.id);
+  if (index !== -1) {
+    tasks.splice(index, 1);
+    res.json({ message: 'Task deleted successfully' });
+  } else {
+    res.status(404).json({ message: 'Task not found' });
+  }
+});
+
 // CRUD routes for invoices
 app.get('/api/invoices', isAuthenticated, (req, res) => {
   res.json(invoices);
+});
+
+app.get('/api/invoices/:id', isAuthenticated, (req, res) => {
+  const invoice = invoices.find(i => i.id === req.params.id);
+  if (invoice) {
+    res.json(invoice);
+  } else {
+    res.status(404).json({ message: 'Invoice not found' });
+  }
 });
 
 app.post('/api/invoices', isAuthenticated, (req, res) => {
@@ -248,15 +289,44 @@ app.post('/api/invoices', isAuthenticated, (req, res) => {
   res.status(201).json(invoice);
 });
 
+app.put('/api/invoices/:id', isAuthenticated, (req, res) => {
+  const index = invoices.findIndex(i => i.id === req.params.id);
+  if (index !== -1) {
+    invoices[index] = { ...invoices[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(invoices[index]);
+  } else {
+    res.status(404).json({ message: 'Invoice not found' });
+  }
+});
+
 // CRUD routes for quotations
 app.get('/api/quotations', isAuthenticated, (req, res) => {
   res.json(quotations);
+});
+
+app.get('/api/quotations/:id', isAuthenticated, (req, res) => {
+  const quotation = quotations.find(q => q.id === req.params.id);
+  if (quotation) {
+    res.json(quotation);
+  } else {
+    res.status(404).json({ message: 'Quotation not found' });
+  }
+});
+
+app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
+  const quotation = quotations.find(q => q.id === req.params.id);
+  if (quotation) {
+    res.json(quotation.items || []);
+  } else {
+    res.status(404).json({ message: 'Quotation not found' });
+  }
 });
 
 app.post('/api/quotations', isAuthenticated, (req, res) => {
   const quotation = {
     id: generateId(),
     ...req.body,
+    items: req.body.items || [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -264,9 +334,28 @@ app.post('/api/quotations', isAuthenticated, (req, res) => {
   res.status(201).json(quotation);
 });
 
+app.put('/api/quotations/:id', isAuthenticated, (req, res) => {
+  const index = quotations.findIndex(q => q.id === req.params.id);
+  if (index !== -1) {
+    quotations[index] = { ...quotations[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(quotations[index]);
+  } else {
+    res.status(404).json({ message: 'Quotation not found' });
+  }
+});
+
 // CRUD routes for expenses
 app.get('/api/expenses', isAuthenticated, (req, res) => {
   res.json(expenses);
+});
+
+app.get('/api/expenses/:id', isAuthenticated, (req, res) => {
+  const expense = expenses.find(e => e.id === req.params.id);
+  if (expense) {
+    res.json(expense);
+  } else {
+    res.status(404).json({ message: 'Expense not found' });
+  }
 });
 
 app.post('/api/expenses', isAuthenticated, (req, res) => {
@@ -278,6 +367,26 @@ app.post('/api/expenses', isAuthenticated, (req, res) => {
   };
   expenses.push(expense);
   res.status(201).json(expense);
+});
+
+app.put('/api/expenses/:id', isAuthenticated, (req, res) => {
+  const index = expenses.findIndex(e => e.id === req.params.id);
+  if (index !== -1) {
+    expenses[index] = { ...expenses[index], ...req.body, updatedAt: new Date().toISOString() };
+    res.json(expenses[index]);
+  } else {
+    res.status(404).json({ message: 'Expense not found' });
+  }
+});
+
+app.delete('/api/expenses/:id', isAuthenticated, (req, res) => {
+  const index = expenses.findIndex(e => e.id === req.params.id);
+  if (index !== -1) {
+    expenses.splice(index, 1);
+    res.json({ message: 'Expense deleted successfully' });
+  } else {
+    res.status(404).json({ message: 'Expense not found' });
+  }
 });
 
 // Services routes
@@ -294,6 +403,19 @@ app.post('/api/services', isAuthenticated, (req, res) => {
   };
   services.push(service);
   res.status(201).json(service);
+});
+
+app.post('/api/services/initialize', isAuthenticated, (req, res) => {
+  // Initialize services if empty - this prevents 404 errors
+  if (services.length === 0) {
+    services.push(
+      { id: '1', name: 'Web Development', description: 'Custom website development', category: 'development', price: 5000, isActive: true },
+      { id: '2', name: 'Mobile App Development', description: 'iOS and Android app development', category: 'development', price: 8000, isActive: true },
+      { id: '3', name: 'Digital Marketing', description: 'SEO and social media marketing', category: 'marketing', price: 2000, isActive: true },
+      { id: '4', name: 'UI/UX Design', description: 'User interface and experience design', category: 'design', price: 3000, isActive: true }
+    );
+  }
+  res.json({ message: 'Services initialized', count: services.length });
 });
 
 // Notifications

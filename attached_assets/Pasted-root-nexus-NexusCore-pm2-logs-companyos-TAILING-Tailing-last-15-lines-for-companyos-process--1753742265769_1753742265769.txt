@@ -1,0 +1,35 @@
+root@nexus:~/NexusCore# pm2 logs companyos
+[TAILING] Tailing last 15 lines for [companyos] process (change the value with --lines option)
+/root/.pm2/logs/companyos-error.log last 15 lines:
+0|companyo |   url: 'file:///root/NexusCore/server/routes.js',
+0|companyo |   code: 'ERR_MODULE_NOT_FOUND'
+0|companyo | }
+0|companyo | Warning: connect.session() MemoryStore is not
+0|companyo | designed for a production environment, as it will leak
+0|companyo | memory, and will not scale past a single process.
+0|companyo | Warning: connect.session() MemoryStore is not
+0|companyo | designed for a production environment, as it will leak
+0|companyo | memory, and will not scale past a single process.
+0|companyo | Warning: connect.session() MemoryStore is not
+0|companyo | designed for a production environment, as it will leak
+0|companyo | memory, and will not scale past a single process.
+0|companyo | Warning: connect.session() MemoryStore is not
+0|companyo | designed for a production environment, as it will leak
+0|companyo | memory, and will not scale past a single process.
+
+/root/.pm2/logs/companyos-out.log last 15 lines:
+0|companyo | 10:36:32 PM [express] GET /api/quotations/02a2zfbue 200 in 2ms
+0|companyo | 10:36:32 PM [express] GET /api/services 200 in 1ms
+0|companyo | 10:36:35 PM [express] GET /api/notifications/unread-count 304 in 1ms
+0|companyo | 10:36:37 PM [express] GET /api/clients 304 in 1ms
+0|companyo | 10:36:38 PM [express] GET /api/notifications 304 in 1ms
+0|companyo | 10:36:38 PM [express] GET /api/notifications/unread-count 304 in 1ms
+0|companyo | 10:36:41 PM [express] GET /api/notifications/unread-count 304 in 1ms
+0|companyo | 10:36:44 PM [express] GET /api/notifications/unread-count 304 in 1ms
+0|companyo | 10:36:46 PM [express] GET /api/quotations/02a2zfbue 304 in 1ms
+0|companyo | 10:36:46 PM [express] GET /api/quotations/02a2zfbue/items 304 in 1ms
+0|companyo | 10:36:46 PM [express] POST /api/services/initialize 404 in 1ms
+0|companyo | 10:36:47 PM [express] GET /api/notifications/unread-count 304 in 0ms
+0|companyo | 10:36:48 PM [express] GET /api/notifications 304 in 1ms
+0|companyo | 10:36:50 PM [express] GET /api/notifications/unread-count 304 in 1ms
+0|companyo | 10:36:53 PM [express] GET /api/notifications/unread-count 304 in 1ms
