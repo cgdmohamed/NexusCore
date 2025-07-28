@@ -87,7 +87,7 @@ npm run build
 ls -la dist/
 
 # Use the production server (avoids ESM issues)
-pm2 start server/prod.js --name companyos
+pm2 start server/prod.cjs --name companyos
 
 # Save PM2 configuration
 pm2 save
