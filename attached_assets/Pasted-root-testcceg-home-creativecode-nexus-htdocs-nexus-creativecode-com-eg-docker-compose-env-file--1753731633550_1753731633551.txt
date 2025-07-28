@@ -1,0 +1,168 @@
+root@testcceg:/home/creativecode-nexus/htdocs/nexus.creativecode.com.eg# docker-compose --env-file .env.docker up -d
+Building app
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  1.849MB
+Step 1/20 : FROM node:18-alpine AS builder
+ ---> ee77c6cd7c18
+Step 2/20 : WORKDIR /app
+ ---> Using cache
+ ---> ec26b3c98e22
+Step 3/20 : COPY package*.json ./
+ ---> Using cache
+ ---> 4238dd03bedb
+Step 4/20 : RUN npm ci && npm cache clean --force
+ ---> Running in b4a0220cdb19
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 515 packages, and audited 516 packages in 13s
+
+69 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (3 low, 8 moderate)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.5.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+npm notice To update run: npm install -g npm@11.5.1
+npm notice
+npm warn using --force Recommended protections disabled.
+ ---> Removed intermediate container b4a0220cdb19
+ ---> 5aa1279f4d9a
+Step 5/20 : COPY . .
+ ---> 7c842722e80d
+Step 6/20 : RUN npm run build
+ ---> Running in b9b7919032f4
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.19 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 3524 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                     1.23 kB │ gzip:   0.66 kB
+../dist/public/assets/index-6-Gyy1-K.css     82.64 kB │ gzip:  13.85 kB
+../dist/public/assets/index-CDdYKnEu.js   1,371.43 kB │ gzip: 362.32 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.98s
+
+  dist/index.js  173.5kb
+
+⚡ Done in 22ms
+ ---> Removed intermediate container b9b7919032f4
+ ---> 339e5181fcbe
+Step 7/20 : FROM node:18-alpine AS production
+ ---> ee77c6cd7c18
+Step 8/20 : RUN addgroup -g 1001 -S nodejs &&     adduser -S companyos -u 1001
+ ---> Running in 86352573fce6
+ ---> Removed intermediate container 86352573fce6
+ ---> 72f78e75346c
+Step 9/20 : WORKDIR /app
+ ---> Running in 83e31c951889
+ ---> Removed intermediate container 83e31c951889
+ ---> 9269836ed85e
+Step 10/20 : COPY package*.json ./
+ ---> fe20be73f0ba
+Step 11/20 : RUN npm ci --only=production && npm cache clean --force
+ ---> Running in 32e357859242
+npm warn config only Use `--omit=dev` to omit dev dependencies from the install.
+
+added 407 packages, and audited 408 packages in 10s
+
+57 packages are looking for funding
+  run `npm fund` for details
+
+3 low severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.5.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+npm notice To update run: npm install -g npm@11.5.1
+npm notice
+npm warn using --force Recommended protections disabled.
+ ---> Removed intermediate container 32e357859242
+ ---> d653e0c47bdc
+Step 12/20 : COPY --from=builder --chown=companyos:nodejs /app/dist ./dist
+ ---> 9b826682af26
+Step 13/20 : COPY --from=builder --chown=companyos:nodejs /app/shared ./shared
+ ---> 3f74c891b34c
+Step 14/20 : RUN mkdir -p logs && chown companyos:nodejs logs
+ ---> Running in e4c83bb5ad31
+ ---> Removed intermediate container e4c83bb5ad31
+ ---> a3f9cf84799e
+Step 15/20 : ENV NODE_ENV=production
+ ---> Running in 270703d6887a
+ ---> Removed intermediate container 270703d6887a
+ ---> 817570153961
+Step 16/20 : ENV PORT=5000
+ ---> Running in 8e54bc3c4ae2
+ ---> Removed intermediate container 8e54bc3c4ae2
+ ---> ba6537f362f3
+Step 17/20 : EXPOSE 5000
+ ---> Running in 96b02196d4ff
+ ---> Removed intermediate container 96b02196d4ff
+ ---> 8e40d2143b2f
+Step 18/20 : USER companyos
+ ---> Running in ba07c1a57ae6
+ ---> Removed intermediate container ba07c1a57ae6
+ ---> 0cb633e91666
+Step 19/20 : HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3     CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+ ---> Running in a592a5dbb2aa
+ ---> Removed intermediate container a592a5dbb2aa
+ ---> 63ba05e7cf65
+Step 20/20 : CMD ["node", "dist/index.js"]
+ ---> Running in bc85aba6180d
+ ---> Removed intermediate container bc85aba6180d
+ ---> cfcb8e22a8cf
+Successfully built cfcb8e22a8cf
+Successfully tagged nexuscreativecodecomeg_app:latest
+WARNING: Image for service app was built because it did not already exist. To rebuild this image you must use `docker-compose build` or `docker-compose up --build`.
+Pulling redis (redis:7-alpine)...
+7-alpine: Pulling from library/redis
+0368fd46e3c6: Pull complete
+4c55286bbede: Pull complete
+5e28347af205: Pull complete
+311eca34042e: Pull complete
+e6fe6f07e192: Pull complete
+a2cadbfeca72: Pull complete
+4f4fb700ef54: Pull complete
+a976ed7e7808: Pull complete
+Digest: sha256:bb186d083732f669da90be8b0f975a37812b15e913465bb14d845db72a4e3e08
+Status: Downloaded newer image for redis:7-alpine
+Creating companyos-redis ...
+Creating companyos-redis    ... error
+WARNING: Host is already in use by another container
+
+ERROR: for companyos-redis  Cannot start service redis: driver failed programming external connectivity on endpoint companyos-redis (a0526f6b96d8bbe90320a24a640ab945534438b53ba5cab13f6101b4bf04ba1f): failed to bind port 0.0.0.0:6379/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:6379: bind: address already in use
+Creating companyos-postgres ... error
+
+ERROR: for companyos-postgres  Cannot start service postgres: driver failed programming external connectivity on endpoint companyos-postgres (9ad79679b38851171c720c796cbcc1be593c22ca5d93c769e930a499fbf499c4): failed to bind port 0.0.0.0:5432/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
+
+ERROR: for redis  Cannot start service redis: driver failed programming external connectivity on endpoint companyos-redis (a0526f6b96d8bbe90320a24a640ab945534438b53ba5cab13f6101b4bf04ba1f): failed to bind port 0.0.0.0:6379/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:6379: bind: address already in use
+
+ERROR: for postgres  Cannot start service postgres: driver failed programming external connectivity on endpoint companyos-postgres (9ad79679b38851171c720c796cbcc1be593c22ca5d93c769e930a499fbf499c4): failed to bind port 0.0.0.0:5432/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
+ERROR: Encountered errors while bringing up the project.
