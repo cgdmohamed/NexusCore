@@ -181,7 +181,14 @@ app.get('/api/health', (req, res) => {
     }
   };
   
-  logAPI('GET /api/health', 200, 'Health check performed', req.session?.user?.id || 'anonymous');
+  // Note: logAPI function may not be defined in all contexts
+  try {
+    if (typeof logAPI === 'function') {
+      logAPI('GET /api/health', 200, 'Health check performed', req.session?.user?.id || 'anonymous');
+    }
+  } catch (e) {
+    // Silent fail for logging
+  }
   res.json(serverStats);
 });
 
@@ -213,7 +220,13 @@ app.get('/api/system-info', (req, res) => {
     }
   };
   
-  logAPI('GET /api/system-info', 200, 'System info requested', req.session?.user?.id || 'anonymous');
+  try {
+    if (typeof logAPI === 'function') {
+      logAPI('GET /api/system-info', 200, 'System info requested', req.session?.user?.id || 'anonymous');
+    }
+  } catch (e) {
+    // Silent fail for logging
+  }
   res.json(systemInfo);
 });
 
@@ -250,7 +263,13 @@ app.get('/api/test-endpoints', (req, res) => {
     note: 'Most endpoints require authentication except /api/health, /api/system-info, and /api/test-endpoints'
   };
   
-  logAPI('GET /api/test-endpoints', 200, 'Endpoint test info provided', req.session?.user?.id || 'anonymous');
+  try {
+    if (typeof logAPI === 'function') {
+      logAPI('GET /api/test-endpoints', 200, 'Endpoint test info provided', req.session?.user?.id || 'anonymous');
+    }
+  } catch (e) {
+    // Silent fail for logging
+  }
   res.json(endpointTests);
 });
 
