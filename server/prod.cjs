@@ -397,6 +397,15 @@ app.get('/api/clients', isAuthenticated, (req, res) => {
   res.json(clients);
 });
 
+app.get('/api/clients/:id', isAuthenticated, (req, res) => {
+  const client = clients.find(c => c.id === req.params.id);
+  if (client) {
+    res.json(client);
+  } else {
+    res.status(404).json({ message: 'Client not found' });
+  }
+});
+
 app.post('/api/clients', isAuthenticated, (req, res) => {
   const client = {
     id: generateId(),
@@ -697,7 +706,8 @@ app.get('/api/quotations/:id/items', isAuthenticated, (req, res) => {
       global.quotationItems = [];
     }
     const items = global.quotationItems.filter(item => item.quotationId === quotationId);
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(items);
   } catch (error) {
     logError(error, { 
@@ -726,7 +736,8 @@ app.post('/api/quotations/:id/items', isAuthenticated, (req, res) => {
       global.quotationItems = [];
     }
     global.quotationItems.push(newItem);
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(newItem);
   } catch (error) {
     logError(error, { 
@@ -752,7 +763,8 @@ app.patch('/api/quotations/:quotationId/items/:id', isAuthenticated, (req, res) 
     
     Object.assign(item, req.body);
     item.total = item.quantity * item.price;
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(item);
   } catch (error) {
     logError(error, { 
@@ -777,7 +789,8 @@ app.delete('/api/quotations/:quotationId/items/:id', isAuthenticated, (req, res)
     }
     
     global.quotationItems.splice(index, 1);
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(204).send();
   } catch (error) {
     logError(error, { 
@@ -858,7 +871,8 @@ app.post('/api/users/:id/change-password', isAuthenticated, (req, res) => {
   try {
     const userId = req.params.id;
     // In production, implement proper password hashing
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
     logError(error, { endpoint: `POST /api/users/${req.params.id}/change-password`, userId: req.session?.user?.id });
@@ -874,7 +888,8 @@ app.get('/api/roles', isAuthenticated, (req, res) => {
       { id: '2', name: 'Manager', description: 'Department management', permissions: ['read', 'write'] },
       { id: '3', name: 'Employee', description: 'Basic access', permissions: ['read'] }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(roles);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/roles', userId: req.session?.user?.id });
@@ -885,7 +900,8 @@ app.get('/api/roles', isAuthenticated, (req, res) => {
 app.post('/api/roles', isAuthenticated, (req, res) => {
   try {
     const role = { id: generateId(), ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(role);
   } catch (error) {
     logError(error, { endpoint: 'POST /api/roles', userId: req.session?.user?.id });
@@ -896,7 +912,8 @@ app.post('/api/roles', isAuthenticated, (req, res) => {
 app.put('/api/roles/:id', isAuthenticated, (req, res) => {
   try {
     const role = { id: req.params.id, ...req.body, updatedAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(role);
   } catch (error) {
     logError(error, { endpoint: `PUT /api/roles/${req.params.id}`, userId: req.session?.user?.id });
@@ -912,7 +929,8 @@ app.get('/api/employees', isAuthenticated, (req, res) => {
       { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@company.com', department: 'Design', position: 'UI/UX Designer', status: 'active' },
       { id: '3', firstName: 'Mike', lastName: 'Johnson', email: 'mike@company.com', department: 'Marketing', position: 'Marketing Manager', status: 'active' }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(employees);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/employees', userId: req.session?.user?.id });
@@ -923,7 +941,8 @@ app.get('/api/employees', isAuthenticated, (req, res) => {
 app.post('/api/employees', isAuthenticated, (req, res) => {
   try {
     const employee = { id: generateId(), ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(employee);
   } catch (error) {
     logError(error, { endpoint: 'POST /api/employees', userId: req.session?.user?.id });
@@ -934,7 +953,8 @@ app.post('/api/employees', isAuthenticated, (req, res) => {
 app.put('/api/employees/:id', isAuthenticated, (req, res) => {
   try {
     const employee = { id: req.params.id, ...req.body, updatedAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(employee);
   } catch (error) {
     logError(error, { endpoint: `PUT /api/employees/${req.params.id}`, userId: req.session?.user?.id });
@@ -948,7 +968,8 @@ app.patch('/api/clients/:id', isAuthenticated, (req, res) => {
     const index = clients.findIndex(c => c.id === req.params.id);
     if (index !== -1) {
       clients[index] = { ...clients[index], ...req.body, updatedAt: new Date().toISOString() };
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(clients[index]);
     } else {
       res.status(404).json({ message: 'Client not found' });
@@ -962,7 +983,8 @@ app.patch('/api/clients/:id', isAuthenticated, (req, res) => {
 app.post('/api/clients/:id/notes', isAuthenticated, (req, res) => {
   try {
     const note = { id: generateId(), clientId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(note);
   } catch (error) {
     logError(error, { endpoint: `POST /api/clients/${req.params.id}/notes`, userId: req.session?.user?.id });
@@ -973,7 +995,8 @@ app.post('/api/clients/:id/notes', isAuthenticated, (req, res) => {
 app.get('/api/clients/:id/credit', isAuthenticated, (req, res) => {
   try {
     const credit = { balance: 0, transactions: [] };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(credit);
   } catch (error) {
     logError(error, { endpoint: `GET /api/clients/${req.params.id}/credit`, userId: req.session?.user?.id });
@@ -984,7 +1007,8 @@ app.get('/api/clients/:id/credit', isAuthenticated, (req, res) => {
 app.post('/api/clients/:id/credit/refund', isAuthenticated, (req, res) => {
   try {
     const refund = { id: generateId(), clientId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(refund);
   } catch (error) {
     logError(error, { endpoint: `POST /api/clients/${req.params.id}/credit/refund`, userId: req.session?.user?.id });
@@ -998,7 +1022,8 @@ app.patch('/api/quotations/:id', isAuthenticated, (req, res) => {
     const index = quotations.findIndex(q => q.id === req.params.id);
     if (index !== -1) {
       quotations[index] = { ...quotations[index], ...req.body, updatedAt: new Date().toISOString() };
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(quotations[index]);
     } else {
       res.status(404).json({ message: 'Quotation not found' });
@@ -1026,7 +1051,8 @@ app.post('/api/quotations/:id/convert-to-invoice', isAuthenticated, (req, res) =
     };
     
     invoices.push(invoice);
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(invoice);
   } catch (error) {
     logError(error, { endpoint: `POST /api/quotations/${req.params.id}/convert-to-invoice`, userId: req.session?.user?.id });
@@ -1038,7 +1064,8 @@ app.post('/api/quotations/:id/convert-to-invoice', isAuthenticated, (req, res) =
 app.post('/api/invoices/:id/items', isAuthenticated, (req, res) => {
   try {
     const item = { id: generateId(), invoiceId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(item);
   } catch (error) {
     logError(error, { endpoint: `POST /api/invoices/${req.params.id}/items`, userId: req.session?.user?.id });
@@ -1048,7 +1075,8 @@ app.post('/api/invoices/:id/items', isAuthenticated, (req, res) => {
 
 app.delete('/api/invoices/:id/items/:itemId', isAuthenticated, (req, res) => {
   try {
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(204).send();
   } catch (error) {
     logError(error, { endpoint: `DELETE /api/invoices/${req.params.id}/items/${req.params.itemId}`, userId: req.session?.user?.id });
@@ -1059,7 +1087,8 @@ app.delete('/api/invoices/:id/items/:itemId', isAuthenticated, (req, res) => {
 app.post('/api/invoices/:id/payments', isAuthenticated, (req, res) => {
   try {
     const payment = { id: generateId(), invoiceId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(payment);
   } catch (error) {
     logError(error, { endpoint: `POST /api/invoices/${req.params.id}/payments`, userId: req.session?.user?.id });
@@ -1070,7 +1099,8 @@ app.post('/api/invoices/:id/payments', isAuthenticated, (req, res) => {
 app.post('/api/invoices/:id/apply-credit', isAuthenticated, (req, res) => {
   try {
     const result = { message: 'Credit applied successfully', appliedAmount: req.body.amount || 0 };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(result);
   } catch (error) {
     logError(error, { endpoint: `POST /api/invoices/${req.params.id}/apply-credit`, userId: req.session?.user?.id });
@@ -1081,7 +1111,8 @@ app.post('/api/invoices/:id/apply-credit', isAuthenticated, (req, res) => {
 app.post('/api/invoices/:id/refund', isAuthenticated, (req, res) => {
   try {
     const refund = { id: generateId(), invoiceId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(refund);
   } catch (error) {
     logError(error, { endpoint: `POST /api/invoices/${req.params.id}/refund`, userId: req.session?.user?.id });
@@ -1095,7 +1126,8 @@ app.delete('/api/expenses/:id', isAuthenticated, (req, res) => {
     const index = expenses.findIndex(e => e.id === req.params.id);
     if (index !== -1) {
       expenses.splice(index, 1);
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.status(204).send();
     } else {
       res.status(404).json({ message: 'Expense not found' });
@@ -1111,7 +1143,8 @@ app.post('/api/expenses/:id/pay', isAuthenticated, (req, res) => {
     const index = expenses.findIndex(e => e.id === req.params.id);
     if (index !== -1) {
       expenses[index] = { ...expenses[index], status: 'paid', paidAt: new Date().toISOString() };
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(expenses[index]);
     } else {
       res.status(404).json({ message: 'Expense not found' });
@@ -1128,7 +1161,8 @@ app.put('/api/services/:id', isAuthenticated, (req, res) => {
     const index = services.findIndex(s => s.id === req.params.id);
     if (index !== -1) {
       services[index] = { ...services[index], ...req.body, updatedAt: new Date().toISOString() };
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(services[index]);
     } else {
       res.status(404).json({ message: 'Service not found' });
@@ -1144,7 +1178,8 @@ app.delete('/api/services/:id', isAuthenticated, (req, res) => {
     const index = services.findIndex(s => s.id === req.params.id);
     if (index !== -1) {
       services.splice(index, 1);
-      logAPI(req, res);
+      // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.status(204).send();
     } else {
       res.status(404).json({ message: 'Service not found' });
@@ -1159,7 +1194,8 @@ app.delete('/api/services/:id', isAuthenticated, (req, res) => {
 app.post('/api/payment-sources', isAuthenticated, (req, res) => {
   try {
     const paymentSource = { id: generateId(), ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(paymentSource);
   } catch (error) {
     logError(error, { endpoint: 'POST /api/payment-sources', userId: req.session?.user?.id });
@@ -1170,7 +1206,8 @@ app.post('/api/payment-sources', isAuthenticated, (req, res) => {
 app.put('/api/payment-sources/:id', isAuthenticated, (req, res) => {
   try {
     const paymentSource = { id: req.params.id, ...req.body, updatedAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(paymentSource);
   } catch (error) {
     logError(error, { endpoint: `PUT /api/payment-sources/${req.params.id}`, userId: req.session?.user?.id });
@@ -1180,7 +1217,8 @@ app.put('/api/payment-sources/:id', isAuthenticated, (req, res) => {
 
 app.delete('/api/payment-sources/:id', isAuthenticated, (req, res) => {
   try {
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(204).send();
   } catch (error) {
     logError(error, { endpoint: `DELETE /api/payment-sources/${req.params.id}`, userId: req.session?.user?.id });
@@ -1197,7 +1235,8 @@ app.get('/api/payment-sources/:id', isAuthenticated, (req, res) => {
       balance: 50000, 
       isActive: true 
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(paymentSource);
   } catch (error) {
     logError(error, { endpoint: `GET /api/payment-sources/${req.params.id}`, userId: req.session?.user?.id });
@@ -1211,7 +1250,8 @@ app.get('/api/payment-sources/:id/transactions', isAuthenticated, (req, res) => 
       { id: '1', type: 'expense', amount: -500, description: 'Office supplies', date: new Date().toISOString() },
       { id: '2', type: 'income', amount: 2000, description: 'Client payment', date: new Date().toISOString() }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(transactions);
   } catch (error) {
     logError(error, { endpoint: `GET /api/payment-sources/${req.params.id}/transactions`, userId: req.session?.user?.id });
@@ -1222,7 +1262,8 @@ app.get('/api/payment-sources/:id/transactions', isAuthenticated, (req, res) => 
 app.get('/api/payment-sources/:id/expenses', isAuthenticated, (req, res) => {
   try {
     const relatedExpenses = expenses.filter(e => e.paymentSourceId === req.params.id);
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(relatedExpenses);
   } catch (error) {
     logError(error, { endpoint: `GET /api/payment-sources/${req.params.id}/expenses`, userId: req.session?.user?.id });
@@ -1233,7 +1274,8 @@ app.get('/api/payment-sources/:id/expenses', isAuthenticated, (req, res) => {
 app.post('/api/payment-sources/:id/adjust-balance', isAuthenticated, (req, res) => {
   try {
     const adjustment = { id: generateId(), paymentSourceId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(adjustment);
   } catch (error) {
     logError(error, { endpoint: `POST /api/payment-sources/${req.params.id}/adjust-balance`, userId: req.session?.user?.id });
@@ -1250,7 +1292,8 @@ app.get('/api/payment-sources/stats', isAuthenticated, (req, res) => {
       monthlyInflow: 15000,
       monthlyOutflow: -8500
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(stats);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/payment-sources/stats', userId: req.session?.user?.id });
@@ -1265,7 +1308,8 @@ app.get('/api/employees/:id/kpis', isAuthenticated, (req, res) => {
       { id: '1', employeeId: req.params.id, title: 'Projects Completed', target: 5, actual: 4, period: 'monthly', status: 'in-progress' },
       { id: '2', employeeId: req.params.id, title: 'Client Satisfaction', target: 90, actual: 95, period: 'quarterly', status: 'achieved' }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(kpis);
   } catch (error) {
     logError(error, { endpoint: `GET /api/employees/${req.params.id}/kpis`, userId: req.session?.user?.id });
@@ -1276,7 +1320,8 @@ app.get('/api/employees/:id/kpis', isAuthenticated, (req, res) => {
 app.post('/api/employees/:id/kpis', isAuthenticated, (req, res) => {
   try {
     const kpi = { id: generateId(), employeeId: req.params.id, ...req.body, createdAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(201).json(kpi);
   } catch (error) {
     logError(error, { endpoint: `POST /api/employees/${req.params.id}/kpis`, userId: req.session?.user?.id });
@@ -1287,7 +1332,8 @@ app.post('/api/employees/:id/kpis', isAuthenticated, (req, res) => {
 app.put('/api/kpis/:id', isAuthenticated, (req, res) => {
   try {
     const kpi = { id: req.params.id, ...req.body, updatedAt: new Date().toISOString() };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(kpi);
   } catch (error) {
     logError(error, { endpoint: `PUT /api/kpis/${req.params.id}`, userId: req.session?.user?.id });
@@ -1297,7 +1343,8 @@ app.put('/api/kpis/:id', isAuthenticated, (req, res) => {
 
 app.delete('/api/kpis/:id', isAuthenticated, (req, res) => {
   try {
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.status(204).send();
   } catch (error) {
     logError(error, { endpoint: `DELETE /api/kpis/${req.params.id}`, userId: req.session?.user?.id });
@@ -1314,7 +1361,8 @@ app.get('/api/employees/:id/kpi-stats', isAuthenticated, (req, res) => {
       overdue: 0,
       averageProgress: 87.5
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(stats);
   } catch (error) {
     logError(error, { endpoint: `GET /api/employees/${req.params.id}/kpi-stats`, userId: req.session?.user?.id });
@@ -1325,7 +1373,8 @@ app.get('/api/employees/:id/kpi-stats', isAuthenticated, (req, res) => {
 app.get('/api/employees/:id/kpi-periods', isAuthenticated, (req, res) => {
   try {
     const periods = ['monthly', 'quarterly', 'annually'];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(periods);
   } catch (error) {
     logError(error, { endpoint: `GET /api/employees/${req.params.id}/kpi-periods`, userId: req.session?.user?.id });
@@ -1342,7 +1391,8 @@ app.get('/api/dashboard/kpis', isAuthenticated, (req, res) => {
       activeTasks: tasks.filter(t => t.status !== 'completed').length,
       totalExpenses: expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(kpis);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/dashboard/kpis', userId: req.session?.user?.id });
@@ -1356,7 +1406,8 @@ app.get('/api/analytics/outstanding', isAuthenticated, (req, res) => {
       invoices: invoices.filter(i => i.status === 'pending'),
       totalAmount: invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (i.amount || 0), 0)
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(outstanding);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/analytics/outstanding', userId: req.session?.user?.id });
@@ -1371,7 +1422,8 @@ app.get('/api/analytics/trends', isAuthenticated, (req, res) => {
       expenses: [800, 900, 1200, 1100, 1300],
       clients: [5, 8, 12, 15, 18]
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(trends);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/analytics/trends', userId: req.session?.user?.id });
@@ -1386,7 +1438,8 @@ app.get('/api/activities', isAuthenticated, (req, res) => {
       { id: '2', type: 'invoice_paid', description: 'Invoice payment received', timestamp: new Date().toISOString() },
       { id: '3', type: 'task_completed', description: 'Task marked as completed', timestamp: new Date().toISOString() }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(activities);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/activities', userId: req.session?.user?.id });
@@ -1402,7 +1455,8 @@ app.patch('/api/notifications/:id/read', isAuthenticated, (req, res) => {
       notification.read = true;
       notification.readAt = new Date().toISOString();
     }
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     logError(error, { endpoint: `PATCH /api/notifications/${req.params.id}/read`, userId: req.session?.user?.id });
@@ -1416,7 +1470,8 @@ app.patch('/api/notifications/mark-all-read', isAuthenticated, (req, res) => {
       n.read = true;
       n.readAt = new Date().toISOString();
     });
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     logError(error, { endpoint: 'PATCH /api/notifications/mark-all-read', userId: req.session?.user?.id });
@@ -1433,7 +1488,8 @@ app.get('/api/user-management/stats', isAuthenticated, (req, res) => {
       totalRoles: 3,
       activeUsers: 3
     };
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(stats);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/user-management/stats', userId: req.session?.user?.id });
@@ -1448,7 +1504,8 @@ app.get('/api/audit-logs', isAuthenticated, (req, res) => {
       { id: '1', action: 'user_login', userId: 'admin-001', timestamp: new Date().toISOString(), details: 'Admin logged in' },
       { id: '2', action: 'client_created', userId: 'admin-001', timestamp: new Date().toISOString(), details: 'New client created' }
     ];
-    logAPI(req, res);
+    // Log API request
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
     res.json(auditLogs);
   } catch (error) {
     logError(error, { endpoint: 'GET /api/audit-logs', userId: req.session?.user?.id });
