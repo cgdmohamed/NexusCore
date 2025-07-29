@@ -85,7 +85,10 @@ export function RecentActivities() {
                     <p className="text-text font-medium">{activity.title}</p>
                     <p className="text-neutral text-sm">{activity.description}</p>
                     <p className="text-neutral text-xs mt-1">
-                      {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                      {activity.createdAt && !isNaN(new Date(activity.createdAt).getTime()) 
+                        ? formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })
+                        : 'Recently'
+                      }
                     </p>
                   </div>
                 </div>
