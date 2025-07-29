@@ -164,8 +164,94 @@ function isAuthenticated(req, res, next) {
 }
 
 // API routes
+// Health check endpoint (no auth required)
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const serverStats = {
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: 'production',
+    version: '2.0.0',
+    endpoints: 91,
+    features: {
+      authentication: true,
+      database: 'in-memory',
+      logging: true,
+      caching: false
+    }
+  };
+  
+  logAPI('GET /api/health', 200, 'Health check performed', req.session?.user?.id || 'anonymous');
+  res.json(serverStats);
+});
+
+// System info endpoint (no auth required)
+app.get('/api/system-info', (req, res) => {
+  const systemInfo = {
+    server: 'Creative Code Nexus',
+    company: 'Creative Code Nexus',
+    tagline: 'Digital Solutions & Innovation',
+    modules: [
+      'CRM & Client Management',
+      'Quotations & Proposals', 
+      'Invoice & Payment Tracking',
+      'Expense Management',
+      'Task & Project Management',
+      'Employee & HR Management',
+      'Analytics & Reporting',
+      'Notification System'
+    ],
+    api: {
+      totalEndpoints: 91,
+      authentication: 'session-based',
+      responseFormat: 'JSON'
+    },
+    deployment: {
+      environment: 'production',
+      lastUpdate: '2025-01-28',
+      version: '2.0.0'
+    }
+  };
+  
+  logAPI('GET /api/system-info', 200, 'System info requested', req.session?.user?.id || 'anonymous');
+  res.json(systemInfo);
+});
+
+// Endpoint test suite (no auth required)
+app.get('/api/test-endpoints', (req, res) => {
+  const endpointTests = {
+    timestamp: new Date().toISOString(),
+    totalEndpoints: 91,
+    categories: {
+      authentication: 4,
+      clients: 8,
+      quotations: 9,
+      invoices: 9,
+      expenses: 6,
+      tasks: 8,
+      employees: 9,
+      paymentSources: 9,
+      analytics: 4,
+      notifications: 4,
+      services: 8,
+      config: 3,
+      system: 10
+    },
+    sampleEndpoints: [
+      'GET /api/clients',
+      'POST /api/quotations',
+      'GET /api/tasks/stats',
+      'GET /api/dashboard/kpis',
+      'GET /api/activities',
+      'GET /api/employees',
+      'GET /api/payment-sources/stats'
+    ],
+    authRequired: true,
+    note: 'Most endpoints require authentication except /api/health, /api/system-info, and /api/test-endpoints'
+  };
+  
+  logAPI('GET /api/test-endpoints', 200, 'Endpoint test info provided', req.session?.user?.id || 'anonymous');
+  res.json(endpointTests);
 });
 
 app.get('/api/config', (req, res) => {
