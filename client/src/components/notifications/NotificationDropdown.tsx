@@ -218,7 +218,7 @@ export function NotificationDropdown() {
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-500 flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          {notification.createdAt && !isNaN(new Date(notification.createdAt).getTime()) 
+                          {notification.createdAt && notification.createdAt !== 'Invalid Date' && !isNaN(new Date(notification.createdAt).getTime()) 
                             ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })
                             : "Just now"}
                         </span>
