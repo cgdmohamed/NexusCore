@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import { Check, UserPlus, FileText, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Activity } from "@shared/schema";
@@ -85,10 +85,7 @@ export function RecentActivities() {
                     <p className="text-text font-medium">{activity.title}</p>
                     <p className="text-neutral text-sm">{activity.description}</p>
                     <p className="text-neutral text-xs mt-1">
-                      {activity.createdAt && !isNaN(new Date(activity.createdAt).getTime()) 
-                        ? formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })
-                        : 'Recently'
-                      }
+                      {formatDistanceToNow(activity.createdAt, { addSuffix: true })}
                     </p>
                   </div>
                 </div>

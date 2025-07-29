@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/i18n";
 
 const getNotificationIcon = (type: string) => {
@@ -245,9 +245,7 @@ export default function Notifications() {
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-xs text-gray-500 flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          {notification.createdAt && !isNaN(new Date(notification.createdAt).getTime()) 
-                            ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })
-                            : "Just now"}
+                          {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
                         </span>
                         
                         {!notification.isRead && (
