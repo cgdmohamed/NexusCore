@@ -24,7 +24,7 @@ export function RecentActivities() {
     showError: false,
   });
 
-  const activityList = activities as Activity[];
+  const activityList = Array.isArray(activities) ? activities as Activity[] : [];
 
   if (isLoading) {
     return (
