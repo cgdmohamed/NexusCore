@@ -1494,7 +1494,66 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Catch-all handler for SPA routing (must be last)
+// Frontend route handlers for SPA
+app.get('/', (req, res) => {
+  try {
+    res.sendFile(path.resolve(distPath, 'index.html'));
+  } catch (error) {
+    logError(error, { 
+      endpoint: 'Frontend root',
+      path: req.path,
+      ip: req.ip 
+    });
+    res.status(500).send('Error loading application');
+  }
+});
+
+// Handle all SPA routes
+app.get('/auth', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/clients*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/quotations*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/invoices*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/expenses*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/tasks*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/team-roles*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/reports-kpis*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/payments*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/services*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+app.get('/notifications*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
+
+// Catch-all handler for any remaining routes (must be last)
 app.get('*', (req, res) => {
   try {
     res.sendFile(path.resolve(distPath, 'index.html'));
