@@ -1,26 +1,34 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
 import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSmartQuery } from "@/hooks/useSmartQuery";
 
 export function KPICards() {
   const { t } = useTranslation();
   
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading } = useSmartQuery({
     queryKey: ["/api/dashboard/kpis"],
+    endpoint: "/api/dashboard/kpis",
+    showError: false, // Don't show error toast for dashboard stats
   });
 
-  const { data: taskStats } = useQuery({
+  const { data: taskStats } = useSmartQuery({
     queryKey: ["/api/tasks/stats"],
+    endpoint: "/api/tasks/stats",
+    showError: false,
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useSmartQuery({
     queryKey: ["/api/clients"],
+    endpoint: "/api/clients",
+    showError: false,
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [] } = useSmartQuery({
     queryKey: ["/api/invoices"],
+    endpoint: "/api/invoices",
+    showError: false,
   });
 
   const kpiData = kpis as any;
