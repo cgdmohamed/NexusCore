@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 import { Check, UserPlus, FileText, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSmartQuery } from "@/hooks/useSmartQuery";
 import type { Activity } from "@shared/schema";
 
 const activityIcons = {
@@ -16,12 +17,12 @@ const activityIcons = {
 
 export function RecentActivities() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   
-  const { data: activities = [], isLoading } = useSmartQuery({
+  const { data: activities = [], isLoading } = useQuery({
     queryKey: ["/api/activities"],
-    endpoint: "/api/activities",
+    enabled: isAuthenticated,
     refetchInterval: 30000, // Refresh every 30 seconds
-    showError: false,
   });
 
   const activityList = Array.isArray(activities) ? activities as Activity[] : [];

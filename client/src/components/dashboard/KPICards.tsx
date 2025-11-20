@@ -1,34 +1,32 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSmartQuery } from "@/hooks/useSmartQuery";
 
 export function KPICards() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   
-  const { data: kpis, isLoading } = useSmartQuery({
+  const { data: kpis, isLoading } = useQuery({
     queryKey: ["/api/dashboard/kpis"],
-    endpoint: "/api/dashboard/kpis",
-    showError: false, // Don't show error toast for dashboard stats
+    enabled: isAuthenticated,
   });
 
-  const { data: taskStats } = useSmartQuery({
+  const { data: taskStats } = useQuery({
     queryKey: ["/api/tasks/stats"],
-    endpoint: "/api/tasks/stats",
-    showError: false,
+    enabled: isAuthenticated,
   });
 
-  const { data: clients = [] } = useSmartQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
-    endpoint: "/api/clients",
-    showError: false,
+    enabled: isAuthenticated,
   });
 
-  const { data: invoices = [] } = useSmartQuery({
+  const { data: invoices = [] } = useQuery({
     queryKey: ["/api/invoices"],
-    endpoint: "/api/invoices",
-    showError: false,
+    enabled: isAuthenticated,
   });
 
   const kpiData = kpis as any;
