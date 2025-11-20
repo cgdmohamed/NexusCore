@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Notification {
   id: string;
@@ -47,8 +48,9 @@ export interface UnreadCountResponse {
 export function useNotifications(page: number = 1, limit: number = 20, unreadOnly: boolean = false) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
-  // Fetch notifications with pagination
+  // Fetch notifications with pagination - ONLY if authenticated
   const notificationsQuery = useQuery({
     queryKey: ["/api/notifications", { page, limit, unreadOnly }],
     queryFn: async (): Promise<Notification[]> => {
@@ -56,19 +58,21 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
       const result = await res.json();
       return result.success ? result.data : [];
     },
-    staleTime: 0, // Always consider data stale for immediate updates
-    refetchInterval: unreadOnly ? 5000 : 10000, // More frequent updates for real-time experience
+    enabled: isAuthenticated, // Only fetch when authenticated
+    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: isAuthenticated ? 30000 : false, // Poll every 30 seconds when authenticated
   });
 
-  // Fetch unread count separately for navbar badge
+  // Fetch unread count separately for navbar badge - ONLY if authenticated
   const unreadCountQuery = useQuery({
     queryKey: ["/api/notifications/unread-count"],
     queryFn: async (): Promise<UnreadCountResponse> => {
       const res = await apiRequest("GET", "/api/notifications/unread-count");
       return await res.json();
     },
-    staleTime: 0, // Always consider data stale for immediate updates
-    refetchInterval: 3000, // Update every 3 seconds for real-time badge
+    enabled: isAuthenticated, // Only fetch when authenticated
+    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: isAuthenticated ? 30000 : false, // Poll every 30 seconds when authenticated
   });
 
   // Mark single notification as read
@@ -163,10 +167,12 @@ export function useNotifications(page: number = 1, limit: number = 20, unreadOnl
 export function useNotificationSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
-  // Fetch notification settings
+  // Fetch notification settings - ONLY if authenticated
   const settingsQuery = useQuery({
     queryKey: ["/api/notifications/settings"],
+    enabled: isAuthenticated, // Only fetch when authenticated
     staleTime: 300000, // 5 minutes
   });
 
