@@ -11,18 +11,7 @@ import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, activities, users } from "@shared/schema";
-import { sql, eq } from "drizzle-orm";
-import { randomUUID } from "crypto";
-import {
-  insertClientSchema,
-  insertQuotationSchema,
-  insertInvoiceSchema,
-  insertExpenseSchema,
-  insertTaskSchema,
-  insertActivitySchema,
-} from "@shared/schema";
-import { z } from "zod";
+import { users } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint (no auth required)
