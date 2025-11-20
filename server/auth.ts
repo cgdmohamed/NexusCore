@@ -2,17 +2,23 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { csrfSync } from "csrf-sync";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends Omit<SelectUser, 'passwordHash'> {
+      passwordHash?: string; // Optional because we remove it for security
+    }
   }
 }
 
-
+// Initialize PostgreSQL session store
+const PgStore = connectPgSimple(session);
 
 async function hashPassword(password: string) {
   return await bcrypt.hash(password, 10);
@@ -23,15 +29,27 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Session configuration - use memory store to avoid database session issues
+  // Validate required environment variables
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be set in environment variables");
+  }
+
+  // Session configuration with PostgreSQL store
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this-in-production',
+    store: new PgStore({
+      pool, // Reuse existing database connection pool
+      tableName: "session", // Table for session storage
+      createTableIfMissing: true, // Auto-create session table
+      pruneSessionInterval: 60, // Clean expired sessions every 60 seconds
+    }),
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax', // CSRF protection via SameSite
     }
   };
 
@@ -39,6 +57,25 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Configure CSRF protection
+  const { generateToken, csrfSynchronisedProtection } = csrfSync({
+    ignoredMethods: ["GET", "HEAD", "OPTIONS"],
+    getTokenFromRequest: (req) => {
+      // Check multiple sources for CSRF token
+      return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
+    },
+  });
+
+  // Expose CSRF token generator and protection middleware
+  app.locals.generateCsrfToken = generateToken;
+  app.locals.csrfProtection = csrfSynchronisedProtection;
+
+  // Endpoint to get CSRF token
+  app.get("/api/csrf-token", (req, res) => {
+    const token = generateToken(req);
+    res.json({ csrfToken: token });
+  });
 
   // Local strategy for username/password authentication
   passport.use(
