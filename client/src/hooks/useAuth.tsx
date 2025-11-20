@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User } from "@shared/schema";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient, refreshCsrfToken, clearCsrfToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -64,8 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: User) => {
+    onSuccess: async (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Fetch CSRF token after successful login
+      try {
+        await refreshCsrfToken();
+      } catch (error) {
+        console.error("Failed to refresh CSRF token after login:", error);
+      }
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.firstName || user.username}!`,
@@ -89,12 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       queryClient.clear(); // Clear all cached data on logout
+      clearCsrfToken(); // Clear CSRF token on logout
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     },
     onError: (error: Error) => {
+      clearCsrfToken(); // Clear CSRF token even on error
       toast({
         title: "Logout failed",
         description: error.message,

@@ -58,26 +58,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure CSRF protection
-  const { generateToken, csrfSynchronisedProtection } = csrfSync({
-    ignoredMethods: ["GET", "HEAD", "OPTIONS"],
-    getTokenFromRequest: (req) => {
-      // Check multiple sources for CSRF token
-      return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
-    },
-  });
-
-  // Expose CSRF token generator and protection middleware
-  app.locals.generateCsrfToken = generateToken;
-  app.locals.csrfProtection = csrfSynchronisedProtection;
-
-  // Endpoint to get CSRF token
-  app.get("/api/csrf-token", (req, res) => {
-    const token = generateToken(req);
-    res.json({ csrfToken: token });
-  });
-
-  // Local strategy for username/password authentication
+  // Local strategy for username/password authentication (setup before routes)
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -183,7 +164,36 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Logout endpoint
+  // Get current user endpoint
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    res.json(req.user);
+  });
+
+  // Configure CSRF protection (applied AFTER login/registration routes)
+  const { generateToken, csrfSynchronisedProtection } = csrfSync({
+    ignoredMethods: ["GET", "HEAD", "OPTIONS"],
+    getTokenFromRequest: (req) => {
+      // Check multiple sources for CSRF token
+      return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
+    },
+  });
+
+  // Endpoint to get CSRF token
+  app.get("/api/csrf-token", (req, res) => {
+    const token = generateToken(req);
+    res.json({ csrfToken: token });
+  });
+
+  // Apply CSRF protection to all POST/PATCH/DELETE/PUT routes globally
+  // This protects all API routes registered after this point
+  // Login/registration routes above are NOT protected (they need to work without tokens)
+  app.use(csrfSynchronisedProtection);
+
+  // Logout endpoint (PROTECTED by CSRF)
+  // This prevents CSRF attacks that could force users to logout
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
@@ -193,14 +203,6 @@ export function setupAuth(app: Express) {
         res.json({ message: "Logged out successfully" });
       });
     });
-  });
-
-  // Get current user endpoint
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    res.json(req.user);
   });
 }
 
