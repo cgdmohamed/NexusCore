@@ -8,11 +8,46 @@ A comprehensive company management system with CRM, financial management, task t
 - Node.js 18+
 - PostgreSQL database
 
-### Setup
+### Development Setup
 ```bash
 npm install
 npm run dev
 ```
+
+### Production Setup with PM2
+
+1. **Install PM2 Globally:**
+```bash
+npm install -g pm2
+```
+
+2. **Start Application with PM2:**
+```bash
+pm2 start npm --name "companyos" -- run dev
+```
+
+3. **Save PM2 Configuration:**
+```bash
+pm2 save
+pm2 startup
+```
+
+4. **Monitor Application:**
+```bash
+pm2 monit           # Real-time monitoring
+pm2 logs companyos  # View logs
+pm2 status          # Check status
+```
+
+5. **Restart/Stop Application:**
+```bash
+pm2 restart companyos
+pm2 stop companyos
+pm2 delete companyos
+```
+
+6. **Auto-restart on Crash:**
+PM2 automatically restarts the application on crashes and on server reboot after running `pm2 startup`.
 
 **Default Login:** admin / admin123
 
