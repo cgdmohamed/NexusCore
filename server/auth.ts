@@ -33,6 +33,11 @@ export function setupAuth(app: Express) {
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET must be set in environment variables");
   }
+  
+  // CSRF_SECRET is required in production, optional in development
+  if (process.env.NODE_ENV === 'production' && !process.env.CSRF_SECRET) {
+    throw new Error("CSRF_SECRET must be set in environment variables for production");
+  }
 
   // Session configuration with PostgreSQL store
   const sessionSettings: session.SessionOptions = {
@@ -173,7 +178,9 @@ export function setupAuth(app: Express) {
   });
 
   // Configure CSRF protection (applied AFTER login/registration routes)
+  const csrfSecret = process.env.CSRF_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-csrf-secret-change-in-production' : '');
   const { generateToken, csrfSynchronisedProtection } = csrfSync({
+    secret: csrfSecret,
     ignoredMethods: ["GET", "HEAD", "OPTIONS"],
     getTokenFromRequest: (req) => {
       // Check multiple sources for CSRF token
