@@ -7,8 +7,10 @@ export const CURRENCY = {
 
 export function formatCurrency(amount: number | string): string {
   const numAmount = typeof amount === 'string' ? parseFloat(amount) || 0 : amount;
-  const formatted = numAmount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
+  const hasDecimals = numAmount % 1 !== 0;
+  
+  const formatted = numAmount.toLocaleString(undefined, {
+    minimumFractionDigits: hasDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   });
   
