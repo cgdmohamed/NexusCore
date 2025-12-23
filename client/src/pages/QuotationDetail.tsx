@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Quotation, QuotationItem, Service, Client } from "@shared/schema";
@@ -319,7 +320,7 @@ export default function QuotationDetail() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-xl font-bold">${quotationTotal.toFixed(2)}</p>
+                <p className="text-xl font-bold">{formatCurrency(quotationTotal)}</p>
               </div>
             </div>
           </CardContent>
@@ -548,7 +549,7 @@ export default function QuotationDetail() {
                         <SelectItem value="custom">Custom Item</SelectItem>
                         {services.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
-                            {service.name} - ${service.defaultPrice}
+                            {service.name} - {formatCurrency(service.defaultPrice)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -671,10 +672,10 @@ export default function QuotationDetail() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">${parseFloat(item.unitPrice).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                       <TableCell className="text-right">{parseFloat(item.discount || '0').toFixed(1)}%</TableCell>
                       <TableCell className="text-right font-medium">
-                        ${parseFloat(item.totalPrice).toFixed(2)}
+                        {formatCurrency(item.totalPrice)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -686,15 +687,15 @@ export default function QuotationDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-sm text-gray-600">Subtotal</p>
-                    <p className="text-xl font-bold">${quotationTotal.toFixed(2)}</p>
+                    <p className="text-xl font-bold">{formatCurrency(quotationTotal)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Tax (0%)</p>
-                    <p className="text-xl font-bold">$0.00</p>
+                    <p className="text-xl font-bold">{formatCurrency(0)}</p>
                   </div>
                   <div className="bg-primary text-white p-4 rounded-lg">
                     <p className="text-sm opacity-90">Total Amount</p>
-                    <p className="text-2xl font-bold">${quotationTotal.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(quotationTotal)}</p>
                   </div>
                 </div>
               </div>

@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/dashboard/Header";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
+import { formatCurrency } from "@/lib/currency";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Table,
@@ -237,7 +238,7 @@ export default function PaymentSourceDetail() {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-gray-900">
-                    ${parseFloat(paymentSource.currentBalance || "0").toLocaleString()}
+                    {formatCurrency(paymentSource.currentBalance || "0")}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
                     Current Balance
@@ -298,7 +299,7 @@ export default function PaymentSourceDetail() {
                     <div>
                       <div className="font-medium">Initial Balance</div>
                       <div className="text-sm text-gray-500">
-                        ${parseFloat(paymentSource.initialBalance || "0").toLocaleString()}
+                        {formatCurrency(paymentSource.initialBalance || "0")}
                       </div>
                     </div>
                   </div>
@@ -347,11 +348,10 @@ export default function PaymentSourceDetail() {
                         <TableCell className={`font-medium ${
                           transaction.type === "expense" ? "text-red-600" : "text-green-600"
                         }`}>
-                          {transaction.type === "expense" ? "-" : "+"}
-                          ${parseFloat(transaction.amount).toLocaleString()}
+                          {transaction.type === "expense" ? "-" : "+"}{formatCurrency(transaction.amount)}
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${parseFloat(transaction.balanceAfter).toLocaleString()}
+                          {formatCurrency(transaction.balanceAfter)}
                         </TableCell>
                         <TableCell className="text-sm text-gray-500">
                           {transaction.createdAt ? format(new Date(transaction.createdAt), "MMM dd, yyyy") : "N/A"}
@@ -406,7 +406,7 @@ export default function PaymentSourceDetail() {
                           )}
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${parseFloat(expense.amount).toLocaleString()}
+                          {formatCurrency(expense.amount)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
@@ -514,14 +514,14 @@ export default function PaymentSourceDetail() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Spent</span>
                 <span className="font-medium text-red-600">
-                  ${expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0).toLocaleString()}
+                  {formatCurrency(expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0))}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-gray-600">Current Balance</span>
                 <span className="font-bold text-green-600">
-                  ${parseFloat(paymentSource.currentBalance || "0").toLocaleString()}
+                  {formatCurrency(paymentSource.currentBalance || "0")}
                 </span>
               </div>
             </CardContent>

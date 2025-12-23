@@ -26,6 +26,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -237,7 +238,7 @@ export default function Invoices() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Amount</p>
-                  <p className="text-xl font-bold">${stats.totalAmount.toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
                 </div>
               </div>
             </CardContent>
@@ -249,7 +250,7 @@ export default function Invoices() {
                 <Building className="h-4 w-4 text-red-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Outstanding</p>
-                  <p className="text-xl font-bold">${stats.outstanding.toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.outstanding)}</p>
                 </div>
               </div>
             </CardContent>
@@ -413,13 +414,13 @@ export default function Invoices() {
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">
-                            ${amount.toLocaleString()}
+                            {formatCurrency(amount)}
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
-                                <span>Paid: ${paid.toLocaleString()}</span>
-                                <span>Due: ${remaining.toLocaleString()}</span>
+                                <span>Paid: {formatCurrency(paid)}</span>
+                                <span>Due: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 
@@ -505,12 +506,12 @@ export default function Invoices() {
                           <div>
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-sm text-gray-600">Amount</span>
-                              <span className="text-lg font-bold">${amount.toLocaleString()}</span>
+                              <span className="text-lg font-bold">{formatCurrency(amount)}</span>
                             </div>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
-                                <span className="text-green-600">Paid: ${paid.toLocaleString()}</span>
-                                <span className="text-red-600">Due: ${remaining.toLocaleString()}</span>
+                                <span className="text-green-600">Paid: {formatCurrency(paid)}</span>
+                                <span className="text-red-600">Due: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import { Eye, FileText, DollarSign, Clock, CheckCircle, XCircle, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -296,7 +297,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
                   </Link>
                 </TableCell>
                 <TableCell className="font-medium">
-                  ${parseFloat(quotation.amount).toFixed(2)}
+                  {formatCurrency(quotation.amount)}
                 </TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(quotation.status)}>

@@ -25,6 +25,7 @@ import {
   Settings
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -246,7 +247,7 @@ export default function PaymentSources() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Balance</p>
-                  <p className="text-2xl font-bold">${parseFloat(stats?.totalBalance || "0").toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats?.totalBalance || "0")}</p>
                 </div>
               </div>
             </CardContent>
@@ -363,7 +364,7 @@ export default function PaymentSources() {
                       {getAccountTypeBadge(source.accountType)}
                     </TableCell>
                     <TableCell className="font-mono">
-                      ${parseFloat(source.currentBalance).toLocaleString()}
+                      {formatCurrency(source.currentBalance)}
                     </TableCell>
                     <TableCell>{source.currency}</TableCell>
                     <TableCell>
@@ -478,7 +479,7 @@ export default function PaymentSources() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Current Balance:</span>
                       <span className="font-mono font-semibold text-lg">
-                        ${parseFloat(source.currentBalance).toLocaleString()}
+                        {formatCurrency(source.currentBalance)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">

@@ -20,6 +20,7 @@ import {
   BarChart3 
 } from "lucide-react";
 import { format, subDays, subMonths } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 
 export default function Analytics() {
   const { t } = useTranslation();
@@ -109,13 +110,8 @@ export default function Analytics() {
     }
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(value);
   };
 
   const handleDateRangeChange = (start: Date | null, end: Date | null) => {
@@ -159,9 +155,9 @@ Generated: ${format(new Date(), 'PPP')}
 Period: ${dateRange.start ? format(dateRange.start, 'PPP') : 'N/A'} to ${dateRange.end ? format(dateRange.end, 'PPP') : 'N/A'}
 
 KPIs:
-Total Revenue: ${formatCurrency(kpis?.totalRevenue || 0)}
-Total Expenses: ${formatCurrency(kpis?.totalExpenses || 0)}
-Net Profit: ${formatCurrency(kpis?.netProfit || 0)}
+Total Revenue: ${formatCurrencyValue(kpis?.totalRevenue || 0)}
+Total Expenses: ${formatCurrencyValue(kpis?.totalExpenses || 0)}
+Net Profit: ${formatCurrencyValue(kpis?.netProfit || 0)}
 New Clients: ${kpis?.newClients || 0}
 Completed Tasks: ${kpis?.completedTasks || 0}
 Conversion Rate: ${kpis?.conversionRate?.toFixed(2) || 0}%
@@ -226,19 +222,19 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <KpiCard
                 title="Total Revenue"
-                value={formatCurrency(kpis?.totalRevenue || 0)}
+                value={formatCurrencyValue(kpis?.totalRevenue || 0)}
                 icon={DollarSign}
                 className="border-l-4 border-l-green-500"
               />
               <KpiCard
                 title="Total Expenses"
-                value={formatCurrency(kpis?.totalExpenses || 0)}
+                value={formatCurrencyValue(kpis?.totalExpenses || 0)}
                 icon={CreditCard}
                 className="border-l-4 border-l-red-500"
               />
               <KpiCard
                 title="Net Profit"
-                value={formatCurrency(kpis?.netProfit || 0)}
+                value={formatCurrencyValue(kpis?.netProfit || 0)}
                 icon={TrendingUp}
                 className={`border-l-4 ${(kpis?.netProfit || 0) >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}
               />
@@ -268,7 +264,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
               />
               <KpiCard
                 title="Outstanding"
-                value={formatCurrency(outstanding?.outstandingTotal || 0)}
+                value={formatCurrencyValue(outstanding?.outstandingTotal || 0)}
                 icon={AlertCircle}
                 className="border-l-4 border-l-yellow-500"
                 description={`${outstanding?.overdueCount || 0} overdue invoices`}
@@ -287,7 +283,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                       {kpis.invoiceBreakdown.paid?.count || 0}
                     </div>
                     <p className="text-sm text-neutral">
-                      {formatCurrency(kpis.invoiceBreakdown.paid?.amount || 0)}
+                      {formatCurrencyValue(kpis.invoiceBreakdown.paid?.amount || 0)}
                     </p>
                   </CardContent>
                 </Card>
@@ -301,7 +297,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                       {kpis.invoiceBreakdown.pending?.count || 0}
                     </div>
                     <p className="text-sm text-neutral">
-                      {formatCurrency(kpis.invoiceBreakdown.pending?.amount || 0)}
+                      {formatCurrencyValue(kpis.invoiceBreakdown.pending?.amount || 0)}
                     </p>
                   </CardContent>
                 </Card>
@@ -315,7 +311,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                       {kpis.invoiceBreakdown.partial?.count || 0}
                     </div>
                     <p className="text-sm text-neutral">
-                      {formatCurrency(kpis.invoiceBreakdown.partial?.amount || 0)}
+                      {formatCurrencyValue(kpis.invoiceBreakdown.partial?.amount || 0)}
                     </p>
                   </CardContent>
                 </Card>
@@ -335,20 +331,20 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                   <div className="flex justify-between items-center">
                     <span className="text-neutral">Total Revenue</span>
                     <span className="font-semibold text-green-600">
-                      {formatCurrency(kpis?.totalRevenue || 0)}
+                      {formatCurrencyValue(kpis?.totalRevenue || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-neutral">Total Expenses</span>
                     <span className="font-semibold text-red-600">
-                      {formatCurrency(kpis?.totalExpenses || 0)}
+                      {formatCurrencyValue(kpis?.totalExpenses || 0)}
                     </span>
                   </div>
                   <hr className="border-gray-200" />
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-text">Net Profit</span>
                     <span className={`font-bold text-lg ${(kpis?.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(kpis?.netProfit || 0)}
+                      {formatCurrencyValue(kpis?.netProfit || 0)}
                     </span>
                   </div>
                   <div className="text-sm text-neutral">
@@ -394,21 +390,21 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                   currentValue={comparison.period1.revenue}
                   previousValue={comparison.period2.revenue}
                   change={comparison.changes.revenue}
-                  formatter={formatCurrency}
+                  formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
                   title="Expenses"
                   currentValue={comparison.period1.expenses}
                   previousValue={comparison.period2.expenses}
                   change={comparison.changes.expenses}
-                  formatter={formatCurrency}
+                  formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
                   title="Net Profit"
                   currentValue={comparison.period1.revenue - comparison.period1.expenses}
                   previousValue={comparison.period2.revenue - comparison.period2.expenses}
                   change={comparison.changes.profit}
-                  formatter={formatCurrency}
+                  formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
                   title="New Clients"
@@ -436,7 +432,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-text mb-4">
-                      {formatCurrency(outstanding.outstandingTotal)}
+                      {formatCurrencyValue(outstanding.outstandingTotal)}
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -461,7 +457,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                         {outstanding.overdueInvoices.slice(0, 5).map((invoice: any) => (
                           <div key={invoice.id} className="flex justify-between items-center">
                             <div>
-                              <div className="font-medium text-text">{formatCurrency(invoice.amount)}</div>
+                              <div className="font-medium text-text">{formatCurrencyValue(invoice.amount)}</div>
                               <div className="text-xs text-neutral">
                                 {invoice.daysPastDue} days overdue
                               </div>

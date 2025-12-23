@@ -130,7 +130,7 @@ export function Navbar() {
         results.push({
           id: invoice.id,
           title: invoice.invoiceNumber,
-          subtitle: `$${invoice.amount} - ${invoice.status}`,
+          subtitle: `${invoice.amount} ج.م - ${invoice.status}`,
           type: 'invoice',
           href: `/invoices/${invoice.id}`,
         });

@@ -30,6 +30,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -192,7 +193,7 @@ export default function InvoiceDetail() {
       
       let message = "Payment recorded successfully";
       if ((data as any)?.overpaymentHandled && (data as any)?.creditAdded > 0) {
-        message += `. $${(data as any).creditAdded} added to client credit balance.`;
+        message += `. ${formatCurrency((data as any).creditAdded)} added to client credit balance.`;
       }
       
       toast({
@@ -498,7 +499,7 @@ export default function InvoiceDetail() {
                 <div>
                   <Label className="text-sm text-gray-600">Available Credit</Label>
                   <p className="font-semibold text-green-600">
-                    ${parseFloat((clientCredit as any).currentBalance).toLocaleString()}
+                    {formatCurrency((clientCredit as any).currentBalance)}
                   </p>
                   <Button 
                     variant="outline" 
@@ -559,26 +560,26 @@ export default function InvoiceDetail() {
             <div className="bg-white p-6 rounded-lg border-2 border-blue-300 shadow-sm mb-6">
               <div className="text-center">
                 <Label className="text-sm text-blue-700 font-medium">INVOICE TOTAL</Label>
-                <p className="text-5xl font-bold text-blue-900 mt-2">${totalAmount.toLocaleString()}</p>
+                <p className="text-5xl font-bold text-blue-900 mt-2">{formatCurrency(totalAmount)}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white p-4 rounded-lg border">
                 <Label className="text-sm text-gray-600">Subtotal</Label>
-                <p className="text-xl font-bold">${subtotal.toLocaleString()}</p>
+                <p className="text-xl font-bold">{formatCurrency(subtotal)}</p>
               </div>
               <div className="bg-white p-4 rounded-lg border">
                 <Label className="text-sm text-gray-600">Tax Amount</Label>
-                <p className="text-xl font-bold">${taxAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold">{formatCurrency(taxAmount)}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <Label className="text-sm text-green-700 font-medium">Paid Amount</Label>
-                <p className="text-xl font-bold text-green-700">${paidAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold text-green-700">{formatCurrency(paidAmount)}</p>
               </div>
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <Label className="text-sm text-red-700 font-medium">Outstanding</Label>
-                <p className="text-xl font-bold text-red-700">${remainingAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold text-red-700">{formatCurrency(remainingAmount)}</p>
               </div>
             </div>
             
@@ -595,8 +596,8 @@ export default function InvoiceDetail() {
                 ></div>
               </div>
               <div className="flex justify-between text-sm text-gray-600 mt-2">
-                <span className="font-medium">Paid: ${paidAmount.toLocaleString()}</span>
-                <span className="font-medium">Remaining: ${remainingAmount.toLocaleString()}</span>
+                <span className="font-medium">Paid: {formatCurrency(paidAmount)}</span>
+                <span className="font-medium">Remaining: {formatCurrency(remainingAmount)}</span>
               </div>
             </div>
           </CardContent>
@@ -709,8 +710,8 @@ export default function InvoiceDetail() {
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>{item.description || '-'}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">${parseFloat(item.unitPrice).toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-medium">${parseFloat(item.totalPrice).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="outline"
@@ -963,7 +964,7 @@ export default function InvoiceDetail() {
                     {payments.map((payment) => (
                       <TableRow key={payment.id}>
                         <TableCell>{format(new Date(payment.paymentDate), 'MMM dd, yyyy')}</TableCell>
-                        <TableCell className="font-medium">${parseFloat(payment.amount).toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <span className="capitalize">{payment.paymentMethod.replace('_', ' ')}</span>
@@ -1008,7 +1009,7 @@ export default function InvoiceDetail() {
                   <div>
                     <Label className="text-sm text-green-700">Current Credit Balance</Label>
                     <p className="text-2xl font-bold text-green-800">
-                      ${parseFloat((clientCredit as any)?.currentBalance || "0").toLocaleString()}
+                      {formatCurrency((clientCredit as any)?.currentBalance || "0")}
                     </p>
                   </div>
                   {parseFloat((clientCredit as any)?.currentBalance || "0") > 0 && remainingAmount > 0 ? (
@@ -1038,7 +1039,7 @@ export default function InvoiceDetail() {
                               {entry.type.replace('_', ' ').toUpperCase()}
                             </Badge>
                             <span className="font-medium">
-                              ${parseFloat(entry.amount).toFixed(2)}
+                              {formatCurrency(entry.amount)}
                             </span>
                           </div>
                           <span className="text-sm text-gray-500">
@@ -1047,8 +1048,8 @@ export default function InvoiceDetail() {
                         </div>
                         <p className="text-sm text-gray-600 mt-1">{entry.description}</p>
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>Previous: ${parseFloat(entry.previousBalance).toFixed(2)}</span>
-                          <span>New: ${parseFloat(entry.newBalance).toFixed(2)}</span>
+                          <span>Previous: {formatCurrency(entry.previousBalance)}</span>
+                          <span>New: {formatCurrency(entry.newBalance)}</span>
                         </div>
                       </div>
                     ))}

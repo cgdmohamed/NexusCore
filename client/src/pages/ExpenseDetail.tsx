@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/dashboard/Header";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
+import { formatCurrency } from "@/lib/currency";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Expense, ExpenseCategory } from "@shared/schema";
 
@@ -236,7 +237,7 @@ export default function ExpenseDetail() {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-gray-900">
-                    ${parseFloat(expense.amount).toLocaleString()}
+                    {formatCurrency(expense.amount)}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
                     {expense.type.charAt(0).toUpperCase() +
@@ -408,7 +409,7 @@ export default function ExpenseDetail() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Amount</span>
                   <span className="font-medium">
-                    ${parseFloat(expense.amount).toLocaleString()}
+                    {formatCurrency(expense.amount)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

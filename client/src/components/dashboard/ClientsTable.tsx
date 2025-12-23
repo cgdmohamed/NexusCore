@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Client } from "@shared/schema";
+import { formatCurrency } from "@/lib/currency";
 
 export function ClientsTable() {
   const { t } = useTranslation();
@@ -114,7 +115,7 @@ export function ClientsTable() {
                     </Badge>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-sm text-text">
-                    ${parseFloat(client.totalValue || "0").toLocaleString()}
+                    {formatCurrency(client.totalValue || "0")}
                   </TableCell>
                 </TableRow>
               ))}

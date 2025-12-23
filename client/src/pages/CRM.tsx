@@ -27,6 +27,7 @@ import {
   Trash2
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -280,7 +281,7 @@ export default function CRM() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Value</p>
-                  <p className="text-xl font-bold">${stats.totalValue.toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.totalValue)}</p>
                 </div>
               </div>
             </CardContent>
@@ -292,7 +293,7 @@ export default function CRM() {
                 <Building className="h-4 w-4 text-purple-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Avg Value</p>
-                  <p className="text-xl font-bold">${Math.round(stats.avgValue).toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.avgValue)}</p>
                 </div>
               </div>
             </CardContent>
@@ -476,7 +477,7 @@ export default function CRM() {
                             </Badge>
                           </TableCell>
                           <TableCell className="font-medium">
-                            ${parseFloat(client.totalValue || "0").toLocaleString()}
+                            {formatCurrency(client.totalValue || "0")}
                           </TableCell>
                           <TableCell className="text-sm text-gray-600">
                             <div className="space-y-1">
@@ -594,10 +595,10 @@ export default function CRM() {
                           <div className="grid grid-cols-2 gap-4 py-2 border-t border-gray-100">
                             <div>
                               <p className="text-xs text-gray-500">Total Value</p>
-                              <p className="text-lg font-bold">${parseFloat(client.totalValue || "0").toLocaleString()}</p>
+                              <p className="text-lg font-bold">{formatCurrency(client.totalValue || "0")}</p>
                               {parseFloat(client.creditBalance || "0") > 0 && (
                                 <p className="text-xs text-green-600 font-medium">
-                                  Credit: ${parseFloat(client.creditBalance || "0").toLocaleString()}
+                                  Credit: {formatCurrency(client.creditBalance || "0")}
                                 </p>
                               )}
                             </div>

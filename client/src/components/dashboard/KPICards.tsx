@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/lib/currency";
 
 export function KPICards() {
   const { t } = useTranslation();
@@ -69,8 +70,8 @@ export function KPICards() {
   const kpiCards = [
     {
       title: "Total Revenue",
-      value: `$${realTimeStats.totalRevenue.toLocaleString()}`,
-      change: `$${realTimeStats.pendingRevenue.toLocaleString()} pending`,
+      value: formatCurrency(realTimeStats.totalRevenue),
+      change: `${formatCurrency(realTimeStats.pendingRevenue)} pending`,
       icon: DollarSign,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",

@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   CalendarIcon,
   Upload,
@@ -367,7 +368,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                           <div>
                             <div className="font-medium">{source.name}</div>
                             <div className="text-sm text-gray-500">
-                              Balance: ${parseFloat(source.currentBalance || "0").toFixed(2)}
+                              Balance: {formatCurrency(source.currentBalance || "0")}
                             </div>
                           </div>
                         </div>

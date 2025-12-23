@@ -56,7 +56,7 @@ export function SystemVerification() {
     {
       module: "Dashboard KPIs",
       status: kpis ? 'success' : 'error',
-      message: kpis ? `KPIs loaded (${kpis.activeClients} clients, $${kpis.totalRevenue} revenue)` : 'Failed to load KPIs'
+      message: kpis ? `KPIs loaded (${kpis.activeClients} clients, ${kpis.totalRevenue} ج.م revenue)` : 'Failed to load KPIs'
     },
     {
       module: "Activity Feed",

@@ -26,6 +26,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -217,7 +218,7 @@ export default function Quotations() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Value</p>
-                  <p className="text-xl font-bold">${stats.totalValue.toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.totalValue)}</p>
                 </div>
               </div>
             </CardContent>
@@ -229,7 +230,7 @@ export default function Quotations() {
                 <TrendingUp className="h-4 w-4 text-purple-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Avg Value</p>
-                  <p className="text-xl font-bold">${Math.round(stats.avgValue).toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(stats.avgValue)}</p>
                 </div>
               </div>
             </CardContent>
@@ -393,7 +394,7 @@ export default function Quotations() {
                           {getClientName(quotation.clientId)}
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${parseFloat(quotation.amount).toLocaleString()}
+                          {formatCurrency(quotation.amount)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getStatusColor(quotation.status)}>
@@ -478,7 +479,7 @@ export default function Quotations() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Amount:</span>
-                          <span className="text-lg font-bold">${parseFloat(quotation.amount).toLocaleString()}</span>
+                          <span className="text-lg font-bold">{formatCurrency(quotation.amount)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Valid Until:</span>

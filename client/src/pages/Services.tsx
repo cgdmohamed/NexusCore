@@ -15,6 +15,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
+import { formatCurrency } from "@/lib/currency";
 
 interface Service {
   id: string;
@@ -381,12 +382,12 @@ export default function Services() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              ${allServices.length > 0 ? 
+              {formatCurrency(allServices.length > 0 ? 
                 (allServices
                   .filter((s: Service) => s.defaultPrice)
                   .reduce((sum: number, s: Service) => sum + parseFloat(s.defaultPrice || '0'), 0) / 
                  allServices.filter((s: Service) => s.defaultPrice).length
-                ).toFixed(2) : '0.00'}
+                ) : 0)}
             </div>
           </CardContent>
         </Card>
@@ -492,7 +493,7 @@ export default function Services() {
                   )}
                   {service.defaultPrice && (
                     <p className="font-semibold text-green-600">
-                      ${parseFloat(service.defaultPrice).toFixed(2)}
+                      {formatCurrency(service.defaultPrice)}
                     </p>
                   )}
                   <div className="flex justify-end space-x-2 pt-2">
@@ -556,7 +557,7 @@ export default function Services() {
                       <td className="p-4">
                         {service.defaultPrice && (
                           <span className="font-semibold text-green-600">
-                            ${parseFloat(service.defaultPrice).toFixed(2)}
+                            {formatCurrency(service.defaultPrice)}
                           </span>
                         )}
                       </td>

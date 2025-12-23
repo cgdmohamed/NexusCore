@@ -29,6 +29,7 @@ import {
   PieChart
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -241,7 +242,7 @@ export default function Expenses() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Amount</p>
-                  <p className="text-2xl font-bold">${(stats?.totalAmount || 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats?.totalAmount || 0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -253,7 +254,7 @@ export default function Expenses() {
                 <TrendingDown className="h-4 w-4 text-orange-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Outstanding</p>
-                  <p className="text-2xl font-bold">${(stats?.pendingAmount || 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats?.pendingAmount || 0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -436,7 +437,7 @@ export default function Expenses() {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium text-gray-900">
-                      ${parseFloat(expense.amount).toLocaleString()}
+                      {formatCurrency(expense.amount)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -542,7 +543,7 @@ export default function Expenses() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-gray-900">
-                      ${parseFloat(expense.amount).toLocaleString()}
+                      {formatCurrency(expense.amount)}
                     </span>
                     {expense.category && (
                       <div className="flex items-center gap-2">

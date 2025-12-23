@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type PaymentSource } from "@shared/schema";
 import { z } from "zod";
+import { formatCurrency } from "@/lib/currency";
 
 const adjustmentSchema = z.object({
   amount: z.string().min(1, "Amount is required"),
@@ -91,14 +92,14 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
           <div>
             <span className="text-gray-600">Current Balance:</span>
             <span className="font-mono font-semibold ml-2">
-              ${currentBalance.toLocaleString()}
+              {formatCurrency(currentBalance)}
             </span>
           </div>
           {watchedAmount && (
             <div>
               <span className="text-gray-600">New Balance:</span>
               <span className={`font-mono font-semibold ml-2 ${newBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                ${newBalance.toLocaleString()}
+                {formatCurrency(newBalance)}
               </span>
             </div>
           )}
