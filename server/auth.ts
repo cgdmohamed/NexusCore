@@ -178,14 +178,21 @@ export function setupAuth(app: Express) {
   });
 
   // Configure CSRF protection (applied AFTER login/registration routes)
-  const csrfSecret = process.env.CSRF_SECRET || (process.env.NODE_ENV === 'development' ? 'dev-csrf-secret-change-in-production' : '');
   const { generateToken, csrfSynchronisedProtection } = csrfSync({
-    secret: csrfSecret,
     ignoredMethods: ["GET", "HEAD", "OPTIONS"],
     getTokenFromRequest: (req) => {
       // Check multiple sources for CSRF token
       return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
     },
+    getTokenFromState: (req) => {
+      // Get token from session
+      return (req.session as any)?.csrfToken;
+    },
+    storeTokenInState: (req, token) => {
+      // Store token in session
+      (req.session as any).csrfToken = token;
+    },
+    size: 128, // Token size in bits
   });
 
   // Endpoint to get CSRF token
