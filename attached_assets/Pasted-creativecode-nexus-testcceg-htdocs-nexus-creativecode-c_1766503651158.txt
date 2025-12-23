@@ -1,0 +1,186 @@
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ cd /home/creativecode-nexus
+creativecode-nexus@testcceg:~$ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 16631  100 16631    0     0   150k      0 --:--:-- --:--:-- --:--:--  151k
+=> Downloading nvm from git to '/home/creativecode-nexus/.nvm'
+=> Cloning into '/home/creativecode-nexus/.nvm'...
+remote: Enumerating objects: 384, done.
+remote: Counting objects: 100% (384/384), done.
+remote: Compressing objects: 100% (328/328), done.
+remote: Total 384 (delta 42), reused 181 (delta 28), pack-reused 0 (from 0)
+Receiving objects: 100% (384/384), 392.50 KiB | 3.27 MiB/s, done.
+Resolving deltas: 100% (42/42), done.
+* (HEAD detached at FETCH_HEAD)
+  master
+=> Compressing and cleaning up git repository
+
+=> Appending nvm source string to /home/creativecode-nexus/.bashrc
+=> Appending bash_completion source string to /home/creativecode-nexus/.bashrc
+=> You currently have modules installed globally with `npm`. These will no
+=> longer be linked to the active version of Node when you install a new node
+=> with `nvm`; and they may (depending on how you construct your `$PATH`)
+=> override the binaries of modules installed with `nvm`:
+
+/usr/local/lib
+└── pm2@6.0.8
+=> If you wish to uninstall them at a later point (or re-install them under your
+=> `nvm` node installs), you can remove them from the system Node as follows:
+
+     $ nvm use system
+     $ npm uninstall -g a_module
+
+=> Close and reopen your terminal to start using nvm or run the following to use it now:
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+creativecode-nexus@testcceg:~$ source ~/.bashrc
+creativecode-nexus@testcceg:~$ source ~/.profile
+creativecode-nexus@testcceg:~$ nvm --version
+0.40.3
+creativecode-nexus@testcceg:~$ nvm install 20
+Downloading and installing node v20.19.6...
+Downloading https://nodejs.org/dist/v20.19.6/node-v20.19.6-linux-x64.tar.xz...
+################################################################################################################# 100.0%
+Computing checksum with sha256sum
+Checksums matched!
+Now using node v20.19.6 (npm v10.8.2)
+Creating default alias: default -> 20 (-> v20.19.6)
+creativecode-nexus@testcceg:~$ nvm use 20
+Now using node v20.19.6 (npm v10.8.2)
+creativecode-nexus@testcceg:~$ node -v
+v20.19.6
+creativecode-nexus@testcceg:~$ cd ~/htdocs/nexus.creativecode.com.eg
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.19 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 3526 modules transformed.
+../dist/public/index.html                     1.23 kB │ gzip:   0.66 kB
+../dist/public/assets/index-6-Gyy1-K.css     82.64 kB │ gzip:  13.85 kB
+../dist/public/assets/index-B01UYPkT.js   1,371.32 kB │ gzip: 362.75 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 25.37s
+
+  dist/index.js  176.1kb
+
+⚡ Done in 51ms
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 restart all
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0 ])
+[PM2] [creativenexus](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ creativenexus      │ fork     │ 9    │ online    │ 0%       │ 3.4mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 log
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/creativecode-nexus/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-21T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-23T15:15:33: PM2 log: Stopping app:creativenexus id:0
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-23T15:15:33: PM2 log: pid=2427383 msg=process killed
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] starting in -fork mode-
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] online
+PM2        | 2025-12-23T15:26:19: PM2 log: Stopping app:creativenexus id:0
+PM2        | 2025-12-23T15:26:19: PM2 log: App [creativenexus:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-23T15:26:19: PM2 log: pid=3790201 msg=process killed
+PM2        | 2025-12-23T15:26:19: PM2 log: App [creativenexus:0] starting in -fork mode-
+PM2        | 2025-12-23T15:26:19: PM2 log: App [creativenexus:0] online
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-out.log last 15 lines:
+0|creative | 3:14:18 PM [express] GET /api/notifications 200 in 14ms :: {"success":true,"data":[]}
+0|creative | 3:14:18 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:18 PM [express] GET /api/notifications/unread-count 200 in 8ms :: {"success":true,"data":{"unre…
+0|creative | 3:14:18 PM [express] GET /api/clients 200 in 11ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:18 PM [express] GET /api/tasks/stats 200 in 27ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:14:48 PM [express] GET /api/notifications 200 in 30ms :: {"success":true,"data":[]}
+0|creative | 3:14:49 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:49 PM [express] GET /api/clients 200 in 82ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:49 PM [express] GET /api/notifications/unread-count 200 in 90ms :: {"success":true,"data":{"unr…
+0|creative | 3:14:49 PM [express] GET /api/tasks/stats 200 in 99ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:15:18 PM [express] GET /api/notifications 200 in 27ms :: {"success":true,"data":[]}
+0|creative | 3:15:19 PM [express] GET /api/invoices 200 in 3ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215","…
+0|creative | 3:15:19 PM [express] GET /api/clients 200 in 6ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","n…
+0|creative | 3:15:19 PM [express] GET /api/notifications/unread-count 200 in 4ms :: {"success":true,"data":{"unre…
+0|creative | 3:15:19 PM [express] GET /api/tasks/stats 200 in 25ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-error.log last 15 lines:
+0|creative |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|creative |     at async ModuleLoader.import (node:internal/modules/esm/loader:336:24)
+0|creative |     at async importModuleDynamicallyWrapper (node:internal/vm/module:429:15) {
+0|creative |   code: 'ERR_INVALID_ARG_TYPE'
+0|creative | }
+0|creative | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|creative |     at new NodeError (node:internal/errors:405:5)
+0|creative |     at validateString (node:internal/validators:162:11)
+0|creative |     at Object.resolve (node:path:1097:7)
+0|creative |     at file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:4227:17
+0|creative |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|creative |     at async ModuleLoader.import (node:internal/modules/esm/loader:336:24)
+0|creative |     at async importModuleDynamicallyWrapper (node:internal/vm/module:429:15) {
+0|creative |   code: 'ERR_INVALID_ARG_TYPE'
+0|creative | }
+
+^C
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 creativenexus log
+[PM2][ERROR] Command not found
+
+usage: pm2 [options] <command>
+
+pm2 -h, --help             all available commands and options
+pm2 examples               display pm2 usage examples
+pm2 <command> -h           help on a specific command
+
+Access pm2 files in ~/.pm2
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 log creativenexus
+[TAILING] Tailing last 15 lines for [creativenexus] process (change the value with --lines option)
+/home/creativecode-nexus/.pm2/logs/creativenexus-out.log last 15 lines:
+0|creative | 3:14:18 PM [express] GET /api/notifications 200 in 14ms :: {"success":true,"data":[]}
+0|creative | 3:14:18 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:18 PM [express] GET /api/notifications/unread-count 200 in 8ms :: {"success":true,"data":{"unre…
+0|creative | 3:14:18 PM [express] GET /api/clients 200 in 11ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:18 PM [express] GET /api/tasks/stats 200 in 27ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:14:48 PM [express] GET /api/notifications 200 in 30ms :: {"success":true,"data":[]}
+0|creative | 3:14:49 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:49 PM [express] GET /api/clients 200 in 82ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:49 PM [express] GET /api/notifications/unread-count 200 in 90ms :: {"success":true,"data":{"unr…
+0|creative | 3:14:49 PM [express] GET /api/tasks/stats 200 in 99ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:15:18 PM [express] GET /api/notifications 200 in 27ms :: {"success":true,"data":[]}
+0|creative | 3:15:19 PM [express] GET /api/invoices 200 in 3ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215","…
+0|creative | 3:15:19 PM [express] GET /api/clients 200 in 6ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","n…
+0|creative | 3:15:19 PM [express] GET /api/notifications/unread-count 200 in 4ms :: {"success":true,"data":{"unre…
+0|creative | 3:15:19 PM [express] GET /api/tasks/stats 200 in 25ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-error.log last 15 lines:
+0|creative |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|creative |     at async ModuleLoader.import (node:internal/modules/esm/loader:336:24)
+0|creative |     at async importModuleDynamicallyWrapper (node:internal/vm/module:429:15) {
+0|creative |   code: 'ERR_INVALID_ARG_TYPE'
+0|creative | }
+0|creative | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|creative |     at new NodeError (node:internal/errors:405:5)
+0|creative |     at validateString (node:internal/validators:162:11)
+0|creative |     at Object.resolve (node:path:1097:7)
+0|creative |     at file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:4227:17
+0|creative |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|creative |     at async ModuleLoader.import (node:internal/modules/esm/loader:336:24)
+0|creative |     at async importModuleDynamicallyWrapper (node:internal/vm/module:429:15) {
+0|creative |   code: 'ERR_INVALID_ARG_TYPE'
+0|creative | }
+
