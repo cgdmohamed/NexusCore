@@ -754,6 +754,69 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Delete client with cascade (quotations, invoices, payments, notes, credit history)
+  app.delete('/api/clients/:id', async (req: any, res) => {
+    try {
+      const clientId = req.params.id;
+      
+      // Check if client exists
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      // Get all invoices for this client to delete their payments
+      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, clientId));
+      const invoiceIds = clientInvoices.map(inv => inv.id);
+
+      // Delete in order of dependencies (cascade delete)
+      // 1. Delete payments for all client invoices
+      if (invoiceIds.length > 0) {
+        for (const invoiceId of invoiceIds) {
+          await db.delete(payments).where(eq(payments.invoiceId, invoiceId));
+        }
+      }
+
+      // 2. Delete invoice items
+      if (invoiceIds.length > 0) {
+        for (const invoiceId of invoiceIds) {
+          await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+        }
+      }
+
+      // 3. Delete invoices
+      await db.delete(invoices).where(eq(invoices.clientId, clientId));
+
+      // 4. Get all quotations for this client
+      const clientQuotations = await db.select().from(quotations).where(eq(quotations.clientId, clientId));
+      const quotationIds = clientQuotations.map(q => q.id);
+
+      // 5. Delete quotation items
+      if (quotationIds.length > 0) {
+        for (const quotationId of quotationIds) {
+          await db.delete(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+        }
+      }
+
+      // 6. Delete quotations
+      await db.delete(quotations).where(eq(quotations.clientId, clientId));
+
+      // 7. Delete client notes
+      await db.delete(clientNotes).where(eq(clientNotes.clientId, clientId));
+
+      // 8. Delete client credit history
+      await db.delete(clientCreditHistory).where(eq(clientCreditHistory.clientId, clientId));
+
+      // 9. Finally delete the client
+      await db.delete(clients).where(eq(clients.id, clientId));
+
+      res.json({ success: true, message: "Client and all related data deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Failed to delete client" });
+    }
+  });
+
   // Client Related Data Routes
   app.get('/api/clients/:id/quotations', async (req: any, res) => {
     try {
