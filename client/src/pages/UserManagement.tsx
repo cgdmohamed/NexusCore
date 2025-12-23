@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +21,8 @@ import {
   UserCheck, 
   UserX,
   Activity,
-  Settings
+  Settings,
+  Trash2
 } from "lucide-react";
 import { UserForm } from "@/components/forms/UserForm";
 import { EmployeeForm } from "@/components/forms/EmployeeForm";
@@ -29,6 +32,8 @@ import { Link } from "wouter";
 
 export default function UserManagement() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("users");
   const [showUserForm, setShowUserForm] = useState(false);
@@ -37,6 +42,36 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+
+  // Delete employee mutation
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (employeeId: string) => {
+      const response = await apiRequest("DELETE", `/api/employees/${employeeId}`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-management/stats"] });
+      toast({
+        title: "Employee Deleted",
+        description: data.message || "Employee has been deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete employee",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteEmployee = (employee: any) => {
+    if (window.confirm(`Are you sure you want to delete ${employee.firstName} ${employee.lastName}? This action cannot be undone.`)) {
+      deleteEmployeeMutation.mutate(employee.id);
+    }
+  };
 
   // Fetch data
   const { data: users = [], isLoading: usersLoading } = useQuery({
@@ -370,6 +405,15 @@ export default function UserManagement() {
                             onClick={() => handleEditEmployee(employee)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteEmployee(employee)}
+                            disabled={deleteEmployeeMutation.isPending}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
