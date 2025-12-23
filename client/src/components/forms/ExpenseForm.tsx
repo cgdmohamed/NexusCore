@@ -75,9 +75,11 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/expense-categories"],
   });
+  
+  console.log("Categories loaded:", categories);
 
   const { data: clients } = useQuery({
     queryKey: ["/api/clients"],
@@ -309,24 +311,31 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={categoriesLoading ? "Loading..." : "Select category"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {Array.isArray(categories) && categories.map((category: any) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {categoriesLoading && (
+                      <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                    )}
+                    {Array.isArray(categories) && categories.length > 0 ? (
+                      categories.map((category: any) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      !categoriesLoading && <SelectItem value="none" disabled>No categories available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
