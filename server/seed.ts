@@ -30,12 +30,13 @@ async function seed() {
       'audit_logs', 'employee_kpis', 'users', 'employees', 'roles'
     ];
     
-    // Also drop the session table completely to avoid index conflicts
+    // Drop session table and its index to avoid conflicts on app restart
     try {
+      await db.execute(sql.raw(`DROP INDEX IF EXISTS "IDX_session_expire"`));
       await db.execute(sql.raw(`DROP TABLE IF EXISTS session CASCADE`));
-      console.log("Dropped session table (will be recreated on app start)");
+      console.log("Dropped session table and index (will be recreated on app start)");
     } catch (e) {
-      // Ignore errors
+      console.log("Session cleanup note:", (e as Error).message);
     }
     
     for (const table of tablesToClear) {
