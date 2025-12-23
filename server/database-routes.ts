@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, count } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
@@ -112,6 +112,83 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching sidebar counters:", error);
       res.status(500).json({ message: "Failed to fetch counters" });
+    }
+  });
+
+  // Dashboard KPIs - real database data
+  app.get('/api/dashboard/kpis', async (req, res) => {
+    try {
+      // Total Revenue from invoices
+      const [revenueResult] = await db.select({ 
+        total: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
+      }).from(invoices);
+
+      // Pending invoices amount
+      const [pendingResult] = await db.select({ 
+        total: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL) - CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
+      }).from(invoices).where(eq(invoices.status, 'pending'));
+
+      // Total Expenses (approved)
+      const [expensesResult] = await db.select({ 
+        total: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)` 
+      }).from(expenses).where(eq(expenses.status, 'approved'));
+
+      // Active clients count
+      const [activeClientsResult] = await db.select({ 
+        count: count() 
+      }).from(clients).where(eq(clients.status, 'active'));
+
+      // Quotation stats
+      const [totalQuotationsResult] = await db.select({ count: count() }).from(quotations);
+      const [acceptedQuotationsResult] = await db.select({ count: count() }).from(quotations).where(eq(quotations.status, 'accepted'));
+      const [pendingQuotationsResult] = await db.select({ count: count() }).from(quotations).where(eq(quotations.status, 'pending'));
+
+      // Invoice stats
+      const [totalInvoicesResult] = await db.select({ count: count() }).from(invoices);
+      const [paidInvoicesResult] = await db.select({ count: count() }).from(invoices).where(eq(invoices.status, 'paid'));
+      const [pendingInvoicesResult] = await db.select({ count: count() }).from(invoices).where(eq(invoices.status, 'pending'));
+      const [overdueInvoicesResult] = await db.select({ count: count() }).from(invoices).where(eq(invoices.status, 'overdue'));
+
+      // Task stats
+      const [totalTasksResult] = await db.select({ count: count() }).from(tasks);
+      const [completedTasksResult] = await db.select({ count: count() }).from(tasks).where(eq(tasks.status, 'completed'));
+      const [inProgressTasksResult] = await db.select({ count: count() }).from(tasks).where(eq(tasks.status, 'in_progress'));
+      const [pendingTasksResult] = await db.select({ count: count() }).from(tasks).where(eq(tasks.status, 'pending'));
+
+      const totalRevenue = parseFloat(revenueResult?.total?.toString() || '0');
+      const totalExpenses = parseFloat(expensesResult?.total?.toString() || '0');
+      const pendingAmount = parseFloat(pendingResult?.total?.toString() || '0');
+
+      res.json({
+        revenue: totalRevenue,
+        expenses: totalExpenses,
+        profit: totalRevenue - totalExpenses,
+        pendingRevenue: pendingAmount,
+        activeClients: activeClientsResult?.count || 0,
+        quotations: {
+          total: totalQuotationsResult?.count || 0,
+          accepted: acceptedQuotationsResult?.count || 0,
+          pending: pendingQuotationsResult?.count || 0,
+          conversionRate: totalQuotationsResult?.count > 0 
+            ? ((acceptedQuotationsResult?.count || 0) / totalQuotationsResult.count * 100).toFixed(1)
+            : 0
+        },
+        invoices: {
+          total: totalInvoicesResult?.count || 0,
+          paid: paidInvoicesResult?.count || 0,
+          pending: pendingInvoicesResult?.count || 0,
+          overdue: overdueInvoicesResult?.count || 0
+        },
+        tasks: {
+          total: totalTasksResult?.count || 0,
+          completed: completedTasksResult?.count || 0,
+          inProgress: inProgressTasksResult?.count || 0,
+          pending: pendingTasksResult?.count || 0
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard KPIs:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard KPIs" });
     }
   });
 
