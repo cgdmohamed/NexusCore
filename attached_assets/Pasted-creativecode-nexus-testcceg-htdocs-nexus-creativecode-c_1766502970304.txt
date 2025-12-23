@@ -1,0 +1,62 @@
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 restart all
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0 ])
+[PM2] [creativenexus](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ creativenexus      │ fork     │ 8    │ online    │ 0%       │ 18.8mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 log
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/creativecode-nexus/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-19T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-19T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-20T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-20T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-21T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-21T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-23T15:15:33: PM2 log: Stopping app:creativenexus id:0
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-23T15:15:33: PM2 log: pid=2427383 msg=process killed
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] starting in -fork mode-
+PM2        | 2025-12-23T15:15:33: PM2 log: App [creativenexus:0] online
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-out.log last 15 lines:
+0|creative | 3:14:18 PM [express] GET /api/notifications 200 in 14ms :: {"success":true,"data":[]}
+0|creative | 3:14:18 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:18 PM [express] GET /api/notifications/unread-count 200 in 8ms :: {"success":true,"data":{"unre…
+0|creative | 3:14:18 PM [express] GET /api/clients 200 in 11ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:18 PM [express] GET /api/tasks/stats 200 in 27ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:14:48 PM [express] GET /api/notifications 200 in 30ms :: {"success":true,"data":[]}
+0|creative | 3:14:49 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:49 PM [express] GET /api/clients 200 in 82ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:49 PM [express] GET /api/notifications/unread-count 200 in 90ms :: {"success":true,"data":{"unr…
+0|creative | 3:14:49 PM [express] GET /api/tasks/stats 200 in 99ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:15:18 PM [express] GET /api/notifications 200 in 27ms :: {"success":true,"data":[]}
+0|creative | 3:15:19 PM [express] GET /api/invoices 200 in 3ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215","…
+0|creative | 3:15:19 PM [express] GET /api/clients 200 in 6ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","n…
+0|creative | 3:15:19 PM [express] GET /api/notifications/unread-count 200 in 4ms :: {"success":true,"data":{"unre…
+0|creative | 3:15:19 PM [express] GET /api/tasks/stats 200 in 25ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-error.log last 15 lines:
+0|creative |       path: [Array],
+0|creative |       message: 'Expected date, received string'
+0|creative |     }
+0|creative |   ]
+0|creative | }
+0|creative | TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+0|creative |     at new NodeError (node:internal/errors:405:5)
+0|creative |     at validateString (node:internal/validators:162:11)
+0|creative |     at Object.resolve (node:path:1097:7)
+0|creative |     at file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:4227:17
+0|creative |     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+0|creative |     at async ModuleLoader.import (node:internal/modules/esm/loader:336:24)
+0|creative |     at async importModuleDynamicallyWrapper (node:internal/vm/module:429:15) {
+0|creative |   code: 'ERR_INVALID_ARG_TYPE'
+0|creative | }
+
