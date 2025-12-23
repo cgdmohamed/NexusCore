@@ -20,34 +20,24 @@ async function seed() {
   try {
     console.log("Clearing database...");
     
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS notifications CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS notification_logs CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS notification_settings CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS email_templates CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS task_activity_log CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS task_dependencies CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS task_comments CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS tasks CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS activities CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS expense_payments CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS expenses CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS expense_categories CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS payments CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS invoice_items CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS invoices CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS quotation_items CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS quotations CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS client_notes CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS client_credit_history CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS clients CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS payment_source_transactions CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS payment_sources CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS services CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS audit_logs CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS employee_kpis CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS users CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS employees CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE IF EXISTS roles CASCADE`);
+    const tablesToClear = [
+      'notifications', 'notification_logs', 'notification_settings', 'email_templates',
+      'task_activity_log', 'task_dependencies', 'task_comments', 'tasks', 'activities',
+      'expense_payments', 'expenses', 'expense_categories', 'payments', 'invoice_items',
+      'invoices', 'quotation_items', 'quotations', 'client_notes', 'client_credit_history',
+      'clients', 'payment_source_transactions', 'payment_sources', 'services',
+      'audit_logs', 'employee_kpis', 'users', 'employees', 'roles'
+    ];
+    
+    for (const table of tablesToClear) {
+      try {
+        await db.execute(sql.raw(`TRUNCATE TABLE ${table} CASCADE`));
+      } catch (e: any) {
+        if (!e.message?.includes('does not exist')) {
+          console.log(`Note: Table ${table} - ${e.code || 'skipped'}`);
+        }
+      }
+    }
     
     console.log("Database cleared!");
 
