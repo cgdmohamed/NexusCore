@@ -9,11 +9,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertEmployeeSchema, type Employee } from "@shared/schema";
+import { type Employee } from "@shared/schema";
 import { z } from "zod";
 import { useState } from "react";
 
-type FormData = z.infer<typeof insertEmployeeSchema>;
+const employeeFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  jobTitle: z.string().optional(),
+  department: z.enum(["operations", "finance", "hr", "sales", "management", "it", "marketing"]),
+  hiringDate: z.string().optional(),
+  status: z.enum(["active", "inactive", "terminated", "on_leave"]),
+  profileImage: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type FormData = z.infer<typeof employeeFormSchema>;
 
 interface EmployeeFormProps {
   employee?: Employee;
@@ -25,7 +38,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
   const isEditing = !!employee;
 
   const form = useForm<FormData>({
-    resolver: zodResolver(insertEmployeeSchema),
+    resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       firstName: employee?.firstName || "",
       lastName: employee?.lastName || "",
@@ -44,7 +57,8 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
     mutationFn: async (data: FormData) => {
       const submitData = {
         ...data,
-        hiringDate: new Date(data.hiringDate as string),
+        email: data.email || null,
+        hiringDate: data.hiringDate ? new Date(data.hiringDate) : null,
       };
       
       if (isEditing) {

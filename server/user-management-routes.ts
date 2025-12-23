@@ -257,7 +257,13 @@ export function registerUserManagementRoutes(app: Express) {
   // Create employee
   app.post("/api/employees", devAuth, async (req, res) => {
     try {
-      const validatedData = insertEmployeeSchema.parse(req.body);
+      const body = req.body;
+      // Transform date strings to Date objects
+      const dataToValidate = {
+        ...body,
+        hiringDate: body.hiringDate ? new Date(body.hiringDate) : null,
+      };
+      const validatedData = insertEmployeeSchema.parse(dataToValidate);
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       const [newEmployee] = await db
@@ -281,7 +287,13 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/employees/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const validatedData = insertEmployeeSchema.parse(req.body);
+      const body = req.body;
+      // Transform date strings to Date objects
+      const dataToValidate = {
+        ...body,
+        hiringDate: body.hiringDate ? new Date(body.hiringDate) : null,
+      };
+      const validatedData = insertEmployeeSchema.parse(dataToValidate);
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Get old values for audit
