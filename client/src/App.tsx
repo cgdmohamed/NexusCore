@@ -74,6 +74,8 @@ function Router() {
             <Route path="/expenses/:id/edit" component={ExpenseEdit} />
             <Route path="/payments" component={PaymentSources} />
             <Route path="/payments/:id" component={PaymentSourceDetail} />
+            <Route path="/payment-sources" component={PaymentSources} />
+            <Route path="/payment-sources/:id" component={PaymentSourceDetail} />
 
             <Route path="/team-roles" component={UserManagement} />
             <Route path="/users/:id" component={UserProfile} />
