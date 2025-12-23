@@ -106,10 +106,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
 
   const expenseMutation = useMutation({
     mutationFn: async (data: ExpenseFormData) => {
-      // Validate that file is selected for new expenses
-      if (!expense && !selectedFile) {
-        throw new Error("Please select a receipt or attachment file");
-      }
+      // Receipt/attachment is optional
 
       // Determine attachment type based on file
       let attachmentType = expense?.attachmentType || 'receipt';
@@ -134,7 +131,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         paymentMethod: data.paymentMethod,
         status: data.status,
         isRecurring: data.isRecurring,
-        attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || "/uploads/default-receipt.pdf",
+        attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || null,
         attachmentType,
         relatedClientId: data.projectId === "none" ? null : data.projectId,
       };
@@ -211,16 +208,6 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
   };
 
   const onSubmit = (data: ExpenseFormData) => {
-    // Check for attachment before submitting
-    if (!expense && !selectedFile) {
-      toast({
-        title: "Missing Attachment",
-        description: "Please select a receipt or attachment file before submitting",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     expenseMutation.mutate(data);
   };
 
@@ -523,7 +510,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
 
         {/* File Upload */}
         <div className="space-y-4">
-          <Label>Receipt/Attachment *</Label>
+          <Label>Receipt/Attachment (Optional)</Label>
           
           {!selectedFile && !expense?.attachmentUrl ? (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
