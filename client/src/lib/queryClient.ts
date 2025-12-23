@@ -47,6 +47,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  _retryCount: number = 0,
 ): Promise<Response> {
   // Prepare headers
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
@@ -58,8 +59,6 @@ export async function apiRequest(
       headers["x-csrf-token"] = token;
     } catch (error) {
       console.error("Failed to get CSRF token for request:", error);
-      // Continue with request even if CSRF token fetch fails
-      // The backend will reject it, but we'll let the error bubble up naturally
     }
   }
 
@@ -69,6 +68,17 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Handle CSRF token errors - refresh token and retry once
+  if (res.status === 403 && _retryCount === 0) {
+    const errorData = await res.clone().json().catch(() => ({}));
+    if (errorData.code === "CSRF_ERROR") {
+      console.log("CSRF token expired, refreshing and retrying...");
+      csrfToken = null; // Clear cached token
+      await fetchCsrfToken().then(token => { csrfToken = token; }).catch(() => {});
+      return apiRequest(method, url, data, 1); // Retry once
+    }
+  }
 
   await throwIfResNotOk(res);
   return res;

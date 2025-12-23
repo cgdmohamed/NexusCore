@@ -33,11 +33,6 @@ export function setupAuth(app: Express) {
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET must be set in environment variables");
   }
-  
-  // CSRF_SECRET is required in production, optional in development
-  if (process.env.NODE_ENV === 'production' && !process.env.CSRF_SECRET) {
-    throw new Error("CSRF_SECRET must be set in environment variables for production");
-  }
 
   // Session configuration with PostgreSQL store
   const sessionSettings: session.SessionOptions = {
@@ -212,6 +207,18 @@ export function setupAuth(app: Express) {
   // This protects all API routes registered after this point
   // Login/registration routes above are NOT protected (they need to work without tokens)
   app.use(csrfSynchronisedProtection);
+
+  // CSRF error handler - catches ForbiddenError from csrf-sync and returns structured response
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
+      console.warn(`CSRF validation failed: ${req.method} ${req.path} - ${err.message}`);
+      return res.status(403).json({ 
+        message: "Invalid or missing CSRF token. Please refresh and try again.",
+        code: "CSRF_ERROR"
+      });
+    }
+    next(err);
+  });
 
   // Logout endpoint (PROTECTED by CSRF)
   // This prevents CSRF attacks that could force users to logout
