@@ -301,7 +301,7 @@ export default function QuotationDetail() {
                 <p className="text-sm text-gray-600">Client</p>
                 <p className="text-xl font-bold">
                   {client ? (
-                    <Link href={`/crm/${client.id}`} className="hover:underline">
+                    <Link href={`/clients/${client.id}`} className="hover:underline">
                       {client.name}
                     </Link>
                   ) : 'Loading...'}

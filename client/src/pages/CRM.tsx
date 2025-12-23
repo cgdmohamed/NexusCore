@@ -441,7 +441,7 @@ export default function CRM() {
                       return (
                         <TableRow key={client.id} className="hover:bg-gray-50">
                           <TableCell className="font-medium">
-                            <Link href={`/crm/${client.id}`} className="text-blue-600 hover:text-blue-800">
+                            <Link href={`/clients/${client.id}`} className="text-blue-600 hover:text-blue-800">
                               {client.name}
                             </Link>
                           </TableCell>
@@ -494,7 +494,7 @@ export default function CRM() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-1">
-                              <Link href={`/crm/${client.id}`}>
+                              <Link href={`/clients/${client.id}`}>
                                 <Button variant="outline" size="sm">
                                   <Eye className="w-3 h-3 mr-1" />
                                   View
@@ -556,7 +556,7 @@ export default function CRM() {
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div>
-                            <Link href={`/crm/${client.id}`} className="text-blue-600 hover:text-blue-800">
+                            <Link href={`/clients/${client.id}`} className="text-blue-600 hover:text-blue-800">
                               <CardTitle className="text-lg">{client.name}</CardTitle>
                             </Link>
                             <div className="flex items-center text-sm text-gray-600 mt-1">
@@ -617,7 +617,7 @@ export default function CRM() {
                         </div>
                         
                         <div className="flex space-x-2 mt-4">
-                          <Link href={`/crm/${client.id}`} className="flex-1">
+                          <Link href={`/clients/${client.id}`} className="flex-1">
                             <Button variant="outline" size="sm" className="w-full">
                               <Eye className="w-3 h-3 mr-1" />
                               View Profile

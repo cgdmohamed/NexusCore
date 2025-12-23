@@ -291,7 +291,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/crm/${quotation.clientId}`} className="hover:underline text-blue-600">
+                  <Link href={`/clients/${quotation.clientId}`} className="hover:underline text-blue-600">
                     {getClientName(quotation.clientId)}
                   </Link>
                 </TableCell>
