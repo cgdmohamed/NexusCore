@@ -198,7 +198,14 @@ export function setupAuth(app: Express) {
   // Endpoint to get CSRF token
   app.get("/api/csrf-token", (req, res) => {
     const token = generateToken(req);
-    res.json({ csrfToken: token });
+    // Explicitly save the session to ensure the token is stored
+    req.session.save((err) => {
+      if (err) {
+        console.error("Error saving session for CSRF token:", err);
+        return res.status(500).json({ message: "Failed to generate CSRF token" });
+      }
+      res.json({ csrfToken: token });
+    });
   });
 
   // Apply CSRF protection to all POST/PATCH/DELETE/PUT routes globally
