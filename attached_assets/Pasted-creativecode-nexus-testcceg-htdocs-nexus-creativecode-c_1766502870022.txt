@@ -1,0 +1,52 @@
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 log
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/creativecode-nexus/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-16T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-17T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-17T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-18T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-18T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-19T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-19T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-20T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-20T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-21T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-21T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-22T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-23T12:52:34: PM2 log: [PM2] Upgrade to version 6.0.14
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-error.log last 15 lines:
+0|creative |       message: 'Expected date, received string'
+0|creative |     }
+0|creative |   ],
+0|creative |   addIssue: [Function (anonymous)],
+0|creative |   addIssues: [Function (anonymous)],
+0|creative |   errors: [
+0|creative |     {
+0|creative |       code: 'invalid_type',
+0|creative |       expected: 'date',
+0|creative |       received: 'string',
+0|creative |       path: [Array],
+0|creative |       message: 'Expected date, received string'
+0|creative |     }
+0|creative |   ]
+0|creative | }
+
+/home/creativecode-nexus/.pm2/logs/creativenexus-out.log last 15 lines:
+0|creative | 3:13:18 PM [express] GET /api/notifications 200 in 98ms :: {"success":true,"data":[]}
+0|creative | 3:13:18 PM [express] GET /api/invoices 200 in 98ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:13:18 PM [express] GET /api/notifications/unread-count 200 in 101ms :: {"success":true,"data":{"un…
+0|creative | 3:13:18 PM [express] GET /api/clients 200 in 103ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d",…
+0|creative | 3:13:18 PM [express] GET /api/tasks/stats 200 in 104ms :: {"statusBreakdown":{},"priorityBreakdown":…
+0|creative | 3:13:48 PM [express] GET /api/notifications 200 in 14ms :: {"success":true,"data":[]}
+0|creative | 3:13:48 PM [express] GET /api/invoices 200 in 12ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:13:48 PM [express] GET /api/notifications/unread-count 200 in 45ms :: {"success":true,"data":{"unr…
+0|creative | 3:13:48 PM [express] GET /api/clients 200 in 45ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:13:48 PM [express] GET /api/tasks/stats 200 in 42ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creative | 3:14:18 PM [express] GET /api/notifications 200 in 14ms :: {"success":true,"data":[]}
+0|creative | 3:14:18 PM [express] GET /api/invoices 200 in 21ms :: [{"id":"874f1e5c-fc03-4eef-9fdf-4126aa300215",…
+0|creative | 3:14:18 PM [express] GET /api/notifications/unread-count 200 in 8ms :: {"success":true,"data":{"unre…
+0|creative | 3:14:18 PM [express] GET /api/clients 200 in 11ms :: [{"id":"6c357973-11f1-4185-8000-b4e53a743e6d","…
+0|creative | 3:14:18 PM [express] GET /api/tasks/stats 200 in 27ms :: {"statusBreakdown":{},"priorityBreakdown":{…
