@@ -264,6 +264,33 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Delete invoice with all items and payments
+  app.delete('/api/invoices/:id', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      
+      // Check if invoice exists
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Delete payments first
+      await db.delete(payments).where(eq(payments.invoiceId, invoiceId));
+
+      // Delete invoice items
+      await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+
+      // Delete the invoice
+      await db.delete(invoices).where(eq(invoices.id, invoiceId));
+
+      res.json({ success: true, message: "Invoice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice" });
+    }
+  });
+
   // Invoice Items CRUD
   app.get('/api/invoices/:id/items', async (req: any, res) => {
     try {
@@ -977,6 +1004,30 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating quotation:", error);
       res.status(500).json({ message: "Failed to update quotation" });
+    }
+  });
+
+  // Delete quotation with all items
+  app.delete('/api/quotations/:id', async (req: any, res) => {
+    try {
+      const quotationId = req.params.id;
+      
+      // Check if quotation exists
+      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, quotationId));
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Delete quotation items first
+      await db.delete(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+
+      // Delete the quotation
+      await db.delete(quotations).where(eq(quotations.id, quotationId));
+
+      res.json({ success: true, message: "Quotation deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quotation:", error);
+      res.status(500).json({ message: "Failed to delete quotation" });
     }
   });
 

@@ -321,6 +321,37 @@ export function registerUserManagementRoutes(app: Express) {
     }
   });
 
+  // Delete employee
+  app.delete("/api/employees/:id", devAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      
+      // Get employee for audit
+      const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Check if employee has an associated user account
+      const [userAccount] = await db.select().from(users).where(eq(users.employeeId, id));
+      if (userAccount) {
+        // Delete the user account first
+        await db.delete(users).where(eq(users.employeeId, id));
+      }
+
+      // Delete the employee
+      await db.delete(employees).where(eq(employees.id, id));
+      
+      await logAudit(userId, 'delete', 'employee', id, employee, null);
+      
+      res.json({ success: true, message: "Employee deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
   // ========== USERS MANAGEMENT ==========
   
   // Get all users
