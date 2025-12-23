@@ -11,7 +11,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertUserSchema, type User } from "@shared/schema";
 import { z } from "zod";
 
-const formSchema = insertUserSchema.extend({
+const formSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  employeeId: z.string().min(1, "Employee is required"),
+  roleId: z.string().min(1, "Role is required"),
+  isActive: z.boolean().default(true),
+  mustChangePassword: z.boolean().default(true),
   password: z.string().min(8, "Password must be at least 8 characters").optional(),
   confirmPassword: z.string().optional(),
 }).refine((data) => {
@@ -48,6 +54,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: user?.username || "",
       email: user?.email || "",
       employeeId: user?.employeeId || "",
       roleId: user?.roleId || "",
@@ -99,6 +106,18 @@ export function UserForm({ user, onClose }: UserFormProps) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="username">Username *</Label>
+          <Input
+            id="username"
+            placeholder="Enter username"
+            {...form.register("username")}
+          />
+          {form.formState.errors.username && (
+            <p className="text-sm text-red-600">{form.formState.errors.username.message}</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="email">Email Address *</Label>
           <Input

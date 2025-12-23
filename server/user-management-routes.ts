@@ -437,29 +437,46 @@ export function registerUserManagementRoutes(app: Express) {
   // Create user
   app.post("/api/users", devAuth, async (req, res) => {
     try {
-      const { password, ...userData } = req.body;
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const { password, confirmPassword, ...userData } = req.body;
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
-      // Note: Password handling skipped since database doesn't have password_hash column
-      // In production, this would need proper password handling
+      // Password is required for new users
+      if (!password || password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
       
-      const validatedData = insertUserSchema.parse(userData);
+      // Hash the password
+      const passwordHash = await bcrypt.hash(password, 10);
       
       const [newUser] = await db
         .insert(users)
         .values({
-          ...validatedData,
-          createdBy: userId,
+          username: userData.username,
+          email: userData.email,
+          passwordHash,
+          employeeId: userData.employeeId,
+          roleId: userData.roleId,
+          isActive: userData.isActive ?? true,
+          mustChangePassword: userData.mustChangePassword ?? true,
         })
         .returning();
       
-      await logAudit(userId, 'create', 'user', newUser.id, null, newUser);
+      await logAudit(userId, 'create', 'user', newUser.id, null, { ...newUser, passwordHash: '[REDACTED]' });
       
-      // Return user data
-      const userResponse = newUser;
+      // Return user data without password hash
+      const { passwordHash: _, ...userResponse } = newUser;
       res.status(201).json(userResponse);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating user:", error);
+      if (error.code === '23505') {
+        // Unique constraint violation
+        if (error.constraint?.includes('username')) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+        if (error.constraint?.includes('email')) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
       res.status(500).json({ message: "Failed to create user" });
     }
   });
@@ -468,30 +485,42 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { password, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const { password, confirmPassword, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
+      const authUserId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // First, get the user to find the employee ID
-      const [user] = await db.select().from(users).where(eq(users.id, id));
+      const [existingUser] = await db.select().from(users).where(eq(users.id, id));
       
-      if (!user) {
+      if (!existingUser) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      let updateData: any = userData;
+      // Build update data
+      const updateData: any = {
+        email: userData.email,
+        employeeId: userData.employeeId,
+        roleId: userData.roleId,
+        isActive: userData.isActive,
+        mustChangePassword: userData.mustChangePassword,
+        updatedAt: new Date(),
+      };
       
-      // Note: Password hash field doesn't exist in current database structure
-      // In production, this would need proper password handling
+      // If username is provided, update it
+      if (userData.username) {
+        updateData.username = userData.username;
+      }
+      
+      // Hash new password if provided
+      if (password && password.length >= 8) {
+        updateData.passwordHash = await bcrypt.hash(password, 10);
+      }
       
       // Get old values for audit
-      const oldUserSafe = user;
+      const { passwordHash: oldHash, ...oldUserSafe } = existingUser;
       
       const [updatedUser] = await db
         .update(users)
-        .set({
-          ...updateData,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(users.id, id))
         .returning();
       
@@ -500,7 +529,7 @@ export function registerUserManagementRoutes(app: Express) {
       }
       
       // Update employee information if employee exists and employee data is provided
-      if (user.employeeId && (firstName || lastName || phone || jobTitle || department || profileImageUrl !== undefined)) {
+      if (existingUser.employeeId && (firstName || lastName || phone || jobTitle || department || profileImageUrl !== undefined)) {
         await db
           .update(employees)
           .set({
@@ -512,15 +541,23 @@ export function registerUserManagementRoutes(app: Express) {
             ...(profileImageUrl !== undefined && { profileImage: profileImageUrl }),
             updatedAt: new Date(),
           })
-          .where(eq(employees.id, user.employeeId));
+          .where(eq(employees.id, existingUser.employeeId));
       }
       
-      const updatedUserSafe = updatedUser;
-      await logAudit(userId, 'update', 'user', id, oldUserSafe, updatedUserSafe);
+      const { passwordHash: newHash, ...updatedUserSafe } = updatedUser;
+      await logAudit(authUserId, 'update', 'user', id, oldUserSafe, updatedUserSafe);
       
       res.json(updatedUserSafe);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user:", error);
+      if (error.code === '23505') {
+        if (error.constraint?.includes('username')) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+        if (error.constraint?.includes('email')) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
       res.status(500).json({ message: "Failed to update user" });
     }
   });
