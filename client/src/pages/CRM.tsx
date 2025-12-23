@@ -82,8 +82,8 @@ export default function CRM() {
 
   const clientList = clients as Client[];
 
-  // Check if user is admin (can delete clients)
-  const isAdmin = (user as any)?.role === 'admin' || (user as any)?.department === 'management';
+  // All authenticated users can delete (remove role restriction)
+  const isAdmin = !!user;
 
   // Delete client mutation with cascade delete
   const deleteClientMutation = useMutation({
