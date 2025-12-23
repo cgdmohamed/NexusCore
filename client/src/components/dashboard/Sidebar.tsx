@@ -60,7 +60,7 @@ export function Sidebar() {
         : undefined,
       badgeColor: 'bg-red-500'
     },
-    { name: 'nav.payments', href: '/payments', icon: Wallet },
+    { name: 'nav.payments', href: '/payment-sources', icon: Wallet },
     { name: 'nav.expenses', href: '/expenses', icon: CreditCard },
     { 
       name: 'nav.tasks', 

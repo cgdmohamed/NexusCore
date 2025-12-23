@@ -23,7 +23,7 @@ export function SidebarCounters({ currentPath }: SidebarCountersProps) {
     if (!counters) return 0;
     
     switch (path) {
-      case '/crm':
+      case '/clients':
         return counters.clients || 0;
       case '/quotations':
         return counters.quotations || 0;

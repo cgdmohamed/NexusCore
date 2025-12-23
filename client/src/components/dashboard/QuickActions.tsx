@@ -43,7 +43,7 @@ export function QuickActions() {
     {
       icon: UserPlus,
       label: "Add New Client",
-      href: "/crm",
+      href: "/clients",
       color: "text-secondary",
       badge: activeClients > 0 ? `${activeClients} active` : null,
     },

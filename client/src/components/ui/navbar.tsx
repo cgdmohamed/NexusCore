@@ -119,7 +119,7 @@ export function Navbar() {
           title: client.name,
           subtitle: client.email,
           type: 'client',
-          href: `/crm?client=${client.id}`,
+          href: `/clients/${client.id}`,
         });
       }
     });
