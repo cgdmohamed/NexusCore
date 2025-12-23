@@ -21,6 +21,7 @@ async function seed() {
     console.log("Clearing database...");
     
     const tablesToClear = [
+      'session',
       'notifications', 'notification_logs', 'notification_settings', 'email_templates',
       'task_activity_log', 'task_dependencies', 'task_comments', 'tasks', 'activities',
       'expense_payments', 'expenses', 'expense_categories', 'payments', 'invoice_items',
@@ -28,6 +29,14 @@ async function seed() {
       'clients', 'payment_source_transactions', 'payment_sources', 'services',
       'audit_logs', 'employee_kpis', 'users', 'employees', 'roles'
     ];
+    
+    // Also drop the session table completely to avoid index conflicts
+    try {
+      await db.execute(sql.raw(`DROP TABLE IF EXISTS session CASCADE`));
+      console.log("Dropped session table (will be recreated on app start)");
+    } catch (e) {
+      // Ignore errors
+    }
     
     for (const table of tablesToClear) {
       try {
