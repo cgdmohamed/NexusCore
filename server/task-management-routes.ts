@@ -12,9 +12,11 @@ import {
 import { eq, desc, and, or, gte, lte, count, sql, ilike } from "drizzle-orm";
 import { z } from "zod";
 
-// Development auth middleware
+// Development auth middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
-  req.user = { claims: { sub: '1' } };
+  if (!req.user) {
+    req.user = { id: '8742bebf-9138-4247-85c8-fd2cb70e7d78', claims: { sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78' } };
+  }
   next();
 };
 
@@ -60,7 +62,7 @@ export function registerTaskManagementRoutes(app: Express) {
         myTasks // Special filter for current user's tasks
       } = req.query;
 
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Simple query for existing tasks table
       const allTasks = await db.select().from(tasks);
@@ -111,7 +113,7 @@ export function registerTaskManagementRoutes(app: Express) {
   app.get("/api/tasks/stats", devAuth, async (req, res) => {
     try {
       const { assignedTo, department } = req.query;
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       let baseConditions = [];
       
@@ -326,7 +328,7 @@ export function registerTaskManagementRoutes(app: Express) {
   app.post("/api/tasks", devAuth, async (req, res) => {
     try {
       const validatedData = createTaskSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       const taskData = {
         title: validatedData.title,
@@ -358,7 +360,7 @@ export function registerTaskManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = createTaskSchema.partial().parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       // Get current task for activity logging
       const [currentTask] = await db.select().from(tasks).where(eq(tasks.id, id));
@@ -416,7 +418,7 @@ export function registerTaskManagementRoutes(app: Express) {
   app.delete("/api/tasks/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       // Check if task exists
       const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));
@@ -444,7 +446,7 @@ export function registerTaskManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = createCommentSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       // Check if task exists
       const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));

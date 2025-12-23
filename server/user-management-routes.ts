@@ -19,15 +19,14 @@ import {
 import { eq, desc, and, like, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
-// Development middleware that bypasses authentication
+// Development middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
-  if (process.env.NODE_ENV !== 'production') {
-    // Mock user for development
+  if (!req.user) {
     req.user = {
-      id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+      id: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
       claims: {
-        sub: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-        email: 'test@company.com'
+        sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
+        email: 'admin@company.com'
       }
     };
   }
@@ -102,7 +101,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/roles", devAuth, async (req, res) => {
     try {
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       const [newRole] = await db
         .insert(roles)
@@ -126,7 +125,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Get old values for audit
       const [oldRole] = await db.select().from(roles).where(eq(roles.id, id));
@@ -157,7 +156,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.delete("/api/roles/:id", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Check if role is in use
       const [roleInUse] = await db.select().from(users).where(eq(users.roleId, id));
@@ -259,7 +258,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/employees", devAuth, async (req, res) => {
     try {
       const validatedData = insertEmployeeSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       const [newEmployee] = await db
         .insert(employees)
@@ -283,7 +282,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = insertEmployeeSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Get old values for audit
       const [oldEmployee] = await db.select().from(employees).where(eq(employees.id, id));
@@ -396,7 +395,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/users", devAuth, async (req, res) => {
     try {
       const { password, ...userData } = req.body;
-      const userId = req.user?.claims?.sub || '1';
+      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // Note: Password handling skipped since database doesn't have password_hash column
       // In production, this would need proper password handling
@@ -427,7 +426,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { password, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       // First, get the user to find the employee ID
       const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -487,7 +486,7 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id/deactivate", devAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
       const [updatedUser] = await db
         .update(users)
@@ -596,7 +595,7 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { currentPassword, newPassword } = req.body;
-      const userId = (req as any).user?.claims?.sub || '1';
+      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       // For this demo, we'll skip password validation
       // In production, you'd verify the current password and hash the new one

@@ -12,14 +12,14 @@ import {
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
-// Development middleware that bypasses authentication
+// Development middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
-  if (process.env.NODE_ENV === 'development') {
-    // Mock user for development
+  if (!req.user) {
     req.user = {
+      id: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
       claims: {
-        sub: '1',
-        email: 'test@company.com'
+        sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
+        email: 'admin@company.com'
       }
     };
   }

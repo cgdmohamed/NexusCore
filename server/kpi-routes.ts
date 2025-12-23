@@ -4,9 +4,11 @@ import { db } from "./db";
 import { employeeKpis, employees } from "@shared/schema";
 import { insertEmployeeKpiSchema } from "@shared/schema";
 
-// Simple dev auth middleware
+// Simple dev auth middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
-  req.user = { claims: { sub: '1' } };
+  if (!req.user) {
+    req.user = { id: '8742bebf-9138-4247-85c8-fd2cb70e7d78', claims: { sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78' } };
+  }
   next();
 };
 
@@ -76,7 +78,7 @@ export function registerKpiRoutes(app: Express) {
   app.post("/api/employees/:employeeId/kpis", devAuth, async (req, res) => {
     try {
       const { employeeId } = req.params;
-      const userId = (req.user as any)?.claims?.sub;
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       const validatedData = insertEmployeeKpiSchema.parse({
         ...req.body,

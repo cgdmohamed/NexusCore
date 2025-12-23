@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export function setupDatabaseRoutes(app: Express) {
@@ -92,20 +92,20 @@ export function setupDatabaseRoutes(app: Express) {
   // Sidebar counters endpoint
   app.get('/api/sidebar/counters', async (req, res) => {
     try {
-      const clientsCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients`);
-      const quotationsCount = await db.execute(sql`SELECT COUNT(*) as count FROM quotations`);
-      const invoicesCount = await db.execute(sql`SELECT COUNT(*) as count FROM invoices`);
-      const expensesCount = await db.execute(sql`SELECT COUNT(*) as count FROM expenses`);
-      const employeesCount = await db.execute(sql`SELECT COUNT(*) as count FROM employees`);
-      const tasksCount = await db.execute(sql`SELECT COUNT(*) as count FROM tasks`);
+      const [clientsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(clients);
+      const [quotationsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(quotations);
+      const [invoicesResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(invoices);
+      const [expensesResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(expenses);
+      const [employeesResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(employees);
+      const [tasksResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(tasks);
       
       const counters = {
-        clients: parseInt(clientsCount[0]?.count?.toString() || '0'),
-        quotations: parseInt(quotationsCount[0]?.count?.toString() || '0'),
-        invoices: parseInt(invoicesCount[0]?.count?.toString() || '0'),
-        expenses: parseInt(expensesCount[0]?.count?.toString() || '0'),
-        employees: parseInt(employeesCount[0]?.count?.toString() || '0'),
-        tasks: parseInt(tasksCount[0]?.count?.toString() || '0'),
+        clients: Number(clientsResult?.count || 0),
+        quotations: Number(quotationsResult?.count || 0),
+        invoices: Number(invoicesResult?.count || 0),
+        expenses: Number(expensesResult?.count || 0),
+        employees: Number(employeesResult?.count || 0),
+        tasks: Number(tasksResult?.count || 0),
       };
       
       res.json(counters);

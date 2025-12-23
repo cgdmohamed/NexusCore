@@ -12,11 +12,14 @@ import {
 } from "@shared/schema";
 import { eq, gte, lte, and, sum, count, desc, sql } from "drizzle-orm";
 
+// Development middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
-  req.user = { 
-    id: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
-    claims: { sub: 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' } 
-  };
+  if (!req.user) {
+    req.user = { 
+      id: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
+      claims: { sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78' } 
+    };
+  }
   next();
 };
 
