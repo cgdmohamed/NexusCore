@@ -28,8 +28,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuration endpoint (no auth required)
   app.get('/api/config', (req, res) => {
     res.json({
-      companyName: process.env.COMPANY_NAME || 'CompanyOS',
-      companyTagline: process.env.COMPANY_TAGLINE || 'Enterprise Management Platform'
+      companyName: process.env.COMPANY_NAME || 'Creative Code Nexus',
+      companyTagline: process.env.COMPANY_TAGLINE || 'Digital Solutions & Innovation'
     });
   });
 

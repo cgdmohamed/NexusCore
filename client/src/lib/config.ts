@@ -8,8 +8,8 @@ interface AppConfig {
 
 // Default configuration (fallback values)
 const defaultConfig: AppConfig = {
-  companyName: 'CompanyOS',
-  companyTagline: 'Enterprise Management Platform',
+  companyName: 'Creative Code Nexus',
+  companyTagline: 'Digital Solutions & Innovation',
 };
 
 // Get configuration from global window object (set by server) or API
