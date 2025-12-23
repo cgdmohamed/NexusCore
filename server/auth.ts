@@ -187,7 +187,6 @@ export function setupAuth(app: Express) {
       // Store token in session
       (req.session as any).csrfToken = token;
     },
-    size: 128, // Token size in bits
   });
 
   // Endpoint to get CSRF token
