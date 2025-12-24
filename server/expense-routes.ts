@@ -295,7 +295,7 @@ export function registerExpenseRoutes(app: Express) {
   // Create expense
   app.post("/api/expenses", async (req, res) => {
     try {
-      const userId = 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0'; // Development user ID
+      const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
       
       console.log("Received expense payload:", JSON.stringify(req.body, null, 2));
       
@@ -357,7 +357,7 @@ export function registerExpenseRoutes(app: Express) {
   app.put("/api/expenses/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0'; // Development user ID
+      const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
       
       console.log("Received expense update payload:", JSON.stringify(req.body, null, 2));
       

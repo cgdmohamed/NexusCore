@@ -20,6 +20,7 @@ import Tasks from "@/pages/Tasks";
 import Analytics from "@/pages/Analytics";
 import PaymentSources from "@/pages/PaymentSources";
 import PaymentSourceDetail from "@/pages/PaymentSourceDetail";
+import PaymentSourceEdit from "@/pages/PaymentSourceEdit";
 import ClientProfile from "@/pages/ClientProfile";
 import QuotationDetail from "@/pages/QuotationDetail";
 import InvoiceDetail from "@/pages/InvoiceDetail";
@@ -74,6 +75,7 @@ function Router() {
             <Route path="/expenses/:id/edit" component={ExpenseEdit} />
             <Route path="/payment-sources" component={PaymentSources} />
             <Route path="/payment-sources/:id" component={PaymentSourceDetail} />
+            <Route path="/payment-sources/:id/edit" component={PaymentSourceEdit} />
 
             <Route path="/team-roles" component={UserManagement} />
             <Route path="/users/:id" component={UserProfile} />
