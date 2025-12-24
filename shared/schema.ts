@@ -170,6 +170,7 @@ export const invoices = pgTable("invoices", {
   paidDate: timestamp("paid_date"),
   notes: text("notes"),
   paymentTerms: text("payment_terms"),
+  attachments: text("attachments").array(), // Array of attachment file paths/URLs
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
