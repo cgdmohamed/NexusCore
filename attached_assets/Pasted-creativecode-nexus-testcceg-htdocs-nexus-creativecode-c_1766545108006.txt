@@ -1,0 +1,32 @@
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/creativecode-nexus/.pm2/pm2.log last 15 lines:
+/home/creativecode-nexus/.pm2/logs/creativenexus-out.log last 15 lines:
+/home/creativecode-nexus/.pm2/logs/creativenexus-error.log last 15 lines:
+0|creativenexus  | 2:58:05 AM [express] GET /api/user 401 in 1ms :: {"message":"Not authenticated"}
+0|creativenexus  | CSRF token generated for session cUn0hdaB...
+0|creativenexus  | 2:58:13 AM [express] GET /api/csrf-token 200 in 14ms :: {"csrfToken":"da76c77279f82d135a81dda0f0411d…
+0|creativenexus  | Forgot password error: error: relation "password_reset_rate_limits" does not exist
+0|creativenexus  |     at /home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/node_modules/pg-pool/index.js:45:11
+0|creativenexus  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|creativenexus  |     at async file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|creativenexus  |     at async file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:1291:35 {
+0|creativenexus  |   length: 125,
+0|creativenexus  |   severity: 'ERROR',
+0|creativenexus  |   code: '42P01',
+0|creativenexus  |   detail: undefined,
+0|creativenexus  |   hint: undefined,
+0|creativenexus  |   position: '79',
+0|creativenexus  |   internalPosition: undefined,
+0|creativenexus  |   internalQuery: undefined,
+0|creativenexus  |   where: undefined,
+0|creativenexus  |   schema: undefined,
+0|creativenexus  |   table: undefined,
+0|creativenexus  |   column: undefined,
+0|creativenexus  |   dataType: undefined,
+0|creativenexus  |   constraint: undefined,
+0|creativenexus  |   file: 'parse_relation.c',
+0|creativenexus  |   line: '1449',
+0|creativenexus  |   routine: 'parserOpenTable'
+0|creativenexus  | }
+0|creativenexus  | 2:58:13 AM [express] POST /api/forgot-password 500 in 19ms :: {"message":"An error occurred. Please …
