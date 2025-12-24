@@ -30,6 +30,8 @@ import UserProfile from "@/pages/UserProfile";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import Notifications from "@/pages/Notifications";
 import Services from "@/pages/Services";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -49,6 +51,8 @@ function Router() {
     return (
       <Switch>
         <Route path="/auth" component={AuthPage} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={AuthPage} />
         <Route component={AuthPage} />
       </Switch>

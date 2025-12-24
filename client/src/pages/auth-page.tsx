@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Loader2, Eye, EyeOff, Building2, Shield, Globe, Users, KeyRound } from "lucide-react";
 
 // Translation strings
@@ -43,7 +43,6 @@ export default function AuthPage() {
   const t = (key: string) => translations[key as keyof typeof translations] || key;
   const { user, isLoading, loginMutation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
 
@@ -66,11 +65,6 @@ export default function AuthPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t("auth.login_failed"));
     }
-  };
-
-  const handleForgotPassword = () => {
-    setShowForgotPassword(true);
-    setError("");
   };
 
   if (isLoading) {
@@ -98,108 +92,83 @@ export default function AuthPage() {
             </div>
 
             <Card className="mx-auto w-full max-w-md">
-              {showForgotPassword ? (
-                // Forgot Password View
-                <div>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <KeyRound className="h-5 w-5" />
-                      <span>{t("auth.forgot_password.title")}</span>
-                    </CardTitle>
-                    <CardDescription>{t("auth.forgot_password.description")}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        {t("auth.forgot_password.message")}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => setShowForgotPassword(false)}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      {t("auth.back_to_login")}
-                    </Button>
-                  </CardContent>
-                </div>
-              ) : (
-                // Login View
-                <div>
-                  <CardHeader>
-                    <CardTitle>{t("auth.login_title")}</CardTitle>
-                    <CardDescription>{t("auth.login_description")}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="username">{t("auth.username")}</Label>
-                        <Input
-                          id="username"
-                          type="text"
-                          value={loginData.username}
-                          onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">{t("auth.password")}</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            value={loginData.password}
-                            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            required
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="sm"
-                          onClick={handleForgotPassword}
-                          className="px-0 text-sm text-muted-foreground hover:text-primary"
-                        >
-                          {t("auth.forgot_password")}
-                        </Button>
-                      </div>
-
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                      
+              <CardHeader>
+                <CardTitle>{t("auth.login_title")}</CardTitle>
+                <CardDescription>{t("auth.login_description")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">{t("auth.username")}</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      value={loginData.username}
+                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                      required
+                      data-testid="input-username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">{t("auth.password")}</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        required
+                        data-testid="input-password"
+                      />
                       <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={loginMutation.isPending}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
                       >
-                        {loginMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t("auth.logging_in")}
-                          </>
-                        ) : (
-                          t("auth.login")
-                        )}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
-                    </form>
-                  </CardContent>
-                </div>
-              )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Link href="/forgot-password">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="px-0 text-sm text-muted-foreground hover:text-primary"
+                        data-testid="link-forgot-password"
+                      >
+                        {t("auth.forgot_password")}
+                      </Button>
+                    </Link>
+                  </div>
+
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loginMutation.isPending}
+                    data-testid="button-login"
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("auth.logging_in")}
+                      </>
+                    ) : (
+                      t("auth.login")
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
             </Card>
           </div>
 

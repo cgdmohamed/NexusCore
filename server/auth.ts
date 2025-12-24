@@ -5,9 +5,12 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { csrfSync } from "csrf-sync";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { storage } from "./storage";
-import { pool } from "./db";
-import { User as SelectUser } from "@shared/schema";
+import { pool, db } from "./db";
+import { User as SelectUser, users, passwordResetTokens, passwordResetRateLimits } from "@shared/schema";
+import { eq, and, gt, sql } from "drizzle-orm";
+import nodemailer from "nodemailer";
 
 declare global {
   namespace Express {
@@ -170,6 +173,249 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     res.json(req.user);
+  });
+
+  // Email transporter for password reset
+  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+  const smtpTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  // Rate limit configuration: max 3 requests per email per hour
+  const RATE_LIMIT_MAX_REQUESTS = 3;
+  const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+  // Request password reset endpoint (no CSRF required - public endpoint)
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const clientIp = req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Check rate limiting
+      const now = new Date();
+      const windowStart = new Date(now.getTime() - RATE_LIMIT_WINDOW_MS);
+      
+      const [existingRateLimit] = await db
+        .select()
+        .from(passwordResetRateLimits)
+        .where(
+          and(
+            eq(passwordResetRateLimits.email, normalizedEmail),
+            gt(passwordResetRateLimits.windowStart, windowStart)
+          )
+        );
+
+      if (existingRateLimit && existingRateLimit.requestCount >= RATE_LIMIT_MAX_REQUESTS) {
+        console.warn(`Rate limit exceeded for password reset: ${normalizedEmail}`);
+        // Return success to prevent email enumeration
+        return res.json({ 
+          message: "If an account exists with this email, a password reset link has been sent." 
+        });
+      }
+
+      // Update or create rate limit record
+      if (existingRateLimit) {
+        await db
+          .update(passwordResetRateLimits)
+          .set({ 
+            requestCount: existingRateLimit.requestCount + 1,
+            lastRequestAt: now 
+          })
+          .where(eq(passwordResetRateLimits.id, existingRateLimit.id));
+      } else {
+        await db.insert(passwordResetRateLimits).values({
+          email: normalizedEmail,
+          requestCount: 1,
+          windowStart: now,
+          lastRequestAt: now,
+        });
+      }
+
+      // Find user by email (don't reveal if user exists)
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, normalizedEmail));
+
+      if (!user) {
+        // Return same message to prevent email enumeration
+        return res.json({ 
+          message: "If an account exists with this email, a password reset link has been sent." 
+        });
+      }
+
+      // Generate secure reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour expiry
+
+      // Invalidate any existing unused tokens for this user
+      await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(
+          and(
+            eq(passwordResetTokens.userId, user.id),
+            eq(passwordResetTokens.used, false)
+          )
+        );
+
+      // Store new token
+      await db.insert(passwordResetTokens).values({
+        userId: user.id,
+        token: tokenHash,
+        expiresAt,
+        ipAddress: clientIp,
+      });
+
+      // Send reset email
+      const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
+      const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+
+      try {
+        await smtpTransporter.sendMail({
+          from: `"${process.env.SMTP_FROM_NAME || 'CompanyOS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+          to: user.email,
+          subject: "Password Reset Request",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Password Reset Request</h2>
+              <p>Hello ${user.firstName || user.username},</p>
+              <p>We received a request to reset your password. Click the button below to set a new password:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="background-color: #0070f3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+              </div>
+              <p>This link will expire in 1 hour.</p>
+              <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+              <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                ${resetUrl}
+              </p>
+            </div>
+          `,
+          text: `Password Reset Request\n\nHello ${user.firstName || user.username},\n\nWe received a request to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
+        });
+        console.log(`Password reset email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        // Still return success to prevent email enumeration
+      }
+
+      res.json({ 
+        message: "If an account exists with this email, a password reset link has been sent." 
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: "An error occurred. Please try again later." });
+    }
+  });
+
+  // Reset password endpoint (with token validation)
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Hash the token to compare with stored hash
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const now = new Date();
+
+      // Find valid token
+      const [resetRecord] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.token, tokenHash),
+            eq(passwordResetTokens.used, false),
+            gt(passwordResetTokens.expiresAt, now)
+          )
+        );
+
+      if (!resetRecord) {
+        return res.status(400).json({ 
+          message: "Invalid or expired reset token. Please request a new password reset." 
+        });
+      }
+
+      // Update user's password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      await db
+        .update(users)
+        .set({ 
+          passwordHash: hashedPassword,
+          updatedAt: now,
+          mustChangePassword: false,
+        })
+        .where(eq(users.id, resetRecord.userId));
+
+      // Mark token as used
+      await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(eq(passwordResetTokens.id, resetRecord.id));
+
+      console.log(`Password reset completed for user ID: ${resetRecord.userId}`);
+
+      res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ message: "An error occurred. Please try again later." });
+    }
+  });
+
+  // Validate reset token endpoint (check if token is valid before showing reset form)
+  app.get("/api/validate-reset-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ valid: false, message: "Token is required" });
+      }
+
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const now = new Date();
+
+      const [resetRecord] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.token, tokenHash),
+            eq(passwordResetTokens.used, false),
+            gt(passwordResetTokens.expiresAt, now)
+          )
+        );
+
+      if (!resetRecord) {
+        return res.json({ valid: false, message: "Invalid or expired reset token" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error('Validate reset token error:', error);
+      res.status(500).json({ valid: false, message: "An error occurred" });
+    }
   });
 
   // Configure CSRF protection (applied AFTER login/registration routes)

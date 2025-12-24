@@ -82,6 +82,26 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Password reset tokens table for secure password recovery
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: varchar("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  ipAddress: varchar("ip_address"),
+});
+
+// Rate limiting table for password reset requests
+export const passwordResetRateLimits = pgTable("password_reset_rate_limits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull(),
+  requestCount: integer("request_count").notNull().default(1),
+  windowStart: timestamp("window_start").notNull().defaultNow(),
+  lastRequestAt: timestamp("last_request_at").defaultNow(),
+});
+
 // KPI status enum
 export const kpiStatusEnum = pgEnum("kpi_status", ["on_track", "below_target", "exceeded", "not_evaluated"]);
 
