@@ -33,7 +33,9 @@ export function clearCsrfToken() {
 
 // Refresh CSRF token (called after login)
 export async function refreshCsrfToken() {
+  console.log("[CSRF] Refreshing token after login...");
   csrfToken = await fetchCsrfToken();
+  console.log(`[CSRF] Token refreshed: ${csrfToken?.substring(0, 16)}...`);
 }
 
 async function throwIfResNotOk(res: Response) {
@@ -60,9 +62,14 @@ export async function apiRequest(
   if (method !== "GET" && method !== "HEAD" && !isExempt) {
     try {
       const token = await getCsrfToken();
-      headers["x-csrf-token"] = token;
+      if (token) {
+        headers["x-csrf-token"] = token;
+        console.log(`[CSRF] Adding token to ${method} ${url}: ${token.substring(0, 16)}...`);
+      } else {
+        console.warn(`[CSRF] No token available for ${method} ${url}`);
+      }
     } catch (error) {
-      console.error("Failed to get CSRF token for request:", error);
+      console.error("[CSRF] Failed to get token:", error);
     }
   }
 

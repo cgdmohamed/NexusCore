@@ -1,0 +1,90 @@
+Request URL
+https://nexus.creativecode.com.eg/api/clients
+Request Method
+POST
+Status Code
+403 Forbidden
+Remote Address
+185.93.221.218:443
+Referrer Policy
+no-referrer
+access-control-allow-credentials
+true
+access-control-allow-origin
+https://nexus.creativecode.com.eg
+content-security-policy
+default-src 'self';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com;img-src 'self' data: https: blob:;script-src 'self' 'unsafe-inline';script-src-elem 'self' 'unsafe-inline';connect-src 'self' wss: https:;base-uri 'self';form-action 'self';frame-ancestors 'self';object-src 'none';script-src-attr 'none';upgrade-insecure-requests
+content-type
+application/json; charset=utf-8
+cross-origin-opener-policy
+same-origin
+cross-origin-resource-policy
+same-origin
+date
+Wed, 24 Dec 2025 00:02:22 GMT
+etag
+W/"5e-nZhfg2zHHZ3m+ZoQSnp7j9QlXvg"
+origin-agent-cluster
+?1
+referrer-policy
+no-referrer
+server
+nginx
+strict-transport-security
+max-age=31536000; includeSubDomains
+vary
+Accept-Encoding
+vary
+Origin, Accept-Encoding
+x-content-encoding-over-network
+br
+x-content-type-options
+nosniff
+x-dns-prefetch-control
+off
+x-download-options
+noopen
+x-frame-options
+SAMEORIGIN
+x-permitted-cross-domain-policies
+none
+x-xss-protection
+0
+:authority
+nexus.creativecode.com.eg
+:method
+POST
+:path
+/api/clients
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,ar;q=0.8
+content-length
+149
+content-type
+application/json
+cookie
+_ga=GA1.1.236155796.1744571184; tk_ai=9Rxcw6iw%2BrBDG5IOodVGfJ2I; _fbp=fb.2.1750762002223.398641556317375898; _fbc=fb.2.1753350085470.IwY2xjawLu3xJleHRuA2FlbQIxMABicmlkETFiUzBzaFowSXBralhmUExRAR6PzWEYc8z34W6eirbcHBbp6XNwoFm_yD2jqXgafzAgv_2ZpY0FAQQuOFB-PA_aem_IHqChetYJiueHNvibyjKBg; _gcl_au=1.1.543175622.1760191685; _ga_TZNR6BXPWB=GS2.1.s1763656879$o20$g0$t1763656884$j55$l0$h0; _ga_EQDN3BWDSD=GS2.1.s1764537829$o48$g1$t1764537851$j38$l0$h0; connect.sid=s%3AYIzDVZpnGg9alBBRcbG5fp0Lte8SusRG.oVEJEolFVzrk0DqpkZC%2BvtNRyWUTuqju2459py7cUpc
+origin
+https://nexus.creativecode.com.eg
+priority
+u=1, i
+sec-ch-ua
+"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Windows"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
