@@ -419,6 +419,46 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  app.patch('/api/invoices/:invoiceId/items/:itemId', async (req: any, res) => {
+    try {
+      const itemData = {
+        name: req.body.name,
+        description: req.body.description || null,
+        quantity: req.body.quantity,
+        unitPrice: req.body.unitPrice,
+        totalPrice: (parseFloat(req.body.quantity) * parseFloat(req.body.unitPrice)).toFixed(2),
+      };
+
+      const [updatedItem] = await db.update(invoiceItems)
+        .set(itemData)
+        .where(eq(invoiceItems.id, req.params.itemId))
+        .returning();
+      
+      // Recalculate invoice totals
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      
+      // Get invoice to preserve tax/discount calculations
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
+      const taxAmount = parseFloat(invoice?.taxAmount || '0');
+      const discountAmount = parseFloat(invoice?.discountAmount || '0');
+      const newTotal = subtotal + taxAmount - discountAmount;
+      
+      await db.update(invoices)
+        .set({ 
+          subtotal: subtotal.toFixed(2),
+          amount: newTotal.toFixed(2),
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, req.params.invoiceId));
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating invoice item:", error);
+      res.status(500).json({ message: "Failed to update invoice item" });
+    }
+  });
+
   app.delete('/api/invoices/:invoiceId/items/:itemId', async (req: any, res) => {
     try {
       await db.delete(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
@@ -427,10 +467,16 @@ export function setupDatabaseRoutes(app: Express) {
       const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
       const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
       
+      // Get invoice to preserve tax/discount calculations
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
+      const taxAmount = parseFloat(invoice?.taxAmount || '0');
+      const discountAmount = parseFloat(invoice?.discountAmount || '0');
+      const newTotal = subtotal + taxAmount - discountAmount;
+      
       await db.update(invoices)
         .set({ 
           subtotal: subtotal.toFixed(2),
-          amount: subtotal.toFixed(2),
+          amount: newTotal.toFixed(2),
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));

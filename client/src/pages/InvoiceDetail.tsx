@@ -83,9 +83,17 @@ export default function InvoiceDetail() {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isEditingItem, setIsEditingItem] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
   const [itemForm, setItemForm] = useState<InvoiceItemFormData>({
+    name: '',
+    description: '',
+    quantity: 1,
+    unitPrice: 0
+  });
+  const [editItemForm, setEditItemForm] = useState<InvoiceItemFormData>({
     name: '',
     description: '',
     quantity: 1,
@@ -202,6 +210,30 @@ export default function InvoiceDetail() {
       toast({
         title: "Error",
         description: "Failed to add invoice item",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async (data: { itemId: string; itemData: InvoiceItemFormData }) => {
+      return apiRequest("PATCH", `/api/invoices/${id}/items/${data.itemId}`, data.itemData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/items`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      setIsEditingItem(false);
+      setEditingItemId(null);
+      setEditItemForm({ name: '', description: '', quantity: 1, unitPrice: 0 });
+      toast({
+        title: "Success",
+        description: "Invoice item updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update invoice item",
         variant: "destructive",
       });
     },
@@ -1009,14 +1041,34 @@ export default function InvoiceDetail() {
                         <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteItemMutation.mutate(item.id)}
-                            disabled={deleteItemMutation.isPending}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingItemId(item.id);
+                                setEditItemForm({
+                                  name: item.name,
+                                  description: item.description || '',
+                                  quantity: typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity,
+                                  unitPrice: parseFloat(item.unitPrice)
+                                });
+                                setIsEditingItem(true);
+                              }}
+                              data-testid={`button-edit-item-${item.id}`}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteItemMutation.mutate(item.id)}
+                              disabled={deleteItemMutation.isPending}
+                              data-testid={`button-delete-item-${item.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1024,6 +1076,94 @@ export default function InvoiceDetail() {
                 </Table>
               </div>
             )}
+
+            {/* Edit Item Dialog */}
+            <Dialog open={isEditingItem} onOpenChange={(open) => {
+              setIsEditingItem(open);
+              if (!open) {
+                setEditingItemId(null);
+                setEditItemForm({ name: '', description: '', quantity: 1, unitPrice: 0 });
+              }
+            }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Invoice Item</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="editItemName">Item Name *</Label>
+                    <Input
+                      id="editItemName"
+                      value={editItemForm.name}
+                      onChange={(e) => setEditItemForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter item name"
+                      data-testid="input-edit-item-name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="editItemDescription">Description</Label>
+                    <Textarea
+                      id="editItemDescription"
+                      value={editItemForm.description}
+                      onChange={(e) => setEditItemForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Enter item description"
+                      data-testid="input-edit-item-description"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="editItemQuantity">Quantity</Label>
+                      <Input
+                        id="editItemQuantity"
+                        type="number"
+                        min="1"
+                        value={editItemForm.quantity}
+                        onChange={(e) => setEditItemForm(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                        data-testid="input-edit-item-quantity"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="editItemUnitPrice">Unit Price (EGP)</Label>
+                      <Input
+                        id="editItemUnitPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editItemForm.unitPrice}
+                        onChange={(e) => setEditItemForm(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
+                        data-testid="input-edit-item-unitprice"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      Total: <span className="font-bold">{formatCurrency((editItemForm.quantity * editItemForm.unitPrice).toString())}</span>
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => {
+                        if (editingItemId) {
+                          updateItemMutation.mutate({ itemId: editingItemId, itemData: editItemForm });
+                        }
+                      }}
+                      disabled={!editItemForm.name.trim() || updateItemMutation.isPending}
+                      className="flex-1"
+                      data-testid="button-save-item"
+                    >
+                      {updateItemMutation.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setIsEditingItem(false);
+                      setEditingItemId(null);
+                      setEditItemForm({ name: '', description: '', quantity: 1, unitPrice: 0 });
+                    }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
 
