@@ -371,7 +371,7 @@ export default function InvoiceDetail() {
   });
 
   const updateTaxDiscountMutation = useMutation({
-    mutationFn: async (data: { taxRate: string; taxAmount: string; discountRate: string; discountAmount: string; amount: string }) => {
+    mutationFn: async (data: { taxRate: string; taxAmount: string; discountRate: string; discountAmount: string; amount: string; subtotal: string }) => {
       return apiRequest("PATCH", `/api/invoices/${id}`, data);
     },
     onSuccess: () => {
@@ -571,7 +571,8 @@ export default function InvoiceDetail() {
       taxAmount: taxAmountValue,
       discountRate,
       discountAmount: discountAmountValue,
-      amount: newTotalAmount
+      amount: newTotalAmount,
+      subtotal: subtotal.toFixed(2)
     });
   };
 
@@ -918,15 +919,23 @@ export default function InvoiceDetail() {
               </div>
             </div>
 
-            {/* Apply Button */}
-            <div className="mt-4 flex justify-end">
-              <Button 
-                onClick={handleApplyTaxDiscount}
-                disabled={updateTaxDiscountMutation.isPending}
-                data-testid="button-apply-tax-discount"
-              >
-                {updateTaxDiscountMutation.isPending ? "Applying..." : "Apply Tax & Discount"}
-              </Button>
+            {/* Save Button */}
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-blue-900">Save Tax & Discount Settings</p>
+                  <p className="text-sm text-blue-700">Click the button to save your changes to this invoice</p>
+                </div>
+                <Button 
+                  onClick={handleApplyTaxDiscount}
+                  disabled={updateTaxDiscountMutation.isPending}
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  data-testid="button-apply-tax-discount"
+                >
+                  {updateTaxDiscountMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
