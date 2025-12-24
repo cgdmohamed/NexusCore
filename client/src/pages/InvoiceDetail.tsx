@@ -6,11 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
 import { useParams, Link, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ArrowLeft,
   Edit,
@@ -27,7 +35,9 @@ import {
   Clock,
   AlertCircle,
   RotateCcw,
-  RefreshCw
+  RefreshCw,
+  Percent,
+  Receipt
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -99,6 +109,12 @@ export default function InvoiceDetail() {
     refundReference: "",
     notes: ""
   });
+  const [taxDiscountForm, setTaxDiscountForm] = useState({
+    applyVat: false,
+    applyDiscount: false,
+    discountType: "percentage" as "percentage" | "amount",
+    discountValue: ""
+  });
 
   const { data: invoice, isLoading: invoiceLoading } = useQuery<Invoice>({
     queryKey: [`/api/invoices/${id}`],
@@ -123,6 +139,24 @@ export default function InvoiceDetail() {
     queryKey: [`/api/clients/${invoice?.clientId}/credit`],
     enabled: !!invoice?.clientId,
   });
+
+  // Initialize tax/discount form when invoice loads or updates
+  useEffect(() => {
+    if (invoice) {
+      const hasVat = parseFloat(invoice.taxRate || "0") > 0;
+      const hasDiscount = parseFloat(invoice.discountAmount || "0") > 0 || parseFloat(invoice.discountRate || "0") > 0;
+      const discountRate = parseFloat(invoice.discountRate || "0");
+      
+      setTaxDiscountForm({
+        applyVat: hasVat,
+        applyDiscount: hasDiscount,
+        discountType: discountRate > 0 ? "percentage" : "amount",
+        discountValue: discountRate > 0 
+          ? discountRate.toString() 
+          : (parseFloat(invoice.discountAmount || "0")).toString()
+      });
+    }
+  }, [invoice?.id, invoice?.taxRate, invoice?.taxAmount, invoice?.discountRate, invoice?.discountAmount]);
 
   const applyCreditMutation = useMutation({
     mutationFn: async (creditAmount: number) => {
@@ -304,6 +338,28 @@ export default function InvoiceDetail() {
     }
   });
 
+  const updateTaxDiscountMutation = useMutation({
+    mutationFn: async (data: { taxRate: string; taxAmount: string; discountRate: string; discountAmount: string; amount: string }) => {
+      return apiRequest("PATCH", `/api/invoices/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      toast({
+        title: "Invoice Updated",
+        description: "Tax and discount settings have been updated.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Update tax/discount error:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update tax and discount",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleRefund = () => {
     const refundAmount = parseFloat(refundForm.refundAmount);
     
@@ -425,6 +481,66 @@ export default function InvoiceDetail() {
     const approvedPayment = { ...paymentForm, adminApproved: true };
     setOverpaymentWarning(null);
     addPaymentMutation.mutate(approvedPayment);
+  };
+
+  const handleApplyTaxDiscount = () => {
+    const VAT_RATE = 15;
+    let taxRate = "0";
+    let taxAmountValue = "0";
+    let discountRate = "0";
+    let discountAmountValue = "0";
+
+    // Calculate tax if VAT is enabled
+    if (taxDiscountForm.applyVat) {
+      taxRate = VAT_RATE.toString();
+      taxAmountValue = ((subtotal * VAT_RATE) / 100).toFixed(2);
+    }
+
+    // Calculate discount if enabled
+    if (taxDiscountForm.applyDiscount && taxDiscountForm.discountValue) {
+      const discountValue = parseFloat(taxDiscountForm.discountValue);
+      
+      // Validate discount doesn't exceed subtotal
+      let calculatedDiscount = 0;
+      if (taxDiscountForm.discountType === "percentage") {
+        if (discountValue > 100) {
+          toast({
+            title: "Invalid Discount",
+            description: "Discount percentage cannot exceed 100%",
+            variant: "destructive"
+          });
+          return;
+        }
+        discountRate = discountValue.toString();
+        calculatedDiscount = (subtotal * discountValue) / 100;
+      } else {
+        calculatedDiscount = discountValue;
+      }
+
+      if (calculatedDiscount > subtotal) {
+        toast({
+          title: "Invalid Discount",
+          description: "Discount amount cannot exceed the subtotal",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      discountAmountValue = calculatedDiscount.toFixed(2);
+    }
+
+    // Calculate the new total amount
+    const newTaxAmount = parseFloat(taxAmountValue);
+    const newDiscountAmount = parseFloat(discountAmountValue);
+    const newTotalAmount = (subtotal + newTaxAmount - newDiscountAmount).toFixed(2);
+
+    updateTaxDiscountMutation.mutate({
+      taxRate,
+      taxAmount: taxAmountValue,
+      discountRate,
+      discountAmount: discountAmountValue,
+      amount: newTotalAmount
+    });
   };
 
   const isOverdue = invoice.status !== 'paid' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
@@ -625,14 +741,18 @@ export default function InvoiceDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-white p-4 rounded-lg border">
                 <Label className="text-sm text-gray-600">Subtotal</Label>
                 <p className="text-xl font-bold">{formatCurrency(subtotal)}</p>
               </div>
               <div className="bg-white p-4 rounded-lg border">
-                <Label className="text-sm text-gray-600">Tax Amount</Label>
-                <p className="text-xl font-bold">{formatCurrency(taxAmount)}</p>
+                <Label className="text-sm text-gray-600">VAT ({parseFloat(invoice.taxRate || "0")}%)</Label>
+                <p className="text-xl font-bold text-blue-600">+{formatCurrency(taxAmount)}</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border">
+                <Label className="text-sm text-gray-600">Discount</Label>
+                <p className="text-xl font-bold text-orange-600">-{formatCurrency(discountAmount)}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <Label className="text-sm text-green-700 font-medium">Paid Amount</Label>
@@ -660,6 +780,117 @@ export default function InvoiceDetail() {
                 <span className="font-medium">Paid: {formatCurrency(paidAmount)}</span>
                 <span className="font-medium">Remaining: {formatCurrency(remainingAmount)}</span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tax & Discount Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Receipt className="w-5 h-5 mr-2" />
+              Tax & Discount Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* VAT Toggle */}
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-base font-medium">Apply VAT (15%)</Label>
+                    <p className="text-sm text-gray-500">Add 15% Value Added Tax to the subtotal</p>
+                  </div>
+                  <Switch
+                    checked={taxDiscountForm.applyVat}
+                    onCheckedChange={(checked) => setTaxDiscountForm(prev => ({ ...prev, applyVat: checked }))}
+                    data-testid="switch-apply-vat"
+                  />
+                </div>
+                {taxDiscountForm.applyVat && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-sm text-blue-700">
+                      VAT Amount: <span className="font-bold">{formatCurrency((subtotal * 15) / 100)}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Discount Toggle */}
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label className="text-base font-medium">Apply Discount</Label>
+                    <p className="text-sm text-gray-500">Reduce the invoice total with a discount</p>
+                  </div>
+                  <Switch
+                    checked={taxDiscountForm.applyDiscount}
+                    onCheckedChange={(checked) => setTaxDiscountForm(prev => ({ ...prev, applyDiscount: checked }))}
+                    data-testid="switch-apply-discount"
+                  />
+                </div>
+                {taxDiscountForm.applyDiscount && (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <Label className="text-sm">Discount Type</Label>
+                        <Select
+                          value={taxDiscountForm.discountType}
+                          onValueChange={(value: "percentage" | "amount") => 
+                            setTaxDiscountForm(prev => ({ ...prev, discountType: value }))
+                          }
+                        >
+                          <SelectTrigger data-testid="select-discount-type">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentage (%)</SelectItem>
+                            <SelectItem value="amount">Fixed Amount (EGP)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-sm">
+                          {taxDiscountForm.discountType === "percentage" ? "Discount %" : "Discount Amount"}
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder={taxDiscountForm.discountType === "percentage" ? "e.g. 10" : "e.g. 500"}
+                          value={taxDiscountForm.discountValue}
+                          onChange={(e) => setTaxDiscountForm(prev => ({ ...prev, discountValue: e.target.value }))}
+                          data-testid="input-discount-value"
+                        />
+                      </div>
+                    </div>
+                    {taxDiscountForm.discountValue && (
+                      <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                        <p className="text-sm text-orange-700">
+                          Discount Amount: <span className="font-bold">
+                            {formatCurrency(
+                              taxDiscountForm.discountType === "percentage"
+                                ? (subtotal * parseFloat(taxDiscountForm.discountValue || "0")) / 100
+                                : parseFloat(taxDiscountForm.discountValue || "0")
+                            )}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Apply Button */}
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={handleApplyTaxDiscount}
+                disabled={updateTaxDiscountMutation.isPending}
+                data-testid="button-apply-tax-discount"
+              >
+                {updateTaxDiscountMutation.isPending ? "Applying..." : "Apply Tax & Discount"}
+              </Button>
             </div>
           </CardContent>
         </Card>
