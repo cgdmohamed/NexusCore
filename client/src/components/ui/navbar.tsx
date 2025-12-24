@@ -36,7 +36,7 @@ interface SearchResult {
 
 export function Navbar() {
   const { t, language, changeLanguage } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { companyName } = useConfig();
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,7 +167,7 @@ export function Navbar() {
   };
 
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate();
   };
 
   return (

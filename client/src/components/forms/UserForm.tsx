@@ -11,17 +11,36 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertUserSchema, type User } from "@shared/schema";
 import { z } from "zod";
 
-const formSchema = z.object({
+const createFormSchema = (isEditing: boolean) => z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   employeeId: z.string().min(1, "Employee is required"),
   roleId: z.string().min(1, "Role is required"),
   isActive: z.boolean().default(true),
   mustChangePassword: z.boolean().default(true),
-  password: z.string().min(8, "Password must be at least 8 characters").optional(),
+  password: z.string().optional(),
   confirmPassword: z.string().optional(),
 }).refine((data) => {
-  if (data.password && data.password !== data.confirmPassword) {
+  // For new users, password is required
+  if (!isEditing && (!data.password || data.password.length === 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Password is required",
+  path: ["password"],
+}).refine((data) => {
+  // Only validate password length if a password is provided
+  if (data.password && data.password.length > 0 && data.password.length < 8) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Password must be at least 8 characters",
+  path: ["password"],
+}).refine((data) => {
+  // Only check password match if a password is provided
+  if (data.password && data.password.length > 0 && data.password !== data.confirmPassword) {
     return false;
   }
   return true;
@@ -30,7 +49,7 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface UserFormProps {
   user?: User;
@@ -51,6 +70,8 @@ export function UserForm({ user, onClose }: UserFormProps) {
     queryKey: ["/api/roles"],
   });
 
+  const formSchema = createFormSchema(isEditing);
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
