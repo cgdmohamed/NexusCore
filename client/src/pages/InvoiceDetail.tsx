@@ -561,7 +561,11 @@ export default function InvoiceDetail() {
               Back to Invoices
             </Button>
           </Link>
-          <Button variant="outline">
+          <Button 
+            variant="outline" 
+            onClick={() => window.open(`/api/invoices/${id}/export-pdf`, '_blank')}
+            data-testid="button-download-pdf"
+          >
             <Download className="w-4 h-4 mr-2" />
             Download PDF
           </Button>

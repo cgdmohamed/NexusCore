@@ -1275,4 +1275,156 @@ export function setupDatabaseRoutes(app: Express) {
       res.status(500).json({ message: "Failed to delete quotation item" });
     }
   });
+
+  // Export invoice as PDF
+  app.get('/api/invoices/:id/export-pdf', async (req: any, res) => {
+    try {
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const [client] = await db.select().from(clients).where(eq(clients.id, invoice.clientId));
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
+
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const taxAmount = parseFloat(invoice.taxAmount || '0');
+      const discountAmount = parseFloat(invoice.discountAmount || '0');
+      const totalAmount = subtotal + taxAmount - discountAmount;
+      const paidAmount = parseFloat(invoice.paidAmount || '0');
+      const balanceDue = totalAmount - paidAmount;
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice ${invoice.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .header h1 { color: #1a1a1a; margin: 0; }
+            .company-info { margin-bottom: 30px; }
+            .client-info { margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
+            .invoice-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
+            .invoice-details div { flex: 1; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            .total-section { margin-top: 20px; text-align: right; }
+            .total-row { display: flex; justify-content: flex-end; margin: 5px 0; }
+            .total-row span { width: 150px; }
+            .total-row span:last-child { font-weight: bold; }
+            .grand-total { font-size: 18px; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+            .balance-due { color: ${balanceDue > 0 ? '#dc2626' : '#16a34a'}; font-size: 20px; }
+            .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+            .status-paid { background: #dcfce7; color: #16a34a; }
+            .status-pending { background: #fef3c7; color: #d97706; }
+            .status-partially_paid { background: #dbeafe; color: #2563eb; }
+            .status-overdue { background: #fee2e2; color: #dc2626; }
+            .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>INVOICE</h1>
+            <p>Invoice Number: <strong>${invoice.invoiceNumber}</strong></p>
+            <span class="status-badge status-${invoice.status}">${invoice.status.toUpperCase().replace('_', ' ')}</span>
+          </div>
+          
+          <div class="company-info">
+            <h3>Creative Code Nexus</h3>
+            <p>123 Business Street<br>
+            Business City, BC 12345<br>
+            Phone: (555) 123-4567<br>
+            Email: info@creativecode.com</p>
+          </div>
+          
+          <div class="client-info">
+            <h3>Bill To:</h3>
+            <p><strong>${client?.name || 'N/A'}</strong><br>
+            ${client?.email || ''}<br>
+            ${client?.phone || ''}<br>
+            ${client?.city || ''}, ${client?.country || ''}</p>
+          </div>
+          
+          <div class="invoice-details">
+            <div>
+              <p><strong>Invoice Date:</strong> ${new Date(invoice.createdAt).toLocaleDateString()}</p>
+              <p><strong>Due Date:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</p>
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${item.name}${item.description ? `<br><small style="color:#666">${item.description}</small>` : ''}</td>
+                  <td>${item.quantity}</td>
+                  <td>EGP ${parseFloat(item.unitPrice).toFixed(2)}</td>
+                  <td>EGP ${parseFloat(item.totalPrice).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="total-section">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>EGP ${subtotal.toFixed(2)}</span>
+            </div>
+            ${taxAmount > 0 ? `
+            <div class="total-row">
+              <span>VAT (${invoice.taxRate || '0'}%):</span>
+              <span>+ EGP ${taxAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${discountAmount > 0 ? `
+            <div class="total-row">
+              <span>Discount:</span>
+              <span>- EGP ${discountAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            <div class="total-row grand-total">
+              <span>Total:</span>
+              <span>EGP ${totalAmount.toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+              <span>Paid Amount:</span>
+              <span style="color: #16a34a">EGP ${paidAmount.toFixed(2)}</span>
+            </div>
+            <div class="total-row balance-due">
+              <span>Balance Due:</span>
+              <span>EGP ${balanceDue.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p><strong>Payment Terms:</strong></p>
+            <p>Payment is due within 30 days of invoice date. All amounts are in Egyptian Pounds (EGP).</p>
+            <br>
+            <p><strong>Bank Details:</strong></p>
+            <p>Bank Name: Example Bank | Account Name: Creative Code Nexus | Account Number: 1234567890</p>
+            <br>
+            <p>Thank you for your business!</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `inline; filename="invoice-${invoice.invoiceNumber}.html"`);
+      res.send(htmlContent);
+    } catch (error) {
+      console.error("Error exporting invoice:", error);
+      res.status(500).json({ message: "Failed to export invoice" });
+    }
+  });
 }

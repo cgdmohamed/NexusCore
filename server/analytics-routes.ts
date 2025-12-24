@@ -39,37 +39,66 @@ export function registerAnalyticsRoutes(app: Express) {
       }
 
       // Total Revenue from paid invoices
-      const revenueResult = await db
+      const revenueQuery = db
         .select({ 
           totalRevenue: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
         })
         .from(invoices);
+      
+      const revenueResult = dateFilter 
+        ? await revenueQuery.where(dateFilter)
+        : await revenueQuery;
 
-      // Total Expenses  
+      // Total Expenses - need separate date filter for expenses table
+      let expenseFilter: any = eq(expenses.status, 'approved');
+      if (startDate && endDate) {
+        expenseFilter = and(
+          eq(expenses.status, 'approved'),
+          gte(expenses.date, new Date(startDate as string)),
+          lte(expenses.date, new Date(endDate as string))
+        );
+      }
+      
       const expenseResult = await db
         .select({ 
           totalExpenses: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)` 
         })
         .from(expenses)
-        .where(eq(expenses.status, 'approved'));
+        .where(expenseFilter);
 
-      // New Clients
-      const newClientsResult = await db
+      // New Clients - filter by creation date if provided
+      let clientFilter: any = undefined;
+      if (startDate && endDate) {
+        clientFilter = and(
+          gte(clients.createdAt, new Date(startDate as string)),
+          lte(clients.createdAt, new Date(endDate as string))
+        );
+      }
+      
+      const newClientsQuery = db
         .select({ 
           newClients: count() 
         })
-        .from(clients)
-;
+        .from(clients);
+      
+      const newClientsResult = clientFilter 
+        ? await newClientsQuery.where(clientFilter)
+        : await newClientsQuery;
 
-      // Invoice Status Breakdown
-      const invoiceStatusResult = await db
+      // Invoice Status Breakdown - apply date filter
+      const invoiceStatusQuery = db
         .select({
           status: invoices.status,
           count: count(),
-          totalAmount: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL)), 0)`
+          totalAmount: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL)), 0)`,
+          totalPaidAmount: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)`
         })
         .from(invoices)
         .groupBy(invoices.status);
+      
+      const invoiceStatusResult = dateFilter 
+        ? await invoiceStatusQuery.where(dateFilter)
+        : await invoiceStatusQuery;
 
       // Quotation Conversion Rate
       const quotationStatsResult = await db
@@ -89,8 +118,8 @@ export function registerAnalyticsRoutes(app: Express) {
         .from(tasks)
         .where(eq(tasks.status, 'completed'));
 
-      const totalRevenue = parseFloat(revenueResult[0]?.totalrevenue || '0');
-      const totalExpenses = expenseResult[0]?.totalexpenses || 0;
+      const totalRevenue = parseFloat(revenueResult[0]?.totalRevenue?.toString() || '0');
+      const totalExpenses = parseFloat(expenseResult[0]?.totalExpenses?.toString() || '0');
       const netProfit = totalRevenue - totalExpenses;
       const newClients = newClientsResult[0]?.newClients || 0;
       const completedTasks = completedTasksResult[0]?.completedTasks || 0;
@@ -99,10 +128,11 @@ export function registerAnalyticsRoutes(app: Express) {
       const invoiceBreakdown = invoiceStatusResult.reduce((acc, item) => {
         acc[item.status] = {
           count: item.count,
-          amount: item.totalAmount
+          amount: parseFloat(item.totalAmount?.toString() || '0'),
+          paidAmount: parseFloat(item.totalPaidAmount?.toString() || '0')
         };
         return acc;
-      }, {} as Record<string, { count: number; amount: number }>);
+      }, {} as Record<string, { count: number; amount: number; paidAmount: number }>);
 
       // Format quotation stats
       const quotationBreakdown = quotationStatsResult.reduce((acc, item) => {

@@ -304,14 +304,15 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-blue-600">Partial Invoices</CardTitle>
+                    <CardTitle className="text-blue-600">Partially Paid Invoices</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-text">
-                      {kpis.invoiceBreakdown.partial?.count || 0}
+                      {kpis.invoiceBreakdown.partially_paid?.count || 0}
                     </div>
                     <p className="text-sm text-neutral">
-                      {formatCurrencyValue(kpis.invoiceBreakdown.partial?.amount || 0)}
+                      Paid: {formatCurrencyValue(kpis.invoiceBreakdown.partially_paid?.paidAmount || 0)} / 
+                      Total: {formatCurrencyValue(kpis.invoiceBreakdown.partially_paid?.amount || 0)}
                     </p>
                   </CardContent>
                 </Card>
