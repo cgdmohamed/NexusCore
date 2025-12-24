@@ -9,6 +9,7 @@ import { registerUserManagementRoutes } from "./user-management-routes";
 import { registerKpiRoutes } from "./kpi-routes";
 import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
+import { registerServicesRoutes } from "./services-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { users } from "@shared/schema";
@@ -84,6 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerKpiRoutes(app);
   registerAnalyticsRoutes(app);
   registerTaskManagementRoutes(app);
+  registerServicesRoutes(app);
 
   // Notification endpoints with real database integration
   app.get('/api/notifications', requireAuth, async (req, res) => {
