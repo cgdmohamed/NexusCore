@@ -2,6 +2,38 @@ import type { Express } from "express";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees } from "@shared/schema";
 import { eq, sql, count } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for invoice file uploads
+const invoiceStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), "uploads", "invoices");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `invoice-${uniqueSuffix}${ext}`);
+  },
+});
+
+const uploadInvoiceFile = multer({
+  storage: invoiceStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "application/pdf"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only JPEG, PNG, GIF, and PDF files are allowed."));
+    }
+  },
+});
 
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
@@ -1471,6 +1503,100 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error exporting invoice:", error);
       res.status(500).json({ message: "Failed to export invoice" });
+    }
+  });
+
+  // Invoice file attachments upload
+  app.post('/api/invoices/:id/attachments', uploadInvoiceFile.single('file'), async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Get existing invoice
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        // Delete uploaded file if invoice not found
+        fs.unlinkSync(file.path);
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Create file path relative to the uploads folder
+      const filePath = `/uploads/invoices/${file.filename}`;
+
+      // Add to existing attachments array
+      const existingAttachments = invoice.attachments || [];
+      const newAttachments = [...existingAttachments, filePath];
+
+      // Update invoice with new attachment
+      const [updatedInvoice] = await db.update(invoices)
+        .set({ attachments: newAttachments, updatedAt: new Date() })
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+
+      res.json({
+        success: true,
+        attachment: filePath,
+        invoice: updatedInvoice,
+      });
+    } catch (error) {
+      console.error("Error uploading invoice attachment:", error);
+      res.status(500).json({ message: "Failed to upload attachment" });
+    }
+  });
+
+  // Delete invoice attachment
+  app.delete('/api/invoices/:id/attachments', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      const { attachmentPath } = req.body;
+
+      if (!attachmentPath) {
+        return res.status(400).json({ message: "Attachment path is required" });
+      }
+
+      // Get existing invoice
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Remove from attachments array
+      const existingAttachments = invoice.attachments || [];
+      const newAttachments = existingAttachments.filter(a => a !== attachmentPath);
+
+      // Update invoice
+      const [updatedInvoice] = await db.update(invoices)
+        .set({ attachments: newAttachments, updatedAt: new Date() })
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+
+      // Delete the file from disk
+      const fullPath = path.join(process.cwd(), attachmentPath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+
+      res.json({
+        success: true,
+        invoice: updatedInvoice,
+      });
+    } catch (error) {
+      console.error("Error deleting invoice attachment:", error);
+      res.status(500).json({ message: "Failed to delete attachment" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use('/uploads', (req, res, next) => {
+    const filePath = path.join(process.cwd(), 'uploads', req.path);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).json({ message: "File not found" });
     }
   });
 }
