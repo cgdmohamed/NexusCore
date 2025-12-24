@@ -42,7 +42,7 @@ export function setupAuth(app: Express) {
     store: new PgStore({
       pool, // Reuse existing database connection pool
       tableName: "session", // Table for session storage
-      createTableIfMissing: true, // Auto-create session table if needed
+      createTableIfMissing: false, // Session table should already exist from migrations
       pruneSessionInterval: 60, // Clean expired sessions every 60 seconds
     }),
     secret: process.env.SESSION_SECRET,
