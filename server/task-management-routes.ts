@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, count, sql, ilike } from "drizzle-orm";
 import { z } from "zod";
+import { notificationService } from "./notification-service";
 
 // Development auth middleware - uses actual admin user ID for FK constraints
 const devAuth = (req: any, res: any, next: any) => {
@@ -345,6 +346,20 @@ export function registerTaskManagementRoutes(app: Express) {
         .values(taskData)
         .returning();
 
+      // Send email notification if task is assigned to someone
+      if (newTask.assignedTo && newTask.assignedTo !== userId) {
+        try {
+          await notificationService.notifyTaskAssigned(
+            newTask.id,
+            newTask.assignedTo,
+            userId,
+            newTask.title
+          );
+        } catch (notifyError) {
+          console.error("Failed to send task assignment notification:", notifyError);
+        }
+      }
+
       res.status(201).json(newTask);
     } catch (error) {
       console.error("Error creating task:", error);
@@ -388,6 +403,22 @@ export function registerTaskManagementRoutes(app: Express) {
         .set(updateData)
         .where(eq(tasks.id, id))
         .returning();
+
+      // Send email notification if task is reassigned to a different user
+      if (validatedData.assignedTo && 
+          validatedData.assignedTo !== currentTask.assignedTo && 
+          validatedData.assignedTo !== userId) {
+        try {
+          await notificationService.notifyTaskAssigned(
+            id,
+            validatedData.assignedTo,
+            userId,
+            updatedTask.title
+          );
+        } catch (notifyError) {
+          console.error("Failed to send task assignment notification:", notifyError);
+        }
+      }
 
       // Log significant changes
       const significantFields = ['status', 'priority', 'assignedTo', 'dueDate', 'progressPercentage'];
