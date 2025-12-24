@@ -371,7 +371,10 @@ export class DatabaseStorage implements IStorage {
     const total = totalResult[0].count;
 
     // Get services with pagination
-    const sortColumn = services[sortBy as keyof typeof services] || services.name;
+    const sortColumn = sortBy === "name" ? services.name : 
+                       sortBy === "category" ? services.category :
+                       sortBy === "defaultPrice" ? services.defaultPrice :
+                       sortBy === "createdAt" ? services.createdAt : services.name;
     const orderClause = sortOrder === "desc" ? desc(sortColumn) : asc(sortColumn);
 
     const servicesResult = await db
@@ -406,7 +409,7 @@ export class DatabaseStorage implements IStorage {
   async updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined> {
     const [updatedService] = await db
       .update(services)
-      .set({ ...service, updatedAt: new Date() })
+      .set(service)
       .where(eq(services.id, id))
       .returning();
     return updatedService;
@@ -414,26 +417,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteService(id: string): Promise<boolean> {
     const result = await db.delete(services).where(eq(services.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getServiceCategories(): Promise<string[]> {
     const categories = await db
       .select({ category: services.category })
       .from(services)
-      .where(and(eq(services.isActive, true), services.category))
+      .where(eq(services.isActive, true))
       .groupBy(services.category);
     
-    return categories.map(c => c.category).filter(Boolean);
+    return categories.map(c => c.category).filter((c): c is string => c !== null && c !== undefined);
   }
 
   async bulkUpdateServiceStatus(serviceIds: string[], isActive: boolean): Promise<number> {
     const result = await db
       .update(services)
-      .set({ isActive, updatedAt: new Date() })
+      .set({ isActive })
       .where(eq(services.id, serviceIds[0])); // This would need proper IN operator for multiple IDs
     
-    return result.rowCount;
+    return result.rowCount ?? 0;
   }
 
   // Analytics operations

@@ -202,7 +202,7 @@ export default function Services() {
   ];
   const existingCategories = allServices
     .map((s: Service) => s.category)
-    .filter((category): category is string => Boolean(category));
+    .filter((category: string | undefined): category is string => Boolean(category));
   const categories = Array.from(new Set([...defaultCategories, ...existingCategories]));
 
   return (

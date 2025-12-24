@@ -50,7 +50,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
   const queryClient = useQueryClient();
 
   // Fetch clients for dropdown
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<Array<{ id: string; name: string }>>({
     queryKey: ["/api/clients"],
   });
 
