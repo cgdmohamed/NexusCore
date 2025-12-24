@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -66,16 +67,7 @@ export function StatusUpdateForm({ entityType, entityId, currentStatus, trigger 
 
   const mutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      const response = await fetch(`/api/${entityType}s/${entityId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to update ${entityType} status`);
-      }
+      const response = await apiRequest("PATCH", `/api/${entityType}s/${entityId}/status`, { status: newStatus });
       return response.json();
     },
     onSuccess: () => {

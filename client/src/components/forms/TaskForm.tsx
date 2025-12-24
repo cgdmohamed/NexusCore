@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-// Remove unused import
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -63,16 +63,7 @@ export function TaskForm({ trigger }: TaskFormProps) {
 
   const mutation = useMutation({
     mutationFn: async (data: TaskFormData) => {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create task");
-      }
+      const response = await apiRequest("POST", "/api/tasks", data);
       return response.json();
     },
     onSuccess: () => {
