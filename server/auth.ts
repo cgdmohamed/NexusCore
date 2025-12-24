@@ -41,8 +41,8 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     store: new PgStore({
       pool, // Reuse existing database connection pool
-      tableName: "session", // Table for session storage
-      createTableIfMissing: false, // Session table should already exist from migrations
+      tableName: "sessions", // Match schema table name (plural)
+      createTableIfMissing: false, // Session table is created via db:push
       pruneSessionInterval: 60, // Clean expired sessions every 60 seconds
     }),
     secret: process.env.SESSION_SECRET,
