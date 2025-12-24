@@ -1,0 +1,31 @@
+0|creativenexus  |   updatedAt: '2025-12-24T01:44:12.216Z'
+0|creativenexus  | }
+0|creativenexus  | Error creating expense: error: null value in column "attachment_url" of relation "expenses" violates not-null constraint
+0|creativenexus  |     at /home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/node_modules/pg-pool/index.js:45:11
+0|creativenexus  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|creativenexus  |     at async file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|creativenexus  |     at async file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:2665:25 {
+0|creativenexus  |   length: 557,
+0|creativenexus  |   severity: 'ERROR',
+0|creativenexus  |   code: '23502',
+0|creativenexus  |   detail: 'Failing row contains (00d0c0f7-d1eb-4f4b-bb20-73ae0c091cd1, Internet, , 375.00, e10e19ba-2ac7-4f0c-90e5-54bc89694a55, fixed, null, null, null, 2025-12-21 22:00:00, credit_card, null, paid, null, null, receipt, null, null, null, t, null, fe372940-8da7-49dc-8ad1-c632eac83b83, null, 2025-12-24 01:44:12.216, 2025-12-24 01:44:12.216, 32e5d9aa-af3f-420d-9395-ffd7adb30775).',
+0|creativenexus  |   hint: undefined,
+0|creativenexus  |   position: undefined,
+0|creativenexus  |   internalPosition: undefined,
+0|creativenexus  |   internalQuery: undefined,
+0|creativenexus  |   where: undefined,
+0|creativenexus  |   schema: 'public',
+0|creativenexus  |   table: 'expenses',
+0|creativenexus  |   column: 'attachment_url',
+0|creativenexus  |   dataType: undefined,
+0|creativenexus  |   constraint: undefined,
+0|creativenexus  |   file: 'execMain.c',
+0|creativenexus  |   line: '2006',
+0|creativenexus  |   routine: 'ExecConstraints'
+0|creativenexus  | }
+0|creativenexus  | 1:44:12 AM [express] POST /api/expenses 500 in 19ms :: {"message":"Failed to create expense"}
+0|creativenexus  | 1:44:16 AM [express] GET /api/notifications 304 in 4ms :: {"success":true,"data":[]}
+0|creativenexus  | 1:44:16 AM [express] GET /api/notifications/unread-count 304 in 3ms :: {"success":true,"data":{"unre…
+0|creativenexus  | 1:44:16 AM [express] GET /api/invoices 304 in 7ms :: [{"id":"3c0fd069-d424-4d79-ae50-7183b3631dd0","…
+0|creativenexus  | 1:44:16 AM [express] GET /api/tasks/stats 304 in 20ms :: {"statusBreakdown":{},"priorityBreakdown":{…
+0|creativenexus  | 1:44:16 AM [express] GET /api/clients 304 in 5ms :: [{"id":"a746dbe7-ced0-4521-8a96-64b5b9215791","n…
