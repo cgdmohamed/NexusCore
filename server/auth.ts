@@ -191,15 +191,21 @@ export function setupAuth(app: Express) {
 
   // Endpoint to get CSRF token
   app.get("/api/csrf-token", (req, res) => {
-    const token = generateToken(req);
-    // Explicitly save the session to ensure the token is stored
-    req.session.save((err) => {
-      if (err) {
-        console.error("Error saving session for CSRF token:", err);
-        return res.status(500).json({ message: "Failed to generate CSRF token" });
-      }
-      res.json({ csrfToken: token });
-    });
+    try {
+      const token = generateToken(req);
+      // Explicitly save the session to ensure the token is stored
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session for CSRF token:", err);
+          return res.status(500).json({ message: "Failed to generate CSRF token" });
+        }
+        console.log(`CSRF token generated for session ${req.sessionID?.substring(0, 8)}...`);
+        res.json({ csrfToken: token });
+      });
+    } catch (error) {
+      console.error("Error generating CSRF token:", error);
+      res.status(500).json({ message: "Failed to generate CSRF token" });
+    }
   });
 
   // Apply CSRF protection to all POST/PATCH/DELETE/PUT routes globally
@@ -210,7 +216,12 @@ export function setupAuth(app: Express) {
   // CSRF error handler - catches ForbiddenError from csrf-sync and returns structured response
   app.use((err: any, req: any, res: any, next: any) => {
     if (err.code === 'EBADCSRFTOKEN' || err.message === 'invalid csrf token') {
-      console.warn(`CSRF validation failed: ${req.method} ${req.path} - ${err.message}`);
+      const receivedToken = req.headers['x-csrf-token'] || req.headers['csrf-token'] || 'none';
+      const sessionToken = (req.session as any)?.csrfToken || 'none';
+      console.warn(`CSRF validation failed: ${req.method} ${req.path}`);
+      console.warn(`  Session ID: ${req.sessionID?.substring(0, 8)}...`);
+      console.warn(`  Received token: ${typeof receivedToken === 'string' ? receivedToken.substring(0, 16) + '...' : 'none'}`);
+      console.warn(`  Session token: ${typeof sessionToken === 'string' ? sessionToken.substring(0, 16) + '...' : 'none'}`);
       return res.status(403).json({ 
         message: "Invalid or missing CSRF token. Please refresh and try again.",
         code: "CSRF_ERROR"

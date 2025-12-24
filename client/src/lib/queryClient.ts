@@ -43,6 +43,9 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Endpoints that are exempt from CSRF (registered before CSRF middleware)
+const CSRF_EXEMPT_ENDPOINTS = ["/api/login", "/api/register"];
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -52,8 +55,9 @@ export async function apiRequest(
   // Prepare headers
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
-  // Add CSRF token for state-changing requests
-  if (method !== "GET" && method !== "HEAD") {
+  // Add CSRF token for state-changing requests (except exempt endpoints)
+  const isExempt = CSRF_EXEMPT_ENDPOINTS.some(exempt => url.startsWith(exempt));
+  if (method !== "GET" && method !== "HEAD" && !isExempt) {
     try {
       const token = await getCsrfToken();
       headers["x-csrf-token"] = token;
