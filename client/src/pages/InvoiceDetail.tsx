@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
 import { useParams, Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -37,7 +37,12 @@ import {
   RotateCcw,
   RefreshCw,
   Percent,
-  Receipt
+  Receipt,
+  Paperclip,
+  Upload,
+  File,
+  Image,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -123,6 +128,7 @@ export default function InvoiceDetail() {
     discountType: "percentage" as "percentage" | "amount",
     discountValue: ""
   });
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const { data: invoice, isLoading: invoiceLoading } = useQuery<Invoice>({
     queryKey: [`/api/invoices/${id}`],
@@ -370,6 +376,68 @@ export default function InvoiceDetail() {
     }
   });
 
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Get CSRF token for the request
+      const token = await getCsrfToken();
+      
+      const response = await fetch(`/api/invoices/${id}/attachments`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers: {
+          'x-csrf-token': token,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload attachment');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      toast({
+        title: "File Uploaded",
+        description: "The attachment has been uploaded successfully.",
+      });
+      setIsUploadingFile(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload attachment",
+        variant: "destructive",
+      });
+      setIsUploadingFile(false);
+    }
+  });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: async (attachmentPath: string) => {
+      return apiRequest("DELETE", `/api/invoices/${id}/attachments`, { attachmentPath });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      toast({
+        title: "Attachment Deleted",
+        description: "The attachment has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete attachment",
+        variant: "destructive",
+      });
+    }
+  });
+
   const updateTaxDiscountMutation = useMutation({
     mutationFn: async (data: { taxRate: string; taxAmount: string; discountRate: string; discountAmount: string; amount: string; subtotal: string }) => {
       return apiRequest("PATCH", `/api/invoices/${id}`, data);
@@ -513,6 +581,31 @@ export default function InvoiceDetail() {
     const approvedPayment = { ...paymentForm, adminApproved: true };
     setOverpaymentWarning(null);
     addPaymentMutation.mutate(approvedPayment);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploadingFile(true);
+    uploadAttachmentMutation.mutate(file, {
+      onSettled: () => {
+        // Reset the file input after upload attempt (success or failure)
+        event.target.value = '';
+      }
+    });
+  };
+
+  const getFileIcon = (filePath: string) => {
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) {
+      return <Image className="w-5 h-5 text-blue-500" />;
+    }
+    return <File className="w-5 h-5 text-gray-500" />;
+  };
+
+  const getFileName = (filePath: string) => {
+    return filePath.split('/').pop() || filePath;
   };
 
   const handleApplyTaxDiscount = () => {
@@ -1431,6 +1524,91 @@ export default function InvoiceDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Attachments Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                <Paperclip className="w-5 h-5 mr-2" />
+                Attachments
+              </CardTitle>
+              <div>
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.gif,.pdf"
+                  onChange={handleFileUpload}
+                  data-testid="input-file-upload"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                  disabled={isUploadingFile || uploadAttachmentMutation.isPending}
+                  data-testid="button-upload-attachment"
+                >
+                  {isUploadingFile || uploadAttachmentMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload File
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(!invoice?.attachments || invoice.attachments.length === 0) ? (
+              <div className="text-center py-8">
+                <Paperclip className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">No attachments yet</p>
+                <p className="text-sm text-gray-500">
+                  Upload receipts, contracts, or other documents related to this invoice.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {invoice.attachments.map((attachment, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    data-testid={`attachment-item-${index}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {getFileIcon(attachment)}
+                      <a 
+                        href={attachment}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                        data-testid={`link-attachment-${index}`}
+                      >
+                        {getFileName(attachment)}
+                      </a>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteAttachmentMutation.mutate(attachment)}
+                      disabled={deleteAttachmentMutation.isPending}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      data-testid={`button-delete-attachment-${index}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
