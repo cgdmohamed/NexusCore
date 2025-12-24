@@ -287,11 +287,15 @@ export default function UserManagement() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <img
-                          src={user.employee?.profileImageUrl || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100`}
-                          alt="Profile"
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage 
+                            src={user.employee?.profileImage} 
+                            alt={`${user.employee?.firstName} ${user.employee?.lastName}`}
+                          />
+                          <AvatarFallback className="bg-primary text-white font-medium">
+                            {user.employee?.firstName?.[0]}{user.employee?.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <h3 className="font-semibold">
                             {user.employee?.firstName} {user.employee?.lastName}

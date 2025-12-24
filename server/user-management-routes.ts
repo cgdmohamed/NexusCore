@@ -355,7 +355,10 @@ export function registerUserManagementRoutes(app: Express) {
       const usersList = await db
         .select({
           id: users.id,
+          username: users.username,
           email: users.email,
+          employeeId: users.employeeId,
+          roleId: users.roleId,
           isActive: users.isActive,
           lastLogin: users.lastLogin,
           mustChangePassword: users.mustChangePassword,
@@ -375,8 +378,8 @@ export function registerUserManagementRoutes(app: Express) {
           },
         })
         .from(users)
-        .innerJoin(employees, eq(users.employeeId, employees.id))
-        .innerJoin(roles, eq(users.roleId, roles.id))
+        .leftJoin(employees, eq(users.employeeId, employees.id))
+        .leftJoin(roles, eq(users.roleId, roles.id))
         .orderBy(desc(users.createdAt));
       
       res.json(usersList);
@@ -393,7 +396,10 @@ export function registerUserManagementRoutes(app: Express) {
       const user = await db
         .select({
           id: users.id,
+          username: users.username,
           email: users.email,
+          employeeId: users.employeeId,
+          roleId: users.roleId,
           isActive: users.isActive,
           lastLogin: users.lastLogin,
           mustChangePassword: users.mustChangePassword,
