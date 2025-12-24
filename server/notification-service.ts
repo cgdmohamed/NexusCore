@@ -10,6 +10,17 @@ import {
   type Notification
 } from "@shared/schema";
 import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
+import nodemailer from "nodemailer";
+
+const smtpTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "587"),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 export interface NotificationPayload {
   userId: string;
@@ -212,22 +223,37 @@ class NotificationService {
   }
 
   /**
-   * Send email using configured provider
+   * Send email using configured SMTP provider
    */
   private async sendEmail(payload: EmailPayload): Promise<void> {
-    // For now, we'll log the email (in production, integrate with SMTP/SendGrid/etc.)
-    console.log("📧 Email would be sent:", {
-      to: payload.to,
-      subject: payload.subject,
-      body: payload.bodyText
-    });
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@creativecode.com.eg";
+    const fromName = process.env.SMTP_FROM_NAME || "Creative Code Nexus";
 
-    // TODO: Integrate with actual email service
-    // Examples:
-    // - NodeMailer for SMTP
-    // - SendGrid API
-    // - AWS SES
-    // - Mailgun API
+    // Check if SMTP is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log("📧 SMTP not configured. Email would be sent:", {
+        to: payload.to,
+        subject: payload.subject,
+        body: payload.bodyText
+      });
+      return;
+    }
+
+    try {
+      const mailOptions = {
+        from: `"${fromName}" <${fromEmail}>`,
+        to: payload.to.join(", "),
+        subject: payload.subject,
+        text: payload.bodyText,
+        html: payload.bodyHtml,
+      };
+
+      const info = await smtpTransporter.sendMail(mailOptions);
+      console.log("📧 Email sent successfully:", info.messageId);
+    } catch (error) {
+      console.error("📧 Failed to send email:", error);
+      throw error;
+    }
   }
 
   /**
