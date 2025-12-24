@@ -22,6 +22,7 @@ export default function ClientProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditingClient, setIsEditingClient] = useState(false);
+  const [editStatus, setEditStatus] = useState<string>("");
   const [newNote, setNewNote] = useState("");
   const [noteType, setNoteType] = useState("note");
 
@@ -156,7 +157,10 @@ export default function ClientProfile() {
             <p className="text-gray-600">Client Profile</p>
           </div>
         </div>
-        <Dialog open={isEditingClient} onOpenChange={setIsEditingClient}>
+        <Dialog open={isEditingClient} onOpenChange={(open) => {
+          setIsEditingClient(open);
+          if (open) setEditStatus(client.status);
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Edit className="w-4 h-4 mr-2" />
@@ -177,7 +181,7 @@ export default function ClientProfile() {
                 phone: formData.get("phone") as string,
                 city: formData.get("city") as string,
                 country: formData.get("country") as string,
-                status: formData.get("status") as string,
+                status: editStatus || client.status,
                 totalValue: totalValueInput && totalValueInput.trim() !== "" ? totalValueInput : client.totalValue,
               });
             }} className="space-y-4">
@@ -203,7 +207,10 @@ export default function ClientProfile() {
               </div>
               <div>
                 <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={client.status}>
+                <Select 
+                  value={editStatus || client.status} 
+                  onValueChange={setEditStatus}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
