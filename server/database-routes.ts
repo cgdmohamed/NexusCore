@@ -341,7 +341,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  // Delete invoice with all items and payments
+  // Delete invoice with all items and payments (only draft invoices)
   app.delete('/api/invoices/:id', async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
@@ -352,7 +352,14 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Invoice not found" });
       }
 
-      // Delete payments first
+      // Only allow deletion of draft invoices
+      if (invoice.status !== 'draft') {
+        return res.status(400).json({ 
+          message: "Only draft invoices can be deleted. Please cancel the invoice instead." 
+        });
+      }
+
+      // Delete payments first (shouldn't have any for draft, but just in case)
       await db.delete(payments).where(eq(payments.invoiceId, invoiceId));
 
       // Delete invoice items

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useState } from "react";
 import { 
   ArrowLeft,
@@ -42,6 +42,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -89,6 +91,8 @@ export default function InvoiceDetail() {
   });
   const [overpaymentWarning, setOverpaymentWarning] = useState<any>(null);
   const [showCreditInfo, setShowCreditInfo] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [, navigate] = useLocation();
   const [refundForm, setRefundForm] = useState({
     refundAmount: "",
     refundMethod: "",
@@ -276,6 +280,30 @@ export default function InvoiceDetail() {
     }
   });
 
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/invoices/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      toast({
+        title: "Invoice Deleted",
+        description: "The draft invoice has been deleted successfully.",
+      });
+      navigate("/invoices");
+    },
+    onError: (error: any) => {
+      console.error("Delete invoice error:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete invoice. Only draft invoices can be deleted.",
+        variant: "destructive",
+      });
+      setShowDeleteConfirm(false);
+    }
+  });
+
   const handleRefund = () => {
     const refundAmount = parseFloat(refundForm.refundAmount);
     
@@ -425,6 +453,39 @@ export default function InvoiceDetail() {
             <Send className="w-4 h-4 mr-2" />
             Send Invoice
           </Button>
+          
+          {/* Delete button - only for draft invoices */}
+          {invoice.status === 'draft' && (
+            <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" data-testid="button-delete-invoice">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Invoice
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Invoice</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete invoice {invoice.invoiceNumber}? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => deleteInvoiceMutation.mutate()}
+                    disabled={deleteInvoiceMutation.isPending}
+                    data-testid="button-confirm-delete"
+                  >
+                    {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
       
