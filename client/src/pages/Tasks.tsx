@@ -648,7 +648,7 @@ export default function Tasks() {
                             {task.assignedTo && (
                               <div className="flex items-center space-x-1">
                                 <User className="h-4 w-4" />
-                                <span>Assigned to: {task.assignedTo}</span>
+                                <span>Assigned to: {task.assigneeName || task.assignedTo}</span>
                               </div>
                             )}
                             {task.dueDate && (
@@ -736,7 +736,7 @@ export default function Tasks() {
                             {task.priority.toUpperCase()}
                           </Badge>
                         </TableCell>
-                        <TableCell>{task.assignedTo || "-"}</TableCell>
+                        <TableCell>{task.assigneeName || task.assignedTo || "-"}</TableCell>
                         <TableCell>
                           {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
                         </TableCell>

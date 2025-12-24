@@ -65,8 +65,19 @@ export function registerTaskManagementRoutes(app: Express) {
 
       const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
       
-      // Simple query for existing tasks table
+      // Query tasks with assignee user info
       const allTasks = await db.select().from(tasks);
+      
+      // Get all users for assignee lookup
+      const allUsers = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username,
+      }).from(users);
+      
+      // Create a map for quick user lookup
+      const userMap = new Map(allUsers.map(u => [u.id, u]));
 
       // Filter tasks based on search criteria
       let filteredTasks = allTasks;
@@ -103,7 +114,20 @@ export function registerTaskManagementRoutes(app: Express) {
       const end = start + parseInt(limit as string);
       const paginatedTasks = filteredTasks.slice(start, end);
 
-      res.json(paginatedTasks);
+      // Enrich tasks with assignee names
+      const tasksWithAssigneeNames = paginatedTasks.map(task => {
+        const assignee = task.assignedTo ? userMap.get(task.assignedTo) : null;
+        return {
+          ...task,
+          assigneeName: assignee 
+            ? (assignee.firstName && assignee.lastName 
+                ? `${assignee.firstName} ${assignee.lastName}` 
+                : assignee.username || task.assignedTo)
+            : null,
+        };
+      });
+
+      res.json(tasksWithAssigneeNames);
     } catch (error) {
       console.error("Error fetching tasks:", error);
       res.status(500).json({ message: "Failed to fetch tasks" });
