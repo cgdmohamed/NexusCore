@@ -37,17 +37,6 @@ const serviceSchema = z.object({
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
 
-const categories = [
-  "Design",
-  "Development", 
-  "Marketing",
-  "Consulting",
-  "E-commerce",
-  "Mobile",
-  "SEO",
-  "Branding"
-];
-
 export default function Services() {
   const { t, language } = useTranslation();
   const isRTL = language === 'ar';
@@ -102,10 +91,11 @@ export default function Services() {
         description: t('services.service_created'),
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Service creation error:", error);
       toast({
         title: t('common.error'),
-        description: t('services.create_error'),
+        description: error?.message || t('services.create_error'),
         variant: "destructive",
       });
     },
@@ -198,12 +188,22 @@ export default function Services() {
   const totalServices = allServices.length;
   const activeServices = allServices.filter((s: Service) => s.isActive).length;
   
-  // Get unique categories for filter dropdown
-  const categories = Array.from(new Set(
-    allServices
-      .map((s: Service) => s.category)
-      .filter((category): category is string => Boolean(category))
-  ));
+  // Get unique categories for filter dropdown - include defaults + existing
+  const defaultCategories = [
+    "Design",
+    "Development", 
+    "Marketing",
+    "Consulting",
+    "E-commerce",
+    "Mobile",
+    "SEO",
+    "Branding",
+    "Other"
+  ];
+  const existingCategories = allServices
+    .map((s: Service) => s.category)
+    .filter((category): category is string => Boolean(category));
+  const categories = Array.from(new Set([...defaultCategories, ...existingCategories]));
 
   return (
     <div className="p-6 space-y-6">
