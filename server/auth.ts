@@ -16,6 +16,14 @@ declare global {
   namespace Express {
     interface User extends Omit<SelectUser, 'passwordHash'> {
       passwordHash?: string; // Optional because we remove it for security
+      permissions?: Record<string, { view: boolean; add: boolean; edit: boolean; delete: boolean; approve: boolean }>;
+      roleName?: string;
+      employee?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        profileImage?: string | null;
+      };
     }
   }
 }
@@ -504,9 +512,34 @@ export function requireAdmin(req: any, res: any, next: any) {
     return res.status(401).json({ message: "Authentication required" });
   }
   
-  if (req.user.role !== 'admin' && req.user.department !== 'management') {
+  // Check if user has Admin role
+  const roleName = req.user.roleName;
+  if (roleName !== 'Admin') {
     return res.status(403).json({ message: "Admin access required" });
   }
   
   next();
+}
+
+// Middleware factory to require specific module permissions
+export function requirePermission(module: string, action: 'view' | 'add' | 'edit' | 'delete' | 'approve') {
+  return (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const permissions = req.user.permissions;
+    if (!permissions) {
+      return res.status(403).json({ message: "No permissions assigned" });
+    }
+    
+    const modulePermissions = permissions[module];
+    if (!modulePermissions || modulePermissions[action] !== true) {
+      return res.status(403).json({ 
+        message: `Permission denied: Cannot ${action} ${module}` 
+      });
+    }
+    
+    next();
+  };
 }

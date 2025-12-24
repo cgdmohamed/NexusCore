@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
 
 import { useQuery } from "@tanstack/react-query";
@@ -15,11 +16,13 @@ import {
   CheckSquare,
   TrendingUp,
   UserCog,
+  Briefcase,
 } from "lucide-react";
 
 export function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { canView, isAdmin } = usePermissions();
   const { t, language } = useTranslation();
   
   const currentUser = user as User | undefined;
@@ -27,54 +30,70 @@ export function Sidebar() {
   // Fetch real-time data for badges
   const { data: taskStats } = useQuery<any>({
     queryKey: ["/api/tasks/stats"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
+    enabled: canView('tasks'),
   });
 
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     refetchInterval: 30000,
+    enabled: canView('crm'),
   });
 
   const { data: invoices = [] } = useQuery<any[]>({
     queryKey: ["/api/invoices"],
     refetchInterval: 30000,
+    enabled: canView('invoices'),
   });
 
-  // Calculate navigation items with real-time badges
-  const navigation = [
-    { name: 'nav.dashboard', href: '/', icon: BarChart3 },
+  // Define navigation items with permission requirements
+  const allNavigation = [
+    { name: 'nav.dashboard', href: '/', icon: BarChart3, module: 'dashboard' },
     { 
       name: 'nav.clients', 
       href: '/clients', 
       icon: Users, 
+      module: 'crm',
       badge: clients.length > 0 ? clients.length.toString() : undefined,
       badgeColor: 'bg-blue-500'
     },
-    { name: 'nav.quotations', href: '/quotations', icon: FileText },
+    { name: 'nav.quotations', href: '/quotations', icon: FileText, module: 'quotations' },
     { 
       name: 'nav.invoices', 
       href: '/invoices', 
       icon: Receipt,
+      module: 'invoices',
       badge: invoices.filter((inv: any) => inv.status === 'overdue').length > 0 
         ? invoices.filter((inv: any) => inv.status === 'overdue').length.toString() 
         : undefined,
       badgeColor: 'bg-red-500'
     },
-    { name: 'nav.payments', href: '/payment-sources', icon: Wallet },
-    { name: 'nav.expenses', href: '/expenses', icon: CreditCard },
+    { name: 'nav.payments', href: '/payment-sources', icon: Wallet, module: 'paymentSources' },
+    { name: 'nav.expenses', href: '/expenses', icon: CreditCard, module: 'expenses' },
     { 
       name: 'nav.tasks', 
       href: '/tasks', 
       icon: CheckSquare,
+      module: 'tasks',
       badge: taskStats?.statusBreakdown?.pending 
         ? taskStats.statusBreakdown.pending.toString() 
         : undefined,
       badgeColor: 'bg-yellow-500'
     },
-    { name: 'nav.services', href: '/services', icon: Receipt },
-    { name: 'nav.team_roles', href: '/team-roles', icon: UserCog },
-    { name: 'nav.reports_kpis', href: '/reports-kpis', icon: TrendingUp },
+    { name: 'nav.services', href: '/services', icon: Briefcase, module: 'quotations' },
+    { name: 'nav.team_roles', href: '/team-roles', icon: UserCog, module: 'employees', adminOnly: true },
+    { name: 'nav.reports_kpis', href: '/reports-kpis', icon: TrendingUp, module: 'analytics' },
   ];
+
+  // Filter navigation based on permissions
+  const navigation = allNavigation.filter(item => {
+    // Admin-only items require admin role
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    // Check if user can view this module
+    return canView(item.module);
+  });
 
   return (
     <aside className="w-64 bg-white shadow-lg flex-shrink-0 border-r border-gray-200">

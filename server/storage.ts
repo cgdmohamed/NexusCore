@@ -7,6 +7,8 @@ import {
   tasks,
   activities,
   services,
+  roles,
+  employees,
   type User,
   type InsertUser,
   type Client,
@@ -26,6 +28,17 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, count, sum, gte, lte, asc, ilike, or } from "drizzle-orm";
+
+export type UserWithPermissions = User & {
+  permissions?: Record<string, { view: boolean; add: boolean; edit: boolean; delete: boolean; approve: boolean }>;
+  roleName?: string;
+  employee?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profileImage?: string | null;
+  };
+};
 
 export interface IStorage {
   // User operations for username/password authentication
@@ -109,15 +122,46 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations for username/password authentication
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  // Helper to get user with role permissions and employee data
+  private async getUserWithPermissions(user: User): Promise<UserWithPermissions> {
+    const result: UserWithPermissions = { ...user };
+    
+    // Get role permissions
+    if (user.roleId) {
+      const [role] = await db.select().from(roles).where(eq(roles.id, user.roleId));
+      if (role) {
+        result.permissions = role.permissions as UserWithPermissions['permissions'];
+        result.roleName = role.name;
+      }
+    }
+    
+    // Get employee data for profile image
+    if (user.employeeId) {
+      const [emp] = await db.select({
+        id: employees.id,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        profileImage: employees.profileImage,
+      }).from(employees).where(eq(employees.id, user.employeeId));
+      if (emp) {
+        result.employee = emp;
+      }
+    }
+    
+    return result;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  // User operations for username/password authentication
+  async getUser(id: string): Promise<UserWithPermissions | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    if (!user) return undefined;
+    return this.getUserWithPermissions(user);
+  }
+
+  async getUserByUsername(username: string): Promise<UserWithPermissions | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    if (!user) return undefined;
+    return this.getUserWithPermissions(user);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
