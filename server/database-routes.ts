@@ -1029,6 +1029,82 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Recalculate invoice totals and fix status (for fixing existing invoices after discount bug)
+  app.post('/api/invoices/:id/recalculate', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      
+      // Get invoice
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Get invoice items and calculate subtotal
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
+      
+      // Calculate tax and discount amounts from rates if available
+      const taxRate = parseFloat(invoice.taxRate || '0');
+      const discountRate = parseFloat(invoice.discountRate || '0');
+      
+      // Use existing fixed amounts or calculate from rates
+      let taxAmount = parseFloat(invoice.taxAmount || '0');
+      let discountAmount = parseFloat(invoice.discountAmount || '0');
+      
+      // If rates are set but amounts are 0, recalculate
+      if (taxRate > 0 && taxAmount === 0) {
+        taxAmount = subtotal * (taxRate / 100);
+      }
+      if (discountRate > 0 && discountAmount === 0) {
+        discountAmount = subtotal * (discountRate / 100);
+      }
+      
+      // Calculate final amount
+      const amount = subtotal + taxAmount - discountAmount;
+      
+      // Get paid amount from payments
+      const invoicePayments = await db.select().from(payments).where(eq(payments.invoiceId, invoiceId));
+      const paidAmount = invoicePayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
+      
+      // Determine correct status
+      let newStatus = invoice.status;
+      let paidDate = invoice.paidDate;
+      
+      if (paidAmount >= amount && amount > 0) {
+        newStatus = 'paid';
+        paidDate = paidDate || new Date();
+      } else if (paidAmount > 0) {
+        newStatus = 'partially_paid';
+      } else if (invoice.status !== 'draft' && invoice.status !== 'cancelled') {
+        newStatus = 'pending';
+      }
+      
+      // Update invoice
+      const [updatedInvoice] = await db.update(invoices)
+        .set({
+          subtotal: subtotal.toFixed(2),
+          taxAmount: taxAmount.toFixed(2),
+          discountAmount: discountAmount.toFixed(2),
+          amount: amount.toFixed(2),
+          paidAmount: paidAmount.toFixed(2),
+          status: newStatus,
+          paidDate: paidDate,
+          updatedAt: new Date()
+        })
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+      
+      res.json({
+        invoice: updatedInvoice,
+        message: `Invoice recalculated: Subtotal ${subtotal.toFixed(2)}, Tax ${taxAmount.toFixed(2)}, Discount ${discountAmount.toFixed(2)}, Total ${amount.toFixed(2)}, Paid ${paidAmount.toFixed(2)}, Status: ${newStatus}`
+      });
+    } catch (error) {
+      console.error("Error recalculating invoice:", error);
+      res.status(500).json({ message: "Failed to recalculate invoice" });
+    }
+  });
+
   // Recalculate client value based on paid invoices
   app.post('/api/clients/:id/recalculate-value', async (req: any, res) => {
     try {

@@ -438,6 +438,28 @@ export default function InvoiceDetail() {
     }
   });
 
+  const recalculateMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/invoices/${id}/recalculate`);
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      toast({
+        title: "Invoice Recalculated",
+        description: data?.message || "Invoice totals and status have been recalculated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Recalculation Failed",
+        description: error.message || "Failed to recalculate invoice",
+        variant: "destructive",
+      });
+    }
+  });
+
   const updateTaxDiscountMutation = useMutation({
     mutationFn: async (data: { taxRate: string; taxAmount: string; discountRate: string; discountAmount: string; amount: string; subtotal: string }) => {
       return apiRequest("PATCH", `/api/invoices/${id}`, data);
@@ -698,6 +720,17 @@ export default function InvoiceDetail() {
           <Button>
             <Send className="w-4 h-4 mr-2" />
             Send Invoice
+          </Button>
+          
+          {/* Recalculate button - to fix existing invoices with wrong totals/status */}
+          <Button 
+            variant="outline" 
+            onClick={() => recalculateMutation.mutate()}
+            disabled={recalculateMutation.isPending}
+            data-testid="button-recalculate-invoice"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
+            {recalculateMutation.isPending ? "Recalculating..." : "Recalculate"}
           </Button>
           
           {/* Delete button - only for draft invoices */}
