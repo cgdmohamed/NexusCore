@@ -315,12 +315,7 @@ export function registerExpenseRoutes(app: Express) {
         updatedAt: expenseData.updatedAt?.toISOString(),
       });
 
-      // Validate mandatory attachment
-      if (!expenseData.attachmentUrl || !expenseData.attachmentType) {
-        return res.status(400).json({ 
-          message: "Attachment is mandatory for all expense records" 
-        });
-      }
+      // Attachment is optional - no validation required
 
       const [expense] = await db
         .insert(expenses)
