@@ -389,7 +389,22 @@ export function setupDatabaseRoutes(app: Express) {
   // Update invoice
   app.patch('/api/invoices/:id', async (req: any, res) => {
     try {
+      // Get current invoice to calculate new total if tax/discount changed
+      const [currentInvoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!currentInvoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
       const updateData = { ...req.body, updatedAt: new Date() };
+      
+      // Recalculate amount if tax or discount changed
+      if (req.body.taxAmount !== undefined || req.body.discountAmount !== undefined || 
+          req.body.taxRate !== undefined || req.body.discountRate !== undefined) {
+        const subtotal = parseFloat(currentInvoice.subtotal || '0');
+        const taxAmount = parseFloat(req.body.taxAmount ?? currentInvoice.taxAmount ?? '0');
+        const discountAmount = parseFloat(req.body.discountAmount ?? currentInvoice.discountAmount ?? '0');
+        updateData.amount = (subtotal + taxAmount - discountAmount).toFixed(2);
+      }
       
       const [updatedInvoice] = await db.update(invoices)
         .set(updateData)
@@ -466,10 +481,16 @@ export function setupDatabaseRoutes(app: Express) {
       const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
       const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
       
+      // Get invoice to preserve tax/discount calculations
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      const taxAmount = parseFloat(invoice?.taxAmount || '0');
+      const discountAmount = parseFloat(invoice?.discountAmount || '0');
+      const newTotal = subtotal + taxAmount - discountAmount;
+      
       await db.update(invoices)
         .set({ 
           subtotal: subtotal.toFixed(2),
-          amount: subtotal.toFixed(2), // For now, assume no tax/discount
+          amount: newTotal.toFixed(2),
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.id));
