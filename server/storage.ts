@@ -354,7 +354,6 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(activities)
-      .where(eq(activities.createdBy, userId))
       .orderBy(desc(activities.createdAt))
       .limit(limit);
   }

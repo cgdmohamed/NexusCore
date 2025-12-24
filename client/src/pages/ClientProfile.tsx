@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -75,6 +75,27 @@ export default function ClientProfile() {
       toast({
         title: "Note added",
         description: "Client note has been added successfully.",
+      });
+    },
+  });
+
+  const recalculateValueMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(`/api/clients/${id}/recalculate-value`, "POST", {});
+      return await response.json();
+    },
+    onSuccess: (data: { client?: any; message?: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", id] });
+      toast({
+        title: "Value recalculated",
+        description: data?.message || "Client value has been updated based on paid invoices.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Recalculation failed",
+        description: "Failed to recalculate client value.",
+        variant: "destructive",
       });
     },
   });
@@ -149,6 +170,7 @@ export default function ClientProfile() {
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+              const totalValueInput = formData.get("totalValue") as string;
               updateClientMutation.mutate({
                 name: formData.get("name") as string,
                 email: formData.get("email") as string,
@@ -156,6 +178,7 @@ export default function ClientProfile() {
                 city: formData.get("city") as string,
                 country: formData.get("country") as string,
                 status: formData.get("status") as string,
+                totalValue: totalValueInput && totalValueInput.trim() !== "" ? totalValueInput : client.totalValue,
               });
             }} className="space-y-4">
               <div>
@@ -191,6 +214,19 @@ export default function ClientProfile() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="totalValue">Total Value (EGP)</Label>
+                <Input 
+                  id="totalValue" 
+                  name="totalValue" 
+                  type="number" 
+                  step="0.01"
+                  defaultValue={client.totalValue || "0"} 
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current value based on paid invoices. You can edit this manually.
+                </p>
+              </div>
               <div className="flex space-x-2">
                 <Button type="submit" disabled={updateClientMutation.isPending} className="flex-1">
                   {updateClientMutation.isPending ? "Updating..." : "Update Client"}
@@ -224,14 +260,26 @@ export default function ClientProfile() {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Value</p>
+                  <p className="text-xl font-bold">EGP {client.totalValue}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Value</p>
-                <p className="text-xl font-bold">${client.totalValue}</p>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => recalculateValueMutation.mutate()}
+                disabled={recalculateValueMutation.isPending}
+                title="Recalculate value from paid invoices"
+                data-testid="button-recalculate-value"
+              >
+                <RefreshCcw className={`w-4 h-4 ${recalculateValueMutation.isPending ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           </CardContent>
         </Card>

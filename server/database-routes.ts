@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities } from "@shared/schema";
 import { eq, sql, count } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -252,6 +252,21 @@ export function setupDatabaseRoutes(app: Express) {
       };
 
       const [newClient] = await db.insert(clients).values(clientData).returning();
+
+      // Log activity for client creation
+      try {
+        await db.insert(activities).values({
+          type: 'client_added',
+          title: 'New Client Added',
+          description: `Client "${newClient.name}" was added to the system`,
+          entityType: 'client',
+          entityId: newClient.id,
+          createdBy: userId,
+        });
+      } catch (activityError) {
+        console.error("Error logging activity:", activityError);
+      }
+
       res.status(201).json(newClient);
     } catch (error) {
       console.error("Error creating client:", error);
@@ -293,6 +308,21 @@ export function setupDatabaseRoutes(app: Express) {
       };
 
       const [newQuotation] = await db.insert(quotations).values(quotationData).returning();
+
+      // Log activity for quotation creation
+      try {
+        await db.insert(activities).values({
+          type: 'quotation_sent',
+          title: 'Quotation Created',
+          description: `Quotation ${newQuotation.quotationNumber} was created`,
+          entityType: 'quotation',
+          entityId: newQuotation.id,
+          createdBy: userId,
+        });
+      } catch (activityError) {
+        console.error("Error logging activity:", activityError);
+      }
+
       res.status(201).json(newQuotation);
     } catch (error) {
       console.error("Error creating quotation:", error);
@@ -639,6 +669,41 @@ export function setupDatabaseRoutes(app: Express) {
         });
       }
       
+      // Log activity for invoice payment
+      if (newStatus === 'paid') {
+        try {
+          // Get client name for the activity description
+          const [client] = await db.select().from(clients).where(eq(clients.id, invoice.clientId));
+          await db.insert(activities).values({
+            type: 'invoice_paid',
+            title: 'Invoice Paid',
+            description: `Invoice ${invoice.invoiceNumber} for ${client?.name || 'Unknown Client'} has been fully paid`,
+            entityType: 'invoice',
+            entityId: invoice.id,
+            createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+          });
+        } catch (activityError) {
+          console.error("Error logging activity:", activityError);
+        }
+      }
+
+      // Auto-update client totalValue based on all paid invoice amounts
+      try {
+        const allClientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, invoice.clientId));
+        const clientTotalPaidValue = allClientInvoices.reduce((sum, inv) => {
+          return sum + parseFloat(inv.paidAmount || '0');
+        }, 0);
+        
+        await db.update(clients)
+          .set({ 
+            totalValue: clientTotalPaidValue.toFixed(2),
+            updatedAt: new Date()
+          })
+          .where(eq(clients.id, invoice.clientId));
+      } catch (clientUpdateError) {
+        console.error("Error updating client total value:", clientUpdateError);
+      }
+
       res.status(201).json({
         payment: newPayment,
         overpaymentHandled: isOverpayment && isAdminApproved,
@@ -940,6 +1005,42 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating client:", error);
       res.status(500).json({ message: "Failed to update client" });
+    }
+  });
+
+  // Recalculate client value based on paid invoices
+  app.post('/api/clients/:id/recalculate-value', async (req: any, res) => {
+    try {
+      const clientId = req.params.id;
+      
+      // Check if client exists
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      // Calculate total paid amount from all invoices for this client
+      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, clientId));
+      const totalPaidValue = clientInvoices.reduce((sum, invoice) => {
+        return sum + parseFloat(invoice.paidAmount || '0');
+      }, 0);
+
+      // Update client totalValue
+      const [updatedClient] = await db.update(clients)
+        .set({ 
+          totalValue: totalPaidValue.toFixed(2),
+          updatedAt: new Date() 
+        })
+        .where(eq(clients.id, clientId))
+        .returning();
+
+      res.json({
+        client: updatedClient,
+        message: `Client value recalculated: EGP ${totalPaidValue.toFixed(2)}`
+      });
+    } catch (error) {
+      console.error("Error recalculating client value:", error);
+      res.status(500).json({ message: "Failed to recalculate client value" });
     }
   });
 

@@ -87,6 +87,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerTaskManagementRoutes(app);
   registerServicesRoutes(app);
 
+  // Activities endpoint
+  app.get('/api/activities', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      const activities = await storage.getActivities(userId, 20);
+      res.json(activities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      res.status(500).json({ message: 'Failed to fetch activities' });
+    }
+  });
+
   // Notification endpoints with real database integration
   app.get('/api/notifications', requireAuth, async (req, res) => {
     try {
