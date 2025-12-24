@@ -192,41 +192,36 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { search, department, status } = req.query;
       
-      let query = db
-        .select({
-          id: employees.id,
-          firstName: employees.firstName,
-          lastName: employees.lastName,
-          email: employees.email,
-          phone: employees.phone,
-          jobTitle: employees.jobTitle,
-          department: employees.department,
-          hiringDate: employees.hiringDate,
-          status: employees.status,
-          profileImage: employees.profileImage,
-          notes: employees.notes,
-          createdAt: employees.createdAt,
-          hasUserAccount: sql<boolean>`false`, // Simplified for now
-        })
-        .from(employees);
+      // First get all employees
+      let baseQuery = db.select().from(employees);
       
       if (search) {
-        query = query.where(
+        baseQuery = baseQuery.where(
           sql`LOWER(${employees.firstName} || ' ' || ${employees.lastName}) LIKE LOWER(${'%' + search + '%'})`
         );
       }
       
       if (department) {
-        query = query.where(eq(employees.department, department as any));
+        baseQuery = baseQuery.where(eq(employees.department, department as any));
       }
       
       if (status) {
-        query = query.where(eq(employees.status, status as any));
+        baseQuery = baseQuery.where(eq(employees.status, status as any));
       }
       
-      const employeesList = await query.orderBy(desc(employees.createdAt));
+      const employeesList = await baseQuery.orderBy(desc(employees.createdAt));
       
-      res.json(employeesList);
+      // Get all user accounts to check which employees have linked users
+      const allUsers = await db.select({ employeeId: users.employeeId }).from(users).where(sql`${users.employeeId} IS NOT NULL`);
+      const linkedEmployeeIds = new Set(allUsers.map(u => u.employeeId));
+      
+      // Add hasUserAccount flag to each employee
+      const employeesWithUserStatus = employeesList.map(emp => ({
+        ...emp,
+        hasUserAccount: linkedEmployeeIds.has(emp.id)
+      }));
+      
+      res.json(employeesWithUserStatus);
     } catch (error) {
       console.error("Error fetching employees:", error);
       res.status(500).json({ message: "Failed to fetch employees" });
