@@ -1063,31 +1063,29 @@ export function setupDatabaseRoutes(app: Express) {
       // Calculate final amount
       const amount = subtotal + taxAmount - discountAmount;
       
-      // Get paid amount from payments
-      const invoicePayments = await db.select().from(payments).where(eq(payments.invoiceId, invoiceId));
-      const paidAmount = invoicePayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
+      // Get the stored paidAmount - do NOT overwrite from payments to preserve manual adjustments
+      const storedPaidAmount = parseFloat(invoice.paidAmount || '0');
       
-      // Determine correct status
+      // Determine correct status based on stored paidAmount vs new amount
       let newStatus = invoice.status;
       let paidDate = invoice.paidDate;
       
-      if (paidAmount >= amount && amount > 0) {
+      if (storedPaidAmount >= amount && amount > 0) {
         newStatus = 'paid';
         paidDate = paidDate || new Date();
-      } else if (paidAmount > 0) {
+      } else if (storedPaidAmount > 0) {
         newStatus = 'partially_paid';
       } else if (invoice.status !== 'draft' && invoice.status !== 'cancelled') {
         newStatus = 'pending';
       }
       
-      // Update invoice
+      // Update invoice - only update amount fields and status, preserve paidAmount
       const [updatedInvoice] = await db.update(invoices)
         .set({
           subtotal: subtotal.toFixed(2),
           taxAmount: taxAmount.toFixed(2),
           discountAmount: discountAmount.toFixed(2),
           amount: amount.toFixed(2),
-          paidAmount: paidAmount.toFixed(2),
           status: newStatus,
           paidDate: paidDate,
           updatedAt: new Date()
@@ -1097,7 +1095,7 @@ export function setupDatabaseRoutes(app: Express) {
       
       res.json({
         invoice: updatedInvoice,
-        message: `Invoice recalculated: Subtotal ${subtotal.toFixed(2)}, Tax ${taxAmount.toFixed(2)}, Discount ${discountAmount.toFixed(2)}, Total ${amount.toFixed(2)}, Paid ${paidAmount.toFixed(2)}, Status: ${newStatus}`
+        message: `Invoice recalculated: Subtotal ${subtotal.toFixed(2)}, Tax ${taxAmount.toFixed(2)}, Discount ${discountAmount.toFixed(2)}, Total ${amount.toFixed(2)}, Paid ${storedPaidAmount.toFixed(2)}, Status: ${newStatus}`
       });
     } catch (error) {
       console.error("Error recalculating invoice:", error);
