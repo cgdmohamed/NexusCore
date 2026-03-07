@@ -151,7 +151,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
           <Label htmlFor="phone">Phone Number</Label>
           <Input
             id="phone"
-            placeholder="+1-555-0123"
+            placeholder="+20-10-1234-5678"
             {...form.register("phone")}
           />
           {form.formState.errors.phone && (

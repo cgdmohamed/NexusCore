@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency";
 
 interface ComparisonCardProps {
   title: string;
@@ -24,13 +25,8 @@ export function ComparisonCard({
   const isNeutral = change.percentage === 0;
 
   const formatChange = (value: number) => {
-    if (formatter.toString().includes('currency')) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(Math.abs(value));
+    if (formatter.toString().includes('currency') || formatter.toString().includes('formatCurrency')) {
+      return formatCurrency(Math.abs(value));
     }
     return Math.abs(value).toString();
   };

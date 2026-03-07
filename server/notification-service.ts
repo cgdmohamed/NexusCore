@@ -227,8 +227,8 @@ class NotificationService {
    * Send email using configured SMTP provider
    */
   private async sendEmail(payload: EmailPayload): Promise<void> {
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@creativecode.com.eg";
-    const fromName = process.env.SMTP_FROM_NAME || "Creative Code Nexus";
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@company.com";
+    const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Company";
 
     // Check if SMTP is configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfig } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ const translations = {
 export default function AuthPage() {
   const t = (key: string) => translations[key as keyof typeof translations] || key;
   const { user, isLoading, loginMutation } = useAuth();
+  const { companyName } = useConfig();
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
@@ -84,7 +86,7 @@ export default function AuthPage() {
             <div className="text-center space-y-2">
               <div className="flex items-center justify-center space-x-2">
                 <Building2 className="h-8 w-8 text-primary" />
-                <h1 className="text-3xl font-bold">CompanyOS</h1>
+                <h1 className="text-3xl font-bold">{companyName}</h1>
               </div>
               <p className="text-muted-foreground">
                 {t("auth.welcome_message")}

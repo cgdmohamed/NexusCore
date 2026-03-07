@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/currency";
 
 interface ExpenseBreakdownProps {
   data: Array<{
@@ -21,14 +22,6 @@ const COLORS = [
 ];
 
 export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const pieData = data.map((item, index) => ({
     name: item.category,

@@ -99,7 +99,7 @@ const translations: Translations = {
   // Auth
   'auth.login': { en: 'Login', ar: 'تسجيل الدخول' },
   'auth.logout': { en: 'Logout', ar: 'تسجيل الخروج' },
-  'auth.welcome': { en: 'Welcome to CompanyOS', ar: 'مرحباً بك في CompanyOS' },
+  'auth.welcome': { en: 'Welcome', ar: 'مرحباً' },
   'auth.getStarted': { en: 'Sign In to Continue', ar: 'سجل الدخول للمتابعة' },
   'auth.signIn': { en: 'Sign In', ar: 'تسجيل الدخول' },
   'auth.signingIn': { en: 'Signing in...', ar: 'جاري تسجيل الدخول...' },

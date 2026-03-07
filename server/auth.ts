@@ -299,7 +299,7 @@ export function setupAuth(app: Express) {
 
       try {
         await smtpTransporter.sendMail({
-          from: `"${process.env.SMTP_FROM_NAME || 'CompanyOS'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+          from: `"${process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || 'Company'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
           to: user.email,
           subject: "Password Reset Request",
           html: `

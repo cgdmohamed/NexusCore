@@ -33,7 +33,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
       name: paymentSource?.name || "",
       description: paymentSource?.description || "",
       accountType: paymentSource?.accountType || "bank",
-      currency: paymentSource?.currency || "USD",
+      currency: paymentSource?.currency || "EGP",
       initialBalance: paymentSource?.initialBalance || "0",
       isActive: paymentSource?.isActive ?? true,
     },
@@ -113,9 +113,9 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
               <SelectValue placeholder="Select currency" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="EGP">EGP</SelectItem>
+              <SelectItem value="EGP">EGP - Egyptian Pound</SelectItem>
+              <SelectItem value="USD">USD - US Dollar</SelectItem>
+              <SelectItem value="EUR">EUR - Euro</SelectItem>
               <SelectItem value="SAR">SAR</SelectItem>
               <SelectItem value="AED">AED</SelectItem>
             </SelectContent>

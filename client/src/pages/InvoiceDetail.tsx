@@ -961,8 +961,8 @@ export default function InvoiceDetail() {
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <Label className="text-base font-medium">Apply VAT (15%)</Label>
-                    <p className="text-sm text-gray-500">Add 15% Value Added Tax to the subtotal</p>
+                    <Label className="text-base font-medium">Apply VAT ({VAT_RATE}%)</Label>
+                    <p className="text-sm text-gray-500">Add {VAT_RATE}% Value Added Tax to the subtotal</p>
                   </div>
                   <Switch
                     checked={taxDiscountForm.applyVat}
@@ -973,7 +973,7 @@ export default function InvoiceDetail() {
                 {taxDiscountForm.applyVat && (
                   <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
                     <p className="text-sm text-blue-700">
-                      VAT Amount: <span className="font-bold">{formatCurrency((subtotal * 15) / 100)}</span>
+                      VAT Amount: <span className="font-bold">{formatCurrency((subtotal * VAT_RATE) / 100)}</span>
                     </p>
                   </div>
                 )}

@@ -7,8 +7,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "wouter";
 import { Loader2, Building2, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useConfig } from "@/lib/config";
 
 export default function ForgotPassword() {
+  const { companyName } = useConfig();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -36,7 +38,7 @@ export default function ForgotPassword() {
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center space-x-2">
               <Building2 className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold">CompanyOS</h1>
+              <h1 className="text-3xl font-bold">{companyName}</h1>
             </div>
           </div>
 

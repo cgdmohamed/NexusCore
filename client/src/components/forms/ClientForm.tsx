@@ -148,7 +148,7 @@ export function ClientForm({ trigger }: ClientFormProps) {
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1 555-0123" {...field} />
+                    <Input placeholder="+20-10-1234-5678" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,7 +162,7 @@ export function ClientForm({ trigger }: ClientFormProps) {
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
-                      <Input placeholder="San Francisco" {...field} />
+                      <Input placeholder="Cairo" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,7 +175,7 @@ export function ClientForm({ trigger }: ClientFormProps) {
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input placeholder="USA" {...field} />
+                      <Input placeholder="Egypt" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

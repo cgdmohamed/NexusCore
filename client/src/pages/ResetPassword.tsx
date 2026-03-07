@@ -7,9 +7,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, useLocation, Redirect } from "wouter";
 import { Loader2, Building2, KeyRound, ArrowLeft, CheckCircle2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useConfig } from "@/lib/config";
 import { useQuery } from "@tanstack/react-query";
 
 export default function ResetPassword() {
+  const { companyName } = useConfig();
   const [, setLocation] = useLocation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,7 +79,7 @@ export default function ResetPassword() {
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center space-x-2">
               <Building2 className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold">CompanyOS</h1>
+              <h1 className="text-3xl font-bold">{companyName}</h1>
             </div>
           </div>
 
