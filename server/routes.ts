@@ -12,6 +12,7 @@ import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
 import { registerProjectRoutes } from "./project-routes";
 import { registerServicesRoutes } from "./services-routes";
+import { registerMessagingRoutes } from "./messaging-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { users } from "@shared/schema";
@@ -89,6 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerTaskManagementRoutes(app);
   registerProjectRoutes(app);
   registerServicesRoutes(app);
+  registerMessagingRoutes(app);
 
   // Activities endpoint
   app.get('/api/activities', requireAuth, async (req, res) => {

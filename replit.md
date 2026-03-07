@@ -50,6 +50,7 @@ Preferred communication style: Simple, everyday language.
     - **Analytics**: Business intelligence and reporting, including real-time KPI performance tracking.
     - **Services & Offerings**: Catalog management with CRUD operations and integration with quotations.
     - **Notifications**: Real-time system notifications with unread counts and historical views. Powered by `NotificationService` — notifications are stored in PostgreSQL and served via real API endpoints (not stubs). Notification triggers wired for: task assignment, expense submission (notifies admins/managers), invoice paid (notifies finance/management), quotation accepted (notifies sales/management).
+    - **Messaging**: Internal direct-messaging system. Users can start DM conversations with colleagues, send/receive messages in real time (5s polling). Unread badge shown in sidebar (green, 15s polling). Sending a message triggers both an in-app notification (`direct_message` type) and an SMTP email alert to the recipient. Tables: `conversations`, `conversation_participants`, `messages`. Routes in `server/messaging-routes.ts`. Page at `client/src/pages/Messages.tsx`.
 - **System Logging**: Three-tier logging architecture (error, app, api) with structured JSON format for comprehensive error and performance tracking.
 - **SMTP**: Startup connection verification logged via `smtpTransporter.verify()` — confirms email readiness on boot.
 

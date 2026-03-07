@@ -51,8 +51,19 @@ const translations: Translations = {
   'services.service_updated': { en: 'Service has been successfully updated', ar: 'تم تحديث الخدمة بنجاح' },
   'services.update_error': { en: 'Failed to update service', ar: 'فشل في تحديث الخدمة' },
   'nav.notifications': { en: 'Notifications', ar: 'الإشعارات' },
+  'nav.messages': { en: 'Messages', ar: 'الرسائل' },
   'nav.systemStatus': { en: 'System Status: Active', ar: 'حالة النظام: نشط' },
   'nav.allModulesOperational': { en: 'All modules operational', ar: 'جميع الوحدات تعمل' },
+
+  // Messaging
+  'messages.new_conversation': { en: 'New Conversation', ar: 'محادثة جديدة' },
+  'messages.select_user': { en: 'Select a user', ar: 'اختر مستخدمًا' },
+  'messages.no_conversations': { en: 'No conversations yet', ar: 'لا توجد محادثات بعد' },
+  'messages.type_message': { en: 'Type a message...', ar: 'اكتب رسالة...' },
+  'messages.send': { en: 'Send', ar: 'إرسال' },
+  'messages.you': { en: 'You', ar: 'أنت' },
+  'messages.unread': { en: 'unread', ar: 'غير مقروء' },
+  'messages.start_conversation': { en: 'Select a conversation or start a new one', ar: 'اختر محادثة أو ابدأ محادثة جديدة' },
   
   // Dashboard
   'dashboard.title': { en: 'Dashboard Overview', ar: 'نظرة عامة على لوحة القيادة' },

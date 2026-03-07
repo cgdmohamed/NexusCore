@@ -32,6 +32,7 @@ import UserProfile from "@/pages/UserProfile";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import Notifications from "@/pages/Notifications";
 import Services from "@/pages/Services";
+import Messages from "@/pages/Messages";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 
@@ -92,6 +93,7 @@ function Router() {
             <Route path="/services" component={Services} />
             <Route path="/reports-kpis" component={Analytics} />
             <Route path="/notifications" component={Notifications} />
+            <Route path="/messages" component={Messages} />
             <Route component={NotFound} />
           </Switch>
         </main>

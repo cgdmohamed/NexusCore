@@ -18,6 +18,7 @@ import {
   TrendingUp,
   UserCog,
   Briefcase,
+  MessageSquare,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -46,6 +47,13 @@ export function Sidebar() {
     refetchInterval: 30000,
     enabled: canView('invoices'),
   });
+
+  const { data: unreadMsgData } = useQuery<{ unreadCount: number }>({
+    queryKey: ["/api/messages/unread-count"],
+    refetchInterval: 15000,
+    enabled: !!user,
+  });
+  const unreadMsgCount = unreadMsgData?.unreadCount || 0;
 
   // Define navigation items with permission requirements
   const allNavigation = [
@@ -86,6 +94,14 @@ export function Sidebar() {
       href: '/projects', 
       icon: FolderKanban, 
       module: 'tasks' 
+    },
+    {
+      name: 'nav.messages',
+      href: '/messages',
+      icon: MessageSquare,
+      module: 'dashboard',
+      badge: unreadMsgCount > 0 ? unreadMsgCount.toString() : undefined,
+      badgeColor: 'bg-green-500',
     },
     { name: 'nav.services', href: '/services', icon: Briefcase, module: 'quotations' },
     { name: 'nav.team_roles', href: '/team-roles', icon: UserCog, module: 'employees', adminOnly: true },
