@@ -1,0 +1,79 @@
+Review the implementation of the **Invoices, Quotations, and Client update functionality** and fix the following issues while keeping the existing system architecture intact.
+
+1. Invoice and Quotation templates
+
+Inspect the current templates used for generating invoices and quotations.
+
+Ensure that:
+
+* The layout is clean and consistent with the system's UI.
+* All dynamic values are correctly rendered.
+* The templates correctly use the available variables.
+
+Verify that important variables such as:
+
+* client information
+* invoice number
+* quotation number
+* issue date
+* due date
+* line items
+* subtotal
+* taxes
+* discounts
+* total amount
+* company information
+
+are correctly passed and displayed.
+
+If any variable is missing or incorrectly mapped, correct the template logic so the documents render complete and accurate information.
+
+2. Template variable validation
+
+Ensure the system validates that all required variables exist before rendering invoice or quotation templates.
+
+If a variable is missing:
+
+* fall back to a safe default value
+* avoid breaking the template rendering.
+
+3. Consistency between invoices and quotations
+
+Ensure both templates share the same formatting structure and visual consistency:
+
+* same typography
+* same spacing
+* same table structure for items
+* consistent totals section.
+
+4. Fix client update failure
+
+Investigate why updating a client from the "Edit Client Information" dialog fails.
+
+Analyze:
+
+* the frontend request sent when clicking "Update Client"
+* the backend API responsible for updating client data
+* request validation rules
+* security protections such as CSRF validation.
+
+Ensure that:
+
+* the update request is properly accepted by the API
+* the request includes any required security tokens or headers
+* valid client updates succeed without errors.
+
+5. Error handling
+
+If an update fails, ensure the system logs a meaningful error internally and returns a clear message so the UI can show the correct feedback.
+
+6. Do not rebuild modules
+
+Do not rewrite the CRM, invoices, or quotations modules.
+
+Instead:
+
+* analyze the current implementation
+* fix the existing logic
+* ensure invoice and quotation templates render correctly
+* ensure client updates work reliably.
