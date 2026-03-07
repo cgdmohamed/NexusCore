@@ -15,6 +15,8 @@ import {
   type InsertExpensePayment,
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
+import { requireAuth } from "./auth";
+import { notificationService } from "./notification-service";
 
 // Helper function to handle payment source transactions
 async function handlePaymentSourceTransaction(
@@ -63,7 +65,7 @@ async function handlePaymentSourceTransaction(
 
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
-  app.get("/api/expense-categories", async (req, res) => {
+  app.get("/api/expense-categories", requireAuth, async (req, res) => {
     try {
       const categories = await db
         .select()
@@ -79,7 +81,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Create expense category
-  app.post("/api/expense-categories", async (req, res) => {
+  app.post("/api/expense-categories", requireAuth, async (req, res) => {
     try {
       const categoryData: InsertExpenseCategory = req.body;
       
@@ -96,7 +98,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense statistics (must be before parameterized routes)
-  app.get("/api/expenses/stats", async (req, res) => {
+  app.get("/api/expenses/stats", requireAuth, async (req, res) => {
     try {
       const { period = "month" } = req.query;
       
@@ -186,7 +188,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get all expenses with filters
-  app.get("/api/expenses", async (req, res) => {
+  app.get("/api/expenses", requireAuth, async (req, res) => {
     try {
       const {
         type,
@@ -263,7 +265,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense by ID
-  app.get("/api/expenses/:id", async (req, res) => {
+  app.get("/api/expenses/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -293,7 +295,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Create expense
-  app.post("/api/expenses", async (req, res) => {
+  app.post("/api/expenses", requireAuth, async (req, res) => {
     try {
       const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
       
@@ -342,6 +344,20 @@ export function registerExpenseRoutes(app: Express) {
       }
 
       res.status(201).json(expense);
+
+      // Notify managers/admins about new expense submission (non-blocking)
+      if (expense.status === 'pending') {
+        try {
+          await notificationService.notifyExpenseSubmitted(
+            expense.id,
+            userId,
+            expense.title,
+            parseFloat(expense.amount)
+          );
+        } catch (notifyError) {
+          console.error('Error sending expense submitted notification:', notifyError);
+        }
+      }
     } catch (error) {
       console.error("Error creating expense:", error);
       res.status(500).json({ message: "Failed to create expense" });
@@ -349,7 +365,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Update expense
-  app.put("/api/expenses/:id", async (req, res) => {
+  app.put("/api/expenses/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
@@ -387,7 +403,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Mark expense as paid
-  app.post("/api/expenses/:id/pay", async (req, res) => {
+  app.post("/api/expenses/:id/pay", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0'; // Development user ID
@@ -487,7 +503,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense payments history
-  app.get("/api/expenses/:id/payments", async (req, res) => {
+  app.get("/api/expenses/:id/payments", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -505,7 +521,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Delete expense
-  app.delete("/api/expenses/:id", async (req, res) => {
+  app.delete("/api/expenses/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
 

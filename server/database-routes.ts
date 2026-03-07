@@ -3,6 +3,7 @@ import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities } from "@shared/schema";
 import { eq, sql, count } from "drizzle-orm";
 import multer from "multer";
+import { notificationService } from "./notification-service";
 import path from "path";
 import fs from "fs";
 
@@ -85,13 +86,28 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/quotations/:id/status', async (req, res) => {
+  app.patch('/api/quotations/:id/status', async (req: any, res) => {
     try {
       const [updatedQuotation] = await db.update(quotations)
         .set({ status: req.body.status, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id))
         .returning();
       res.json(updatedQuotation);
+
+      // Trigger notification when quotation is accepted
+      if (req.body.status === 'accepted' && updatedQuotation) {
+        try {
+          const [client] = await db.select().from(clients).where(eq(clients.id, updatedQuotation.clientId));
+          await notificationService.notifyQuotationAccepted(
+            updatedQuotation.id,
+            client?.name || 'Unknown Client',
+            parseFloat(updatedQuotation.amount || '0'),
+            req.user?.id
+          );
+        } catch (notifyError) {
+          console.error('Error sending quotation accepted notification:', notifyError);
+        }
+      }
     } catch (error) {
       console.error("Error updating quotation status:", error);
       res.status(500).json({ message: "Failed to update quotation status" });
@@ -690,7 +706,7 @@ export function setupDatabaseRoutes(app: Express) {
         });
       }
       
-      // Log activity for invoice payment
+      // Log activity and send notification for invoice payment
       if (newStatus === 'paid') {
         try {
           // Get client name for the activity description
@@ -703,6 +719,17 @@ export function setupDatabaseRoutes(app: Express) {
             entityId: invoice.id,
             createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
           });
+          // Send notification to finance/management
+          try {
+            await notificationService.notifyInvoicePaid(
+              invoice.id,
+              client?.name || 'Unknown Client',
+              newInvoicePaidAmount,
+              (req as any).user?.id
+            );
+          } catch (notifyError) {
+            console.error('Error sending invoice paid notification:', notifyError);
+          }
         } catch (activityError) {
           console.error("Error logging activity:", activityError);
         }

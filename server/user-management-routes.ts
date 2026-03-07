@@ -18,20 +18,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, like, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
-
-// Development middleware - uses actual admin user ID for FK constraints
-const devAuth = (req: any, res: any, next: any) => {
-  if (!req.user) {
-    req.user = {
-      id: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
-      claims: {
-        sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
-        email: 'admin@company.com'
-      }
-    };
-  }
-  next();
-};
+import { requireAuth, requireAdmin } from "./auth";
 
 // Helper function to log audit actions
 async function logAudit(
@@ -63,7 +50,7 @@ export function registerUserManagementRoutes(app: Express) {
   // ========== ROLES MANAGEMENT ==========
   
   // Get all roles
-  app.get("/api/roles", devAuth, async (req, res) => {
+  app.get("/api/roles", requireAuth, async (req, res) => {
     try {
       const rolesList = await db
         .select()
@@ -78,7 +65,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get role by ID
-  app.get("/api/roles/:id", devAuth, async (req, res) => {
+  app.get("/api/roles/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const [role] = await db
@@ -98,7 +85,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Create role
-  app.post("/api/roles", devAuth, async (req, res) => {
+  app.post("/api/roles", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertRoleSchema.parse(req.body);
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
@@ -121,7 +108,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Update role
-  app.put("/api/roles/:id", devAuth, async (req, res) => {
+  app.put("/api/roles/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertRoleSchema.parse(req.body);
@@ -153,7 +140,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Delete role
-  app.delete("/api/roles/:id", devAuth, async (req, res) => {
+  app.delete("/api/roles/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
@@ -188,7 +175,7 @@ export function registerUserManagementRoutes(app: Express) {
   // ========== EMPLOYEES MANAGEMENT ==========
   
   // Get all employees
-  app.get("/api/employees", devAuth, async (req, res) => {
+  app.get("/api/employees", requireAuth, async (req, res) => {
     try {
       const { search, department, status } = req.query;
       
@@ -229,7 +216,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get employee by ID
-  app.get("/api/employees/:id", devAuth, async (req, res) => {
+  app.get("/api/employees/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -250,7 +237,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Create employee
-  app.post("/api/employees", devAuth, async (req, res) => {
+  app.post("/api/employees", requireAdmin, async (req, res) => {
     try {
       const body = req.body;
       // Transform date strings to Date objects
@@ -279,7 +266,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Update employee
-  app.put("/api/employees/:id", devAuth, async (req, res) => {
+  app.put("/api/employees/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const body = req.body;
@@ -317,7 +304,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Delete employee
-  app.delete("/api/employees/:id", devAuth, async (req, res) => {
+  app.delete("/api/employees/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
@@ -350,7 +337,7 @@ export function registerUserManagementRoutes(app: Express) {
   // ========== USERS MANAGEMENT ==========
   
   // Get all users
-  app.get("/api/users", devAuth, async (req, res) => {
+  app.get("/api/users", requireAdmin, async (req, res) => {
     try {
       const usersList = await db
         .select({
@@ -390,7 +377,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get specific user by ID
-  app.get("/api/users/:id", devAuth, async (req, res) => {
+  app.get("/api/users/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const user = await db
@@ -436,7 +423,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Create user
-  app.post("/api/users", devAuth, async (req, res) => {
+  app.post("/api/users", requireAdmin, async (req, res) => {
     try {
       const { password, confirmPassword, ...userData } = req.body;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
@@ -483,7 +470,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Update user
-  app.put("/api/users/:id", devAuth, async (req, res) => {
+  app.put("/api/users/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { password, confirmPassword, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
@@ -564,7 +551,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Deactivate user
-  app.put("/api/users/:id/deactivate", devAuth, async (req, res) => {
+  app.put("/api/users/:id/deactivate", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
@@ -592,7 +579,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get audit logs
-  app.get("/api/audit-logs", devAuth, async (req, res) => {
+  app.get("/api/audit-logs", requireAdmin, async (req, res) => {
     try {
       const { entityType, entityId, limit = 50 } = req.query;
       
@@ -638,7 +625,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get user management statistics
-  app.get("/api/user-management/stats", devAuth, async (req, res) => {
+  app.get("/api/user-management/stats", requireAuth, async (req, res) => {
     try {
       const [
         totalEmployees,
@@ -672,7 +659,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Change user password
-  app.post("/api/users/:id/change-password", devAuth, async (req, res) => {
+  app.post("/api/users/:id/change-password", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { currentPassword, newPassword } = req.body;

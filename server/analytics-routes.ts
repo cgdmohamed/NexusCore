@@ -11,22 +11,12 @@ import {
   employees 
 } from "@shared/schema";
 import { eq, gte, lte, and, sum, count, desc, sql } from "drizzle-orm";
-
-// Development middleware - uses actual admin user ID for FK constraints
-const devAuth = (req: any, res: any, next: any) => {
-  if (!req.user) {
-    req.user = { 
-      id: '8742bebf-9138-4247-85c8-fd2cb70e7d78',
-      claims: { sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78' } 
-    };
-  }
-  next();
-};
+import { requireAuth } from "./auth";
 
 export function registerAnalyticsRoutes(app: Express) {
   
   // Company KPIs - High-level performance indicators
-  app.get("/api/analytics/kpis", devAuth, async (req, res) => {
+  app.get("/api/analytics/kpis", requireAuth, async (req, res) => {
     try {
       const { startDate, endDate, period = 'month' } = req.query;
       
@@ -167,7 +157,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Financial Reports - Detailed breakdown
-  app.get("/api/analytics/financial-reports", devAuth, async (req, res) => {
+  app.get("/api/analytics/financial-reports", requireAuth, async (req, res) => {
     try {
       const { startDate, endDate, type = 'summary' } = req.query;
       
@@ -258,7 +248,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Trend Analysis - Monthly/Quarterly data
-  app.get("/api/analytics/trends", devAuth, async (req, res) => {
+  app.get("/api/analytics/trends", requireAuth, async (req, res) => {
     try {
       const { period = 'month', metric = 'revenue' } = req.query;
       
@@ -326,7 +316,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Period Comparison
-  app.get("/api/analytics/comparison", devAuth, async (req, res) => {
+  app.get("/api/analytics/comparison", requireAuth, async (req, res) => {
     try {
       const { period1Start, period1End, period2Start, period2End } = req.query;
 
@@ -436,7 +426,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Outstanding Receivables and Payables
-  app.get("/api/analytics/outstanding", devAuth, async (req, res) => {
+  app.get("/api/analytics/outstanding", requireAuth, async (req, res) => {
     try {
       // Outstanding Receivables (Unpaid/Partial invoices)
       const receivables = await db

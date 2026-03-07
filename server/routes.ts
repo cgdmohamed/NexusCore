@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
+import { notificationService } from "./notification-service";
 import { setupDatabaseRoutes } from "./database-routes";
 import { registerExpenseRoutes } from "./expense-routes";
 import { registerPaymentSourceRoutes } from "./payment-source-routes";
@@ -104,11 +105,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notification endpoints with real database integration
+  // Notification endpoints
   app.get('/api/notifications', requireAuth, async (req, res) => {
     try {
-      // Return empty array for now - to be implemented with notification system
-      res.json({ success: true, data: [] });
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const unreadOnly = req.query.unreadOnly === 'true';
+
+      const result = await notificationService.getUserNotifications(userId, page, limit, unreadOnly);
+      res.json({
+        success: true,
+        data: result.notifications,
+        pagination: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) },
+        unreadCount: result.unreadCount
+      });
     } catch (error) {
       console.error('Error fetching notifications:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
@@ -117,8 +130,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/notifications/unread-count', requireAuth, async (req, res) => {
     try {
-      // Return 0 for now - to be implemented with notification system
-      res.json({ success: true, data: { unreadCount: 0 } });
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
+
+      const unreadCount = await notificationService.getUnreadCount(userId);
+      res.json({ success: true, data: { unreadCount } });
     } catch (error) {
       console.error('Error fetching unread count:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch unread count' });
@@ -127,7 +143,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
     try {
-      // Placeholder - to be implemented with notification system
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
+
+      await notificationService.markAsRead(req.params.id, userId);
       res.json({ success: true });
     } catch (error) {
       console.error('Error marking notification as read:', error);

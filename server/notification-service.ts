@@ -23,6 +23,19 @@ const smtpTransporter = nodemailer.createTransport({
   },
 });
 
+// Verify SMTP connection on startup (only if credentials are configured)
+if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  smtpTransporter.verify((error) => {
+    if (error) {
+      console.error('[SMTP] Connection verification failed:', error.message);
+    } else {
+      console.log('[SMTP] Connection verified successfully — ready to send emails');
+    }
+  });
+} else {
+  console.warn('[SMTP] No credentials configured (SMTP_USER/SMTP_PASS not set) — email sending disabled');
+}
+
 export interface NotificationPayload {
   userId: string;
   type: string;

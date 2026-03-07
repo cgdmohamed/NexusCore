@@ -49,8 +49,9 @@ Preferred communication style: Simple, everyday language.
     - **Projects & Kanban**: Project management with drag-and-drop Kanban boards. Tasks linked to a project appear as Kanban cards across 4 columns (Pending, In Progress, Completed, Cancelled). Standalone tasks unaffected.
     - **Analytics**: Business intelligence and reporting, including real-time KPI performance tracking.
     - **Services & Offerings**: Catalog management with CRUD operations and integration with quotations.
-    - **Notifications**: Real-time system notifications with unread counts and historical views.
+    - **Notifications**: Real-time system notifications with unread counts and historical views. Powered by `NotificationService` — notifications are stored in PostgreSQL and served via real API endpoints (not stubs). Notification triggers wired for: task assignment, expense submission (notifies admins/managers), invoice paid (notifies finance/management), quotation accepted (notifies sales/management).
 - **System Logging**: Three-tier logging architecture (error, app, api) with structured JSON format for comprehensive error and performance tracking.
+- **SMTP**: Startup connection verification logged via `smtpTransporter.verify()` — confirms email readiness on boot.
 
 ## External Dependencies
 
