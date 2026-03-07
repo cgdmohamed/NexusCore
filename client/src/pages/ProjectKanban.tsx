@@ -75,10 +75,10 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 const COLUMNS = [
-  { id: "pending",     title: "Pending",     color: "border-t-slate-400",  headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
-  { id: "in_progress", title: "In Progress", color: "border-t-blue-400",   headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
-  { id: "completed",   title: "Completed",   color: "border-t-green-400",  headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
-  { id: "cancelled",   title: "Cancelled",   color: "border-t-red-400",    headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
+  { id: "pending",     title: "Pending",     accent: "#94a3b8", headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
+  { id: "in_progress", title: "In Progress", accent: "#60a5fa", headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
+  { id: "completed",   title: "Completed",   accent: "#34d399", headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
+  { id: "cancelled",   title: "Cancelled",   accent: "#f87171", headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
 ];
 
 const priorityColors: Record<string, string> = {
@@ -171,11 +171,10 @@ export default function ProjectKanban() {
   const [isTaskDialogOpen, setIsTaskDialogOpen]   = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // The API returns a flat object: { id, name, color, clientId, clientName, tasks: [...] }
+  // Default queryFn from queryClient uses queryKey.join("/") → /api/projects/{id}
+  // and correctly throws on non-OK responses (auth failures, etc.)
   const { data: projectData, isLoading } = useQuery<any>({
     queryKey: ["/api/projects", id],
-    queryFn: () =>
-      fetch(`/api/projects/${id}`, { credentials: "include" }).then((r) => r.json()),
   });
 
   const { data: users = [] } = useQuery<any[]>({ queryKey: ["/api/users"] });
@@ -287,6 +286,10 @@ export default function ProjectKanban() {
             )}
           </div>
         </div>
+        <Button onClick={() => openCreateDialog("pending")} size="sm">
+          <Plus className="h-4 w-4 mr-1.5" />
+          New Task
+        </Button>
       </div>
 
       {/* Board */}
@@ -296,30 +299,33 @@ export default function ProjectKanban() {
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
+        <div className="flex gap-5 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
           {COLUMNS.map((col) => {
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
             return (
-              <div key={col.id} className="flex flex-col w-72 flex-shrink-0">
-                {/* Column header */}
-                <div className={cn("rounded-t-lg px-3 py-2 border-t-4 flex items-center justify-between", col.color, col.headerBg)}>
-                  <span className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+              <div key={col.id} className="flex flex-col w-80 flex-shrink-0 min-w-[18rem]">
+                {/* Column header — accent top border via inline style */}
+                <div
+                  className={cn("rounded-t-lg px-4 py-3 flex items-center justify-between", col.headerBg)}
+                  style={{ borderTop: `3px solid ${col.accent}` }}
+                >
+                  <span className="text-sm font-semibold text-slate-700 tracking-wide">
                     {col.title}
                   </span>
-                  <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", col.badgeCls)}>
+                  <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full min-w-[1.5rem] text-center", col.badgeCls)}>
                     {columnTasks.length}
                   </span>
                 </div>
 
                 {/* Column body */}
-                <div className="bg-white rounded-b-lg border border-t-0 border-slate-200 flex flex-col">
+                <div className="bg-white rounded-b-lg border border-t-0 border-slate-200 flex flex-col shadow-sm">
                   <SortableContext
                     items={columnTasks.map((t: any) => t.id)}
                     strategy={verticalListSortingStrategy}
                     id={col.id}
                   >
                     <DroppableColumn colId={col.id}>
-                      <div className="p-2">
+                      <div className="p-3 space-y-2">
                         {columnTasks.map((task: any) => (
                           <SortableTaskCard
                             key={task.id}
@@ -328,22 +334,25 @@ export default function ProjectKanban() {
                           />
                         ))}
                         {columnTasks.length === 0 && (
-                          <p className="text-xs text-muted-foreground text-center py-6 select-none">
-                            No tasks
-                          </p>
+                          <div className="flex flex-col items-center justify-center py-10 gap-2 select-none">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${col.accent}20` }}>
+                              <Plus className="h-4 w-4" style={{ color: col.accent }} />
+                            </div>
+                            <p className="text-xs text-muted-foreground">No tasks yet</p>
+                          </div>
                         )}
                       </div>
                     </DroppableColumn>
                   </SortableContext>
 
-                  <div className="px-2 pb-2">
+                  <div className="px-3 pb-3 pt-1 border-t border-slate-100">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      className="w-full justify-start text-muted-foreground hover:text-slate-800 hover:bg-slate-50 h-8 text-xs"
                       onClick={() => openCreateDialog(col.id)}
                     >
-                      <Plus className="h-4 w-4 mr-1" />
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
                       Add task
                     </Button>
                   </div>

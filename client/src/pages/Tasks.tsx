@@ -59,6 +59,7 @@ const taskFormSchema = z.object({
   status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
   dueDate: z.date().optional(),
   assignedTo: z.string().optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
@@ -129,6 +130,11 @@ export default function Tasks() {
     queryKey: ["/api/clients"],
   });
 
+  // Fetch projects for optional task linking
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+  });
+
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (data: TaskFormData) => {
@@ -139,6 +145,8 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      // Invalidate projects so task counters and Kanban boards update
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsCreateDialogOpen(false);
       form.reset();
       toast({
@@ -481,6 +489,37 @@ export default function Tasks() {
                             </FormItem>
                           )}
                         />
+
+                        {projects.length > 0 && (
+                          <FormField
+                            control={form.control}
+                            name="projectId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                                <Select
+                                  onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                                  value={field.value ?? "none"}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Not linked to a project" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="none">Not linked to a project</SelectItem>
+                                    {projects.map((p: any) => (
+                                      <SelectItem key={p.id} value={p.id}>
+                                        {p.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
 
                         <div className="flex justify-end space-x-2">
                           <Button 
