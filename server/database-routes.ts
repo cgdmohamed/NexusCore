@@ -1622,11 +1622,53 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Update quotation item
+  app.patch('/api/quotations/:id/items/:itemId', async (req: any, res) => {
+    try {
+      const qty = parseFloat(req.body.quantity) || 0;
+      const price = parseFloat(req.body.unitPrice) || 0;
+      const disc = parseFloat(req.body.discount) || 0;
+      const subtotal = qty * price;
+      const totalPrice = (subtotal - (subtotal * disc / 100)).toFixed(2);
+
+      const [updatedItem] = await db.update(quotationItems)
+        .set({
+          description: req.body.description,
+          quantity: req.body.quantity,
+          unitPrice: req.body.unitPrice,
+          discount: req.body.discount || '0.00',
+          totalPrice,
+        })
+        .where(eq(quotationItems.id, req.params.itemId))
+        .returning();
+
+      // Recalculate and update quotation total
+      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      await db.update(quotations)
+        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id));
+
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating quotation item:", error);
+      res.status(500).json({ message: "Failed to update quotation item" });
+    }
+  });
+
   // Delete quotation item
   app.delete('/api/quotations/:id/items/:itemId', async (req: any, res) => {
     try {
       await db.delete(quotationItems)
         .where(eq(quotationItems.id, req.params.itemId));
+
+      // Recalculate and update quotation total
+      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      await db.update(quotations)
+        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .where(eq(quotations.id, req.params.id));
+
       res.json({ message: "Item deleted successfully" });
     } catch (error) {
       console.error("Error deleting quotation item:", error);

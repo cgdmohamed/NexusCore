@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,13 @@ export default function QuotationDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState("");
+
+  // Edit item state
+  const [editingItem, setEditingItem] = useState<QuotationItem | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editQuantity, setEditQuantity] = useState("1");
+  const [editUnitPrice, setEditUnitPrice] = useState("0");
+  const [editDiscount, setEditDiscount] = useState("0");
 
   const { data: quotation, isLoading: quotationLoading } = useQuery<Quotation>({
     queryKey: ["/api/quotations", id],
@@ -93,6 +101,76 @@ export default function QuotationDetail() {
       });
     },
   });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ itemId, data }: { itemId: string; data: any }) => {
+      return apiRequest("PATCH", `/api/quotations/${id}/items/${itemId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      setEditingItem(null);
+      toast({ title: t("quotations.item_updated"), description: t("quotations.item_updated_desc") });
+    },
+    onError: (error: any) => {
+      toast({ title: t("quotations.item_update_failed"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return apiRequest("DELETE", `/api/quotations/${id}/items/${itemId}`, undefined);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      toast({ title: t("quotations.item_deleted"), description: t("quotations.item_deleted_desc") });
+    },
+    onError: (error: any) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const openEditDialog = (item: QuotationItem) => {
+    setEditingItem(item);
+    setEditDescription(item.description);
+    setEditQuantity(item.quantity);
+    setEditUnitPrice(item.unitPrice);
+    setEditDiscount(item.discount || "0");
+  };
+
+  const calculateEditTotal = () => {
+    const qty = parseFloat(editQuantity) || 0;
+    const price = parseFloat(editUnitPrice) || 0;
+    const disc = parseFloat(editDiscount) || 0;
+    const subtotal = qty * price;
+    return subtotal - (subtotal * disc / 100);
+  };
+
+  const handleUpdateItem = () => {
+    if (!editDescription.trim() || !editingItem) return;
+    const qty = parseFloat(editQuantity);
+    const price = parseFloat(editUnitPrice);
+    if (isNaN(qty) || qty <= 0) {
+      toast({ title: t("quotations.invalid_quantity"), variant: "destructive" });
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      toast({ title: t("quotations.invalid_price"), variant: "destructive" });
+      return;
+    }
+    updateItemMutation.mutate({
+      itemId: editingItem.id,
+      data: {
+        description: editDescription,
+        quantity: editQuantity,
+        unitPrice: editUnitPrice,
+        discount: editDiscount || "0",
+      },
+    });
+  };
 
   const resetForm = () => {
     setSelectedService("custom");
@@ -660,6 +738,7 @@ export default function QuotationDetail() {
                     <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Discount</TableHead>
                     <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -678,6 +757,47 @@ export default function QuotationDetail() {
                       <TableCell className="text-right">{parseFloat(item.discount || '0').toFixed(1)}%</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.totalPrice)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openEditDialog(item)}
+                          >
+                            <Pencil className="h-4 w-4 text-gray-500" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                disabled={deleteItemMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{t("quotations.delete_item_title")}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {t("quotations.delete_item_desc")}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={() => deleteItemMutation.mutate(item.id)}
+                                >
+                                  {t("common.delete")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -705,6 +825,88 @@ export default function QuotationDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("quotations.edit_item")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-description">{t("quotations.item_description")}</Label>
+              <Input
+                id="edit-description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Enter item description"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-quantity">{t("quotations.item_quantity")}</Label>
+                <Input
+                  id="edit-quantity"
+                  type="number"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(e.target.value)}
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-unitPrice">{t("quotations.item_unit_price")}</Label>
+                <Input
+                  id="edit-unitPrice"
+                  type="number"
+                  value={editUnitPrice}
+                  onChange={(e) => setEditUnitPrice(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-discount">{t("quotations.item_discount")} (%)</Label>
+              <Input
+                id="edit-discount"
+                type="number"
+                value={editDiscount}
+                onChange={(e) => setEditDiscount(e.target.value)}
+                min="0"
+                max="100"
+                step="0.01"
+              />
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{t("quotations.item_total")}:</span>
+                <span className="text-lg font-bold">{formatCurrency(calculateEditTotal().toFixed(2))}</span>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleUpdateItem}
+                disabled={updateItemMutation.isPending || !editDescription.trim()}
+                className="flex-1"
+              >
+                {updateItemMutation.isPending ? t("common.saving") : t("common.save")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingItem(null)}
+              >
+                {t("common.cancel")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

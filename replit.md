@@ -41,7 +41,7 @@ Preferred communication style: Simple, everyday language.
 - **Modules**:
     - **Dashboard**: KPI cards, recent activities, quick actions, team performance.
     - **CRM**: Client management with filtering, search, and activity tracking.
-    - **Quotations**: Creation, management, status workflow, PDF export, and conversion to invoices.
+    - **Quotations**: Creation, management, status workflow, PDF export, and conversion to invoices. Quotation items support full CRUD: edit (description, quantity, unit price, discount) via dialog and delete with confirmation — both recalculate the quotation total automatically.
     - **Invoices**: Generation, payment tracking, overpayment prevention, and client credit balance management.
     - **Expenses**: Logging, approval workflow, file uploads, categorization, and integration with payment sources.
     - **Employees**: HR management, employee records, and KPI tracking.
