@@ -42,7 +42,8 @@ import {
   Upload,
   File,
   Image,
-  X
+  X,
+  Ban
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -63,6 +64,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Invoice, InvoiceItem, Payment, Client } from "@shared/schema";
@@ -117,6 +129,7 @@ export default function InvoiceDetail() {
   const [overpaymentWarning, setOverpaymentWarning] = useState<any>(null);
   const [showCreditInfo, setShowCreditInfo] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [, navigate] = useLocation();
   const [refundForm, setRefundForm] = useState({
     refundAmount: "",
@@ -375,6 +388,35 @@ export default function InvoiceDetail() {
         variant: "destructive",
       });
       setShowDeleteConfirm(false);
+    }
+  });
+
+  const cancelInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/invoices/${id}/cancel`, {});
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to cancel invoice");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      setShowCancelConfirm(false);
+      toast({
+        title: "Invoice Cancelled",
+        description: "The invoice has been cancelled and excluded from revenue calculations.",
+      });
+    },
+    onError: (error: any) => {
+      setShowCancelConfirm(false);
+      toast({
+        title: "Cancellation Failed",
+        description: error.message || "Failed to cancel invoice.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -734,7 +776,38 @@ export default function InvoiceDetail() {
             {recalculateMutation.isPending ? "Recalculating..." : "Recalculate"}
           </Button>
           
-          {/* Delete button - only for draft invoices */}
+          {/* Cancel Invoice - available for non-terminal states (draft invoices use Delete instead) */}
+          {['pending', 'sent', 'overdue', 'partially_paid'].includes(invoice.status) && (
+            <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50" data-testid="button-cancel-invoice">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Cancel Invoice
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel Invoice {invoice.invoiceNumber}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will mark the invoice as <strong>Cancelled</strong>. The invoice will remain visible for record keeping but no further payments can be recorded and it will be excluded from revenue calculations. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep Invoice</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => cancelInvoiceMutation.mutate()}
+                    disabled={cancelInvoiceMutation.isPending}
+                    className="bg-orange-600 hover:bg-orange-700"
+                    data-testid="button-confirm-cancel"
+                  >
+                    {cancelInvoiceMutation.isPending ? "Cancelling..." : "Yes, Cancel Invoice"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* Delete Invoice - only for draft invoices with no payments */}
           {invoice.status === 'draft' && (
             <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
               <DialogTrigger asChild>
@@ -747,12 +820,12 @@ export default function InvoiceDetail() {
                 <DialogHeader>
                   <DialogTitle>Delete Invoice</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to delete invoice {invoice.invoiceNumber}? This action cannot be undone.
+                    Are you sure you want to delete invoice {invoice.invoiceNumber}? This action cannot be undone and will permanently remove the invoice and all its items.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-                    Cancel
+                    Keep Invoice
                   </Button>
                   <Button 
                     variant="destructive" 
@@ -760,7 +833,7 @@ export default function InvoiceDetail() {
                     disabled={deleteInvoiceMutation.isPending}
                     data-testid="button-confirm-delete"
                   >
-                    {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
+                    {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete Permanently"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -770,6 +843,17 @@ export default function InvoiceDetail() {
       </div>
       
       <div className="p-6 space-y-6">
+        {/* Cancelled Invoice Banner */}
+        {invoice.status === 'cancelled' && (
+          <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+            <Ban className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="font-semibold">This invoice has been cancelled</p>
+              <p className="text-sm text-red-600">No further payments can be recorded. This invoice is excluded from revenue calculations but remains visible for record keeping.</p>
+            </div>
+          </div>
+        )}
+
         {/* Invoice Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
@@ -1390,7 +1474,7 @@ export default function InvoiceDetail() {
                 )}
                 <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
                   <DialogTrigger asChild>
-                    <Button size="sm">
+                    <Button size="sm" disabled={invoice.status === 'cancelled'}>
                       <Plus className="w-4 h-4 mr-2" />
                       Record Payment
                     </Button>
@@ -1515,7 +1599,7 @@ export default function InvoiceDetail() {
               <div className="text-center py-8">
                 <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">No payments recorded for this invoice</p>
-                <Button onClick={() => setIsAddingPayment(true)}>
+                <Button onClick={() => setIsAddingPayment(true)} disabled={invoice.status === 'cancelled'}>
                   <Plus className="w-4 h-4 mr-2" />
                   Record First Payment
                 </Button>

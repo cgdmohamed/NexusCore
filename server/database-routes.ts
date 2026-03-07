@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities } from "@shared/schema";
-import { eq, sql, count } from "drizzle-orm";
+import { eq, sql, count, ne } from "drizzle-orm";
 import multer from "multer";
 import { notificationService } from "./notification-service";
 import path from "path";
@@ -137,6 +137,38 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
+  // Cancel invoice - blocks further payments, excluded from revenue
+  app.post('/api/invoices/:id/cancel', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      if (invoice.status === 'cancelled') {
+        return res.status(400).json({ message: "Invoice is already cancelled" });
+      }
+
+      // Fully paid invoices cannot be cancelled without a refund
+      if (invoice.status === 'paid' || invoice.status === 'refunded') {
+        return res.status(400).json({ 
+          message: "Paid or refunded invoices cannot be cancelled. Process a refund first if needed." 
+        });
+      }
+
+      const [updated] = await db.update(invoices)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error cancelling invoice:", error);
+      res.status(500).json({ message: "Failed to cancel invoice" });
+    }
+  });
+
   // Sidebar counters endpoint
   app.get('/api/sidebar/counters', async (req, res) => {
     try {
@@ -166,10 +198,10 @@ export function setupDatabaseRoutes(app: Express) {
   // Dashboard KPIs - real database data
   app.get('/api/dashboard/kpis', async (req, res) => {
     try {
-      // Total Revenue from invoices
+      // Total Revenue from invoices (exclude cancelled)
       const [revenueResult] = await db.select({ 
         total: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
-      }).from(invoices);
+      }).from(invoices).where(ne(invoices.status, 'cancelled'));
 
       // Pending invoices amount
       const [pendingResult] = await db.select({ 
@@ -452,8 +484,16 @@ export function setupDatabaseRoutes(app: Express) {
         });
       }
 
-      // Delete payments first (shouldn't have any for draft, but just in case)
-      await db.delete(payments).where(eq(payments.invoiceId, invoiceId));
+      // Block deletion if payments have been recorded against this invoice
+      const [paymentRecord] = await db.select({ id: payments.id })
+        .from(payments)
+        .where(eq(payments.invoiceId, invoiceId))
+        .limit(1);
+      if (paymentRecord) {
+        return res.status(400).json({ 
+          message: "Cannot delete an invoice with recorded payments. Please cancel it instead." 
+        });
+      }
 
       // Delete invoice items
       await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
@@ -607,6 +647,10 @@ export function setupDatabaseRoutes(app: Express) {
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      if (invoice.status === 'cancelled') {
+        return res.status(400).json({ message: "Cannot record payments against a cancelled invoice." });
       }
       
       const currentPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
