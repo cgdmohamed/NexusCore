@@ -14,6 +14,7 @@ import {
   CreditCard,
   Wallet,
   CheckSquare,
+  FolderKanban,
   TrendingUp,
   UserCog,
   Briefcase,
@@ -79,6 +80,12 @@ export function Sidebar() {
         ? taskStats.statusBreakdown.pending.toString() 
         : undefined,
       badgeColor: 'bg-yellow-500'
+    },
+    { 
+      name: 'nav.projects', 
+      href: '/projects', 
+      icon: FolderKanban, 
+      module: 'tasks' 
     },
     { name: 'nav.services', href: '/services', icon: Briefcase, module: 'quotations' },
     { name: 'nav.team_roles', href: '/team-roles', icon: UserCog, module: 'employees', adminOnly: true },

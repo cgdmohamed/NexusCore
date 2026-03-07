@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
     - **Expenses**: Logging, approval workflow, file uploads, categorization, and integration with payment sources.
     - **Employees**: HR management, employee records, and KPI tracking.
     - **Tasks**: Assignment, progress tracking, and status management.
+    - **Projects & Kanban**: Project management with drag-and-drop Kanban boards. Tasks linked to a project appear as Kanban cards across 4 columns (Pending, In Progress, Completed, Cancelled). Standalone tasks unaffected.
     - **Analytics**: Business intelligence and reporting, including real-time KPI performance tracking.
     - **Services & Offerings**: Catalog management with CRUD operations and integration with quotations.
     - **Notifications**: Real-time system notifications with unread counts and historical views.
@@ -59,6 +60,7 @@ Preferred communication style: Simple, everyday language.
 - **Date Handling**: date-fns (managed via internal `dateUtils`).
 - **Icons**: Lucide React.
 - **Routing**: Wouter.
+- **Drag-and-Drop**: @dnd-kit/core + @dnd-kit/sortable (Kanban board).
 
 ### Backend
 - **Database**: @neondatabase/serverless (for PostgreSQL).

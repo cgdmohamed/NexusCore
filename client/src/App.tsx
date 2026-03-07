@@ -17,6 +17,8 @@ import ExpenseDetail from "@/pages/ExpenseDetail";
 import ExpenseEdit from "@/pages/ExpenseEdit";
 
 import Tasks from "@/pages/Tasks";
+import Projects from "@/pages/Projects";
+import ProjectKanban from "@/pages/ProjectKanban";
 import Analytics from "@/pages/Analytics";
 import PaymentSources from "@/pages/PaymentSources";
 import PaymentSourceDetail from "@/pages/PaymentSourceDetail";
@@ -85,6 +87,8 @@ function Router() {
             <Route path="/users/:id" component={UserProfile} />
             <Route path="/employees/:id" component={EmployeeProfile} />
             <Route path="/tasks" component={Tasks} />
+            <Route path="/projects" component={Projects} />
+            <Route path="/projects/:id" component={ProjectKanban} />
             <Route path="/services" component={Services} />
             <Route path="/reports-kpis" component={Analytics} />
             <Route path="/notifications" component={Notifications} />

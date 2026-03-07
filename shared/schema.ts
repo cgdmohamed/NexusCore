@@ -253,6 +253,7 @@ export const clientCreditHistory = pgTable("client_credit_history", {
 // Tasks table - Basic structure matching actual database
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id),
   title: text("title").notNull(),
   description: text("description"),
   priority: varchar("priority").notNull().default("medium"), // low, medium, high
@@ -262,6 +263,17 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   assignedTo: varchar("assigned_to").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Projects table
+export const projects = pgTable("projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: varchar("status").notNull().default("active"),
+  color: varchar("color").notNull().default("#3b82f6"),
+  createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });
 
@@ -427,6 +439,14 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 
 
 
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [projects.createdBy],
+    references: [users.id],
+  }),
+  tasks: many(tasks),
+}));
+
 export const tasksRelations = relations(tasks, ({ one }) => ({
   assignedTo: one(users, {
     fields: [tasks.assignedTo],
@@ -435,6 +455,10 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   createdBy: one(users, {
     fields: [tasks.createdBy],
     references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
   }),
 }));
 
@@ -501,6 +525,11 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   completedDate: true,
 });
 
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
   createdAt: true,
@@ -513,6 +542,9 @@ export const insertEmployeeKpiSchema = createInsertSchema(employeeKpis).omit({
 });
 
 // Types
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
 
@@ -521,8 +553,6 @@ export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-export type AuditLog = typeof auditLogs.$inferSelect;
 
 export type EmployeeKpi = typeof employeeKpis.$inferSelect;
 export type InsertEmployeeKpi = z.infer<typeof insertEmployeeKpiSchema>;
@@ -740,8 +770,6 @@ export const expensePayments = pgTable("expense_payments", {
 const insertExpenseCategorySchema = createInsertSchema(expenseCategories);
 const insertExpenseSchema = createInsertSchema(expenses);
 const insertExpensePaymentSchema = createInsertSchema(expensePayments);
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Quotation = typeof quotations.$inferSelect;
 export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
