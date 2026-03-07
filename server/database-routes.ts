@@ -1018,7 +1018,7 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/clients/:id', async (req: any, res) => {
     try {
-      const { name, email, phone, address, city, country, status } = req.body;
+      const { name, email, phone, address, city, country, status, totalValue, creditBalance } = req.body;
       const updateData: Record<string, any> = { updatedAt: new Date() };
       if (name !== undefined) updateData.name = name;
       if (email !== undefined) updateData.email = email;
@@ -1027,11 +1027,17 @@ export function setupDatabaseRoutes(app: Express) {
       if (city !== undefined) updateData.city = city;
       if (country !== undefined) updateData.country = country;
       if (status !== undefined) updateData.status = status;
+      if (totalValue !== undefined) updateData.totalValue = parseFloat(totalValue).toFixed(2);
+      if (creditBalance !== undefined) updateData.creditBalance = parseFloat(creditBalance).toFixed(2);
 
       const [updatedClient] = await db.update(clients)
         .set(updateData)
         .where(eq(clients.id, req.params.id))
         .returning();
+
+      if (!updatedClient) {
+        return res.status(404).json({ message: "Client not found" });
+      }
       res.json(updatedClient);
     } catch (error) {
       console.error("Error updating client:", error);
@@ -1443,7 +1449,6 @@ export function setupDatabaseRoutes(app: Express) {
   // Export quotation as PDF
   app.get('/api/quotations/:id/export-pdf', async (req: any, res) => {
     try {
-      // Get quotation with client and items
       const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
       if (!quotation) {
         return res.status(404).json({ message: "Quotation not found" });
@@ -1452,93 +1457,135 @@ export function setupDatabaseRoutes(app: Express) {
       const [client] = await db.select().from(clients).where(eq(clients.id, quotation.clientId));
       const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 
-      const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const companyName = process.env.COMPANY_NAME || 'Creative Code Nexus';
+      const companyEmail = process.env.COMPANY_EMAIL || 'info@company.com';
+      const companyPhone = process.env.COMPANY_PHONE || '';
+      const companyAddress = process.env.COMPANY_ADDRESS || '';
 
-      // Generate HTML for PDF (simplified version)
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
+      const taxAmount = parseFloat(quotation.taxAmount || '0');
+      const discountAmount = parseFloat(quotation.discountAmount || '0');
+      const totalAmount = subtotal + taxAmount - discountAmount;
+
+      const statusColors: Record<string, string> = {
+        draft: 'background:#f3f4f6;color:#374151',
+        sent: 'background:#dbeafe;color:#1d4ed8',
+        approved: 'background:#dcfce7;color:#15803d',
+        rejected: 'background:#fee2e2;color:#dc2626',
+        expired: 'background:#fef3c7;color:#d97706',
+      };
+      const statusStyle = statusColors[quotation.status] || 'background:#f3f4f6;color:#374151';
+
       const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="utf-8" />
           <title>Quotation ${quotation.quotationNumber}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            .header { text-align: center; margin-bottom: 40px; }
+            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .header h1 { color: #1a1a1a; margin: 0; }
             .company-info { margin-bottom: 30px; }
-            .client-info { margin-bottom: 30px; }
-            .quotation-details { margin-bottom: 30px; }
+            .client-info { margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
+            .doc-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
+            .doc-details div { flex: 1; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
             th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f5f5f5; }
-            .total-row { font-weight: bold; background-color: #f9f9f9; }
-            .footer { margin-top: 40px; font-size: 12px; color: #666; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            .total-section { margin-top: 20px; text-align: right; }
+            .total-row { display: flex; justify-content: flex-end; margin: 5px 0; }
+            .total-row span { width: 180px; }
+            .total-row span:last-child { font-weight: bold; }
+            .grand-total { font-size: 18px; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+            .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+            .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
           </style>
         </head>
         <body>
           <div class="header">
             <h1>QUOTATION</h1>
-            <p>Quotation Number: ${quotation.quotationNumber}</p>
+            <p>Quotation Number: <strong>${quotation.quotationNumber}</strong></p>
+            <span class="status-badge" style="${statusStyle}">${quotation.status.toUpperCase()}</span>
           </div>
-          
+
           <div class="company-info">
-            <h3>CompanyOS</h3>
-            <p>123 Business Street<br>
-            Business City, BC 12345<br>
-            Phone: (555) 123-4567<br>
-            Email: info@companyos.com</p>
+            <h3>${companyName}</h3>
+            <p>${companyAddress ? companyAddress + '<br>' : ''}${companyPhone ? 'Phone: ' + companyPhone + '<br>' : ''}Email: ${companyEmail}</p>
           </div>
-          
+
           <div class="client-info">
-            <h3>Bill To:</h3>
+            <h3>Prepared For:</h3>
             <p><strong>${client?.name || 'N/A'}</strong><br>
-            ${client?.email || ''}<br>
-            ${client?.phone || ''}<br>
-            ${client?.city || ''}, ${client?.country || ''}</p>
+            ${client?.email ? client.email + '<br>' : ''}${client?.phone ? client.phone + '<br>' : ''}${[client?.city, client?.country].filter(Boolean).join(', ')}</p>
           </div>
-          
-          <div class="quotation-details">
-            <p><strong>Date:</strong> ${new Date(quotation.createdAt).toLocaleDateString()}</p>
-            <p><strong>Valid Until:</strong> ${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</p>
-            <p><strong>Status:</strong> ${quotation.status.toUpperCase()}</p>
+
+          <div class="doc-details">
+            <div>
+              <p><strong>Date:</strong> ${new Date(quotation.createdAt).toLocaleDateString()}</p>
+              <p><strong>Valid Until:</strong> ${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</p>
+            </div>
+            <div>
+              ${quotation.title ? `<p><strong>Subject:</strong> ${quotation.title}</p>` : ''}
+            </div>
           </div>
-          
+
           <table>
             <thead>
               <tr>
                 <th>Description</th>
                 <th>Quantity</th>
-                <th>Unit Price</th>
+                <th>Unit Price (EGP)</th>
                 <th>Discount</th>
-                <th>Total</th>
+                <th>Total (EGP)</th>
               </tr>
             </thead>
             <tbody>
               ${items.map(item => `
                 <tr>
-                  <td>${item.description}</td>
+                  <td>${item.description || item.name || ''}</td>
                   <td>${item.quantity}</td>
-                  <td>$${parseFloat(item.unitPrice).toFixed(2)}</td>
-                  <td>${parseFloat(item.discount).toFixed(1)}%</td>
-                  <td>$${parseFloat(item.totalPrice).toFixed(2)}</td>
+                  <td>${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
+                  <td>${parseFloat(item.discount || '0').toFixed(1)}%</td>
+                  <td>${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
                 </tr>
               `).join('')}
-              <tr class="total-row">
-                <td colspan="4"><strong>TOTAL</strong></td>
-                <td><strong>$${totalAmount.toFixed(2)}</strong></td>
-              </tr>
             </tbody>
           </table>
-          
+
+          <div class="total-section">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>EGP ${subtotal.toFixed(2)}</span>
+            </div>
+            ${taxAmount > 0 ? `
+            <div class="total-row">
+              <span>VAT (${quotation.taxRate || '0'}%):</span>
+              <span>+ EGP ${taxAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${discountAmount > 0 ? `
+            <div class="total-row">
+              <span>Discount (${quotation.discountRate || '0'}%):</span>
+              <span>- EGP ${discountAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            <div class="total-row grand-total">
+              <span>Total:</span>
+              <span>EGP ${totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
           <div class="footer">
             <p><strong>Terms & Conditions:</strong></p>
-            <p>Payment due within 30 days of quotation acceptance. All prices are in USD. This quotation is valid for 30 days from the date of issue.</p>
+            <p>This quotation is valid until the date shown above. All amounts are in Egyptian Pounds (EGP) and include VAT where applicable. Prices are subject to change after the validity date.</p>
             <br>
-            <p>Thank you for your business!</p>
+            <p>Thank you for considering ${companyName}!</p>
           </div>
         </body>
         </html>
       `;
 
-      // Set headers for PDF download
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `inline; filename="quotation-${quotation.quotationNumber}.html"`);
       res.send(htmlContent);
@@ -1571,17 +1618,27 @@ export function setupDatabaseRoutes(app: Express) {
       const [client] = await db.select().from(clients).where(eq(clients.id, invoice.clientId));
       const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
 
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const companyName = process.env.COMPANY_NAME || 'Creative Code Nexus';
+      const companyEmail = process.env.COMPANY_EMAIL || 'info@company.com';
+      const companyPhone = process.env.COMPANY_PHONE || '';
+      const companyAddress = process.env.COMPANY_ADDRESS || '';
+
+      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
       const taxAmount = parseFloat(invoice.taxAmount || '0');
       const discountAmount = parseFloat(invoice.discountAmount || '0');
       const totalAmount = subtotal + taxAmount - discountAmount;
       const paidAmount = parseFloat(invoice.paidAmount || '0');
       const balanceDue = totalAmount - paidAmount;
 
+      const invoiceDate = invoice.invoiceDate
+        ? new Date(invoice.invoiceDate).toLocaleDateString()
+        : new Date(invoice.createdAt).toLocaleDateString();
+
       const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="utf-8" />
           <title>Invoice ${invoice.invoiceNumber}</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
@@ -1589,22 +1646,25 @@ export function setupDatabaseRoutes(app: Express) {
             .header h1 { color: #1a1a1a; margin: 0; }
             .company-info { margin-bottom: 30px; }
             .client-info { margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
-            .invoice-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
-            .invoice-details div { flex: 1; }
+            .doc-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
+            .doc-details div { flex: 1; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
             th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
             th { background-color: #f5f5f5; font-weight: bold; }
             .total-section { margin-top: 20px; text-align: right; }
             .total-row { display: flex; justify-content: flex-end; margin: 5px 0; }
-            .total-row span { width: 150px; }
+            .total-row span { width: 180px; }
             .total-row span:last-child { font-weight: bold; }
             .grand-total { font-size: 18px; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
             .balance-due { color: ${balanceDue > 0 ? '#dc2626' : '#16a34a'}; font-size: 20px; }
             .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
             .status-paid { background: #dcfce7; color: #16a34a; }
+            .status-sent { background: #dbeafe; color: #1d4ed8; }
+            .status-draft { background: #f3f4f6; color: #374151; }
             .status-pending { background: #fef3c7; color: #d97706; }
             .status-partially_paid { background: #dbeafe; color: #2563eb; }
             .status-overdue { background: #fee2e2; color: #dc2626; }
+            .status-cancelled { background: #f3f4f6; color: #6b7280; }
             .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
           </style>
         </head>
@@ -1612,53 +1672,51 @@ export function setupDatabaseRoutes(app: Express) {
           <div class="header">
             <h1>INVOICE</h1>
             <p>Invoice Number: <strong>${invoice.invoiceNumber}</strong></p>
-            <span class="status-badge status-${invoice.status}">${invoice.status.toUpperCase().replace('_', ' ')}</span>
+            <span class="status-badge status-${invoice.status}">${invoice.status.toUpperCase().replace(/_/g, ' ')}</span>
           </div>
-          
+
           <div class="company-info">
-            <h3>Creative Code Nexus</h3>
-            <p>123 Business Street<br>
-            Business City, BC 12345<br>
-            Phone: (555) 123-4567<br>
-            Email: info@creativecode.com</p>
+            <h3>${companyName}</h3>
+            <p>${companyAddress ? companyAddress + '<br>' : ''}${companyPhone ? 'Phone: ' + companyPhone + '<br>' : ''}Email: ${companyEmail}</p>
           </div>
-          
+
           <div class="client-info">
             <h3>Bill To:</h3>
             <p><strong>${client?.name || 'N/A'}</strong><br>
-            ${client?.email || ''}<br>
-            ${client?.phone || ''}<br>
-            ${client?.city || ''}, ${client?.country || ''}</p>
+            ${client?.email ? client.email + '<br>' : ''}${client?.phone ? client.phone + '<br>' : ''}${[client?.city, client?.country].filter(Boolean).join(', ')}</p>
           </div>
-          
-          <div class="invoice-details">
+
+          <div class="doc-details">
             <div>
-              <p><strong>Invoice Date:</strong> ${new Date(invoice.createdAt).toLocaleDateString()}</p>
+              <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
               <p><strong>Due Date:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</p>
             </div>
+            <div>
+              ${invoice.title ? `<p><strong>Subject:</strong> ${invoice.title}</p>` : ''}
+            </div>
           </div>
-          
+
           <table>
             <thead>
               <tr>
                 <th>Description</th>
                 <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
+                <th>Unit Price (EGP)</th>
+                <th>Total (EGP)</th>
               </tr>
             </thead>
             <tbody>
               ${items.map(item => `
                 <tr>
-                  <td>${item.name}${item.description ? `<br><small style="color:#666">${item.description}</small>` : ''}</td>
+                  <td>${item.name || ''}${item.description ? `<br><small style="color:#666">${item.description}</small>` : ''}</td>
                   <td>${item.quantity}</td>
-                  <td>EGP ${parseFloat(item.unitPrice).toFixed(2)}</td>
-                  <td>EGP ${parseFloat(item.totalPrice).toFixed(2)}</td>
+                  <td>${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
+                  <td>${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
-          
+
           <div class="total-section">
             <div class="total-row">
               <span>Subtotal:</span>
@@ -1672,7 +1730,7 @@ export function setupDatabaseRoutes(app: Express) {
             ` : ''}
             ${discountAmount > 0 ? `
             <div class="total-row">
-              <span>Discount:</span>
+              <span>Discount (${invoice.discountRate || '0'}%):</span>
               <span>- EGP ${discountAmount.toFixed(2)}</span>
             </div>
             ` : ''}
@@ -1682,22 +1740,19 @@ export function setupDatabaseRoutes(app: Express) {
             </div>
             <div class="total-row">
               <span>Paid Amount:</span>
-              <span style="color: #16a34a">EGP ${paidAmount.toFixed(2)}</span>
+              <span style="color:#16a34a">EGP ${paidAmount.toFixed(2)}</span>
             </div>
             <div class="total-row balance-due">
               <span>Balance Due:</span>
               <span>EGP ${balanceDue.toFixed(2)}</span>
             </div>
           </div>
-          
+
           <div class="footer">
             <p><strong>Payment Terms:</strong></p>
-            <p>Payment is due within 30 days of invoice date. All amounts are in Egyptian Pounds (EGP).</p>
+            <p>Payment is due within 30 days of the invoice date. All amounts are in Egyptian Pounds (EGP) and include applicable VAT.</p>
             <br>
-            <p><strong>Bank Details:</strong></p>
-            <p>Bank Name: Example Bank | Account Name: Creative Code Nexus | Account Number: 1234567890</p>
-            <br>
-            <p>Thank you for your business!</p>
+            <p>Thank you for your business with ${companyName}!</p>
           </div>
         </body>
         </html>

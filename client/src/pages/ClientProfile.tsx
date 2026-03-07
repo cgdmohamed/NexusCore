@@ -44,20 +44,26 @@ export default function ClientProfile() {
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: Partial<Client>) => {
-      return apiRequest(`/api/clients/${id}`, "PATCH", data);
+      const res = await apiRequest(`/api/clients/${id}`, "PATCH", data);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || `Request failed with status ${res.status}`);
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsEditingClient(false);
       toast({
         title: "Client updated",
         description: "Client information has been successfully updated.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Update failed",
-        description: "Failed to update client information.",
+        description: error.message || "Failed to update client information.",
         variant: "destructive",
       });
     },
