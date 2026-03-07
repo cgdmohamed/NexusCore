@@ -142,26 +142,18 @@ export default function Analytics() {
   };
 
   const handleExport = () => {
-    // Generate CSV export
-    const exportData = {
-      kpis,
-      dateRange,
-      comparison,
-      generated: new Date().toISOString()
-    };
-    
-    const csvContent = `Company Analytics Report
-Generated: ${format(new Date(), 'PPP')}
-Period: ${dateRange.start ? format(dateRange.start, 'PPP') : 'N/A'} to ${dateRange.end ? format(dateRange.end, 'PPP') : 'N/A'}
+    const csvContent = `${t('analytics.csv_report_title')}
+${t('analytics.csv_generated')}: ${format(new Date(), 'PPP')}
+${t('analytics.csv_period')}: ${dateRange.start ? format(dateRange.start, 'PPP') : 'N/A'} to ${dateRange.end ? format(dateRange.end, 'PPP') : 'N/A'}
 
-KPIs:
-Total Revenue: ${formatCurrencyValue(kpis?.totalRevenue || 0)}
-Total Expenses: ${formatCurrencyValue(kpis?.totalExpenses || 0)}
-Net Profit: ${formatCurrencyValue(kpis?.netProfit || 0)}
-New Clients: ${kpis?.newClients || 0}
-Completed Tasks: ${kpis?.completedTasks || 0}
-Conversion Rate: ${kpis?.conversionRate?.toFixed(2) || 0}%
-Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
+${t('analytics.csv_kpis')}:
+${t('analytics.csv_total_revenue')}: ${formatCurrencyValue(kpis?.totalRevenue || 0)}
+${t('analytics.csv_total_expenses')}: ${formatCurrencyValue(kpis?.totalExpenses || 0)}
+${t('analytics.csv_net_profit')}: ${formatCurrencyValue(kpis?.netProfit || 0)}
+${t('analytics.csv_new_clients')}: ${kpis?.newClients || 0}
+${t('analytics.csv_completed_tasks')}: ${kpis?.completedTasks || 0}
+${t('analytics.csv_conversion_rate')}: ${kpis?.conversionRate?.toFixed(2) || 0}%
+${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
 `;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -178,13 +170,13 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
       <div className="space-y-6">
         <Header 
           title={t('nav.reports_kpis')}
-          subtitle="Comprehensive business performance and reporting analytics"
+          subtitle={t('analytics.subtitle')}
         />
         <div className="p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-neutral">Loading analytics...</p>
+              <p className="text-neutral">{t('analytics.loading')}</p>
             </div>
           </div>
         </div>
@@ -196,7 +188,7 @@ Profit Margin: ${kpis?.profitMargin?.toFixed(2) || 0}%
     <div className="space-y-6">
       <Header 
         title={t('nav.reports_kpis')}
-        subtitle="Comprehensive business performance and reporting analytics"
+        subtitle={t('analytics.subtitle')}
       />
       
       <div className="p-6 space-y-6">

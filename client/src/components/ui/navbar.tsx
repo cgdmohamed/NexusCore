@@ -174,9 +174,9 @@ export function Navbar() {
     <nav className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Logo & Brand */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 rtl:space-x-reverse">
           <Link href="/">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 rtl:space-x-reverse">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Building2 className="text-white text-sm" />
               </div>
@@ -217,7 +217,7 @@ export function Navbar() {
                   const Icon = getTypeIcon(result.type);
                   return (
                     <Link key={result.id} href={result.href}>
-                      <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                      <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
                         <Icon className="w-4 h-4 text-gray-500" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900">{result.title}</p>
@@ -252,7 +252,7 @@ export function Navbar() {
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 rtl:space-x-reverse">
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -297,7 +297,7 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="h-4 w-4 me-2" />
                 {t('auth.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>

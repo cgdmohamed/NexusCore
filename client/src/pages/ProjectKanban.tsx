@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,9 +63,8 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Task form schema
 const taskFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1),
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high"]),
   status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
@@ -74,11 +74,11 @@ const taskFormSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
-const COLUMNS = [
-  { id: "pending",     title: "Pending",     accent: "#94a3b8", headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
-  { id: "in_progress", title: "In Progress", accent: "#60a5fa", headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
-  { id: "completed",   title: "Completed",   accent: "#34d399", headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
-  { id: "cancelled",   title: "Cancelled",   accent: "#f87171", headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
+const COLUMN_DEFS = [
+  { id: "pending",     titleKey: "kanban.pending",     accent: "#94a3b8", headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
+  { id: "in_progress", titleKey: "kanban.in_progress", accent: "#60a5fa", headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
+  { id: "completed",   titleKey: "kanban.completed",   accent: "#34d399", headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
+  { id: "cancelled",   titleKey: "kanban.cancelled",   accent: "#f87171", headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
 ];
 
 const priorityColors: Record<string, string> = {
@@ -87,7 +87,6 @@ const priorityColors: Record<string, string> = {
   high:   "bg-red-100 text-red-700 border-red-200",
 };
 
-// ── Droppable column wrapper ───────────────────────────────────────────────
 function DroppableColumn({ colId, children }: { colId: string; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: colId });
   return (
@@ -103,7 +102,6 @@ function DroppableColumn({ colId, children }: { colId: string; children: React.R
   );
 }
 
-// ── Sortable task card ─────────────────────────────────────────────────────
 function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => void }) {
   const {
     attributes,
@@ -161,18 +159,16 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
 export default function ProjectKanban() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  const [activeTask, setActiveTask]           = useState<any>(null);
-  const [selectedTask, setSelectedTask]       = useState<any>(null);
-  const [isTaskDialogOpen, setIsTaskDialogOpen]   = useState(false);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [activeTask, setActiveTask]                   = useState<any>(null);
+  const [selectedTask, setSelectedTask]               = useState<any>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen]       = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen]   = useState(false);
 
-  // Default queryFn from queryClient uses queryKey.join("/") → /api/projects/{id}
-  // and correctly throws on non-OK responses (auth failures, etc.)
   const { data: projectData, isLoading } = useQuery<any>({
     queryKey: ["/api/projects", id],
   });
@@ -184,7 +180,7 @@ export default function ProjectKanban() {
       apiRequest("PUT", `/api/tasks/${taskId}`, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/projects", id] }),
     onError: (err: Error) =>
-      toast({ title: "Error", description: err.message, variant: "destructive" }),
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" }),
   });
 
   const createTaskMutation = useMutation({
@@ -194,10 +190,10 @@ export default function ProjectKanban() {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", id] });
       setIsCreateDialogOpen(false);
       form.reset();
-      toast({ title: "Success", description: "Task created successfully" });
+      toast({ title: t("common.success"), description: t("kanban.task_created") });
     },
     onError: (err: Error) =>
-      toast({ title: "Error", description: err.message, variant: "destructive" }),
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" }),
   });
 
   const sensors = useSensors(
@@ -218,7 +214,6 @@ export default function ProjectKanban() {
     );
   }
 
-  // projectData IS the project (fields are at top level), tasks nested inside
   const project = projectData;
   const tasks: any[] = projectData?.tasks ?? [];
 
@@ -236,13 +231,11 @@ export default function ProjectKanban() {
     const taskId = active.id as string;
     const overId = over.id as string;
 
-    // over.id can be: a column id ("pending", "in_progress", …) OR another task's id
-    const columnIds = COLUMNS.map((c) => c.id);
+    const columnIds = COLUMN_DEFS.map((c) => c.id);
     let newStatus: string;
     if (columnIds.includes(overId)) {
       newStatus = overId;
     } else {
-      // Dropped over a task — find which column that task is in
       const overTask = tasks.find((t) => t.id === overId);
       newStatus = overTask?.status ?? overId;
     }
@@ -265,30 +258,30 @@ export default function ProjectKanban() {
         <div className="flex items-center gap-4">
           <Link href="/projects">
             <Button variant="ghost" size="sm">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Projects
+              <ChevronLeft className="h-4 w-4 me-1" />
+              {t("kanban.back_to_projects")}
             </Button>
           </Link>
           <div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
-              <h1 className="text-2xl font-bold text-slate-900">{project?.name ?? "Project Board"}</h1>
+              <h1 className="text-2xl font-bold text-slate-900">{project?.name ?? t("nav.projects")}</h1>
             </div>
             {project?.clientName ? (
               <Link href={`/clients/${project.clientId}`}>
-                <div className="flex items-center gap-1.5 mt-0.5 text-sm text-primary hover:underline cursor-pointer w-fit ml-6">
+                <div className="flex items-center gap-1.5 mt-0.5 text-sm text-primary hover:underline cursor-pointer w-fit ms-6">
                   <User className="h-3.5 w-3.5" />
                   <span>{project.clientName}</span>
                 </div>
               </Link>
             ) : (
-              <p className="text-xs text-muted-foreground mt-0.5 ml-6">Internal Project</p>
+              <p className="text-xs text-muted-foreground mt-0.5 ms-6">{t("common.internal_project")}</p>
             )}
           </div>
         </div>
         <Button onClick={() => openCreateDialog("pending")} size="sm">
-          <Plus className="h-4 w-4 mr-1.5" />
-          New Task
+          <Plus className="h-4 w-4 me-1.5" />
+          {t("kanban.new_task")}
         </Button>
       </div>
 
@@ -300,24 +293,22 @@ export default function ProjectKanban() {
         onDragEnd={onDragEnd}
       >
         <div className="flex gap-5 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
-          {COLUMNS.map((col) => {
+          {COLUMN_DEFS.map((col) => {
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
             return (
               <div key={col.id} className="flex flex-col w-80 flex-shrink-0 min-w-[18rem]">
-                {/* Column header — accent top border via inline style */}
                 <div
                   className={cn("rounded-t-lg px-4 py-3 flex items-center justify-between", col.headerBg)}
                   style={{ borderTop: `3px solid ${col.accent}` }}
                 >
                   <span className="text-sm font-semibold text-slate-700 tracking-wide">
-                    {col.title}
+                    {t(col.titleKey)}
                   </span>
                   <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full min-w-[1.5rem] text-center", col.badgeCls)}>
                     {columnTasks.length}
                   </span>
                 </div>
 
-                {/* Column body */}
                 <div className="bg-white rounded-b-lg border border-t-0 border-slate-200 flex flex-col shadow-sm">
                   <SortableContext
                     items={columnTasks.map((t: any) => t.id)}
@@ -338,7 +329,7 @@ export default function ProjectKanban() {
                             <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${col.accent}20` }}>
                               <Plus className="h-4 w-4" style={{ color: col.accent }} />
                             </div>
-                            <p className="text-xs text-muted-foreground">No tasks yet</p>
+                            <p className="text-xs text-muted-foreground">{t("common.no_tasks")}</p>
                           </div>
                         )}
                       </div>
@@ -352,8 +343,8 @@ export default function ProjectKanban() {
                       className="w-full justify-start text-muted-foreground hover:text-slate-800 hover:bg-slate-50 h-8 text-xs"
                       onClick={() => openCreateDialog(col.id)}
                     >
-                      <Plus className="h-3.5 w-3.5 mr-1.5" />
-                      Add task
+                      <Plus className="h-3.5 w-3.5 me-1.5" />
+                      {t("kanban.add_task")}
                     </Button>
                   </div>
                 </div>
@@ -382,41 +373,41 @@ export default function ProjectKanban() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Task</DialogTitle>
+            <DialogTitle>{t("kanban.add_task_title")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={form.handleSubmit((d) => createTaskMutation.mutate(d))} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
-              <Input id="title" {...form.register("title")} placeholder="Task title" />
+              <Label htmlFor="title">{t("kanban.task_title")} <span className="text-destructive">*</span></Label>
+              <Input id="title" {...form.register("title")} placeholder={t("kanban.task_title_placeholder")} />
               {form.formState.errors.title && (
-                <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
+                <p className="text-xs text-destructive">{t("tasks.title_required")}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" {...form.register("description")} placeholder="Optional description" rows={3} />
+              <Label htmlFor="description">{t("kanban.description_label")}</Label>
+              <Textarea id="description" {...form.register("description")} placeholder={t("kanban.task_desc_placeholder")} rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Priority</Label>
+                <Label>{t("kanban.priority")}</Label>
                 <Select
                   onValueChange={(v) => form.setValue("priority", v as any)}
                   defaultValue="medium"
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="low">{t("tasks.low")}</SelectItem>
+                    <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
+                    <SelectItem value="high">{t("tasks.high")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Assignee</Label>
+                <Label>{t("kanban.assignee")}</Label>
                 <Select onValueChange={(v) => form.setValue("assignedTo", v === "none" ? null : v)}>
-                  <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("common.unassigned")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
+                    <SelectItem value="none">{t("common.unassigned")}</SelectItem>
                     {users.map((u: any) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || u.email}
@@ -427,14 +418,14 @@ export default function ProjectKanban() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
+              <Label htmlFor="dueDate">{t("kanban.due_date")}</Label>
               <Input id="dueDate" type="date" {...form.register("dueDate")} />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t("common.cancel")}</Button>
               <Button type="submit" disabled={createTaskMutation.isPending}>
-                {createTaskMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create Task
+                {createTaskMutation.isPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+                {t("kanban.create_task")}
               </Button>
             </DialogFooter>
           </form>
@@ -445,7 +436,7 @@ export default function ProjectKanban() {
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <div className="flex items-start justify-between gap-3 pr-8">
+            <div className="flex items-start justify-between gap-3 pe-8">
               <DialogTitle className="text-xl leading-snug">{selectedTask?.title}</DialogTitle>
               <Badge variant="outline" className={cn("text-xs mt-0.5 flex-shrink-0", priorityColors[selectedTask?.priority] ?? "")}>
                 {selectedTask?.priority}
@@ -456,7 +447,7 @@ export default function ProjectKanban() {
           <div className="space-y-5 py-2">
             {selectedTask?.description && (
               <div>
-                <p className="text-xs text-muted-foreground font-medium mb-1">Description</p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">{t("kanban.description_label")}</p>
                 <p className="text-sm whitespace-pre-wrap text-slate-700">{selectedTask.description}</p>
               </div>
             )}
@@ -467,8 +458,8 @@ export default function ProjectKanban() {
                   <User className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Assignee</p>
-                  <p className="text-sm font-medium">{selectedTask?.assigneeName || "Unassigned"}</p>
+                  <p className="text-xs text-muted-foreground">{t("kanban.assignee_label")}</p>
+                  <p className="text-sm font-medium">{selectedTask?.assigneeName || t("common.unassigned")}</p>
                 </div>
               </div>
 
@@ -477,7 +468,7 @@ export default function ProjectKanban() {
                   <CalendarIcon className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Due Date</p>
+                  <p className="text-xs text-muted-foreground">{t("kanban.due_date_label")}</p>
                   <p className="text-sm font-medium">
                     {selectedTask?.dueDate
                       ? format(new Date(selectedTask.dueDate), "PPP")
@@ -491,7 +482,7 @@ export default function ProjectKanban() {
                   <Clock className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="text-xs text-muted-foreground">{t("kanban.status_label")}</p>
                   <Badge variant="outline" className="capitalize text-xs">
                     {selectedTask?.status?.replace("_", " ")}
                   </Badge>
@@ -501,11 +492,11 @@ export default function ProjectKanban() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>{t("common.close")}</Button>
             <Link href="/tasks">
               <Button variant="secondary">
-                <Edit className="h-4 w-4 mr-2" />
-                Full Edit
+                <Edit className="h-4 w-4 me-2" />
+                {t("common.full_edit")}
               </Button>
             </Link>
           </DialogFooter>

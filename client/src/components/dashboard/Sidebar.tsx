@@ -116,7 +116,7 @@ export function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                  "flex items-center space-x-3 rtl:space-x-reverse px-3 py-2 rounded-lg transition-colors",
                   isActive
                     ? "bg-primary text-white"
                     : "text-neutral hover:bg-gray-50"
@@ -126,7 +126,7 @@ export function Sidebar() {
                 <span>{t(item.name)}</span>
                 {item.badge && (
                   <span className={cn(
-                    "ml-auto text-xs px-2 py-1 rounded-full text-white",
+                    "ms-auto text-xs px-2 py-1 rounded-full text-white",
                     item.badgeColor || "bg-secondary"
                   )}>
                     {item.badge}
@@ -140,10 +140,10 @@ export function Sidebar() {
         {/* System Status Indicator */}
         <div className="mt-8 p-3 bg-blue-50 rounded-lg">
           <p className="text-xs text-blue-600 font-medium">
-            System Status: Active
+            {t("nav.systemStatus")}
           </p>
           <p className="text-xs text-blue-500">
-            All modules operational
+            {t("nav.allModulesOperational")}
           </p>
         </div>
       </div>

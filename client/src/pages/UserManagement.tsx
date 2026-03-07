@@ -54,21 +54,21 @@ export default function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user-management/stats"] });
       toast({
-        title: "Employee Deleted",
-        description: data.message || "Employee has been deleted successfully",
+        title: t("userManagement.deleted"),
+        description: data.message || t("messages.success.deleted"),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete employee",
+        title: t("userManagement.delete_failed"),
+        description: error.message || t("userManagement.delete_failed_desc"),
         variant: "destructive",
       });
     },
   });
 
   const handleDeleteEmployee = (employee: any) => {
-    if (window.confirm(`Are you sure you want to delete ${employee.firstName} ${employee.lastName}? This action cannot be undone.`)) {
+    if (window.confirm(t("userManagement.delete_confirm", { "name": `${employee.firstName} ${employee.lastName}` }))) {
       deleteEmployeeMutation.mutate(employee.id);
     }
   };

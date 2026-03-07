@@ -97,15 +97,15 @@ export default function CRM() {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
-        title: "Client Deleted",
+        title: t("crm.deleted"),
         description: data.message,
         variant: "default",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete client and related data",
+        title: t("crm.delete_failed"),
+        description: error.message || t("crm.delete_failed_desc"),
         variant: "destructive",
       });
     },

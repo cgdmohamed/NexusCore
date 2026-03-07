@@ -73,16 +73,16 @@ export default function PaymentSourceDetail() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Payment source deleted successfully",
+        title: t("paymentSources.deleted"),
+        description: t("paymentSources.deleted_desc"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
       setLocation("/payment-sources");
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete payment source",
+        title: t("paymentSources.delete_failed"),
+        description: error.message || t("paymentSources.delete_failed_desc"),
         variant: "destructive",
       });
     },

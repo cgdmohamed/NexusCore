@@ -110,7 +110,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsCreateDialogOpen(false);
       form.reset();
-      toast({ title: t("common.success"), description: "Project created successfully" });
+      toast({ title: t("common.success"), description: t("projects.created") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -127,7 +127,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setEditingProject(null);
       form.reset();
-      toast({ title: t("common.success"), description: "Project updated successfully" });
+      toast({ title: t("common.success"), description: t("projects.updated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -140,7 +140,7 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      toast({ title: t("common.success"), description: "Project deleted successfully" });
+      toast({ title: t("common.success"), description: t("projects.deleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -176,25 +176,25 @@ export default function Projects() {
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <Header 
         title={t("nav.projects")}
-        subtitle="Manage your projects and their tasks in Kanban boards"
+        subtitle={t("projects.subtitle")}
       />
       
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-slate-900">All Projects</h2>
+          <h2 className="text-xl font-semibold text-slate-900">{t("projects.all_projects")}</h2>
           <Dialog 
             open={isCreateDialogOpen || !!editingProject} 
             onOpenChange={(open) => { if (!open) closeDialog(); }}
           >
             <DialogTrigger asChild>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Project
+                <Plus className="h-4 w-4 me-2" />
+                {t("projects.new_project")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{editingProject ? "Edit Project" : "Create New Project"}</DialogTitle>
+                <DialogTitle>{editingProject ? t("projects.edit_project") : t("projects.create_project")}</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -203,9 +203,9 @@ export default function Projects() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>{t("projects.name")}</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Project name" />
+                          <Input {...field} placeholder={t("projects.name_placeholder")} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -216,9 +216,9 @@ export default function Projects() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>{t("projects.description")}</FormLabel>
                         <FormControl>
-                          <Textarea {...field} value={field.value ?? ""} placeholder="Project description (optional)" />
+                          <Textarea {...field} value={field.value ?? ""} placeholder={t("projects.description_placeholder")} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,18 +229,18 @@ export default function Projects() {
                     name="clientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <FormLabel>{t("projects.client_optional")}</FormLabel>
                         <Select
                           onValueChange={(val) => field.onChange(val === "none" ? null : val)}
                           value={field.value ?? "none"}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a client (optional)" />
+                              <SelectValue placeholder={t("projects.select_client")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">No client — Internal Project</SelectItem>
+                            <SelectItem value="none">{t("projects.no_client")}</SelectItem>
                             {clients.map((client: any) => (
                               <SelectItem key={client.id} value={client.id}>
                                 {client.name}
@@ -257,7 +257,7 @@ export default function Projects() {
                     name="color"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Color</FormLabel>
+                        <FormLabel>{t("projects.color")}</FormLabel>
                         <FormControl>
                           <div className="flex gap-2">
                             {PRESET_COLORS.map((color) => (
@@ -280,13 +280,13 @@ export default function Projects() {
                   />
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={closeDialog}>
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                       {(createMutation.isPending || updateMutation.isPending) && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
                       )}
-                      {editingProject ? "Save Changes" : "Create Project"}
+                      {editingProject ? t("projects.save_changes") : t("projects.create_btn")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -315,13 +315,13 @@ export default function Projects() {
             <div className="bg-slate-100 p-6 rounded-full mb-4">
               <FolderKanban className="h-12 w-12 text-slate-400" />
             </div>
-            <h3 className="text-lg font-medium text-slate-900">No projects yet</h3>
+            <h3 className="text-lg font-medium text-slate-900">{t("projects.no_projects")}</h3>
             <p className="text-slate-500 max-w-sm mt-2">
-              Create your first project to start organizing tasks in a Kanban board.
+              {t("projects.no_projects_desc")}
             </p>
             <Button className="mt-6" onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Project
+              <Plus className="h-4 w-4 me-2" />
+              {t("projects.create_btn")}
             </Button>
           </div>
         ) : (
@@ -337,7 +337,7 @@ export default function Projects() {
                       />
                       <CardTitle className="text-lg font-semibold truncate">{project.name}</CardTitle>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ms-2">
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -354,18 +354,18 @@ export default function Projects() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("projects.delete_title")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the project. All tasks within this project will be unlinked (moved to standalone tasks).
+                              {t("projects.delete_desc")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => deleteMutation.mutate(project.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Delete
+                              {t("common.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -381,7 +381,7 @@ export default function Projects() {
                       </div>
                     </Link>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-1">Internal Project</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("common.internal_project")}</p>
                   )}
 
                   {project.description && (
@@ -393,21 +393,21 @@ export default function Projects() {
                 <CardContent className="pb-4">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-slate-50">
-                      {project.taskCounts?.pending || 0} pending
+                      {project.taskCounts?.pending || 0} {t("projects.pending")}
                     </Badge>
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
-                      {project.taskCounts?.in_progress || 0} in progress
+                      {project.taskCounts?.in_progress || 0} {t("projects.in_progress")}
                     </Badge>
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100">
-                      {project.taskCounts?.completed || 0} completed
+                      {project.taskCounts?.completed || 0} {t("projects.completed_tasks")}
                     </Badge>
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0">
                   <Link href={`/projects/${project.id}`} className="w-full">
                     <Button variant="secondary" className="w-full">
-                      Open Board
-                      <ExternalLink className="ml-2 h-4 w-4" />
+                      {t("projects.open_board")}
+                      <ExternalLink className="ms-2 h-4 w-4" />
                     </Button>
                   </Link>
                 </CardFooter>

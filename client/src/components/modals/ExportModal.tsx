@@ -41,14 +41,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       
       toast({
         title: t('common.success'),
-        description: "Data exported successfully",
+        description: t('export.success_desc'),
       });
       
       onOpenChange(false);
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: "Failed to export data",
+        description: t('export.failed_desc'),
         variant: "destructive",
       });
     } finally {
@@ -60,28 +60,28 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Export Data</DialogTitle>
+          <DialogTitle>{t('export.title')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <div>
             <Label htmlFor="format" className="text-sm font-medium text-text">
-              Export Format
+              {t('export.format')}
             </Label>
             <Select value={format} onValueChange={setFormat}>
               <SelectTrigger className="mt-2">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pdf">PDF Document</SelectItem>
-                <SelectItem value="excel">Excel Spreadsheet</SelectItem>
-                <SelectItem value="csv">CSV File</SelectItem>
+                <SelectItem value="pdf">{t('export.pdf')}</SelectItem>
+                <SelectItem value="excel">{t('export.excel')}</SelectItem>
+                <SelectItem value="csv">{t('export.csv')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           <div>
-            <Label className="text-sm font-medium text-text">Date Range</Label>
+            <Label className="text-sm font-medium text-text">{t('export.date_range')}</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <Input
                 type="date"

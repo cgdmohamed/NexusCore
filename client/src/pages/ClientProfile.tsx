@@ -14,12 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import type { Client, Quotation, Invoice, ClientNote } from "@shared/schema";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditingClient, setIsEditingClient] = useState(false);
   const [editStatus, setEditStatus] = useState<string>("");
@@ -56,14 +58,14 @@ export default function ClientProfile() {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsEditingClient(false);
       toast({
-        title: "Client updated",
-        description: "Client information has been successfully updated.",
+        title: t("crm.updated"),
+        description: t("crm.updated_desc"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
-        description: error.message || "Failed to update client information.",
+        title: t("crm.update_failed"),
+        description: error.message || t("crm.update_failed_desc"),
         variant: "destructive",
       });
     },

@@ -13,6 +13,7 @@ import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshC
 import { formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import type { Quotation, QuotationItem, Service, Client } from "@shared/schema";
 
@@ -20,6 +21,7 @@ export default function QuotationDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [selectedService, setSelectedService] = useState("custom");
   const [customDescription, setCustomDescription] = useState("");
@@ -78,15 +80,15 @@ export default function QuotationDetail() {
       setIsAddingItem(false);
       resetForm();
       toast({
-        title: "Item added",
-        description: "Quotation item has been added successfully.",
+        title: t("quotations.item_added"),
+        description: t("quotations.item_added_desc"),
       });
     },
     onError: (error: any) => {
       console.error("Add item error:", error);
       toast({
-        title: "Failed to add item",
-        description: error.message || "Could not add the quotation item.",
+        title: t("quotations.item_failed"),
+        description: error.message || t("quotations.item_failed_desc"),
         variant: "destructive",
       });
     },
@@ -125,8 +127,8 @@ export default function QuotationDetail() {
   const handleAddItem = () => {
     if (!customDescription.trim()) {
       toast({
-        title: "Description required",
-        description: "Please provide a description for the item.",
+        title: t("quotations.description_required"),
+        description: t("quotations.description_required_desc"),
         variant: "destructive",
       });
       return;
@@ -155,8 +157,8 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       setIsEditing(false);
       toast({
-        title: "Quotation updated",
-        description: "Quotation has been updated successfully.",
+        title: t("quotations.updated"),
+        description: t("quotations.updated_desc"),
       });
     },
   });
@@ -172,8 +174,8 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
-        title: "Converted to invoice",
-        description: "Quotation has been successfully converted to an invoice.",
+        title: t("quotations.converted"),
+        description: t("quotations.converted_desc"),
       });
     },
   });
@@ -188,15 +190,15 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       toast({
-        title: "Status updated",
-        description: "Quotation status has been updated.",
+        title: t("quotations.status_updated"),
+        description: t("quotations.status_updated_desc"),
       });
     },
     onError: (error: any) => {
       console.error("Status update error:", error);
       toast({
-        title: "Failed to update status",
-        description: error.message || "Could not update quotation status.",
+        title: t("quotations.status_failed"),
+        description: error.message || t("quotations.status_failed_desc"),
         variant: "destructive",
       });
     },

@@ -150,13 +150,13 @@ export default function Tasks() {
       setIsCreateDialogOpen(false);
       form.reset();
       toast({
-        title: "Success",
-        description: "Task created successfully",
+        title: t("tasks.created"),
+        description: t("tasks.created_desc"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -177,13 +177,13 @@ export default function Tasks() {
       setEditingTask(null);
       editForm.reset();
       toast({
-        title: "Success",
-        description: "Task updated successfully",
+        title: t("tasks.updated"),
+        description: t("tasks.updated_desc"),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
+import { useTranslation } from "@/lib/i18n";
 import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,8 +63,8 @@ export default function UserProfile() {
     },
     onSuccess: () => {
       toast({
-        title: "Profile Updated",
-        description: "User profile has been updated successfully.",
+        title: t("profile.updated"),
+        description: t("profile.updated_desc"),
       });
       setShowEditDialog(false);
       queryClient.invalidateQueries({ queryKey: ["/api/users", id] });
@@ -71,7 +73,7 @@ export default function UserProfile() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Update Failed",
+        title: t("profile.update_failed"),
         description: error.message,
         variant: "destructive",
       });
@@ -86,15 +88,15 @@ export default function UserProfile() {
     },
     onSuccess: () => {
       toast({
-        title: "Password Changed",
-        description: "Password has been changed successfully.",
+        title: t("profile.password_changed"),
+        description: t("profile.password_changed_desc"),
       });
       setShowPasswordDialog(false);
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     },
     onError: (error: Error) => {
       toast({
-        title: "Password Change Failed",
+        title: t("profile.password_failed"),
         description: error.message,
         variant: "destructive",
       });
@@ -123,8 +125,8 @@ export default function UserProfile() {
   const handleChangePassword = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
-        title: "Password Mismatch",
-        description: "New password and confirmation do not match.",
+        title: t("profile.password_mismatch"),
+        description: t("profile.password_mismatch_desc"),
         variant: "destructive",
       });
       return;

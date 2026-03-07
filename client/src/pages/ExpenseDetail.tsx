@@ -52,8 +52,8 @@ export default function ExpenseDetail() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Expense deleted successfully",
+        title: t("expenses.deleted"),
+        description: t("expenses.deleted_desc"),
       });
       // Invalidate all expense-related queries to update statistics
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
@@ -63,8 +63,8 @@ export default function ExpenseDetail() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete expense",
+        title: t("common.error"),
+        description: error.message || t("expenses.delete_failed_desc"),
         variant: "destructive",
       });
     },
@@ -81,8 +81,8 @@ export default function ExpenseDetail() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Expense marked as paid successfully",
+        title: t("expenses.paid"),
+        description: t("expenses.paid_desc"),
       });
       // Invalidate all expense-related queries to update statistics
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
@@ -94,8 +94,8 @@ export default function ExpenseDetail() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to mark expense as paid",
+        title: t("common.error"),
+        description: error.message || t("expenses.pay_failed_desc"),
         variant: "destructive",
       });
     },

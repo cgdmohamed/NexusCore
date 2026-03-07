@@ -51,6 +51,8 @@ const translations: Translations = {
   'services.service_updated': { en: 'Service has been successfully updated', ar: 'تم تحديث الخدمة بنجاح' },
   'services.update_error': { en: 'Failed to update service', ar: 'فشل في تحديث الخدمة' },
   'nav.notifications': { en: 'Notifications', ar: 'الإشعارات' },
+  'nav.systemStatus': { en: 'System Status: Active', ar: 'حالة النظام: نشط' },
+  'nav.allModulesOperational': { en: 'All modules operational', ar: 'جميع الوحدات تعمل' },
   
   // Dashboard
   'dashboard.title': { en: 'Dashboard Overview', ar: 'نظرة عامة على لوحة القيادة' },
@@ -95,7 +97,16 @@ const translations: Translations = {
   'common.description': { en: 'Description', ar: 'الوصف' },
   'common.notes': { en: 'Notes', ar: 'الملاحظات' },
   'common.actions': { en: 'Actions', ar: 'الإجراءات' },
-  
+  'common.close': { en: 'Close', ar: 'إغلاق' },
+  'common.optional': { en: 'optional', ar: 'اختياري' },
+  'common.internal_project': { en: 'Internal Project', ar: 'مشروع داخلي' },
+  'common.unassigned': { en: 'Unassigned', ar: 'غير مكلف' },
+  'common.no_tasks': { en: 'No tasks yet', ar: 'لا توجد مهام بعد' },
+  'common.are_you_sure': { en: 'Are you sure?', ar: 'هل أنت متأكد؟' },
+  'common.save_changes': { en: 'Save Changes', ar: 'حفظ التغييرات' },
+  'common.full_edit': { en: 'Full Edit', ar: 'تعديل كامل' },
+  'common.all': { en: 'All', ar: 'الكل' },
+
   // Auth
   'auth.login': { en: 'Login', ar: 'تسجيل الدخول' },
   'auth.logout': { en: 'Logout', ar: 'تسجيل الخروج' },
@@ -117,7 +128,14 @@ const translations: Translations = {
   'crm.active': { en: 'Active', ar: 'نشط' },
   'crm.inactive': { en: 'Inactive', ar: 'غير نشط' },
   'crm.lead': { en: 'Lead', ar: 'عميل محتمل' },
-  
+  'crm.deleted': { en: 'Client Deleted', ar: 'تم حذف العميل' },
+  'crm.delete_failed': { en: 'Delete Failed', ar: 'فشل الحذف' },
+  'crm.delete_failed_desc': { en: 'Failed to delete client and related data', ar: 'فشل في حذف العميل والبيانات المرتبطة' },
+  'crm.updated': { en: 'Client Updated', ar: 'تم تحديث العميل' },
+  'crm.updated_desc': { en: 'Client information has been successfully updated.', ar: 'تم تحديث معلومات العميل بنجاح.' },
+  'crm.update_failed': { en: 'Update Failed', ar: 'فشل التحديث' },
+  'crm.update_failed_desc': { en: 'Failed to update client information.', ar: 'فشل في تحديث معلومات العميل.' },
+
   // Quotations
   'quotations.title': { en: 'Quotations', ar: 'عروض الأسعار' },
   'quotations.createQuotation': { en: 'Create Quotation', ar: 'إنشاء عرض سعر' },
@@ -133,7 +151,21 @@ const translations: Translations = {
   'quotations.accepted': { en: 'Accepted', ar: 'مقبول' },
   'quotations.rejected': { en: 'Rejected', ar: 'مرفوض' },
   'quotations.expired': { en: 'Expired', ar: 'منتهي الصلاحية' },
-  
+  'quotations.item_added': { en: 'Item added', ar: 'تمت إضافة العنصر' },
+  'quotations.item_added_desc': { en: 'Quotation item has been added successfully.', ar: 'تم إضافة عنصر عرض السعر بنجاح.' },
+  'quotations.item_failed': { en: 'Failed to add item', ar: 'فشل إضافة العنصر' },
+  'quotations.item_failed_desc': { en: 'Could not add the quotation item.', ar: 'تعذر إضافة عنصر عرض السعر.' },
+  'quotations.description_required': { en: 'Description required', ar: 'الوصف مطلوب' },
+  'quotations.description_required_desc': { en: 'Please provide a description for the item.', ar: 'يرجى تقديم وصف للعنصر.' },
+  'quotations.updated': { en: 'Quotation updated', ar: 'تم تحديث عرض السعر' },
+  'quotations.updated_desc': { en: 'Quotation has been updated successfully.', ar: 'تم تحديث عرض السعر بنجاح.' },
+  'quotations.converted': { en: 'Converted to invoice', ar: 'تم التحويل إلى فاتورة' },
+  'quotations.converted_desc': { en: 'Quotation has been successfully converted to an invoice.', ar: 'تم تحويل عرض السعر إلى فاتورة بنجاح.' },
+  'quotations.status_updated': { en: 'Status updated', ar: 'تم تحديث الحالة' },
+  'quotations.status_updated_desc': { en: 'Quotation status has been updated.', ar: 'تم تحديث حالة عرض السعر.' },
+  'quotations.status_failed': { en: 'Failed to update status', ar: 'فشل تحديث الحالة' },
+  'quotations.status_failed_desc': { en: 'Could not update quotation status.', ar: 'تعذر تحديث حالة عرض السعر.' },
+
   // Invoices
   'invoices.title': { en: 'Invoices', ar: 'الفواتير' },
   'invoices.createInvoice': { en: 'Create Invoice', ar: 'إنشاء فاتورة' },
@@ -159,7 +191,15 @@ const translations: Translations = {
   'expenses.recurring': { en: 'Recurring', ar: 'متكرر' },
   'expenses.approved': { en: 'Approved', ar: 'موافق عليه' },
   'expenses.rejected': { en: 'Rejected', ar: 'مرفوض' },
-  
+  'expenses.deleted': { en: 'Expense Deleted', ar: 'تم حذف المصروف' },
+  'expenses.deleted_desc': { en: 'Expense deleted successfully', ar: 'تم حذف المصروف بنجاح' },
+  'expenses.delete_failed': { en: 'Failed to Delete', ar: 'فشل الحذف' },
+  'expenses.delete_failed_desc': { en: 'Failed to delete expense', ar: 'فشل في حذف المصروف' },
+  'expenses.paid': { en: 'Expense Paid', ar: 'تم دفع المصروف' },
+  'expenses.paid_desc': { en: 'Expense marked as paid successfully', ar: 'تم تحديد المصروف كمدفوع بنجاح' },
+  'expenses.pay_failed': { en: 'Payment Failed', ar: 'فشل الدفع' },
+  'expenses.pay_failed_desc': { en: 'Failed to mark expense as paid', ar: 'فشل في تحديد المصروف كمدفوع' },
+
   // Payment Sources
   'paymentSources.title': { en: 'Payment Sources', ar: 'مصادر الدفع' },
   'paymentSources.addSource': { en: 'Add Payment Source', ar: 'إضافة مصدر دفع' },
@@ -169,7 +209,11 @@ const translations: Translations = {
   'paymentSources.bank': { en: 'Bank', ar: 'بنك' },
   'paymentSources.cash': { en: 'Cash', ar: 'نقد' },
   'paymentSources.wallet': { en: 'Wallet', ar: 'محفظة' },
-  
+  'paymentSources.deleted': { en: 'Payment Source Deleted', ar: 'تم حذف مصدر الدفع' },
+  'paymentSources.deleted_desc': { en: 'Payment source deleted successfully', ar: 'تم حذف مصدر الدفع بنجاح' },
+  'paymentSources.delete_failed': { en: 'Delete Failed', ar: 'فشل الحذف' },
+  'paymentSources.delete_failed_desc': { en: 'Failed to delete payment source', ar: 'فشل في حذف مصدر الدفع' },
+
   // Tasks
   'tasks.title': { en: 'Tasks', ar: 'المهام' },
   'tasks.createTask': { en: 'Create Task', ar: 'إنشاء مهمة' },
@@ -183,7 +227,63 @@ const translations: Translations = {
   'tasks.high': { en: 'High', ar: 'عالية' },
   'tasks.medium': { en: 'Medium', ar: 'متوسطة' },
   'tasks.low': { en: 'Low', ar: 'منخفضة' },
-  
+  'tasks.created': { en: 'Task Created', ar: 'تم إنشاء المهمة' },
+  'tasks.created_desc': { en: 'Task created successfully', ar: 'تم إنشاء المهمة بنجاح' },
+  'tasks.updated': { en: 'Task Updated', ar: 'تم تحديث المهمة' },
+  'tasks.updated_desc': { en: 'Task updated successfully', ar: 'تم تحديث المهمة بنجاح' },
+  'tasks.title_required': { en: 'Title is required', ar: 'العنوان مطلوب' },
+
+  // Projects
+  'projects.title': { en: 'Projects', ar: 'المشاريع' },
+  'projects.subtitle': { en: 'Manage your projects and their tasks in Kanban boards', ar: 'إدارة مشاريعك ومهامها في لوحات كانبان' },
+  'projects.all_projects': { en: 'All Projects', ar: 'جميع المشاريع' },
+  'projects.new_project': { en: 'New Project', ar: 'مشروع جديد' },
+  'projects.edit_project': { en: 'Edit Project', ar: 'تعديل المشروع' },
+  'projects.create_project': { en: 'Create New Project', ar: 'إنشاء مشروع جديد' },
+  'projects.name': { en: 'Name', ar: 'الاسم' },
+  'projects.description': { en: 'Description', ar: 'الوصف' },
+  'projects.color': { en: 'Color', ar: 'اللون' },
+  'projects.client_optional': { en: 'Client (optional)', ar: 'العميل (اختياري)' },
+  'projects.select_client': { en: 'Select a client (optional)', ar: 'اختر عميلاً (اختياري)' },
+  'projects.no_client': { en: 'No client — Internal Project', ar: 'بدون عميل — مشروع داخلي' },
+  'projects.name_placeholder': { en: 'Project name', ar: 'اسم المشروع' },
+  'projects.description_placeholder': { en: 'Project description (optional)', ar: 'وصف المشروع (اختياري)' },
+  'projects.save_changes': { en: 'Save Changes', ar: 'حفظ التغييرات' },
+  'projects.create_btn': { en: 'Create Project', ar: 'إنشاء مشروع' },
+  'projects.open_board': { en: 'Open Board', ar: 'فتح اللوحة' },
+  'projects.no_projects': { en: 'No projects yet', ar: 'لا توجد مشاريع بعد' },
+  'projects.no_projects_desc': { en: 'Create your first project to start organizing tasks in a Kanban board.', ar: 'أنشئ مشروعك الأول لبدء تنظيم المهام في لوحة كانبان.' },
+  'projects.delete_title': { en: 'Are you sure?', ar: 'هل أنت متأكد؟' },
+  'projects.delete_desc': { en: 'This will permanently delete the project. All tasks within this project will be unlinked (moved to standalone tasks).', ar: 'سيؤدي هذا إلى حذف المشروع نهائياً. ستصبح جميع المهام داخل هذا المشروع مهاماً مستقلة.' },
+  'projects.created': { en: 'Project created successfully', ar: 'تم إنشاء المشروع بنجاح' },
+  'projects.updated': { en: 'Project updated successfully', ar: 'تم تحديث المشروع بنجاح' },
+  'projects.deleted': { en: 'Project deleted successfully', ar: 'تم حذف المشروع بنجاح' },
+  'projects.pending': { en: 'pending', ar: 'معلق' },
+  'projects.in_progress': { en: 'in progress', ar: 'قيد التنفيذ' },
+  'projects.completed_tasks': { en: 'completed', ar: 'مكتمل' },
+
+  // Kanban
+  'kanban.pending': { en: 'Pending', ar: 'معلق' },
+  'kanban.in_progress': { en: 'In Progress', ar: 'قيد التنفيذ' },
+  'kanban.completed': { en: 'Completed', ar: 'مكتمل' },
+  'kanban.cancelled': { en: 'Cancelled', ar: 'ملغى' },
+  'kanban.add_task': { en: 'Add task', ar: 'إضافة مهمة' },
+  'kanban.new_task': { en: 'New Task', ar: 'مهمة جديدة' },
+  'kanban.add_task_title': { en: 'Add Task', ar: 'إضافة مهمة' },
+  'kanban.task_created': { en: 'Task created successfully', ar: 'تم إنشاء المهمة بنجاح' },
+  'kanban.task_title': { en: 'Title', ar: 'العنوان' },
+  'kanban.task_title_placeholder': { en: 'Task title', ar: 'عنوان المهمة' },
+  'kanban.task_desc_placeholder': { en: 'Optional description', ar: 'وصف اختياري' },
+  'kanban.priority': { en: 'Priority', ar: 'الأولوية' },
+  'kanban.assignee': { en: 'Assignee', ar: 'المكلف' },
+  'kanban.due_date': { en: 'Due Date', ar: 'تاريخ الاستحقاق' },
+  'kanban.create_task': { en: 'Create Task', ar: 'إنشاء مهمة' },
+  'kanban.assignee_label': { en: 'Assignee', ar: 'المكلف' },
+  'kanban.due_date_label': { en: 'Due Date', ar: 'تاريخ الاستحقاق' },
+  'kanban.status_label': { en: 'Status', ar: 'الحالة' },
+  'kanban.description_label': { en: 'Description', ar: 'الوصف' },
+  'kanban.back_to_projects': { en: 'Projects', ar: 'المشاريع' },
+
   // Employees
   'employees.title': { en: 'Employees', ar: 'الموظفون' },
   'employees.addEmployee': { en: 'Add Employee', ar: 'إضافة موظف' },
@@ -198,7 +298,7 @@ const translations: Translations = {
   'employees.hr': { en: 'HR', ar: 'الموارد البشرية' },
   'employees.sales': { en: 'Sales', ar: 'المبيعات' },
   'employees.management': { en: 'Management', ar: 'الإدارة' },
-  
+
   // User Management
   'userManagement.title': { en: 'User Management', ar: 'إدارة المستخدمين' },
   'userManagement.addUser': { en: 'Add User', ar: 'إضافة مستخدم' },
@@ -209,16 +309,43 @@ const translations: Translations = {
   'userManagement.admin': { en: 'Admin', ar: 'مدير' },
   'userManagement.employee': { en: 'Employee', ar: 'موظف' },
   'userManagement.viewer': { en: 'Viewer', ar: 'مشاهد' },
-  
+  'userManagement.delete_confirm': { en: 'Are you sure you want to delete {{name}}? This action cannot be undone.', ar: 'هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.' },
+  'userManagement.deleted': { en: 'Employee Deleted', ar: 'تم حذف الموظف' },
+  'userManagement.delete_failed': { en: 'Delete Failed', ar: 'فشل الحذف' },
+  'userManagement.delete_failed_desc': { en: 'Failed to delete employee', ar: 'فشل في حذف الموظف' },
+
   // Analytics
   'analytics.title': { en: 'Analytics & Reports', ar: 'التحليلات والتقارير' },
+  'analytics.subtitle': { en: 'Comprehensive business performance and reporting analytics', ar: 'تحليلات شاملة لأداء الأعمال والتقارير' },
   'analytics.revenue': { en: 'Revenue Analytics', ar: 'تحليلات الإيرادات' },
   'analytics.clients': { en: 'Client Analytics', ar: 'تحليلات العملاء' },
   'analytics.performance': { en: 'Performance Metrics', ar: 'مقاييس الأداء' },
   'analytics.monthlyRevenue': { en: 'Monthly Revenue', ar: 'الإيرادات الشهرية' },
   'analytics.clientGrowth': { en: 'Client Growth', ar: 'نمو العملاء' },
   'analytics.taskCompletion': { en: 'Task Completion Rate', ar: 'معدل إنجاز المهام' },
-  
+  'analytics.loading': { en: 'Loading analytics...', ar: 'جاري تحميل التحليلات...' },
+  'analytics.csv_report_title': { en: 'Company Analytics Report', ar: 'تقرير تحليلات الشركة' },
+  'analytics.csv_generated': { en: 'Generated', ar: 'تاريخ الإنشاء' },
+  'analytics.csv_period': { en: 'Period', ar: 'الفترة' },
+  'analytics.csv_kpis': { en: 'KPIs', ar: 'مؤشرات الأداء' },
+  'analytics.csv_total_revenue': { en: 'Total Revenue', ar: 'إجمالي الإيرادات' },
+  'analytics.csv_total_expenses': { en: 'Total Expenses', ar: 'إجمالي المصروفات' },
+  'analytics.csv_net_profit': { en: 'Net Profit', ar: 'صافي الربح' },
+  'analytics.csv_new_clients': { en: 'New Clients', ar: 'عملاء جدد' },
+  'analytics.csv_completed_tasks': { en: 'Completed Tasks', ar: 'مهام مكتملة' },
+  'analytics.csv_conversion_rate': { en: 'Conversion Rate', ar: 'معدل التحويل' },
+  'analytics.csv_profit_margin': { en: 'Profit Margin', ar: 'هامش الربح' },
+
+  // Export Modal
+  'export.title': { en: 'Export Data', ar: 'تصدير البيانات' },
+  'export.format': { en: 'Export Format', ar: 'صيغة التصدير' },
+  'export.date_range': { en: 'Date Range', ar: 'نطاق التاريخ' },
+  'export.pdf': { en: 'PDF Document', ar: 'مستند PDF' },
+  'export.excel': { en: 'Excel Spreadsheet', ar: 'جدول Excel' },
+  'export.csv': { en: 'CSV File', ar: 'ملف CSV' },
+  'export.success_desc': { en: 'Data exported successfully', ar: 'تم تصدير البيانات بنجاح' },
+  'export.failed_desc': { en: 'Failed to export data', ar: 'فشل في تصدير البيانات' },
+
   // Notifications
   'notifications.title': { en: 'Notifications', ar: 'الإشعارات' },
   'notifications.subtitle': { en: 'Stay updated with the latest activities', ar: 'ابق على اطلاع بآخر الأنشطة' },
@@ -282,6 +409,14 @@ const translations: Translations = {
   'profile.personalInfo': { en: 'Personal Information', ar: 'المعلومات الشخصية' },
   'profile.contactInfo': { en: 'Contact Information', ar: 'معلومات الاتصال' },
   'profile.workInfo': { en: 'Work Information', ar: 'معلومات العمل' },
+  'profile.updated': { en: 'Profile Updated', ar: 'تم تحديث الملف الشخصي' },
+  'profile.updated_desc': { en: 'User profile has been updated successfully.', ar: 'تم تحديث الملف الشخصي بنجاح.' },
+  'profile.update_failed': { en: 'Update Failed', ar: 'فشل التحديث' },
+  'profile.password_changed': { en: 'Password Changed', ar: 'تم تغيير كلمة المرور' },
+  'profile.password_changed_desc': { en: 'Password has been changed successfully.', ar: 'تم تغيير كلمة المرور بنجاح.' },
+  'profile.password_failed': { en: 'Password Change Failed', ar: 'فشل تغيير كلمة المرور' },
+  'profile.password_mismatch': { en: 'Password Mismatch', ar: 'كلمة المرور غير متطابقة' },
+  'profile.password_mismatch_desc': { en: 'New password and confirmation do not match.', ar: 'كلمة المرور الجديدة والتأكيد غير متطابقين.' },
 
   // Additional Services translations
   'services.inactive_services': { en: 'Inactive Services', ar: 'الخدمات غير النشطة' },
