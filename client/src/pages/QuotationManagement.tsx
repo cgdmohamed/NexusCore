@@ -31,7 +31,7 @@ export default function QuotationManagement() {
   const bulkStatusMutation = useMutation({
     mutationFn: async ({ quotationIds, status }: { quotationIds: string[], status: string }) => {
       const promises = quotationIds.map(id => 
-        apiRequest(`/api/quotations/${id}`, "PATCH", { status })
+        apiRequest("PATCH", `/api/quotations/${id}`, { status })
       );
       return Promise.all(promises);
     },

@@ -44,7 +44,7 @@ export default function ClientProfile() {
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: Partial<Client>) => {
-      const res = await apiRequest(`/api/clients/${id}`, "PATCH", data);
+      const res = await apiRequest("PATCH", `/api/clients/${id}`, data);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message || `Request failed with status ${res.status}`);
@@ -71,7 +71,7 @@ export default function ClientProfile() {
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/clients/${id}/notes`, "POST", {
+      return apiRequest("POST", `/api/clients/${id}/notes`, {
         note: newNote,
         type: noteType,
       });
@@ -88,7 +88,7 @@ export default function ClientProfile() {
 
   const recalculateValueMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/clients/${id}/recalculate-value`, "POST", {});
+      const response = await apiRequest("POST", `/api/clients/${id}/recalculate-value`, {});
       return await response.json();
     },
     onSuccess: (data: { client?: any; message?: string }) => {
