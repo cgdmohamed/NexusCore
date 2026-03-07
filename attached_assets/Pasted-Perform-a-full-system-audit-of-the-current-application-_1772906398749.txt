@@ -1,0 +1,84 @@
+Perform a full system audit of the current application and verify that the core operational systems are functioning correctly.
+
+Focus on the following areas and fix any issues you find while keeping the existing architecture intact.
+
+1. Module permissions and roles
+
+Review the roles and permissions system across all modules.
+
+Verify that permissions are correctly applied for:
+
+* Dashboard
+* Clients (CRM)
+* Quotations
+* Invoices
+* Payments
+* Expenses
+* Tasks
+* Projects
+* Services & Offerings
+* Team & Roles
+* Reports & KPIs
+
+Ensure that:
+
+* users only see modules they have permission to access
+* role permissions are enforced on both frontend and backend
+* sensitive operations (create, update, delete, export) are protected properly.
+
+Fix any inconsistencies between UI visibility and backend authorization.
+
+2. SMTP configuration
+
+Review the email system configuration.
+
+Verify that the SMTP configuration is working properly and that the application can successfully send emails.
+
+Check that email sending works for events such as:
+
+* invoice notifications
+* quotation notifications
+* password reset emails
+* system notifications.
+
+If any configuration issues exist, correct them so emails are reliably sent.
+
+3. Internal notification system
+
+Inspect the internal notification system used in the application.
+
+Ensure that notifications are triggered correctly for events such as:
+
+* task assignment
+* task status changes
+* invoice creation
+* quotation creation
+* project updates.
+
+Verify that:
+
+* notifications appear correctly in the notification panel
+* unread counts update correctly
+* notifications are stored and retrieved properly.
+
+4. Email notification triggers
+
+Verify that email notifications are triggered for the appropriate events.
+
+Ensure the system correctly sends email alerts when required and that the notification logic does not break if email delivery fails.
+
+5. Logging and error visibility
+
+Ensure that failures in email sending or notifications are logged properly so administrators can diagnose issues.
+
+6. Maintain system stability
+
+Do not rebuild the modules.
+
+Instead:
+
+* review the existing implementation
+* correct configuration issues
+* ensure all modules, permissions, and notification systems function reliably.
+
+If inconsistencies are found, fix them in the safest way without disrupting the existing system.
