@@ -83,6 +83,8 @@ interface PaymentFormData {
   adminApproved: boolean;
 }
 
+const VAT_RATE = 15;
+
 export default function InvoiceDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -631,7 +633,6 @@ export default function InvoiceDetail() {
   };
 
   const handleApplyTaxDiscount = () => {
-    const VAT_RATE = 15;
     let taxRate = "0";
     let taxAmountValue = "0";
     let discountRate = "0";

@@ -52,10 +52,12 @@ export function setupAuth(app: Express) {
       tableName: "sessions", // Match schema table name (plural)
       createTableIfMissing: false, // Session table is created via db:push
       pruneSessionInterval: 60, // Clean expired sessions every 60 seconds
+      ttl: 7 * 24 * 60 * 60, // 7 days in seconds — explicit TTL bypasses broken cookie.expires calc
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Reset session TTL on every active request
     cookie: {
       // SameSite=None + Secure=true is required so the session cookie is sent
       // with cross-site POST requests when the app runs inside Replit's preview
