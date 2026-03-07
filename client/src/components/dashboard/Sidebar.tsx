@@ -1,9 +1,9 @@
 import { Link, useLocation } from "wouter";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
-
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import {
@@ -19,6 +19,8 @@ import {
   UserCog,
   Briefcase,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -26,26 +28,40 @@ export function Sidebar() {
   const { user } = useAuth();
   const { canView, isAdmin } = usePermissions();
   const { t, language } = useTranslation();
-  
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
   const currentUser = user as User | undefined;
 
-  // Fetch real-time data for badges
+  const toggle = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("sidebar-collapsed", String(next)); } catch {}
+      return next;
+    });
+  };
+
   const { data: taskStats } = useQuery<any>({
     queryKey: ["/api/tasks/stats"],
     refetchInterval: 30000,
-    enabled: canView('tasks'),
+    enabled: canView("tasks"),
   });
 
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     refetchInterval: 30000,
-    enabled: canView('crm'),
+    enabled: canView("crm"),
   });
 
   const { data: invoices = [] } = useQuery<any[]>({
     queryKey: ["/api/invoices"],
     refetchInterval: 30000,
-    enabled: canView('invoices'),
+    enabled: canView("invoices"),
   });
 
   const { data: unreadMsgData } = useQuery<{ unreadCount: number }>({
@@ -55,114 +71,118 @@ export function Sidebar() {
   });
   const unreadMsgCount = unreadMsgData?.unreadCount || 0;
 
-  // Define navigation items with permission requirements
   const allNavigation = [
-    { name: 'nav.dashboard', href: '/', icon: BarChart3, module: 'dashboard' },
-    { 
-      name: 'nav.clients', 
-      href: '/clients', 
-      icon: Users, 
-      module: 'crm',
-      badge: clients.length > 0 ? clients.length.toString() : undefined,
-      badgeColor: 'bg-blue-500'
-    },
-    { name: 'nav.quotations', href: '/quotations', icon: FileText, module: 'quotations' },
-    { 
-      name: 'nav.invoices', 
-      href: '/invoices', 
-      icon: Receipt,
-      module: 'invoices',
-      badge: invoices.filter((inv: any) => inv.status === 'overdue').length > 0 
-        ? invoices.filter((inv: any) => inv.status === 'overdue').length.toString() 
-        : undefined,
-      badgeColor: 'bg-red-500'
-    },
-    { name: 'nav.payments', href: '/payment-sources', icon: Wallet, module: 'paymentSources' },
-    { name: 'nav.expenses', href: '/expenses', icon: CreditCard, module: 'expenses' },
-    { 
-      name: 'nav.tasks', 
-      href: '/tasks', 
-      icon: CheckSquare,
-      module: 'tasks',
-      badge: taskStats?.statusBreakdown?.pending 
-        ? taskStats.statusBreakdown.pending.toString() 
-        : undefined,
-      badgeColor: 'bg-yellow-500'
-    },
-    { 
-      name: 'nav.projects', 
-      href: '/projects', 
-      icon: FolderKanban, 
-      module: 'tasks' 
-    },
+    { name: "nav.dashboard", href: "/", icon: BarChart3, module: "dashboard" },
     {
-      name: 'nav.messages',
-      href: '/messages',
-      icon: MessageSquare,
-      module: 'dashboard',
-      badge: unreadMsgCount > 0 ? unreadMsgCount.toString() : undefined,
-      badgeColor: 'bg-green-500',
+      name: "nav.clients",
+      href: "/clients",
+      icon: Users,
+      module: "crm",
+      badge: clients.length > 0 ? clients.length.toString() : undefined,
+      badgeColor: "bg-blue-500",
     },
-    { name: 'nav.services', href: '/services', icon: Briefcase, module: 'quotations' },
-    { name: 'nav.team_roles', href: '/team-roles', icon: UserCog, module: 'employees', adminOnly: true },
-    { name: 'nav.reports_kpis', href: '/reports-kpis', icon: TrendingUp, module: 'analytics' },
+    { name: "nav.quotations", href: "/quotations", icon: FileText, module: "quotations" },
+    {
+      name: "nav.invoices",
+      href: "/invoices",
+      icon: Receipt,
+      module: "invoices",
+      badge:
+        invoices.filter((inv: any) => inv.status === "overdue").length > 0
+          ? invoices.filter((inv: any) => inv.status === "overdue").length.toString()
+          : undefined,
+      badgeColor: "bg-red-500",
+    },
+    { name: "nav.payments", href: "/payment-sources", icon: Wallet, module: "paymentSources" },
+    { name: "nav.expenses", href: "/expenses", icon: CreditCard, module: "expenses" },
+    {
+      name: "nav.tasks",
+      href: "/tasks",
+      icon: CheckSquare,
+      module: "tasks",
+      badge: taskStats?.statusBreakdown?.pending
+        ? taskStats.statusBreakdown.pending.toString()
+        : undefined,
+      badgeColor: "bg-yellow-500",
+    },
+    { name: "nav.projects", href: "/projects", icon: FolderKanban, module: "tasks" },
+    {
+      name: "nav.messages",
+      href: "/messages",
+      icon: MessageSquare,
+      module: "dashboard",
+      badge: unreadMsgCount > 0 ? unreadMsgCount.toString() : undefined,
+      badgeColor: "bg-green-500",
+    },
+    { name: "nav.services", href: "/services", icon: Briefcase, module: "quotations" },
+    { name: "nav.team_roles", href: "/team-roles", icon: UserCog, module: "employees", adminOnly: true },
+    { name: "nav.reports_kpis", href: "/reports-kpis", icon: TrendingUp, module: "analytics" },
   ];
 
-  // Filter navigation based on permissions
-  const navigation = allNavigation.filter(item => {
-    // Admin-only items require admin role
-    if (item.adminOnly && !isAdmin) {
-      return false;
-    }
-    // Check if user can view this module
+  const navigation = allNavigation.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
     return canView(item.module);
   });
 
   return (
-    <aside className="w-64 bg-white shadow-lg flex-shrink-0 border-r border-gray-200">
-      <div className="p-5">
-        {/* Navigation Menu */}
-        <nav className="space-y-2">
-          {navigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center space-x-3 rtl:space-x-reverse px-3 py-2 rounded-lg transition-colors",
-                  isActive
-                    ? "bg-primary text-white"
-                    : "text-neutral hover:bg-gray-50"
-                )}
-              >
+    <aside
+      className={cn(
+        "flex flex-col flex-shrink-0 bg-white shadow-lg border-r border-gray-200 transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      {/* Toggle button */}
+      <div className={cn("flex items-center border-b border-gray-100 h-14", collapsed ? "justify-center" : "justify-end px-3")}>
+        <button
+          onClick={toggle}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+        {navigation.map((item) => {
+          const isActive = location === item.href;
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center rounded-lg transition-colors relative group",
+                collapsed ? "justify-center px-0 py-2.5" : "space-x-3 rtl:space-x-reverse px-3 py-2",
+                isActive ? "bg-primary text-white" : "text-neutral hover:bg-gray-50"
+              )}
+              title={collapsed ? t(item.name) : undefined}
+            >
+              <div className="relative flex-shrink-0">
                 <Icon className="w-5 h-5" />
-                <span>{t(item.name)}</span>
-                {item.badge && (
-                  <span className={cn(
-                    "ms-auto text-xs px-2 py-1 rounded-full text-white",
-                    item.badgeColor || "bg-secondary"
-                  )}>
-                    {item.badge}
+                {/* Dot badge when collapsed */}
+                {collapsed && item.badge && (
+                  <span className={cn("absolute -top-1 -end-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full text-white", item.badgeColor || "bg-secondary")}>
+                    {parseInt(item.badge) > 9 ? "9+" : item.badge}
                   </span>
                 )}
-              </Link>
-            );
-          })}
-        </nav>
+              </div>
 
-        {/* System Status Indicator */}
-        <div className="mt-8 p-3 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-600 font-medium">
-            {t("nav.systemStatus")}
-          </p>
-          <p className="text-xs text-blue-500">
-            {t("nav.allModulesOperational")}
-          </p>
-        </div>
-      </div>
+              {!collapsed && (
+                <>
+                  <span className="flex-1 truncate">{t(item.name)}</span>
+                  {item.badge && (
+                    <span className={cn("ms-auto text-xs px-2 py-0.5 rounded-full text-white", item.badgeColor || "bg-secondary")}>
+                      {item.badge}
+                    </span>
+                  )}
+                </>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
     </aside>
   );
 }
