@@ -57,10 +57,15 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      // SameSite=None + Secure=true is required so the session cookie is sent
+      // with cross-site POST requests when the app runs inside Replit's preview
+      // iframe (top-level origin replit.com ≠ app origin repl.co).
+      // SameSite=Lax blocks cross-site POST requests, causing new sessions to be
+      // created for every mutation, which breaks CSRF token validation.
+      secure: true,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'lax', // CSRF protection via SameSite
+      sameSite: 'none' as const,
     }
   };
 
