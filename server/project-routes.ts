@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { projects, tasks, users, insertProjectSchema } from "@shared/schema";
+import { projects, tasks, users, clients, insertProjectSchema } from "@shared/schema";
 import { eq, count } from "drizzle-orm";
 import { z } from "zod";
 
@@ -13,10 +13,14 @@ const devAuth = (req: any, res: any, next: any) => {
 };
 
 export function registerProjectRoutes(app: Express) {
-  // GET /api/projects — list all projects with task counts
+  // GET /api/projects — list all projects with task counts and client name
   app.get("/api/projects", devAuth, async (req, res) => {
     try {
       const allProjects = await db.select().from(projects);
+
+      // Build client map for enrichment
+      const allClients = await db.select({ id: clients.id, name: clients.name }).from(clients);
+      const clientMap = new Map(allClients.map(c => [c.id, c]));
       
       const projectsWithCounts = await Promise.all(
         allProjects.map(async (project) => {
@@ -45,9 +49,12 @@ export function registerProjectRoutes(app: Express) {
             }
           });
 
+          const client = project.clientId ? clientMap.get(project.clientId) : null;
+
           return {
             ...project,
             taskCounts: counts,
+            clientName: client?.name || null,
           };
         })
       );
@@ -124,9 +131,19 @@ export function registerProjectRoutes(app: Express) {
         };
       });
 
+      // Enrich with client name if linked
+      let clientName: string | null = null;
+      if (project.clientId) {
+        const [client] = await db.select({ id: clients.id, name: clients.name })
+          .from(clients)
+          .where(eq(clients.id, project.clientId));
+        clientName = client?.name || null;
+      }
+
       res.json({
         ...project,
         tasks: enrichedTasks,
+        clientName,
       });
     } catch (error) {
       console.error("Error fetching project details:", error);

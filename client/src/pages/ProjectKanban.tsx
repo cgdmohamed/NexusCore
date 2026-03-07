@@ -301,12 +301,24 @@ export default function ProjectKanban() {
               Projects
             </Button>
           </Link>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-4 h-4 rounded-full" 
-              style={{ backgroundColor: project?.color }} 
-            />
-            <h1 className="text-2xl font-bold">{project?.name}</h1>
+          <div>
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-4 h-4 rounded-full" 
+                style={{ backgroundColor: project?.color }} 
+              />
+              <h1 className="text-2xl font-bold">{project?.name}</h1>
+            </div>
+            {(project as any)?.clientName ? (
+              <Link href={`/clients/${(project as any)?.clientId}`}>
+                <div className="flex items-center gap-1.5 mt-0.5 text-sm text-primary hover:underline cursor-pointer w-fit ml-6">
+                  <User className="h-3.5 w-3.5" />
+                  <span>{(project as any)?.clientName}</span>
+                </div>
+              </Link>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-0.5 ml-6">Internal Project</p>
+            )}
           </div>
         </div>
       </div>

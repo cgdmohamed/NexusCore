@@ -17,6 +17,7 @@ const translations: Translations = {
   'nav.payments': { en: 'Payments', ar: 'المدفوعات' },
   'nav.expenses': { en: 'Expenses', ar: 'المصروفات' },
   'nav.tasks': { en: 'Tasks', ar: 'المهام' },
+  'nav.projects': { en: 'Projects', ar: 'المشاريع' },
   'nav.team_roles': { en: 'Team & Roles', ar: 'الفريق والأدوار' },
   'nav.reports_kpis': { en: 'Reports & KPIs', ar: 'التقارير ومؤشرات الأداء' },
   'nav.services': { en: 'Services & Offerings', ar: 'الخدمات والعروض' },

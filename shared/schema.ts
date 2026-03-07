@@ -273,6 +273,7 @@ export const projects = pgTable("projects", {
   description: text("description"),
   status: varchar("status").notNull().default("active"),
   color: varchar("color").notNull().default("#3b82f6"),
+  clientId: varchar("client_id").references(() => clients.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });
@@ -443,6 +444,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [projects.createdBy],
     references: [users.id],
+  }),
+  client: one(clients, {
+    fields: [projects.clientId],
+    references: [clients.id],
   }),
   tasks: many(tasks),
 }));

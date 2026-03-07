@@ -1018,8 +1018,18 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/clients/:id', async (req: any, res) => {
     try {
+      const { name, email, phone, address, city, country, status } = req.body;
+      const updateData: Record<string, any> = { updatedAt: new Date() };
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      if (phone !== undefined) updateData.phone = phone;
+      if (address !== undefined) updateData.address = address;
+      if (city !== undefined) updateData.city = city;
+      if (country !== undefined) updateData.country = country;
+      if (status !== undefined) updateData.status = status;
+
       const [updatedClient] = await db.update(clients)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(clients.id, req.params.id))
         .returning();
       res.json(updatedClient);

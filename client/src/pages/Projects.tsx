@@ -6,8 +6,8 @@ import {
   Edit, 
   Trash2, 
   FolderKanban, 
-  MoreVertical,
-  ExternalLink
+  ExternalLink,
+  User2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,13 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -43,6 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { insertProjectSchema, type Project } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,13 +61,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [
-  "#3b82f6", // Blue
-  "#10b981", // Green
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#8b5cf6", // Violet
-  "#06b6d4", // Cyan
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
 ];
+
+const projectFormSchema = insertProjectSchema.extend({
+  clientId: z.string().nullable().optional(),
+});
+
+type ProjectFormData = z.infer<typeof projectFormSchema>;
 
 export default function Projects() {
   const { t } = useTranslation();
@@ -71,19 +85,25 @@ export default function Projects() {
     queryKey: ["/api/projects"],
   });
 
-  const form = useForm({
-    resolver: zodResolver(insertProjectSchema),
+  const { data: clients = [] } = useQuery<any[]>({
+    queryKey: ["/api/clients"],
+  });
+
+  const form = useForm<ProjectFormData>({
+    resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: "",
       description: "",
       color: "#3b82f6",
       status: "active",
+      clientId: null,
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/projects", data);
+    mutationFn: async (data: ProjectFormData) => {
+      const payload = { ...data, clientId: data.clientId || null };
+      const res = await apiRequest("POST", "/api/projects", payload);
       return res.json();
     },
     onSuccess: () => {
@@ -98,8 +118,9 @@ export default function Projects() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await apiRequest("PUT", `/api/projects/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: ProjectFormData }) => {
+      const payload = { ...data, clientId: data.clientId || null };
+      const res = await apiRequest("PUT", `/api/projects/${id}`, payload);
       return res.json();
     },
     onSuccess: () => {
@@ -126,7 +147,7 @@ export default function Projects() {
     },
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: ProjectFormData) => {
     if (editingProject) {
       updateMutation.mutate({ id: editingProject.id, data });
     } else {
@@ -134,20 +155,27 @@ export default function Projects() {
     }
   };
 
-  const startEdit = (project: Project) => {
+  const startEdit = (project: any) => {
     setEditingProject(project);
     form.reset({
       name: project.name,
       description: project.description || "",
       color: project.color || "#3b82f6",
       status: project.status || "active",
+      clientId: project.clientId || null,
     });
+  };
+
+  const closeDialog = () => {
+    setIsCreateDialogOpen(false);
+    setEditingProject(null);
+    form.reset();
   };
 
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <Header 
-        title={t("nav.projects") || "Projects"} 
+        title={t("nav.projects")}
         subtitle="Manage your projects and their tasks in Kanban boards"
       />
       
@@ -156,13 +184,7 @@ export default function Projects() {
           <h2 className="text-xl font-semibold text-slate-900">All Projects</h2>
           <Dialog 
             open={isCreateDialogOpen || !!editingProject} 
-            onOpenChange={(open) => {
-              if (!open) {
-                setIsCreateDialogOpen(false);
-                setEditingProject(null);
-                form.reset();
-              }
-            }}
+            onOpenChange={(open) => { if (!open) closeDialog(); }}
           >
             <DialogTrigger asChild>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -196,8 +218,36 @@ export default function Projects() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="Project description (optional)" />
+                          <Textarea {...field} value={field.value ?? ""} placeholder="Project description (optional)" />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <Select
+                          onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                          value={field.value ?? "none"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a client (optional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">No client — Internal Project</SelectItem>
+                            {clients.map((client: any) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -229,11 +279,7 @@ export default function Projects() {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => {
-                      setIsCreateDialogOpen(false);
-                      setEditingProject(null);
-                      form.reset();
-                    }}>
+                    <Button type="button" variant="outline" onClick={closeDialog}>
                       Cancel
                     </Button>
                     <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
@@ -284,14 +330,14 @@ export default function Projects() {
               <Card key={project.id} className="group hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-3 h-3 rounded-full flex-shrink-0" 
                         style={{ backgroundColor: project.color }}
                       />
-                      <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
+                      <CardTitle className="text-lg font-semibold truncate">{project.name}</CardTitle>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -326,6 +372,18 @@ export default function Projects() {
                       </AlertDialog>
                     </div>
                   </div>
+
+                  {project.clientName ? (
+                    <Link href={`/clients/${project.clientId}`}>
+                      <div className="flex items-center gap-1.5 mt-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
+                        <User2 className="h-3.5 w-3.5" />
+                        <span>{project.clientName}</span>
+                      </div>
+                    </Link>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Internal Project</p>
+                  )}
+
                   {project.description && (
                     <CardDescription className="line-clamp-2 mt-2">
                       {project.description}

@@ -1,0 +1,72 @@
+Review the current implementation of the Projects module and CRM integration in the existing system and fix the following issues without rebuilding any modules.
+
+1. Fix Sidebar Label
+
+The sidebar currently displays "nav.projects" instead of a proper label.
+
+Inspect how navigation labels are implemented for other modules such as:
+Clients, Tasks, Invoices, Expenses.
+
+Fix the Projects label so it displays correctly as **"Projects"** using the same translation or label system used by the rest of the navigation.
+
+2. Optional Client Relationship
+
+Projects should be able to link to a CRM client, but this relationship must be **optional**.
+
+Update the database schema if needed so the projects table supports:
+
+clientId (nullable)
+
+Rules:
+
+* A project may belong to a client
+* A project may exist without a client
+* No validation should force selecting a client
+
+3. Project Creation Form
+
+Extend the Create Project form to include an **optional client selector**.
+
+Requirements:
+
+* Dropdown listing existing CRM clients
+* Allow empty selection
+* Use the same select/combobox component already used in the CRM or quotations forms
+* Maintain the same UI style and spacing
+
+4. Project Display
+
+When a project is linked to a client:
+
+* Show the client name inside the project header or card
+* Provide quick navigation to the client profile
+
+When no client is linked:
+
+* Display "Internal Project" or simply omit the client label.
+
+5. Client Update Issue
+
+Investigate why updating clients sometimes fails.
+
+Check:
+
+* client update API route
+* validation rules
+* database relations
+
+Ensure that adding the Projects feature did not break client updates or introduce invalid joins.
+
+6. Maintain UI Consistency
+
+All changes must follow the existing UI system:
+
+* reuse existing shadcn/ui components
+* match the same spacing and typography
+* follow the same layout patterns used across the application
+
+Do not introduce new styling patterns.
+
+7. Do not rebuild the Projects module.
+
+Only extend and fix the current implementation.
