@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import type { Quotation, QuotationItem, Service, Client } from "@shared/schema";
 
 export default function QuotationDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -243,9 +244,10 @@ export default function QuotationDetail() {
 
   const convertToInvoiceMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/quotations/${id}/convert-to-invoice`, {});
+      const res = await apiRequest("POST", `/api/quotations/${id}/convert-to-invoice`, {});
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { invoice: { id: string }; message: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
@@ -255,6 +257,9 @@ export default function QuotationDetail() {
         title: t("quotations.converted"),
         description: t("quotations.converted_desc"),
       });
+      if (data?.invoice?.id) {
+        navigate(`/invoices/${data.invoice.id}`);
+      }
     },
   });
 

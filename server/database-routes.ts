@@ -1442,31 +1442,65 @@ export function setupDatabaseRoutes(app: Express) {
       }
 
       // Get quotation items
-      const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-      
-      // Calculate total from items
-      const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const qItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 
-      // Create invoice
+      // Calculate financial summary
+      // subtotal = sum of (qty × unitPrice) before per-item discounts
+      const subtotal = qItems.reduce((sum, item) => {
+        return sum + parseFloat(item.quantity) * parseFloat(item.unitPrice);
+      }, 0);
+      // totalAfterItemDiscounts = sum of item totalPrice (discount already baked in)
+      const totalAfterItemDiscounts = qItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      const discountAmount = subtotal - totalAfterItemDiscounts;
+
+      // Generate a unique invoice number
+      const year = new Date().getFullYear();
+      const invoiceNumber = `INV-${year}-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`;
+
+      // Create invoice record with full financial data
       const invoiceData = {
-        invoiceNumber: `INV-2024-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        invoiceNumber,
         clientId: quotation.clientId,
         quotationId: quotation.id,
-        amount: totalAmount.toFixed(2),
+        title: quotation.title,
+        description: quotation.description,
+        notes: quotation.notes,
+        subtotal: subtotal.toFixed(2),
+        discountAmount: discountAmount.toFixed(2),
+        discountRate: '0.00',
+        taxRate: '0.00',
+        taxAmount: '0.00',
+        amount: totalAfterItemDiscounts.toFixed(2),
         paidAmount: '0.00',
         status: 'pending',
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        createdBy: req.user?.id || 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0',
+        createdBy: req.user?.id,
       };
 
       const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
+
+      // Copy quotation items into invoice items
+      if (qItems.length > 0) {
+        const invoiceItemsData = qItems.map((item) => ({
+          invoiceId: newInvoice.id,
+          serviceId: item.serviceId ?? undefined,
+          name: item.description,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+        }));
+        await db.insert(invoiceItems).values(invoiceItemsData);
+      }
 
       // Update quotation status to invoiced
       await db.update(quotations)
         .set({ status: 'invoiced', updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
-      res.status(201).json({ invoice: newInvoice, message: "Quotation converted to invoice successfully" });
+      // Return the invoice with its items for immediate display
+      const createdItems = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, newInvoice.id));
+      res.status(201).json({ invoice: newInvoice, items: createdItems, message: "Quotation converted to invoice successfully" });
     } catch (error) {
       console.error("Error converting quotation to invoice:", error);
       res.status(500).json({ message: "Failed to convert quotation to invoice" });
