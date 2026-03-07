@@ -29,6 +29,7 @@ const createTaskSchema = z.object({
   status: z.enum(["pending", "in_progress", "completed", "cancelled"]).default("pending"),
   dueDate: z.string().optional(),
   assignedTo: z.string().optional(),
+  projectId: z.string().optional().nullable(),
 });
 
 // Comment creation schema
@@ -362,6 +363,7 @@ export function registerTaskManagementRoutes(app: Express) {
         status: validatedData.status,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         assignedTo: validatedData.assignedTo || null,
+        projectId: validatedData.projectId || null,
         createdBy: userId,
       };
 

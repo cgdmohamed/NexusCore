@@ -4,18 +4,16 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   DndContext, 
   DragOverlay, 
-  closestCorners, 
+  closestCenter,
   KeyboardSensor, 
   PointerSensor, 
   useSensor, 
   useSensors,
   DragStartEvent,
   DragEndEvent,
-  DragOverEvent,
-  defaultDropAnimationSideEffects
+  useDroppable,
 } from "@dnd-kit/core";
 import { 
-  arrayMove, 
   SortableContext, 
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy,
@@ -36,7 +34,6 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogFooter,
-  DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,10 +50,8 @@ import {
   Plus, 
   User, 
   Calendar as CalendarIcon, 
-  MoreHorizontal,
+  Clock,
   Edit,
-  Trash2,
-  Clock
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +60,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Task form schema
 const taskFormSchema = z.object({
@@ -79,50 +75,53 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 const COLUMNS = [
-  { id: "pending", title: "Pending" },
-  { id: "in_progress", title: "In Progress" },
-  { id: "completed", title: "Completed" },
-  { id: "cancelled", title: "Cancelled" },
+  { id: "pending",     title: "Pending",     color: "border-t-slate-400",  headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
+  { id: "in_progress", title: "In Progress", color: "border-t-blue-400",   headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
+  { id: "completed",   title: "Completed",   color: "border-t-green-400",  headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
+  { id: "cancelled",   title: "Cancelled",   color: "border-t-red-400",    headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
 ];
 
-const priorityColors = {
-  low: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  high: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+const priorityColors: Record<string, string> = {
+  low:    "bg-gray-100 text-gray-700 border-gray-200",
+  medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  high:   "bg-red-100 text-red-700 border-red-200",
 };
 
-interface TaskCardProps {
-  task: any;
-  onClick: (task: any) => void;
+// ── Droppable column wrapper ───────────────────────────────────────────────
+function DroppableColumn({ colId, children }: { colId: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: colId });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex-1 min-h-[120px] rounded-md transition-colors",
+        isOver ? "bg-primary/5 ring-2 ring-primary/20 ring-dashed" : ""
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
-function SortableTaskCard({ task, onClick }: TaskCardProps) {
+// ── Sortable task card ─────────────────────────────────────────────────────
+function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => void }) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging
-  } = useSortable({
-    id: task.id,
-    data: {
-      type: "Task",
-      task,
-    },
-  });
+    isDragging,
+  } = useSortable({ id: task.id, data: { type: "Task", task } });
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
+  const style = { transition, transform: CSS.Translate.toString(transform) };
 
   if (isDragging) {
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="opacity-30 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg h-24 mb-3"
+        className="opacity-30 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg h-20 mb-2"
       />
     );
   }
@@ -133,29 +132,28 @@ function SortableTaskCard({ task, onClick }: TaskCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-3 cursor-grab hover:shadow-md transition-shadow"
+      className="mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-slate-200"
       onClick={() => onClick(task)}
     >
       <CardContent className="p-3 space-y-2">
         <div className="flex justify-between items-start gap-2">
-          <span className="font-medium text-sm line-clamp-2">{task.title}</span>
-          <Badge className={priorityColors[task.priority as keyof typeof priorityColors]}>
+          <span className="font-medium text-sm leading-snug line-clamp-2 flex-1">{task.title}</span>
+          <Badge variant="outline" className={cn("text-xs flex-shrink-0", priorityColors[task.priority] ?? "")}>
             {task.priority}
           </Badge>
         </div>
-        
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           {task.assigneeName && (
-            <div className="flex items-center gap-1">
+            <span className="flex items-center gap-1">
               <User className="h-3 w-3" />
-              <span>{task.assigneeName}</span>
-            </div>
+              {task.assigneeName}
+            </span>
           )}
           {task.dueDate && (
-            <div className="flex items-center gap-1">
+            <span className="flex items-center gap-1">
               <CalendarIcon className="h-3 w-3" />
-              <span>{format(new Date(task.dueDate), "MMM d")}</span>
-            </div>
+              {format(new Date(task.dueDate), "MMM d")}
+            </span>
           )}
         </div>
       </CardContent>
@@ -163,84 +161,67 @@ function SortableTaskCard({ task, onClick }: TaskCardProps) {
   );
 }
 
+// ── Main page ──────────────────────────────────────────────────────────────
 export default function ProjectKanban() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const [activeTask, setActiveTask] = useState<any>(null);
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [targetColumn, setTargetColumn] = useState<string | null>(null);
 
+  const [activeTask, setActiveTask]           = useState<any>(null);
+  const [selectedTask, setSelectedTask]       = useState<any>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen]   = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  // The API returns a flat object: { id, name, color, clientId, clientName, tasks: [...] }
   const { data: projectData, isLoading } = useQuery<any>({
     queryKey: ["/api/projects", id],
+    queryFn: () =>
+      fetch(`/api/projects/${id}`, { credentials: "include" }).then((r) => r.json()),
   });
 
-  const { data: users = [] } = useQuery<any[]>({
-    queryKey: ["/api/users"],
-  });
+  const { data: users = [] } = useQuery<any[]>({ queryKey: ["/api/users"] });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, data }: { taskId: string; data: any }) => {
-      return apiRequest("PUT", `/api/tasks/${taskId}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects", id] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    mutationFn: ({ taskId, data }: { taskId: string; data: any }) =>
+      apiRequest("PUT", `/api/tasks/${taskId}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/projects", id] }),
+    onError: (err: Error) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/tasks", { ...data, projectId: id });
-    },
+    mutationFn: (data: any) =>
+      apiRequest("POST", "/api/tasks", { ...data, projectId: id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", id] });
       setIsCreateDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Task created successfully",
-      });
+      form.reset();
+      toast({ title: "Success", description: "Task created successfully" });
     },
+    onError: (err: Error) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      priority: "medium",
-      status: "pending",
-    },
+    defaultValues: { title: "", description: "", priority: "medium", status: "pending" },
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const project = projectData?.project;
-  const tasks = projectData?.tasks || [];
+  // projectData IS the project (fields are at top level), tasks nested inside
+  const project = projectData;
+  const tasks: any[] = projectData?.tasks ?? [];
 
   const onDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === "Task") {
@@ -250,50 +231,38 @@ export default function ProjectKanban() {
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveTask(null);
     if (!over) return;
 
     const taskId = active.id as string;
     const overId = over.id as string;
 
-    // Check if dropped over a column or another task
-    let newStatus = overId;
-    if (over.data.current?.type === "Task") {
-      newStatus = over.data.current.task.status;
+    // over.id can be: a column id ("pending", "in_progress", …) OR another task's id
+    const columnIds = COLUMNS.map((c) => c.id);
+    let newStatus: string;
+    if (columnIds.includes(overId)) {
+      newStatus = overId;
+    } else {
+      // Dropped over a task — find which column that task is in
+      const overTask = tasks.find((t) => t.id === overId);
+      newStatus = overTask?.status ?? overId;
     }
 
-    if (activeTask && activeTask.status !== newStatus) {
-      updateTaskMutation.mutate({
-        taskId,
-        data: { status: newStatus },
-      });
+    const draggedTask = tasks.find((t) => t.id === taskId);
+    if (draggedTask && draggedTask.status !== newStatus) {
+      updateTaskMutation.mutate({ taskId, data: { status: newStatus } });
     }
-
-    setActiveTask(null);
-  };
-
-  const handleCreateTask = (data: TaskFormData) => {
-    createTaskMutation.mutate(data);
   };
 
   const openCreateDialog = (status: string) => {
-    setTargetColumn(status);
-    form.reset({
-      title: "",
-      description: "",
-      priority: "medium",
-      status: status as any,
-    });
+    form.reset({ title: "", description: "", priority: "medium", status: status as any });
     setIsCreateDialogOpen(true);
   };
 
-  const openTaskDetail = (task: any) => {
-    setSelectedTask(task);
-    setIsTaskDialogOpen(true);
-  };
-
   return (
-    <div className="h-full flex flex-col space-y-6 p-6 overflow-hidden">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 flex flex-col p-6 overflow-hidden bg-slate-50/50 min-h-0">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/projects">
             <Button variant="ghost" size="sm">
@@ -303,17 +272,14 @@ export default function ProjectKanban() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <div 
-                className="w-4 h-4 rounded-full" 
-                style={{ backgroundColor: project?.color }} 
-              />
-              <h1 className="text-2xl font-bold">{project?.name}</h1>
+              <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
+              <h1 className="text-2xl font-bold text-slate-900">{project?.name ?? "Project Board"}</h1>
             </div>
-            {(project as any)?.clientName ? (
-              <Link href={`/clients/${(project as any)?.clientId}`}>
+            {project?.clientName ? (
+              <Link href={`/clients/${project.clientId}`}>
                 <div className="flex items-center gap-1.5 mt-0.5 text-sm text-primary hover:underline cursor-pointer w-fit ml-6">
                   <User className="h-3.5 w-3.5" />
-                  <span>{(project as any)?.clientName}</span>
+                  <span>{project.clientName}</span>
                 </div>
               </Link>
             ) : (
@@ -323,54 +289,65 @@ export default function ProjectKanban() {
         </div>
       </div>
 
+      {/* Board */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={closestCenter}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="flex gap-6 overflow-x-auto pb-4 h-full items-start">
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
           {COLUMNS.map((col) => {
             const columnTasks = tasks.filter((t: any) => t.status === col.id);
             return (
-              <div key={col.id} className="flex flex-col min-w-[300px] w-[300px] max-h-full">
-                <Card className="bg-slate-50/50 border-none shadow-none flex flex-col max-h-full">
-                  <CardHeader className="p-3 flex flex-row items-center justify-between space-y-0">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        {col.title}
-                      </CardTitle>
-                      <Badge variant="secondary" className="bg-white">
-                        {columnTasks.length}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-2 flex-1 overflow-y-auto">
-                    <SortableContext 
-                      items={columnTasks.map((t: any) => t.id)} 
-                      strategy={verticalListSortingStrategy}
-                      id={col.id}
-                    >
-                      <div className="min-h-[100px]">
+              <div key={col.id} className="flex flex-col w-72 flex-shrink-0">
+                {/* Column header */}
+                <div className={cn("rounded-t-lg px-3 py-2 border-t-4 flex items-center justify-between", col.color, col.headerBg)}>
+                  <span className="text-sm font-semibold uppercase tracking-wider text-slate-600">
+                    {col.title}
+                  </span>
+                  <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", col.badgeCls)}>
+                    {columnTasks.length}
+                  </span>
+                </div>
+
+                {/* Column body */}
+                <div className="bg-white rounded-b-lg border border-t-0 border-slate-200 flex flex-col">
+                  <SortableContext
+                    items={columnTasks.map((t: any) => t.id)}
+                    strategy={verticalListSortingStrategy}
+                    id={col.id}
+                  >
+                    <DroppableColumn colId={col.id}>
+                      <div className="p-2">
                         {columnTasks.map((task: any) => (
-                          <SortableTaskCard 
-                            key={task.id} 
-                            task={task} 
-                            onClick={openTaskDetail}
+                          <SortableTaskCard
+                            key={task.id}
+                            task={task}
+                            onClick={(t) => { setSelectedTask(t); setIsTaskDialogOpen(true); }}
                           />
                         ))}
+                        {columnTasks.length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-6 select-none">
+                            No tasks
+                          </p>
+                        )}
                       </div>
-                    </SortableContext>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-muted-foreground mt-2"
+                    </DroppableColumn>
+                  </SortableContext>
+
+                  <div className="px-2 pb-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-muted-foreground hover:text-foreground"
                       onClick={() => openCreateDialog(col.id)}
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Task
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add task
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -378,11 +355,11 @@ export default function ProjectKanban() {
 
         <DragOverlay>
           {activeTask ? (
-            <Card className="w-[280px] shadow-lg border-primary/50">
-              <CardContent className="p-3 space-y-2">
+            <Card className="w-64 shadow-xl rotate-2 border-primary/40">
+              <CardContent className="p-3">
                 <div className="flex justify-between items-start gap-2">
-                  <span className="font-medium text-sm line-clamp-2">{activeTask.title}</span>
-                  <Badge className={priorityColors[activeTask.priority as keyof typeof priorityColors]}>
+                  <span className="font-medium text-sm line-clamp-2 flex-1">{activeTask.title}</span>
+                  <Badge variant="outline" className={cn("text-xs", priorityColors[activeTask.priority] ?? "")}>
                     {activeTask.priority}
                   </Badge>
                 </div>
@@ -396,27 +373,28 @@ export default function ProjectKanban() {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
+            <DialogTitle>Add Task</DialogTitle>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleCreateTask)} className="space-y-4">
+          <form onSubmit={form.handleSubmit((d) => createTaskMutation.mutate(d))} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
               <Input id="title" {...form.register("title")} placeholder="Task title" />
+              {form.formState.errors.title && (
+                <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" {...form.register("description")} placeholder="Task description" />
+              <Textarea id="description" {...form.register("description")} placeholder="Optional description" rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Priority</Label>
-                <Select 
-                  onValueChange={(val) => form.setValue("priority", val as any)} 
-                  defaultValue={form.getValues("priority")}
+                <Select
+                  onValueChange={(v) => form.setValue("priority", v as any)}
+                  defaultValue="medium"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
@@ -426,16 +404,13 @@ export default function ProjectKanban() {
               </div>
               <div className="space-y-2">
                 <Label>Assignee</Label>
-                <Select 
-                  onValueChange={(val) => form.setValue("assignedTo", val)} 
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
+                <Select onValueChange={(v) => form.setValue("assignedTo", v === "none" ? null : v)}>
+                  <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                   <SelectContent>
-                    {users.map((user: any) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.username || user.email}
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {users.map((u: any) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || u.email}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -444,15 +419,13 @@ export default function ProjectKanban() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date</Label>
-              <Input 
-                id="dueDate" 
-                type="date" 
-                {...form.register("dueDate")} 
-              />
+              <Input id="dueDate" type="date" {...form.register("dueDate")} />
             </div>
             <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={createTaskMutation.isPending}>
-                {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+                {createTaskMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create Task
               </Button>
             </DialogFooter>
           </form>
@@ -461,31 +434,32 @@ export default function ProjectKanban() {
 
       {/* Task Detail Dialog */}
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <div className="flex justify-between items-start pr-8">
-              <DialogTitle className="text-xl">{selectedTask?.title}</DialogTitle>
-              <Badge className={priorityColors[selectedTask?.priority as keyof typeof priorityColors]}>
+            <div className="flex items-start justify-between gap-3 pr-8">
+              <DialogTitle className="text-xl leading-snug">{selectedTask?.title}</DialogTitle>
+              <Badge variant="outline" className={cn("text-xs mt-0.5 flex-shrink-0", priorityColors[selectedTask?.priority] ?? "")}>
                 {selectedTask?.priority}
               </Badge>
             </div>
           </DialogHeader>
-          <div className="space-y-6 py-4">
+
+          <div className="space-y-5 py-2">
             {selectedTask?.description && (
               <div>
-                <Label className="text-muted-foreground">Description</Label>
-                <p className="mt-1 text-sm whitespace-pre-wrap">{selectedTask.description}</p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Description</p>
+                <p className="text-sm whitespace-pre-wrap text-slate-700">{selectedTask.description}</p>
               </div>
             )}
-            
-            <div className="grid grid-cols-2 gap-6">
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-full">
                   <User className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Assignee</p>
-                  <p className="text-sm">{selectedTask?.assigneeName || "Unassigned"}</p>
+                  <p className="text-xs text-muted-foreground">Assignee</p>
+                  <p className="text-sm font-medium">{selectedTask?.assigneeName || "Unassigned"}</p>
                 </div>
               </div>
 
@@ -494,9 +468,11 @@ export default function ProjectKanban() {
                   <CalendarIcon className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Due Date</p>
-                  <p className="text-sm">
-                    {selectedTask?.dueDate ? format(new Date(selectedTask.dueDate), "PPP") : "No due date"}
+                  <p className="text-xs text-muted-foreground">Due Date</p>
+                  <p className="text-sm font-medium">
+                    {selectedTask?.dueDate
+                      ? format(new Date(selectedTask.dueDate), "PPP")
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -506,17 +482,18 @@ export default function ProjectKanban() {
                   <Clock className="h-4 w-4 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Status</p>
-                  <Badge variant="outline" className="capitalize">
-                    {selectedTask?.status.replace("_", " ")}
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge variant="outline" className="capitalize text-xs">
+                    {selectedTask?.status?.replace("_", " ")}
                   </Badge>
                 </div>
               </div>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Close</Button>
-            <Link href={`/tasks`}>
+            <Link href="/tasks">
               <Button variant="secondary">
                 <Edit className="h-4 w-4 mr-2" />
                 Full Edit
