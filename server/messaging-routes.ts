@@ -6,8 +6,8 @@ import { requireAuth } from "./auth";
 import { notificationService } from "./notification-service";
 
 export function registerMessagingRoutes(app: Express) {
-  // GET /api/users/directory — lightweight user list for messaging (all authenticated users)
-  app.get("/api/users/directory", requireAuth, async (req: any, res) => {
+  // GET /api/messaging/users — lightweight user list for messaging (all authenticated users)
+  app.get("/api/messaging/users", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user?.id;
       const usersList = await db

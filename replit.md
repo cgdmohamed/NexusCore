@@ -28,6 +28,8 @@ Preferred communication style: Simple, everyday language.
   - PostgreSQL-backed session storage (connect-pg-simple) replacing in-memory store
   - Environment-based SESSION_SECRET (required, no fallback)
   - Full CSRF protection using csrf-sync on all POST/PATCH/DELETE/PUT routes
+  - CSRF token embedded in login response (avoids separate /api/csrf-token request that would create a new session and overwrite the login session)
+  - Messaging user directory served at `/api/messaging/users` (avoids conflict with `/api/users/:id` route)
   - Frontend automatic CSRF token management (fetch on login, clear on logout)
   - Role-based access control with department-level permissions
   - HTTP-only cookies with SameSite protection

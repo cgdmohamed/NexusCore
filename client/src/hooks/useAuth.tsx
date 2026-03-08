@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User } from "@shared/schema";
-import { apiRequest, queryClient, refreshCsrfToken, clearCsrfToken } from "../lib/queryClient";
+import { apiRequest, queryClient, clearCsrfToken, setCsrfToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -62,18 +62,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
-    },
-    onSuccess: async (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
-      
-      // Fetch CSRF token after successful login
-      try {
-        await refreshCsrfToken();
-      } catch (error) {
-        console.error("Failed to refresh CSRF token after login:", error);
+      const data = await res.json();
+      // Extract and cache the CSRF token that the server embeds in the login
+      // response. This avoids a separate /api/csrf-token request which would
+      // fire without the session cookie, create a new session, and overwrite
+      // the login session — breaking all subsequent authenticated requests.
+      if (data.csrfToken) {
+        setCsrfToken(data.csrfToken);
       }
-      
+      const { csrfToken: _token, ...user } = data;
+      return user as User;
+    },
+    onSuccess: (user: User) => {
+      // Set user data — React re-renders, auth-gated queries fire using the
+      // already-established login session cookie.
+      queryClient.setQueryData(["/api/user"], user);
+
+      // Invalidate any pre-login error states so components re-fetch cleanly.
+      queryClient.invalidateQueries();
+
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.firstName || user.username}!`,

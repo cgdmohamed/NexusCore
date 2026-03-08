@@ -115,6 +115,22 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Configure CSRF protection — set up here so generateToken is available
+  // in the login handler below. csrfSynchronisedProtection middleware is
+  // applied AFTER all exempt routes (login, register, forgot-password).
+  const { generateToken, csrfSynchronisedProtection } = csrfSync({
+    ignoredMethods: ["GET", "HEAD", "OPTIONS"],
+    getTokenFromRequest: (req) => {
+      return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
+    },
+    getTokenFromState: (req) => {
+      return (req.session as any)?.csrfToken;
+    },
+    storeTokenInState: (req, token) => {
+      (req.session as any).csrfToken = token;
+    },
+  });
+
   // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
@@ -177,7 +193,15 @@ export function setupAuth(app: Express) {
       
       req.login(user, (err) => {
         if (err) return next(err);
-        res.json(user);
+        // Generate CSRF token in the same session and return it with the user.
+        // This avoids the need for a separate /api/csrf-token request after login,
+        // which would fire without the session cookie and create a new session that
+        // overwrites the login session, breaking all subsequent authenticated requests.
+        const csrfToken = generateToken(req);
+        req.session.save((saveErr) => {
+          if (saveErr) console.error("Error saving session after login:", saveErr);
+          res.json({ ...user, csrfToken });
+        });
       });
     })(req, res, next);
   });
@@ -433,24 +457,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Configure CSRF protection (applied AFTER login/registration routes)
-  const { generateToken, csrfSynchronisedProtection } = csrfSync({
-    ignoredMethods: ["GET", "HEAD", "OPTIONS"],
-    getTokenFromRequest: (req) => {
-      // Check multiple sources for CSRF token
-      return req.body?._csrf || req.headers['x-csrf-token'] as string || req.headers['csrf-token'] as string;
-    },
-    getTokenFromState: (req) => {
-      // Get token from session
-      return (req.session as any)?.csrfToken;
-    },
-    storeTokenInState: (req, token) => {
-      // Store token in session
-      (req.session as any).csrfToken = token;
-    },
-  });
-
-  // Endpoint to get CSRF token
+  // Endpoint to get CSRF token (kept for backward compatibility / fallback)
   app.get("/api/csrf-token", (req, res) => {
     try {
       const token = generateToken(req);

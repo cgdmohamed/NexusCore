@@ -31,6 +31,11 @@ export function clearCsrfToken() {
   csrfToken = null;
 }
 
+// Set CSRF token directly (called after login when token is in the response)
+export function setCsrfToken(token: string) {
+  csrfToken = token;
+}
+
 // Refresh CSRF token (called after login)
 export async function refreshCsrfToken() {
   console.log("[CSRF] Refreshing token after login...");

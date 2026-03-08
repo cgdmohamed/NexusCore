@@ -80,7 +80,7 @@ export default function Messages() {
   const { data: usersData = [] } = useQuery<
     Pick<User, "id" | "username" | "firstName" | "lastName">[]
   >({
-    queryKey: ["/api/users/directory"],
+    queryKey: ["/api/messaging/users"],
     enabled: !!user,
   });
 
