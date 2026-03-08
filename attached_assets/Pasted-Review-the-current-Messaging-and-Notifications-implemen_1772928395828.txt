@@ -1,0 +1,62 @@
+Review the current Messaging and Notifications implementation and resolve the errors shown in the server logs.
+
+Before making any changes, analyze the existing database schema, API routes, and services.
+
+Your goal is to ensure that the code correctly uses the existing tables and APIs without introducing unnecessary endpoints or schema changes.
+
+Follow this process:
+
+1. Verify database schema
+
+Inspect the current database tables related to messaging and notifications.
+
+Ensure the application code is aligned with the actual schema.
+
+If the code references columns that do not exist (for example fields used for read status or unread counts), update the schema only when necessary.
+
+Do not create duplicate tables or unnecessary fields.
+
+2. Fix schema mismatches
+
+The logs show errors indicating missing columns and potential schema mismatches.
+
+Identify the exact mismatch between the code and the database schema and fix it so queries execute successfully.
+
+3. Verify existing API endpoints
+
+Check the APIs currently used by the Messaging module.
+
+If the frontend is requesting endpoints that do not exist, first determine whether an existing endpoint already provides the required data.
+
+Reuse existing APIs whenever possible.
+
+Do not generate new endpoints unless it is strictly necessary and there is no existing route that can provide the required functionality.
+
+4. User directory loading
+
+The "New Conversation" dialog needs a list of users.
+
+Ensure the system correctly loads users using an existing API endpoint from the current Users / Team module.
+
+Avoid introducing a new endpoint if an existing one already returns the required user data.
+
+5. Notifications integration
+
+Ensure message notifications correctly integrate with the existing notifications system.
+
+Unread counts should work correctly without causing database errors.
+
+6. Stability
+
+After fixes:
+
+* the server logs should not contain database column errors
+* messaging should load users correctly
+* conversations should load without errors
+* unread notification counts should work normally
+
+7. Architecture discipline
+
+Do not introduce unnecessary schema changes, tables, or API routes.
+
+Prefer fixing mismatches between existing code, schema, and APIs rather than expanding the architecture.
