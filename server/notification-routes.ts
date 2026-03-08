@@ -3,8 +3,11 @@ import { notificationService } from "./notification-service";
 import { db } from "./db";
 import { notificationSettings, users } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "./auth";
 
 const router = Router();
+
+router.use(requireAuth);
 
 /**
  * Get user notifications with pagination
@@ -12,17 +15,13 @@ const router = Router();
  */
 router.get("/", async (req: any, res) => {
   try {
-    // In development mode, use hardcoded user ID
-    const userId = process.env.NODE_ENV === 'development' 
-      ? 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' 
-      : req.user?.id;
-    
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const page = parseInt(req.query.page) || 1;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per request
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const unreadOnly = req.query.unreadOnly === "true";
 
     const result = await notificationService.getUserNotifications(userId, page, limit, unreadOnly);
@@ -40,10 +39,7 @@ router.get("/", async (req: any, res) => {
     });
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to fetch notifications" 
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch notifications" });
   }
 });
 
@@ -53,11 +49,7 @@ router.get("/", async (req: any, res) => {
  */
 router.get("/unread-count", async (req: any, res) => {
   try {
-    // In development mode, use hardcoded user ID
-    const userId = process.env.NODE_ENV === 'development' 
-      ? 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' 
-      : req.user?.id;
-    
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -70,82 +62,48 @@ router.get("/unread-count", async (req: any, res) => {
     });
   } catch (error) {
     console.error("Failed to fetch unread count:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to fetch unread count" 
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch unread count" });
   }
 });
 
 /**
- * Mark notification as read
- * PUT /api/notifications/:id/read
+ * Mark single notification as read
+ * PATCH /api/notifications/:id/read
  */
-router.put("/:id/read", async (req: any, res) => {
+router.patch("/:id/read", async (req: any, res) => {
   try {
-    // In development mode, use hardcoded user ID
-    const userId = process.env.NODE_ENV === 'development' 
-      ? 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' 
-      : req.user?.id;
-    
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const notificationId = req.params.id;
-    
-    // For now, just log the action since we're using mock notifications
-    console.log(`📝 Mock: Marked notification ${notificationId} as read for user ${userId}`);
+    await notificationService.markAsRead(notificationId, userId);
 
-    res.json({
-      success: true,
-      message: "Notification marked as read"
-    });
+    res.json({ success: true, message: "Notification marked as read" });
   } catch (error) {
     console.error("Failed to mark notification as read:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to mark notification as read" 
-    });
+    res.status(500).json({ success: false, message: "Failed to mark notification as read" });
   }
 });
 
 /**
- * Mark multiple notifications as read
- * PUT /api/notifications/read-multiple
+ * Mark all notifications as read
+ * PATCH /api/notifications/mark-all-read
  */
-router.put("/read-multiple", async (req: any, res) => {
+router.patch("/mark-all-read", async (req: any, res) => {
   try {
-    // In development mode, use hardcoded user ID
-    const userId = process.env.NODE_ENV === 'development' 
-      ? 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0' 
-      : req.user?.id;
-    
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { notificationIds } = req.body;
-    
-    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "notificationIds must be a non-empty array" 
-      });
-    }
+    await notificationService.markAllAsRead(userId);
 
-    await notificationService.markMultipleAsRead(notificationIds, userId);
-
-    res.json({
-      success: true,
-      message: "Notifications marked as read"
-    });
+    res.json({ success: true, message: "All notifications marked as read" });
   } catch (error) {
-    console.error("Failed to mark notifications as read:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to mark notifications as read" 
-    });
+    console.error("Failed to mark all notifications as read:", error);
+    res.status(500).json({ success: false, message: "Failed to mark all notifications as read" });
   }
 });
 
@@ -165,16 +123,10 @@ router.get("/settings", async (req: any, res) => {
       .from(notificationSettings)
       .where(eq(notificationSettings.userId, userId));
 
-    res.json({
-      success: true,
-      data: settings
-    });
+    res.json({ success: true, data: settings });
   } catch (error) {
     console.error("Failed to fetch notification settings:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to fetch notification settings" 
-    });
+    res.status(500).json({ success: false, message: "Failed to fetch notification settings" });
   }
 });
 
@@ -192,13 +144,9 @@ router.put("/settings", async (req: any, res) => {
     const { notificationType, inAppEnabled, emailEnabled, pushEnabled } = req.body;
 
     if (!notificationType) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "notificationType is required" 
-      });
+      return res.status(400).json({ success: false, message: "notificationType is required" });
     }
 
-    // Upsert notification settings
     const existingSetting = await db
       .select()
       .from(notificationSettings)
@@ -210,7 +158,6 @@ router.put("/settings", async (req: any, res) => {
       );
 
     if (existingSetting.length > 0) {
-      // Update existing
       await db
         .update(notificationSettings)
         .set({
@@ -226,7 +173,6 @@ router.put("/settings", async (req: any, res) => {
           )
         );
     } else {
-      // Create new
       await db
         .insert(notificationSettings)
         .values({
@@ -238,16 +184,10 @@ router.put("/settings", async (req: any, res) => {
         });
     }
 
-    res.json({
-      success: true,
-      message: "Notification settings updated"
-    });
+    res.json({ success: true, message: "Notification settings updated" });
   } catch (error) {
     console.error("Failed to update notification settings:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to update notification settings" 
-    });
+    res.status(500).json({ success: false, message: "Failed to update notification settings" });
   }
 });
 
@@ -255,41 +195,13 @@ router.put("/settings", async (req: any, res) => {
  * Test notification (admin only)
  * POST /api/notifications/test
  */
-router.post("/test", async (req: any, res) => {
+router.post("/test", requireAdmin, async (req: any, res) => {
   try {
-    // Get current user from database
-    let userId = req.user?.id;
-    let userRole = req.user?.role;
-    
-    // In development mode, get the first admin user if not authenticated
-    if (process.env.NODE_ENV === 'development' && !userId) {
-      try {
-        const [adminUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.role, 'admin'))
-          .limit(1);
-        
-        if (adminUser) {
-          userId = adminUser.id;
-          userRole = adminUser.role;
-        }
-      } catch (error) {
-        console.error('Error getting admin user for test notification:', error);
-      }
-    }
-    
-    if (!userId || userRole !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-
+    const userId = req.user?.id;
     const { type, title, message, targetUserId } = req.body;
 
     if (!type || !title || !message) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "type, title, and message are required" 
-      });
+      return res.status(400).json({ success: false, message: "type, title, and message are required" });
     }
 
     const notification = await notificationService.createNotification({
@@ -303,17 +215,10 @@ router.post("/test", async (req: any, res) => {
       createdBy: userId
     });
 
-    res.json({
-      success: true,
-      message: "Test notification sent",
-      data: notification
-    });
+    res.json({ success: true, message: "Test notification sent", data: notification });
   } catch (error) {
     console.error("Failed to send test notification:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to send test notification" 
-    });
+    res.status(500).json({ success: false, message: "Failed to send test notification" });
   }
 });
 
@@ -321,28 +226,18 @@ router.post("/test", async (req: any, res) => {
  * Create system notification (admin only)
  * POST /api/notifications/system
  */
-router.post("/system", async (req: any, res) => {
+router.post("/system", requireAdmin, async (req: any, res) => {
   try {
     const userId = req.user?.id;
-    const userRole = req.user?.role;
-    
-    if (!userId || userRole !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-
     const { type, title, message, targetUsers, priority, entityType, entityId, entityUrl } = req.body;
 
     if (!type || !title || !message) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "type, title, and message are required" 
-      });
+      return res.status(400).json({ success: false, message: "type, title, and message are required" });
     }
 
     let userIds: string[] = [];
 
     if (targetUsers === "all") {
-      // Send to all active users
       const allUsers = await db
         .select({ id: users.id })
         .from(users)
@@ -351,10 +246,7 @@ router.post("/system", async (req: any, res) => {
     } else if (Array.isArray(targetUsers)) {
       userIds = targetUsers;
     } else {
-      return res.status(400).json({ 
-        success: false, 
-        message: "targetUsers must be 'all' or an array of user IDs" 
-      });
+      return res.status(400).json({ success: false, message: "targetUsers must be 'all' or an array of user IDs" });
     }
 
     const notifications = await notificationService.createBulkNotifications(userIds, {
@@ -375,10 +267,7 @@ router.post("/system", async (req: any, res) => {
     });
   } catch (error) {
     console.error("Failed to send system notification:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to send system notification" 
-    });
+    res.status(500).json({ success: false, message: "Failed to send system notification" });
   }
 });
 

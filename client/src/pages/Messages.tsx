@@ -93,6 +93,7 @@ export default function Messages() {
     apiRequest("PATCH", `/api/conversations/${selectedConvId}/read`, {}).then(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
     });
   }, [selectedConvId]);
 

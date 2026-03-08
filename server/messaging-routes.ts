@@ -297,19 +297,28 @@ export function registerMessagingRoutes(app: Express) {
       const preview = content.trim().length > 100 ? content.trim().slice(0, 100) + "…" : content.trim();
 
       for (const participant of otherParticipants) {
-        // In-app notification
         try {
-          await notificationService.createNotification({
-            userId: participant.userId,
-            type: "direct_message",
-            title: `New message from ${senderName}`,
-            message: preview,
-            priority: "medium",
-            entityType: "message",
-            entityId: newMsg.id,
-            entityUrl: "/messages",
-            createdBy: userId,
-          });
+          // Only create a new notification if the recipient has no unread DM notification already.
+          // This prevents a flood of emails for every single message in a conversation.
+          const alreadyNotified = await notificationService.hasUnreadNotification(
+            participant.userId,
+            "direct_message",
+            "/messages"
+          );
+
+          if (!alreadyNotified) {
+            await notificationService.createNotification({
+              userId: participant.userId,
+              type: "direct_message",
+              title: `New message from ${senderName}`,
+              message: preview,
+              priority: "medium",
+              entityType: "message",
+              entityId: newMsg.id,
+              entityUrl: "/messages",
+              createdBy: userId,
+            });
+          }
         } catch (notifErr) {
           console.error("[Messaging] Failed to create in-app notification:", notifErr);
         }
@@ -341,6 +350,13 @@ export function registerMessagingRoutes(app: Express) {
             eq(conversationParticipants.userId, userId)
           )
         );
+
+      // Also mark all unread direct_message notifications as read so the bell clears
+      try {
+        await notificationService.markAllAsRead(userId);
+      } catch (notifErr) {
+        console.error("[Messaging] Failed to clear DM notifications:", notifErr);
+      }
 
       res.json({ success: true });
     } catch (error) {

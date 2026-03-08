@@ -327,6 +327,32 @@ class NotificationService {
   }
 
   /**
+   * Mark all notifications as read for a user
+   */
+  async markAllAsRead(userId: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE notifications 
+      SET is_read = true, updated_at = ${new Date().toISOString()}
+      WHERE user_id = ${userId} AND is_read = false
+    `);
+  }
+
+  /**
+   * Check if user has an existing unread notification for a given type and entity
+   */
+  async hasUnreadNotification(userId: string, type: string, entityUrl?: string): Promise<boolean> {
+    const result = await db.execute(sql`
+      SELECT COUNT(*) as count 
+      FROM notifications 
+      WHERE user_id = ${userId} 
+        AND type = ${type} 
+        AND is_read = false
+        ${entityUrl ? sql`AND entity_url = ${entityUrl}` : sql``}
+    `);
+    return Number((result.rows[0] as any)?.count || 0) > 0;
+  }
+
+  /**
    * Get user notifications with pagination
    */
   async getUserNotifications(
