@@ -4,52 +4,6 @@ import { conversations, conversationParticipants, messages, users } from "@share
 import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { requireAuth } from "./auth";
 import { notificationService } from "./notification-service";
-import nodemailer from "nodemailer";
-
-const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-const smtpTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: smtpPort,
-  secure: smtpPort === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-async function sendMessageEmail(
-  toEmail: string,
-  toName: string,
-  senderName: string,
-  preview: string
-) {
-  if (!process.env.SMTP_USER) return;
-  const appName = process.env.COMPANY_NAME || "CompanyOS";
-  const appUrl = process.env.APP_URL || "https://localhost:5000";
-  try {
-    await smtpTransporter.sendMail({
-      from: `"${process.env.SMTP_FROM_NAME || appName}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: `New message from ${senderName} — ${appName}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-          <h2 style="color:#1a1a2e">You have a new message</h2>
-          <p><strong>${senderName}</strong> sent you a message in ${appName}:</p>
-          <div style="background:#f5f5f5;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:4px;margin:16px 0">
-            <p style="margin:0;color:#374151">${preview}</p>
-          </div>
-          <a href="${appUrl}/messages" style="display:inline-block;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:8px">
-            Open Messages
-          </a>
-          <p style="color:#9ca3af;font-size:12px;margin-top:24px">This email was sent automatically by ${appName}.</p>
-        </div>
-      `,
-      text: `New message from ${senderName}:\n\n${preview}\n\nOpen Messages: ${appUrl}/messages`,
-    });
-  } catch (err) {
-    console.error("[Messaging] Failed to send email notification:", err);
-  }
-}
 
 export function registerMessagingRoutes(app: Express) {
   // GET /api/users/directory — lightweight user list for messaging (all authenticated users)
@@ -358,22 +312,6 @@ export function registerMessagingRoutes(app: Express) {
           });
         } catch (notifErr) {
           console.error("[Messaging] Failed to create in-app notification:", notifErr);
-        }
-
-        // Email notification
-        try {
-          const [recipientUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, participant.userId));
-          if (recipientUser?.email) {
-            const recipientName =
-              `${recipientUser.firstName || ""} ${recipientUser.lastName || ""}`.trim() ||
-              recipientUser.username;
-            await sendMessageEmail(recipientUser.email, recipientName, senderName, preview);
-          }
-        } catch (emailErr) {
-          console.error("[Messaging] Failed to send email notification:", emailErr);
         }
       }
 
