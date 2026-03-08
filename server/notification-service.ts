@@ -98,10 +98,13 @@ class NotificationService {
     // Log the notification creation
     await this.logNotification(notification.id, "sent", "in_app", true);
 
-    // Send email if enabled for this user and notification type
-    const setting = userSettings.find(s => s.notificationType === payload.type);
-    if (!setting || setting.emailEnabled) {
-      await this.sendEmailNotification(notification);
+    // For direct_message type, email is handled by messaging-email.ts (deferred + debounced).
+    // Skip it here to avoid immediate duplicate emails.
+    if (payload.type !== "direct_message") {
+      const setting = userSettings.find(s => s.notificationType === payload.type);
+      if (!setting || setting.emailEnabled) {
+        await this.sendEmailNotification(notification);
+      }
     }
 
     return notification;

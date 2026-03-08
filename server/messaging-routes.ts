@@ -4,6 +4,7 @@ import { conversations, conversationParticipants, messages, users } from "@share
 import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { requireAuth } from "./auth";
 import { notificationService } from "./notification-service";
+import { scheduleMessageEmail, cancelMessageEmail, cancelAllMessageEmails } from "./messaging-email";
 
 export function registerMessagingRoutes(app: Express) {
   // GET /api/messaging/users — lightweight user list for messaging (all authenticated users)
@@ -297,31 +298,26 @@ export function registerMessagingRoutes(app: Express) {
       const preview = content.trim().length > 100 ? content.trim().slice(0, 100) + "…" : content.trim();
 
       for (const participant of otherParticipants) {
+        // 1. In-app notification — always create immediately
         try {
-          // Only create a new notification if the recipient has no unread DM notification already.
-          // This prevents a flood of emails for every single message in a conversation.
-          const alreadyNotified = await notificationService.hasUnreadNotification(
-            participant.userId,
-            "direct_message",
-            "/messages"
-          );
-
-          if (!alreadyNotified) {
-            await notificationService.createNotification({
-              userId: participant.userId,
-              type: "direct_message",
-              title: `New message from ${senderName}`,
-              message: preview,
-              priority: "medium",
-              entityType: "message",
-              entityId: newMsg.id,
-              entityUrl: "/messages",
-              createdBy: userId,
-            });
-          }
+          await notificationService.createNotification({
+            userId: participant.userId,
+            type: "direct_message",
+            title: `New message from ${senderName}`,
+            message: preview,
+            priority: "medium",
+            entityType: "message",
+            entityId: newMsg.id,
+            entityUrl: "/messages",
+            createdBy: userId,
+          });
         } catch (notifErr) {
           console.error("[Messaging] Failed to create in-app notification:", notifErr);
         }
+
+        // 2. Deferred email — schedules (or debounces) a single summary email after a delay.
+        //    If the recipient reads the conversation before the delay expires, the email is cancelled.
+        scheduleMessageEmail(participant.userId, convId, senderName, preview);
       }
 
       res.status(201).json({
@@ -350,6 +346,9 @@ export function registerMessagingRoutes(app: Express) {
             eq(conversationParticipants.userId, userId)
           )
         );
+
+      // Cancel any pending deferred email for this conversation
+      cancelMessageEmail(userId, convId);
 
       // Also mark all unread direct_message notifications as read so the bell clears
       try {
