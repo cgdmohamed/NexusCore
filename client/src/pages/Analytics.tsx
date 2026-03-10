@@ -402,8 +402,8 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 />
                 <ComparisonCard
                   title="Net Profit"
-                  currentValue={comparison.period1.revenue - comparison.period1.expenses}
-                  previousValue={comparison.period2.revenue - comparison.period2.expenses}
+                  currentValue={Math.round((comparison.period1.revenue - comparison.period1.expenses) * 100) / 100}
+                  previousValue={Math.round((comparison.period2.revenue - comparison.period2.expenses) * 100) / 100}
                   change={comparison.changes.profit}
                   formatter={formatCurrencyValue}
                 />

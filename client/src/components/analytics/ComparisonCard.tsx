@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/currency";
 
 interface ComparisonCardProps {
   title: string;
@@ -14,22 +13,18 @@ interface ComparisonCardProps {
   formatter?: (value: number) => string;
 }
 
-export function ComparisonCard({ 
-  title, 
-  currentValue, 
-  previousValue, 
-  change, 
-  formatter = (val) => val.toString() 
+export function ComparisonCard({
+  title,
+  currentValue,
+  previousValue,
+  change,
+  formatter = (val) => Number(val.toFixed(2)).toString(),
 }: ComparisonCardProps) {
   const isPositive = change.percentage > 0;
   const isNeutral = change.percentage === 0;
 
-  const formatChange = (value: number) => {
-    if (formatter.toString().includes('currency') || formatter.toString().includes('formatCurrency')) {
-      return formatCurrency(Math.abs(value));
-    }
-    return Math.abs(value).toString();
-  };
+  const absChange = Math.abs(change.absolute);
+  const absPct = Math.abs(change.percentage);
 
   return (
     <Card>
@@ -41,7 +36,7 @@ export function ComparisonCard({
           <div className="text-2xl font-bold text-text">
             {formatter(currentValue)}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <div className={cn(
               "flex items-center space-x-1 text-xs px-2 py-1 rounded-full",
@@ -56,13 +51,13 @@ export function ComparisonCard({
               ) : (
                 <ArrowDown className="h-3 w-3" />
               )}
-              <span>{Math.abs(change.percentage).toFixed(1)}%</span>
+              <span>{absPct.toFixed(2)}%</span>
             </div>
             <span className="text-xs text-neutral">
-              {isPositive ? "+" : isNeutral ? "" : "-"}{formatChange(change.absolute)} vs previous period
+              {isPositive ? "+" : isNeutral ? "" : "-"}{formatter(absChange)} vs previous period
             </span>
           </div>
-          
+
           <div className="text-xs text-neutral">
             Previous: {formatter(previousValue)}
           </div>

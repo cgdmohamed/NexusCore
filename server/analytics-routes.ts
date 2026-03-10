@@ -381,39 +381,31 @@ export function registerAnalyticsRoutes(app: Express) {
       const period1Metrics = await getMetricsForPeriod(period1Start as string, period1End as string);
       const period2Metrics = await getMetricsForPeriod(period2Start as string, period2End as string);
 
-      // Calculate percentage changes
+      const r2 = (n: number) => Math.round(n * 100) / 100;
+
+      // Calculate percentage changes, rounded to 2 decimal places
       const calculateChange = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? 100 : 0;
-        return ((current - previous) / previous) * 100;
+        const absolute = r2(current - previous);
+        const percentage = previous === 0
+          ? (current > 0 ? 100 : 0)
+          : r2(((current - previous) / previous) * 100);
+        return { absolute, percentage };
       };
 
+      const p1r = r2(period1Metrics.revenue);
+      const p1e = r2(period1Metrics.expenses);
+      const p2r = r2(period2Metrics.revenue);
+      const p2e = r2(period2Metrics.expenses);
+
       const comparison = {
-        period1: period1Metrics,
-        period2: period2Metrics,
+        period1: { ...period1Metrics, revenue: p1r, expenses: p1e },
+        period2: { ...period2Metrics, revenue: p2r, expenses: p2e },
         changes: {
-          revenue: {
-            absolute: period1Metrics.revenue - period2Metrics.revenue,
-            percentage: calculateChange(period1Metrics.revenue, period2Metrics.revenue)
-          },
-          expenses: {
-            absolute: period1Metrics.expenses - period2Metrics.expenses,
-            percentage: calculateChange(period1Metrics.expenses, period2Metrics.expenses)
-          },
-          profit: {
-            absolute: (period1Metrics.revenue - period1Metrics.expenses) - (period2Metrics.revenue - period2Metrics.expenses),
-            percentage: calculateChange(
-              period1Metrics.revenue - period1Metrics.expenses,
-              period2Metrics.revenue - period2Metrics.expenses
-            )
-          },
-          newClients: {
-            absolute: period1Metrics.newClients - period2Metrics.newClients,
-            percentage: calculateChange(period1Metrics.newClients, period2Metrics.newClients)
-          },
-          completedTasks: {
-            absolute: period1Metrics.completedTasks - period2Metrics.completedTasks,
-            percentage: calculateChange(period1Metrics.completedTasks, period2Metrics.completedTasks)
-          }
+          revenue: calculateChange(p1r, p2r),
+          expenses: calculateChange(p1e, p2e),
+          profit: calculateChange(r2(p1r - p1e), r2(p2r - p2e)),
+          newClients: calculateChange(period1Metrics.newClients, period2Metrics.newClients),
+          completedTasks: calculateChange(period1Metrics.completedTasks, period2Metrics.completedTasks)
         }
       };
 
