@@ -1179,7 +1179,8 @@ app.put('/api/services/:id', isAuthenticated, (req, res) => {
   try {
     const index = services.findIndex(s => s.id === req.params.id);
     if (index !== -1) {
-      services[index] = { ...services[index], ...req.body, updatedAt: new Date().toISOString() };
+      const { name, description, category, price, isActive } = req.body;
+      services[index] = { ...services[index], name, description, category, price, isActive, updatedAt: new Date().toISOString() };
       // Log API request
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(services[index]);
