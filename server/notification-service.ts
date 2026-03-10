@@ -156,10 +156,12 @@ class NotificationService {
       if (!template) {
         // Use default template
         const appName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notification";
+        const replitDomains = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
         const appUrl =
           process.env.APP_URL ||
-          (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "");
-        const actionUrl = notification.entityUrl ? `${appUrl}${notification.entityUrl}` : appUrl;
+          (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "") ||
+          (replitDomains ? `https://${replitDomains}` : "");
+        const actionUrl = appUrl && notification.entityUrl ? `${appUrl}${notification.entityUrl}` : "";
         const esc = (s: string) =>
           s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 

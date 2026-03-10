@@ -115,12 +115,12 @@ async function sendDeferredEmail(
 
     if (!recipient?.email) return;
 
+    const replitDomains = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
     const appUrl =
       process.env.APP_URL ||
-      (process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : "");
-    const messagesUrl = `${appUrl}/messages`;
+      (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "") ||
+      (replitDomains ? `https://${replitDomains}` : "");
+    const messagesUrl = appUrl ? `${appUrl}/messages` : "";
 
     const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notifications";
     const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
@@ -171,12 +171,12 @@ async function sendDeferredEmail(
               <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:6px;padding:0 16px;">
                 ${messageRows}
               </table>
-              <p style="margin:24px 0 0;text-align:center;">
+              ${messagesUrl ? `<p style="margin:24px 0 0;text-align:center;">
                 <a href="${messagesUrl}"
                    style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;">
                   Open Messages
                 </a>
-              </p>
+              </p>` : ""}
             </td>
           </tr>
           <tr>
@@ -192,8 +192,8 @@ async function sendDeferredEmail(
 </html>`;
 
     const bodyText = isBatch
-      ? `You have ${messages.length} new messages.\n\n${messages.map((m) => `${m.senderName}: ${m.preview}`).join("\n")}\n\nOpen: ${messagesUrl}`
-      : `${firstSender}: ${messages[0].preview}\n\nOpen: ${messagesUrl}`;
+      ? `You have ${messages.length} new messages.\n\n${messages.map((m) => `${m.senderName}: ${m.preview}`).join("\n")}${messagesUrl ? `\n\nOpen: ${messagesUrl}` : ""}`
+      : `${firstSender}: ${messages[0].preview}${messagesUrl ? `\n\nOpen: ${messagesUrl}` : ""}`;
 
     const smtpPort = parseInt(process.env.SMTP_PORT || "587");
     const transporter = nodemailer.createTransport({
