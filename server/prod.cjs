@@ -1037,7 +1037,10 @@ app.patch('/api/quotations/:id', isAuthenticated, (req, res) => {
   try {
     const index = quotations.findIndex(q => q.id === req.params.id);
     if (index !== -1) {
-      quotations[index] = { ...quotations[index], ...req.body, updatedAt: new Date().toISOString() };
+      const safeBody = Object.fromEntries(
+        Object.entries(req.body).filter(([key]) => !['__proto__', 'constructor', 'prototype'].includes(key))
+      );
+      quotations[index] = { ...quotations[index], ...safeBody, updatedAt: new Date().toISOString() };
       // Log API request
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(quotations[index]);
