@@ -409,6 +409,7 @@ export function registerTaskManagementRoutes(app: Express) {
       if (validatedData.status) updateData.status = validatedData.status;
       if (validatedData.dueDate) updateData.dueDate = new Date(validatedData.dueDate);
       if (validatedData.assignedTo !== undefined) updateData.assignedTo = validatedData.assignedTo;
+      if (validatedData.projectId !== undefined) updateData.projectId = validatedData.projectId;
       
       updateData.updatedAt = new Date();
       

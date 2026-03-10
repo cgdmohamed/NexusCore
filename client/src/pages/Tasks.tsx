@@ -173,6 +173,7 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsEditDialogOpen(false);
       setEditingTask(null);
       editForm.reset();
@@ -222,6 +223,7 @@ export default function Tasks() {
       priority: data.priority,
       status: data.status,
       assignedTo: data.assignedTo || null,
+      projectId: data.projectId !== undefined ? data.projectId : (editingTask.projectId ?? null),
     };
     if (data.dueDate) {
       submitData.dueDate = data.dueDate instanceof Date 
@@ -245,6 +247,7 @@ export default function Tasks() {
       status: task.status || "pending",
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
       assignedTo: task.assignedTo || undefined,
+      projectId: task.projectId ?? null,
     });
     setIsEditDialogOpen(true);
   };
@@ -1068,6 +1071,37 @@ export default function Tasks() {
                   </FormItem>
                 )}
               />
+
+              {projects.length > 0 && (
+                <FormField
+                  control={editForm.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <Select
+                        onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                        value={field.value ?? "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Not linked to a project" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Not linked to a project</SelectItem>
+                          {projects.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="flex justify-end space-x-2">
                 <Button 
