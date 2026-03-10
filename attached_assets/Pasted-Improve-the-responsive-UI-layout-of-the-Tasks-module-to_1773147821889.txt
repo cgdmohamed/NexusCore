@@ -1,0 +1,85 @@
+Improve the responsive UI layout of the Tasks module to ensure a clean and balanced mobile and tablet experience.
+
+Do not modify business logic, APIs, or database structure. Only improve layout behavior and spacing.
+
+General Goal:
+Ensure the Tasks page adapts properly on small screens with a clean visual hierarchy and consistent spacing.
+
+1. KPI Summary Cards (Top Statistics)
+
+Improve the responsive grid for the task statistics cards.
+
+Requirements:
+
+* On desktop: keep cards in one horizontal row.
+* On tablet: display cards in 3 columns.
+* On mobile: display cards in a balanced 2-column grid instead of a single vertical column.
+* Maintain equal height and spacing between cards.
+* Ensure icons, labels, and numbers remain centered and readable.
+
+2. Header Actions
+
+Improve the Export button behavior on mobile.
+
+Requirements:
+
+* Prevent the Export button from visually floating too far from the page title.
+* Align it properly with the title section.
+* Ensure it scales or moves gracefully on smaller screens.
+
+3. Task Management Section
+
+Improve the layout of the Create Task button and filter controls.
+
+Requirements:
+
+* On desktop: keep "Create Task" aligned to the right.
+* On mobile: place "Create Task" above the filters with proper spacing.
+* Ensure the button does not stretch excessively or break layout.
+
+4. Filters Layout
+
+Improve the responsiveness of the filters area.
+
+Requirements:
+
+* Ensure Search, Status filter, and Priority filter stack logically on small screens.
+* Prevent elements from looking cramped or misaligned.
+* Keep consistent spacing between inputs.
+* Align Clear Filters and View toggle buttons properly.
+
+5. View Toggle Buttons
+
+Improve the grid/list toggle responsiveness.
+
+Requirements:
+
+* Ensure toggle buttons remain aligned and not overly wide.
+* Prevent them from wrapping awkwardly on smaller screens.
+
+6. Task Cards List
+
+Improve the layout of task cards.
+
+Requirements:
+
+* Ensure task title, status badges, and action buttons align properly.
+* Prevent badges like "COMPLETED" and "HIGH" from overlapping or breaking lines.
+* Maintain consistent spacing between task rows.
+
+7. Mobile Visual Hierarchy
+
+Ensure the mobile layout follows a clear order:
+
+Page Title
+Statistics Cards
+Create Task Button
+Filters
+Task List
+
+Spacing between these sections should be consistent and visually clean.
+
+Important:
+Do not change component logic.
+Do not modify data flow or API calls.
+Only improve layout structure, spacing, and responsive grid behavior.

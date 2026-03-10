@@ -290,333 +290,239 @@ export default function Tasks() {
       <div className="p-3 md:p-6 space-y-6">
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Briefcase className="h-4 w-4 text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-                    <p className="text-2xl font-bold">{stats.totalTasks || 0}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { label: "Total Tasks",   value: stats.totalTasks || 0,                           icon: Briefcase,   accent: "border-t-blue-500",   iconColor: "text-blue-500" },
+              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,            icon: CheckCircle2, accent: "border-t-green-500", iconColor: "text-green-500" },
+              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,          icon: Clock,       accent: "border-t-yellow-500", iconColor: "text-yellow-500" },
+              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,              icon: AlertCircle, accent: "border-t-orange-500", iconColor: "text-orange-500" },
+              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,               icon: AlertCircle, accent: "border-t-red-500",    iconColor: "text-red-500" },
+              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length,   icon: Users,       accent: "border-t-gray-400",   iconColor: "text-gray-400" },
+            ].map(({ label, value, icon: Icon, accent, iconColor }) => (
+              <Card key={label} className={`border-t-2 ${accent}`}>
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-gray-500 leading-tight">{label}</p>
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Completed</p>
-                    <p className="text-2xl font-bold">{stats.statusBreakdown?.completed || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">In Progress</p>
-                    <p className="text-2xl font-bold">{stats.statusBreakdown?.in_progress || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="h-4 w-4 text-orange-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending</p>
-                    <p className="text-2xl font-bold">{stats.statusBreakdown?.pending || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">High Priority</p>
-                    <p className="text-2xl font-bold">{stats.priorityBreakdown?.high || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-gray-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Assigned</p>
-                    <p className="text-2xl font-bold">{tasks.filter((t: any) => t.assignedTo).length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <p className="text-2xl font-bold text-text">{value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
 
         {/* Controls and Filters */}
         <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-              <CardTitle className="text-lg font-semibold">Task Management</CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('common.create')} Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Create New Task</DialogTitle>
-                      <DialogDescription>
-                        Create a new task and assign it to team members
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Title</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter task title" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Description</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Enter task description" 
-                                  className="min-h-[100px]"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="priority"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Priority</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select priority" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="high">High</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Status</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="in_progress">In Progress</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <FormField
-                          control={form.control}
-                          name="assignedTo"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Assign To</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select assignee" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {(users as any[]).map((user: any) => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                      {user.email}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        {projects.length > 0 && (
-                          <FormField
-                            control={form.control}
-                            name="projectId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                                <Select
-                                  onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                                  value={field.value ?? "none"}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Not linked to a project" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="none">Not linked to a project</SelectItem>
-                                    {projects.map((p: any) => (
-                                      <SelectItem key={p.id} value={p.id}>
-                                        {p.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-
-                        <div className="flex justify-end space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setIsCreateDialogOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button type="submit" disabled={createTaskMutation.isPending}>
-                            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-3">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('common.search')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 w-full"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex gap-3 flex-1">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
-                      <SelectValue placeholder="All Priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priority</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
+          <CardContent className="p-4 space-y-3">
+            {/* Title row + actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-base font-semibold text-text">Task Management</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
                   size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setPriorityFilter("all");
-                  }}
+                  className="w-full sm:w-auto"
+                  onClick={() => setIsCreateDialogOpen(true)}
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Clear Filters
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('common.create')} Task
                 </Button>
-                <div className="flex border rounded-md">
+                <div className="flex border rounded-md ml-auto sm:ml-0">
                   <Button
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("cards")}
-                    className="rounded-r-none"
+                    className="rounded-r-none h-8 px-2.5"
                   >
-                    <Grid3X3 className="h-4 w-4" />
+                    <Grid3X3 className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant={viewMode === "table" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("table")}
-                    className="rounded-l-none"
+                    className="rounded-l-none h-8 px-2.5"
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('common.search')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Filters row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none h-9">
+                  <SelectValue placeholder="All Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 shrink-0"
+                onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1.5" />
+                Clear
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Create Task Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Task</DialogTitle>
+              <DialogDescription>Create a new task and assign it to team members</DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl><Input placeholder="Enter task title" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Enter task description" className="min-h-[100px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="assignedTo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assign To</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select assignee" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {(users as any[]).map((user: any) => (
+                            <SelectItem key={user.id} value={user.id}>{user.email}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {projects.length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <Select
+                          onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                          value={field.value ?? "none"}
+                        >
+                          <FormControl><SelectTrigger><SelectValue placeholder="Not linked to a project" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Not linked to a project</SelectItem>
+                            {projects.map((p: any) => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" disabled={createTaskMutation.isPending}>
+                    {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
         {/* Tasks Display */}
         {isLoading ? (
@@ -660,20 +566,20 @@ export default function Tasks() {
             {viewMode === "cards" ? (
               <div className="grid gap-4">
                 {tasks.map((task: any) => (
-                  <Card key={task.id} className="hover:shadow-md transition-shadow">
+                  <Card key={task.id} className="hover:shadow-sm transition-shadow">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-lg font-semibold">{task.title}</h3>
-                            <Badge 
-                              variant="secondary" 
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-text leading-snug mb-1.5 truncate">{task.title}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                            <Badge
+                              variant="secondary"
                               className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
                             >
                               {task.status.replace("_", " ").toUpperCase()}
                             </Badge>
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className={`text-xs ${
                                 task.priority === 'high' ? 'text-red-600 border-red-200' :
                                 task.priority === 'medium' ? 'text-yellow-600 border-yellow-200' :
@@ -684,54 +590,51 @@ export default function Tasks() {
                             </Badge>
                           </div>
                           {task.description && (
-                            <p className="text-gray-600 mb-3">{task.description}</p>
+                            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{task.description}</p>
                           )}
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                             {task.assignedTo && (
-                              <div className="flex items-center space-x-1">
-                                <User className="h-4 w-4" />
-                                <span>Assigned to: {task.assigneeName || task.assignedTo}</span>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3.5 w-3.5" />
+                                <span>{task.assigneeName || task.assignedTo}</span>
                               </div>
                             )}
                             {task.dueDate && (
-                              <div className="flex items-center space-x-1">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="h-3.5 w-3.5" />
+                                <span>Due {new Date(task.dueDate).toLocaleDateString()}</span>
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2 ml-4">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 w-8 p-0 sm:w-auto sm:px-3"
                             onClick={() => viewTaskDetails(task)}
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
+                            <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
+                            <span className="hidden sm:inline text-xs">View</span>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEditDialog(task)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Task
+                                <Edit className="h-4 w-4 mr-2" />Edit Task
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'in_progress')}>
-                                <Clock className="h-4 w-4 mr-2" />
-                                Mark In Progress
+                                <Clock className="h-4 w-4 mr-2" />Mark In Progress
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'completed')}>
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                                Mark Complete
+                                <CheckCircle2 className="h-4 w-4 mr-2" />Mark Complete
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'cancelled')}>
-                                <AlertCircle className="h-4 w-4 mr-2" />
-                                Cancel Task
+                                <AlertCircle className="h-4 w-4 mr-2" />Cancel Task
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
