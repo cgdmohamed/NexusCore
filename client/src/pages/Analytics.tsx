@@ -19,20 +19,23 @@ import {
   AlertCircle,
   BarChart3 
 } from "lucide-react";
-import { format, subDays, subMonths } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 
 export default function Analytics() {
   const { t } = useTranslation();
   const [dateRange, setDateRange] = useState<{start: Date | null, end: Date | null}>({
-    start: subMonths(new Date(), 1),
-    end: new Date()
+    start: startOfDay(subMonths(new Date(), 1)),
+    end: endOfDay(new Date())
   });
   const [selectedPeriod, setSelectedPeriod] = useState('month');
 
+  const startKey = dateRange.start?.toISOString() ?? null;
+  const endKey = dateRange.end?.toISOString() ?? null;
+
   // Fetch Company KPIs
   const { data: kpis, isLoading: kpisLoading } = useQuery({
-    queryKey: ['/api/analytics/kpis', dateRange.start, dateRange.end],
+    queryKey: ['/api/analytics/kpis', startKey, endKey],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (dateRange.start) params.append('startDate', dateRange.start.toISOString());
@@ -63,7 +66,7 @@ export default function Analytics() {
 
   // Fetch Financial Reports
   const { data: expenseReports } = useQuery({
-    queryKey: ['/api/analytics/financial-reports', 'expenses', dateRange.start, dateRange.end],
+    queryKey: ['/api/analytics/financial-reports', 'expenses', startKey, endKey],
     queryFn: async () => {
       const params = new URLSearchParams({ type: 'expenses' });
       if (dateRange.start) params.append('startDate', dateRange.start.toISOString());
@@ -76,7 +79,7 @@ export default function Analytics() {
 
   // Fetch Period Comparison
   const { data: comparison } = useQuery({
-    queryKey: ['/api/analytics/comparison', dateRange.start, dateRange.end],
+    queryKey: ['/api/analytics/comparison', startKey, endKey],
     queryFn: async () => {
       if (!dateRange.start || !dateRange.end) return null;
       
@@ -115,7 +118,10 @@ export default function Analytics() {
   };
 
   const handleDateRangeChange = (start: Date | null, end: Date | null) => {
-    setDateRange({ start, end });
+    setDateRange({
+      start: start ? startOfDay(start) : null,
+      end: end ? endOfDay(end) : null,
+    });
   };
 
   const handlePeriodChange = (period: string) => {
@@ -138,7 +144,7 @@ export default function Analytics() {
         break;
     }
     
-    setDateRange({ start, end: now });
+    setDateRange({ start: startOfDay(start), end: endOfDay(now) });
   };
 
   const handleExport = () => {
