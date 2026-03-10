@@ -36,14 +36,16 @@ async function testEmail() {
     const testRecipient = process.argv[2] || smtpConfig.auth.user;
     console.log(`\n📤 Sending test email to: ${testRecipient}`);
 
+    const appName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "App";
+    const fromEmail = process.env.SMTP_FROM || smtpConfig.auth.user;
     const info = await transporter.sendMail({
-      from: `"${process.env.SMTP_FROM_NAME || 'Creative Code Nexus'}" <${process.env.SMTP_FROM || smtpConfig.auth.user}>`,
+      from: `"${appName}" <${fromEmail}>`,
       to: testRecipient,
-      subject: "Test Email from Creative Code Nexus",
+      subject: `Test Email from ${appName}`,
       text: "This is a test email to verify your SMTP configuration is working correctly.",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Creative Code Nexus - Email Test</h2>
+          <h2 style="color: #2563eb;">${appName} - Email Test</h2>
           <p>This is a test email to verify your SMTP configuration is working correctly.</p>
           <p style="color: #10b981; font-weight: bold;">✅ Your email system is configured and working!</p>
           <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">

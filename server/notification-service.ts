@@ -155,11 +155,53 @@ class NotificationService {
 
       if (!template) {
         // Use default template
+        const appName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notification";
+        const appUrl =
+          process.env.APP_URL ||
+          (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "");
+        const actionUrl = notification.entityUrl ? `${appUrl}${notification.entityUrl}` : appUrl;
+        const esc = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+        const defaultHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f9f9f9;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f9;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#4f46e5;padding:24px 32px;">
+              <h1 style="margin:0;color:#fff;font-size:20px;">${esc(appName)}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 12px;font-size:18px;color:#1a1a1a;">${esc(notification.title)}</h2>
+              <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.6;">${esc(notification.message)}</p>
+              ${actionUrl ? `<p style="text-align:center;margin:0;">
+                <a href="${esc(actionUrl)}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;">View Details</a>
+              </p>` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;background:#f9f9f9;text-align:center;color:#aaa;font-size:12px;">
+              You are receiving this notification from ${esc(appName)}.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
         const emailPayload: EmailPayload = {
           to: [user.email],
           subject: notification.title,
-          bodyHtml: `<h2>${notification.title}</h2><p>${notification.message}</p>`,
-          bodyText: `${notification.title}\n\n${notification.message}`,
+          bodyHtml: defaultHtml,
+          bodyText: `${notification.title}\n\n${notification.message}${actionUrl ? `\n\n${actionUrl}` : ""}`,
           metadata: {
             notificationId: notification.id,
             entityType: notification.entityType,
@@ -171,7 +213,7 @@ class NotificationService {
       } else {
         // Use template with variable substitution
         const variables = {
-          user_name: `${user.firstName} ${user.lastName}`,
+          user_name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || user.email || "User",
           user_email: user.email,
           notification_title: notification.title,
           notification_message: notification.message,
@@ -243,8 +285,8 @@ class NotificationService {
    * Send email using configured SMTP provider
    */
   private async sendEmail(payload: EmailPayload): Promise<void> {
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@company.com";
-    const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Company";
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
+    const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notifications";
 
     // Check if SMTP is configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -316,16 +358,9 @@ class NotificationService {
    * Mark multiple notifications as read
    */
   async markMultipleAsRead(notificationIds: string[], userId: string): Promise<void> {
-    const idList = notificationIds.map(id => `'${id}'`).join(',');
-    await db.execute(sql`
-      UPDATE notifications 
-      SET is_read = true, updated_at = ${new Date().toISOString()}
-      WHERE id IN (${sql.raw(idList)}) AND user_id = ${userId}
-    `);
-
-    // Log each notification
+    if (notificationIds.length === 0) return;
     for (const id of notificationIds) {
-      await this.logNotification(id, "read", "in_app", true);
+      await this.markAsRead(id, userId);
     }
   }
 

@@ -122,8 +122,8 @@ async function sendDeferredEmail(
         : "");
     const messagesUrl = `${appUrl}/messages`;
 
-    const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "CompanyOS";
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@company.com";
+    const fromName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notifications";
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log("[Messaging Email] SMTP not configured, skipping email to", recipient.email);
