@@ -1566,130 +1566,172 @@ export function setupDatabaseRoutes(app: Express) {
       const companyEmail = process.env.COMPANY_EMAIL || 'info@company.com';
       const companyPhone = process.env.COMPANY_PHONE || '';
       const companyAddress = process.env.COMPANY_ADDRESS || '';
+      const companyVatNumber = process.env.COMPANY_VAT_NUMBER || '';
+      const companyRegNumber = process.env.COMPANY_REGISTRATION_NUMBER || '';
 
       const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
       const taxAmount = parseFloat(quotation.taxAmount || '0');
       const discountAmount = parseFloat(quotation.discountAmount || '0');
       const totalAmount = subtotal + taxAmount - discountAmount;
 
-      const statusColors: Record<string, string> = {
-        draft: 'background:#f3f4f6;color:#374151',
-        sent: 'background:#dbeafe;color:#1d4ed8',
-        approved: 'background:#dcfce7;color:#15803d',
+      const statusBadgeStyles: Record<string, string> = {
+        draft:    'background:#f3f4f6;color:#374151',
+        sent:     'background:#dbeafe;color:#1d4ed8',
+        accepted: 'background:#dcfce7;color:#15803d',
         rejected: 'background:#fee2e2;color:#dc2626',
-        expired: 'background:#fef3c7;color:#d97706',
+        expired:  'background:#fef3c7;color:#d97706',
+        invoiced: 'background:#ede9fe;color:#7c3aed',
       };
-      const statusStyle = statusColors[quotation.status] || 'background:#f3f4f6;color:#374151';
+      const statusStyle = statusBadgeStyles[quotation.status] || 'background:#f3f4f6;color:#374151';
 
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Quotation ${quotation.quotationNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .header h1 { color: #1a1a1a; margin: 0; }
-            .company-info { margin-bottom: 30px; }
-            .client-info { margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
-            .doc-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
-            .doc-details div { flex: 1; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f5f5f5; font-weight: bold; }
-            .total-section { margin-top: 20px; text-align: right; }
-            .total-row { display: flex; justify-content: flex-end; margin: 5px 0; }
-            .total-row span { width: 180px; }
-            .total-row span:last-child { font-weight: bold; }
-            .grand-total { font-size: 18px; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
-            .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-            .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>QUOTATION</h1>
-            <p>Quotation Number: <strong>${quotation.quotationNumber}</strong></p>
-            <span class="status-badge" style="${statusStyle}">${quotation.status.toUpperCase()}</span>
-          </div>
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Quotation ${quotation.quotationNumber}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a2e;background:#fff;padding:48px;max-width:900px;margin:0 auto}
 
-          <div class="company-info">
-            <h3>${companyName}</h3>
-            <p>${companyAddress ? companyAddress + '<br>' : ''}${companyPhone ? 'Phone: ' + companyPhone + '<br>' : ''}Email: ${companyEmail}</p>
-          </div>
+    /* Header */
+    .doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;padding-bottom:32px;border-bottom:3px solid #1a1a2e}
+    .company-block{display:flex;flex-direction:column;gap:3px;max-width:260px}
+    .company-logo{width:72px;height:72px;object-fit:contain;margin-bottom:14px}
+    .company-name{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .company-detail{font-size:11.5px;color:#6b7280;line-height:1.7}
+    .doc-info{text-align:right}
+    .doc-type{font-size:34px;font-weight:800;color:#1a1a2e;letter-spacing:3px;margin-bottom:18px}
+    .doc-meta-table{margin-left:auto;border-collapse:collapse}
+    .doc-meta-table td{padding:4px 0 4px 28px;font-size:12px;vertical-align:top}
+    .doc-meta-table td:first-child{color:#9ca3af;white-space:nowrap}
+    .doc-meta-table td:last-child{font-weight:600;color:#1a1a2e}
+    .status-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;margin-top:14px}
 
-          <div class="client-info">
-            <h3>Prepared For:</h3>
-            <p><strong>${client?.name || 'N/A'}</strong><br>
-            ${client?.email ? client.email + '<br>' : ''}${client?.phone ? client.phone + '<br>' : ''}${[client?.city, client?.country].filter(Boolean).join(', ')}</p>
-          </div>
+    /* Bill To */
+    .bill-section{margin-bottom:36px;padding:20px 24px;background:#f9fafb;border-left:4px solid #1a1a2e;border-radius:0 6px 6px 0}
+    .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9ca3af;margin-bottom:8px}
+    .bill-name{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .bill-detail{font-size:12px;color:#6b7280;line-height:1.7}
 
-          <div class="doc-details">
-            <div>
-              <p><strong>Date:</strong> ${new Date(quotation.createdAt).toLocaleDateString()}</p>
-              <p><strong>Valid Until:</strong> ${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div>
-              ${quotation.title ? `<p><strong>Subject:</strong> ${quotation.title}</p>` : ''}
-            </div>
-          </div>
+    /* Items table */
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:36px}
+    .items-table thead tr{background:#1a1a2e}
+    .items-table thead th{padding:13px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#fff;text-align:left}
+    .items-table thead th.right{text-align:right}
+    .items-table tbody tr{border-bottom:1px solid #f3f4f6}
+    .items-table tbody tr:nth-child(even){background:#f9fafb}
+    .items-table tbody td{padding:13px 16px;font-size:13px;color:#374151;vertical-align:top}
+    .items-table tbody td.right{text-align:right}
+    .item-name{font-weight:600;color:#1a1a2e}
+    .item-desc{font-size:11px;color:#9ca3af;margin-top:3px}
 
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price (EGP)</th>
-                <th>Discount</th>
-                <th>Total (EGP)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(item => `
-                <tr>
-                  <td>${item.description || item.name || ''}</td>
-                  <td>${item.quantity}</td>
-                  <td>${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
-                  <td>${parseFloat(item.discount || '0').toFixed(1)}%</td>
-                  <td>${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+    /* Totals */
+    .totals-wrapper{display:flex;justify-content:flex-end;margin-bottom:48px}
+    .totals-box{width:300px}
+    .totals-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px solid #f3f4f6}
+    .totals-row:last-child{border-bottom:none}
+    .totals-row.grand-total{font-size:15px;font-weight:700;border-top:2px solid #1a1a2e;border-bottom:2px solid #1a1a2e;padding:10px 0;margin-top:4px}
+    .totals-label{color:#6b7280}
+    .totals-value{font-weight:600;color:#1a1a2e}
 
-          <div class="total-section">
-            <div class="total-row">
-              <span>Subtotal:</span>
-              <span>EGP ${subtotal.toFixed(2)}</span>
-            </div>
-            ${taxAmount > 0 ? `
-            <div class="total-row">
-              <span>VAT (${quotation.taxRate || '0'}%):</span>
-              <span>+ EGP ${taxAmount.toFixed(2)}</span>
-            </div>
-            ` : ''}
-            ${discountAmount > 0 ? `
-            <div class="total-row">
-              <span>Discount (${quotation.discountRate || '0'}%):</span>
-              <span>- EGP ${discountAmount.toFixed(2)}</span>
-            </div>
-            ` : ''}
-            <div class="total-row grand-total">
-              <span>Total:</span>
-              <span>EGP ${totalAmount.toFixed(2)}</span>
-            </div>
-          </div>
+    /* Footer */
+    .doc-footer{border-top:1px solid #e5e7eb;padding-top:24px;font-size:11px;color:#9ca3af;line-height:1.7}
 
-          <div class="footer">
-            <p><strong>Terms & Conditions:</strong></p>
-            <p>This quotation is valid until the date shown above. All amounts are in Egyptian Pounds (EGP) and include VAT where applicable. Prices are subject to change after the validity date.</p>
-            <br>
-            <p>Thank you for considering ${companyName}!</p>
-          </div>
-        </body>
-        </html>
-      `;
+    @media print{body{padding:24px}@page{margin:1cm}}
+  </style>
+</head>
+<body>
+
+  <!-- TWO-COLUMN HEADER -->
+  <div class="doc-header">
+    <div class="company-block">
+      <img src="/assets/logo.png" alt="${companyName}" class="company-logo" onerror="this.style.display='none'" />
+      <div class="company-name">${companyName}</div>
+      ${companyAddress ? `<div class="company-detail">${companyAddress}</div>` : ''}
+      ${companyPhone ? `<div class="company-detail">Tel: ${companyPhone}</div>` : ''}
+      <div class="company-detail">${companyEmail}</div>
+      ${companyVatNumber ? `<div class="company-detail">VAT No: ${companyVatNumber}</div>` : ''}
+      ${companyRegNumber ? `<div class="company-detail">Reg No: ${companyRegNumber}</div>` : ''}
+    </div>
+    <div class="doc-info">
+      <div class="doc-type">QUOTATION</div>
+      <table class="doc-meta-table">
+        <tr><td>Quotation No.</td><td>${quotation.quotationNumber}</td></tr>
+        <tr><td>Date</td><td>${new Date(quotation.createdAt).toLocaleDateString()}</td></tr>
+        <tr><td>Valid Until</td><td>${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</td></tr>
+        ${quotation.title ? `<tr><td>Subject</td><td>${quotation.title}</td></tr>` : ''}
+      </table>
+      <div><span class="status-badge" style="${statusStyle}">${quotation.status.toUpperCase()}</span></div>
+    </div>
+  </div>
+
+  <!-- PREPARED FOR -->
+  <div class="bill-section">
+    <div class="section-label">Prepared For</div>
+    <div class="bill-name">${client?.name || 'N/A'}</div>
+    ${client?.email ? `<div class="bill-detail">${client.email}</div>` : ''}
+    ${client?.phone ? `<div class="bill-detail">${client.phone}</div>` : ''}
+    ${[client?.city, client?.country].filter(Boolean).length > 0 ? `<div class="bill-detail">${[client?.city, client?.country].filter(Boolean).join(', ')}</div>` : ''}
+  </div>
+
+  <!-- ITEMS TABLE -->
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th class="right">Quantity</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Discount</th>
+        <th class="right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map(item => `
+      <tr>
+        <td>
+          <div class="item-name">${item.description || item.name || ''}</div>
+        </td>
+        <td class="right">${item.quantity}</td>
+        <td class="right">${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
+        <td class="right">${parseFloat(item.discount || '0').toFixed(1)}%</td>
+        <td class="right">${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <!-- TOTALS -->
+  <div class="totals-wrapper">
+    <div class="totals-box">
+      <div class="totals-row">
+        <span class="totals-label">Subtotal</span>
+        <span class="totals-value">EGP ${subtotal.toFixed(2)}</span>
+      </div>
+      ${discountAmount > 0 ? `
+      <div class="totals-row">
+        <span class="totals-label">Discount${quotation.discountRate ? ` (${quotation.discountRate}%)` : ''}</span>
+        <span class="totals-value">− EGP ${discountAmount.toFixed(2)}</span>
+      </div>` : ''}
+      ${taxAmount > 0 ? `
+      <div class="totals-row">
+        <span class="totals-label">VAT${quotation.taxRate ? ` (${quotation.taxRate}%)` : ''}</span>
+        <span class="totals-value">+ EGP ${taxAmount.toFixed(2)}</span>
+      </div>` : ''}
+      <div class="totals-row grand-total">
+        <span class="totals-label">Total</span>
+        <span class="totals-value">EGP ${totalAmount.toFixed(2)}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <p>This quotation is valid until the date shown above. All amounts are in Egyptian Pounds (EGP) and include VAT where applicable. Prices are subject to change after the validity date.</p>
+    <br>
+    <p>Thank you for considering <strong>${companyName}</strong>. We look forward to working with you.</p>
+  </div>
+
+</body>
+</html>`;
 
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `inline; filename="quotation-${quotation.quotationNumber}.html"`);
@@ -1769,6 +1811,8 @@ export function setupDatabaseRoutes(app: Express) {
       const companyEmail = process.env.COMPANY_EMAIL || 'info@company.com';
       const companyPhone = process.env.COMPANY_PHONE || '';
       const companyAddress = process.env.COMPANY_ADDRESS || '';
+      const companyVatNumber = process.env.COMPANY_VAT_NUMBER || '';
+      const companyRegNumber = process.env.COMPANY_REGISTRATION_NUMBER || '';
 
       const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
       const taxAmount = parseFloat(invoice.taxAmount || '0');
@@ -1781,129 +1825,176 @@ export function setupDatabaseRoutes(app: Express) {
         ? new Date(invoice.invoiceDate).toLocaleDateString()
         : new Date(invoice.createdAt).toLocaleDateString();
 
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Invoice ${invoice.invoiceNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .header h1 { color: #1a1a1a; margin: 0; }
-            .company-info { margin-bottom: 30px; }
-            .client-info { margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 5px; }
-            .doc-details { margin-bottom: 30px; display: flex; justify-content: space-between; }
-            .doc-details div { flex: 1; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f5f5f5; font-weight: bold; }
-            .total-section { margin-top: 20px; text-align: right; }
-            .total-row { display: flex; justify-content: flex-end; margin: 5px 0; }
-            .total-row span { width: 180px; }
-            .total-row span:last-child { font-weight: bold; }
-            .grand-total { font-size: 18px; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
-            .balance-due { color: ${balanceDue > 0 ? '#dc2626' : '#16a34a'}; font-size: 20px; }
-            .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-            .status-paid { background: #dcfce7; color: #16a34a; }
-            .status-sent { background: #dbeafe; color: #1d4ed8; }
-            .status-draft { background: #f3f4f6; color: #374151; }
-            .status-pending { background: #fef3c7; color: #d97706; }
-            .status-partially_paid { background: #dbeafe; color: #2563eb; }
-            .status-overdue { background: #fee2e2; color: #dc2626; }
-            .status-cancelled { background: #f3f4f6; color: #6b7280; }
-            .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>INVOICE</h1>
-            <p>Invoice Number: <strong>${invoice.invoiceNumber}</strong></p>
-            <span class="status-badge status-${invoice.status}">${invoice.status.toUpperCase().replace(/_/g, ' ')}</span>
-          </div>
+      const invStatusBadgeStyles: Record<string, string> = {
+        paid:             'background:#dcfce7;color:#15803d',
+        partially_paid:   'background:#dbeafe;color:#2563eb',
+        sent:             'background:#e0f2fe;color:#0369a1',
+        draft:            'background:#f3f4f6;color:#374151',
+        overdue:          'background:#fee2e2;color:#dc2626',
+        cancelled:        'background:#f3f4f6;color:#6b7280',
+        refunded:         'background:#ede9fe;color:#7c3aed',
+        partially_refunded: 'background:#fef3c7;color:#d97706',
+      };
+      const invStatusStyle = invStatusBadgeStyles[invoice.status] || 'background:#f3f4f6;color:#374151';
+      const balanceColor = balanceDue > 0 ? '#dc2626' : '#16a34a';
 
-          <div class="company-info">
-            <h3>${companyName}</h3>
-            <p>${companyAddress ? companyAddress + '<br>' : ''}${companyPhone ? 'Phone: ' + companyPhone + '<br>' : ''}Email: ${companyEmail}</p>
-          </div>
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice ${invoice.invoiceNumber}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a2e;background:#fff;padding:48px;max-width:900px;margin:0 auto}
 
-          <div class="client-info">
-            <h3>Bill To:</h3>
-            <p><strong>${client?.name || 'N/A'}</strong><br>
-            ${client?.email ? client.email + '<br>' : ''}${client?.phone ? client.phone + '<br>' : ''}${[client?.city, client?.country].filter(Boolean).join(', ')}</p>
-          </div>
+    /* Header */
+    .doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;padding-bottom:32px;border-bottom:3px solid #1a1a2e}
+    .company-block{display:flex;flex-direction:column;gap:3px;max-width:260px}
+    .company-logo{width:72px;height:72px;object-fit:contain;margin-bottom:14px}
+    .company-name{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .company-detail{font-size:11.5px;color:#6b7280;line-height:1.7}
+    .doc-info{text-align:right}
+    .doc-type{font-size:34px;font-weight:800;color:#1a1a2e;letter-spacing:3px;margin-bottom:18px}
+    .doc-meta-table{margin-left:auto;border-collapse:collapse}
+    .doc-meta-table td{padding:4px 0 4px 28px;font-size:12px;vertical-align:top}
+    .doc-meta-table td:first-child{color:#9ca3af;white-space:nowrap}
+    .doc-meta-table td:last-child{font-weight:600;color:#1a1a2e}
+    .status-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;margin-top:14px}
 
-          <div class="doc-details">
-            <div>
-              <p><strong>Invoice Date:</strong> ${invoiceDate}</p>
-              <p><strong>Due Date:</strong> ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div>
-              ${invoice.title ? `<p><strong>Subject:</strong> ${invoice.title}</p>` : ''}
-            </div>
-          </div>
+    /* Bill To */
+    .bill-section{margin-bottom:36px;padding:20px 24px;background:#f9fafb;border-left:4px solid #1a1a2e;border-radius:0 6px 6px 0}
+    .section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9ca3af;margin-bottom:8px}
+    .bill-name{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+    .bill-detail{font-size:12px;color:#6b7280;line-height:1.7}
 
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price (EGP)</th>
-                <th>Total (EGP)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(item => `
-                <tr>
-                  <td>${item.name || ''}${item.description ? `<br><small style="color:#666">${item.description}</small>` : ''}</td>
-                  <td>${item.quantity}</td>
-                  <td>${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
-                  <td>${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+    /* Items table */
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:36px}
+    .items-table thead tr{background:#1a1a2e}
+    .items-table thead th{padding:13px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:#fff;text-align:left}
+    .items-table thead th.right{text-align:right}
+    .items-table tbody tr{border-bottom:1px solid #f3f4f6}
+    .items-table tbody tr:nth-child(even){background:#f9fafb}
+    .items-table tbody td{padding:13px 16px;font-size:13px;color:#374151;vertical-align:top}
+    .items-table tbody td.right{text-align:right}
+    .item-name{font-weight:600;color:#1a1a2e}
+    .item-desc{font-size:11px;color:#9ca3af;margin-top:3px}
 
-          <div class="total-section">
-            <div class="total-row">
-              <span>Subtotal:</span>
-              <span>EGP ${subtotal.toFixed(2)}</span>
-            </div>
-            ${taxAmount > 0 ? `
-            <div class="total-row">
-              <span>VAT (${invoice.taxRate || '0'}%):</span>
-              <span>+ EGP ${taxAmount.toFixed(2)}</span>
-            </div>
-            ` : ''}
-            ${discountAmount > 0 ? `
-            <div class="total-row">
-              <span>Discount (${invoice.discountRate || '0'}%):</span>
-              <span>- EGP ${discountAmount.toFixed(2)}</span>
-            </div>
-            ` : ''}
-            <div class="total-row grand-total">
-              <span>Total:</span>
-              <span>EGP ${totalAmount.toFixed(2)}</span>
-            </div>
-            <div class="total-row">
-              <span>Paid Amount:</span>
-              <span style="color:#16a34a">EGP ${paidAmount.toFixed(2)}</span>
-            </div>
-            <div class="total-row balance-due">
-              <span>Balance Due:</span>
-              <span>EGP ${balanceDue.toFixed(2)}</span>
-            </div>
-          </div>
+    /* Totals */
+    .totals-wrapper{display:flex;justify-content:flex-end;margin-bottom:48px}
+    .totals-box{width:300px}
+    .totals-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px solid #f3f4f6}
+    .totals-row:last-child{border-bottom:none}
+    .totals-row.grand-total{font-size:15px;font-weight:700;border-top:2px solid #1a1a2e;border-bottom:2px solid #1a1a2e;padding:10px 0;margin-top:4px}
+    .totals-row.balance-row{font-size:16px;font-weight:800;padding-top:12px;margin-top:4px}
+    .totals-label{color:#6b7280}
+    .totals-value{font-weight:600;color:#1a1a2e}
+    .totals-value.paid-color{color:#16a34a}
 
-          <div class="footer">
-            <p><strong>Payment Terms:</strong></p>
-            <p>Payment is due within 30 days of the invoice date. All amounts are in Egyptian Pounds (EGP) and include applicable VAT.</p>
-            <br>
-            <p>Thank you for your business with ${companyName}!</p>
-          </div>
-        </body>
-        </html>
-      `;
+    /* Footer */
+    .doc-footer{border-top:1px solid #e5e7eb;padding-top:24px;font-size:11px;color:#9ca3af;line-height:1.7}
+
+    @media print{body{padding:24px}@page{margin:1cm}}
+  </style>
+</head>
+<body>
+
+  <!-- TWO-COLUMN HEADER -->
+  <div class="doc-header">
+    <div class="company-block">
+      <img src="/assets/logo.png" alt="${companyName}" class="company-logo" onerror="this.style.display='none'" />
+      <div class="company-name">${companyName}</div>
+      ${companyAddress ? `<div class="company-detail">${companyAddress}</div>` : ''}
+      ${companyPhone ? `<div class="company-detail">Tel: ${companyPhone}</div>` : ''}
+      <div class="company-detail">${companyEmail}</div>
+      ${companyVatNumber ? `<div class="company-detail">VAT No: ${companyVatNumber}</div>` : ''}
+      ${companyRegNumber ? `<div class="company-detail">Reg No: ${companyRegNumber}</div>` : ''}
+    </div>
+    <div class="doc-info">
+      <div class="doc-type">INVOICE</div>
+      <table class="doc-meta-table">
+        <tr><td>Invoice No.</td><td>${invoice.invoiceNumber}</td></tr>
+        <tr><td>Invoice Date</td><td>${invoiceDate}</td></tr>
+        <tr><td>Due Date</td><td>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</td></tr>
+        ${invoice.title ? `<tr><td>Subject</td><td>${invoice.title}</td></tr>` : ''}
+      </table>
+      <div><span class="status-badge" style="${invStatusStyle}">${invoice.status.toUpperCase().replace(/_/g, ' ')}</span></div>
+    </div>
+  </div>
+
+  <!-- BILL TO -->
+  <div class="bill-section">
+    <div class="section-label">Bill To</div>
+    <div class="bill-name">${client?.name || 'N/A'}</div>
+    ${client?.email ? `<div class="bill-detail">${client.email}</div>` : ''}
+    ${client?.phone ? `<div class="bill-detail">${client.phone}</div>` : ''}
+    ${[client?.city, client?.country].filter(Boolean).length > 0 ? `<div class="bill-detail">${[client?.city, client?.country].filter(Boolean).join(', ')}</div>` : ''}
+  </div>
+
+  <!-- ITEMS TABLE -->
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th class="right">Quantity</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map(item => `
+      <tr>
+        <td>
+          <div class="item-name">${item.name || ''}</div>
+          ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+        </td>
+        <td class="right">${item.quantity}</td>
+        <td class="right">${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
+        <td class="right">${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <!-- TOTALS -->
+  <div class="totals-wrapper">
+    <div class="totals-box">
+      <div class="totals-row">
+        <span class="totals-label">Subtotal</span>
+        <span class="totals-value">EGP ${subtotal.toFixed(2)}</span>
+      </div>
+      ${discountAmount > 0 ? `
+      <div class="totals-row">
+        <span class="totals-label">Discount${invoice.discountRate ? ` (${invoice.discountRate}%)` : ''}</span>
+        <span class="totals-value">− EGP ${discountAmount.toFixed(2)}</span>
+      </div>` : ''}
+      ${taxAmount > 0 ? `
+      <div class="totals-row">
+        <span class="totals-label">VAT${invoice.taxRate ? ` (${invoice.taxRate}%)` : ''}</span>
+        <span class="totals-value">+ EGP ${taxAmount.toFixed(2)}</span>
+      </div>` : ''}
+      <div class="totals-row grand-total">
+        <span class="totals-label">Total</span>
+        <span class="totals-value">EGP ${totalAmount.toFixed(2)}</span>
+      </div>
+      <div class="totals-row">
+        <span class="totals-label">Paid Amount</span>
+        <span class="totals-value paid-color">EGP ${paidAmount.toFixed(2)}</span>
+      </div>
+      <div class="totals-row balance-row">
+        <span class="totals-label">Balance Due</span>
+        <span class="totals-value" style="color:${balanceColor}">EGP ${balanceDue.toFixed(2)}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <p>Payment is due within 30 days of the invoice date. All amounts are in Egyptian Pounds (EGP) and include applicable VAT.</p>
+    <br>
+    <p>Thank you for your business with <strong>${companyName}</strong>. We appreciate your continued partnership.</p>
+  </div>
+
+</body>
+</html>`;
 
       res.setHeader('Content-Type', 'text/html');
       res.setHeader('Content-Disposition', `inline; filename="invoice-${invoice.invoiceNumber}.html"`);
