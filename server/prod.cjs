@@ -594,7 +594,8 @@ app.post('/api/quotations', isAuthenticated, (req, res) => {
 app.put('/api/quotations/:id', isAuthenticated, (req, res) => {
   const index = quotations.findIndex(q => q.id === req.params.id);
   if (index !== -1) {
-    quotations[index] = { ...quotations[index], ...req.body, updatedAt: new Date().toISOString() };
+    const { id, createdAt, ...allowedUpdates } = req.body;
+    quotations[index] = { ...quotations[index], ...allowedUpdates, updatedAt: new Date().toISOString() };
     res.json(quotations[index]);
   } else {
     res.status(404).json({ message: 'Quotation not found' });
