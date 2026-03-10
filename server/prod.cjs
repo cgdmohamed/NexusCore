@@ -545,7 +545,8 @@ app.post('/api/invoices', isAuthenticated, (req, res) => {
 app.put('/api/invoices/:id', isAuthenticated, (req, res) => {
   const index = invoices.findIndex(i => i.id === req.params.id);
   if (index !== -1) {
-    invoices[index] = { ...invoices[index], ...req.body, updatedAt: new Date().toISOString() };
+    const { id, createdAt, invoiceNumber, createdBy, ...allowedFields } = req.body;
+    invoices[index] = { ...invoices[index], ...allowedFields, updatedAt: new Date().toISOString() };
     res.json(invoices[index]);
   } else {
     res.status(404).json({ message: 'Invoice not found' });
