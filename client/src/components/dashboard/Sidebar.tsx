@@ -21,9 +21,15 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   const { canView, isAdmin } = usePermissions();
@@ -124,22 +130,39 @@ export function Sidebar() {
     return canView(item.module);
   });
 
-  return (
-    <aside
-      className={cn(
-        "flex flex-col flex-shrink-0 bg-white shadow-lg border-r border-gray-200 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
-      {/* Toggle button */}
-      <div className={cn("flex items-center border-b border-gray-100 h-14", collapsed ? "justify-center" : "justify-end px-3")}>
-        <button
-          onClick={toggle}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-        </button>
+  const handleNavClick = () => {
+    if (onMobileClose) onMobileClose();
+  };
+
+  const navContent = (isMobileDrawer = false) => (
+    <>
+      {/* Header row */}
+      <div className={cn(
+        "flex items-center border-b border-gray-100 h-14",
+        isMobileDrawer
+          ? "justify-between px-3"
+          : collapsed ? "justify-center" : "justify-end px-3"
+      )}>
+        {isMobileDrawer && (
+          <span className="text-sm font-semibold text-gray-700">Menu</span>
+        )}
+        {isMobileDrawer ? (
+          <button
+            onClick={onMobileClose}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        ) : (
+          <button
+            onClick={toggle}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -147,29 +170,30 @@ export function Sidebar() {
         {navigation.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;
+          const isCollapsed = !isMobileDrawer && collapsed;
 
           return (
             <Link
               key={item.name}
               href={item.href}
+              onClick={handleNavClick}
               className={cn(
                 "flex items-center rounded-lg transition-colors relative group",
-                collapsed ? "justify-center px-0 py-2.5" : "space-x-3 rtl:space-x-reverse px-3 py-2",
+                isCollapsed ? "justify-center px-0 py-2.5" : "space-x-3 rtl:space-x-reverse px-3 py-2",
                 isActive ? "bg-primary text-white" : "text-neutral hover:bg-gray-50"
               )}
-              title={collapsed ? t(item.name) : undefined}
+              title={isCollapsed ? t(item.name) : undefined}
             >
               <div className="relative flex-shrink-0">
                 <Icon className="w-5 h-5" />
-                {/* Dot badge when collapsed */}
-                {collapsed && item.badge && (
+                {isCollapsed && item.badge && (
                   <span className={cn("absolute -top-1 -end-1 w-4 h-4 text-[10px] flex items-center justify-center rounded-full text-white", item.badgeColor || "bg-secondary")}>
                     {parseInt(item.badge) > 9 ? "9+" : item.badge}
                   </span>
                 )}
               </div>
 
-              {!collapsed && (
+              {!isCollapsed && (
                 <>
                   <span className="flex-1 truncate">{t(item.name)}</span>
                   {item.badge && (
@@ -183,6 +207,39 @@ export function Sidebar() {
           );
         })}
       </nav>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-white shadow-xl border-r border-gray-200 transition-transform duration-300 md:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {navContent(true)}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex flex-col flex-shrink-0 bg-white shadow-lg border-r border-gray-200 transition-all duration-300",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
+        {navContent(false)}
+      </aside>
+    </>
   );
 }

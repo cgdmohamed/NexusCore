@@ -21,7 +21,8 @@ import {
   Users,
   CheckSquare,
   FileText,
-  CreditCard
+  CreditCard,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User as UserType } from "@shared/schema";
@@ -34,7 +35,11 @@ interface SearchResult {
   href: string;
 }
 
-export function Navbar() {
+interface NavbarProps {
+  onMenuClick?: () => void;
+}
+
+export function Navbar({ onMenuClick }: NavbarProps) {
   const { t, language, changeLanguage } = useTranslation();
   const { user, logoutMutation } = useAuth();
   const { companyName } = useConfig();
@@ -44,16 +49,13 @@ export function Navbar() {
 
   const currentUser = user as UserType | undefined;
 
-  // Get user's display name and initials
   const getUserDisplayName = () => {
-    // Check if user has employee data with name
     if (currentUser && 'employee' in currentUser && currentUser.employee) {
       const employee = currentUser.employee as any;
       if (employee.firstName && employee.lastName) {
         return `${employee.firstName} ${employee.lastName}`;
       }
     }
-    // Fallback to firstName/lastName from user directly
     if (currentUser?.firstName && currentUser?.lastName) {
       return `${currentUser.firstName} ${currentUser.lastName}`;
     }
@@ -61,14 +63,12 @@ export function Navbar() {
   };
 
   const getUserInitials = () => {
-    // Check if user has employee data with name
     if (currentUser && 'employee' in currentUser && currentUser.employee) {
       const employee = currentUser.employee as any;
       if (employee.firstName && employee.lastName) {
         return `${employee.firstName[0]}${employee.lastName[0]}`.toUpperCase();
       }
     }
-    // Fallback to firstName/lastName from user directly
     if (currentUser?.firstName && currentUser?.lastName) {
       return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase();
     }
@@ -76,7 +76,6 @@ export function Navbar() {
     return email[0].toUpperCase() + (email[1] || '').toUpperCase();
   };
 
-  // Fetch data for search functionality
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
     enabled: searchQuery.length > 0,
@@ -102,16 +101,12 @@ export function Navbar() {
     enabled: searchQuery.length > 0,
   });
 
-
-
-  // Search functionality
   const getSearchResults = (): SearchResult[] => {
     if (!searchQuery || searchQuery.length < 2) return [];
 
     const results: SearchResult[] = [];
     const query = searchQuery.toLowerCase();
 
-    // Search clients
     (clients as any[]).forEach(client => {
       if (client.name?.toLowerCase().includes(query) || client.email?.toLowerCase().includes(query)) {
         results.push({
@@ -124,7 +119,6 @@ export function Navbar() {
       }
     });
 
-    // Search invoices
     (invoices as any[]).forEach(invoice => {
       if (invoice.invoiceNumber?.toLowerCase().includes(query)) {
         results.push({
@@ -137,7 +131,6 @@ export function Navbar() {
       }
     });
 
-    // Search tasks
     (tasks as any[]).forEach(task => {
       if (task.title?.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query)) {
         results.push({
@@ -150,7 +143,7 @@ export function Navbar() {
       }
     });
 
-    return results.slice(0, 8); // Limit to 8 results
+    return results.slice(0, 8);
   };
 
   const searchResults = getSearchResults();
@@ -171,23 +164,36 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
+    <nav className="bg-white border-b border-gray-200 px-3 md:px-6 py-3 md:py-4">
+      <div className="flex items-center gap-2 md:gap-0 md:justify-between">
+
+        {/* Hamburger — mobile only */}
+        <button
+          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* Logo & Brand */}
-        <div className="flex items-center space-x-4 rtl:space-x-reverse">
+        <div className="flex items-center flex-shrink-0 md:space-x-4 rtl:space-x-reverse">
           <Link href="/">
-            <div className="flex items-center space-x-3 rtl:space-x-reverse">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Building2 className="text-white text-sm" />
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Building2 className="text-white w-4 h-4" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">{companyName}</h1>
+              {/* Full title — hidden on very small screens */}
+              <h1 className="hidden sm:block text-lg md:text-xl font-semibold text-gray-900 whitespace-nowrap leading-tight">
+                {companyName}
+              </h1>
             </div>
           </Link>
         </div>
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-2xl mx-8 relative">
-          <div className="relative">
+        {/* Search Bar — hidden on mobile, visible md+ */}
+        <div className="hidden md:flex flex-1 max-w-2xl mx-8 relative">
+          <div className="relative w-full">
             <Search className={cn(
               "absolute top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4",
               language === 'ar' ? 'right-3' : 'left-3'
@@ -209,7 +215,6 @@ export function Navbar() {
             />
           </div>
 
-          {/* Search Results Dropdown */}
           {showSearchResults && searchResults.length > 0 && (
             <Card className="absolute top-full mt-2 w-full z-50 shadow-lg">
               <CardContent className="p-2">
@@ -241,7 +246,6 @@ export function Navbar() {
             </Card>
           )}
 
-          {/* No Results */}
           {showSearchResults && searchQuery.length >= 2 && searchResults.length === 0 && (
             <Card className="absolute top-full mt-2 w-full z-50 shadow-lg">
               <CardContent className="p-4 text-center">
@@ -252,7 +256,12 @@ export function Navbar() {
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center space-x-4 rtl:space-x-reverse">
+        <div className="flex items-center gap-1 md:gap-4 rtl:space-x-reverse ml-auto md:ml-0">
+          {/* Search icon — mobile only */}
+          <Button variant="ghost" size="sm" className="md:hidden h-9 w-9 p-0">
+            <Search className="h-4 w-4" />
+          </Button>
+
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -280,8 +289,8 @@ export function Navbar() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 px-3 gap-2">
-                <Avatar className="h-6 w-6">
+              <Button variant="ghost" className="h-9 px-2 md:px-3 gap-2">
+                <Avatar className="h-6 w-6 flex-shrink-0">
                   <AvatarImage 
                     src={currentUser?.profileImageUrl || (currentUser && 'employee' in currentUser && currentUser.employee ? (currentUser.employee as any).profileImage : undefined)} 
                     alt={getUserDisplayName()}
@@ -290,7 +299,7 @@ export function Navbar() {
                     {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">
+                <span className="hidden sm:inline text-sm font-medium">
                   {getUserDisplayName()}
                 </span>
               </Button>
