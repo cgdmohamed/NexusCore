@@ -545,8 +545,11 @@ app.post('/api/invoices', isAuthenticated, (req, res) => {
 app.put('/api/invoices/:id', isAuthenticated, (req, res) => {
   const index = invoices.findIndex(i => i.id === req.params.id);
   if (index !== -1) {
-    const { id, createdAt, invoiceNumber, createdBy, ...allowedFields } = req.body;
-    invoices[index] = { ...invoices[index], ...allowedFields, updatedAt: new Date().toISOString() };
+    const allowedFields = ['clientId', 'title', 'description', 'amount', 'paidAmount', 'subtotal', 'taxRate', 'taxAmount', 'discountRate', 'discountAmount', 'status', 'invoiceDate', 'dueDate', 'paidDate', 'notes', 'paymentTerms', 'attachments'];
+    const safeUpdate = Object.fromEntries(
+      allowedFields.filter(k => k in req.body).map(k => [k, req.body[k]])
+    );
+    invoices[index] = { ...invoices[index], ...safeUpdate, updatedAt: new Date().toISOString() };
     res.json(invoices[index]);
   } else {
     res.status(404).json({ message: 'Invoice not found' });
