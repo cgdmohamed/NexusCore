@@ -496,7 +496,11 @@ app.post('/api/tasks', isAuthenticated, (req, res) => {
 app.put('/api/tasks/:id', isAuthenticated, (req, res) => {
   const index = tasks.findIndex(t => t.id === req.params.id);
   if (index !== -1) {
-    tasks[index] = { ...tasks[index], ...req.body, updatedAt: new Date().toISOString() };
+    const allowedFields = ['title', 'description', 'priority', 'status', 'dueDate', 'completedDate', 'assignedTo', 'projectId'];
+    const safeUpdate = Object.fromEntries(
+      allowedFields.filter(k => k in req.body).map(k => [k, req.body[k]])
+    );
+    tasks[index] = { ...tasks[index], ...safeUpdate, updatedAt: new Date().toISOString() };
     res.json(tasks[index]);
   } else {
     res.status(404).json({ message: 'Task not found' });
