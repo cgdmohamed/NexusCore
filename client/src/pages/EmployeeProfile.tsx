@@ -84,7 +84,7 @@ export default function EmployeeProfile() {
         subtitle={`${employee.firstName} ${employee.lastName} - ${employee.jobTitle}`}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6">
         {/* Back Button */}
         <Link href="/team-roles">
           <Button variant="outline">
@@ -95,8 +95,8 @@ export default function EmployeeProfile() {
 
         {/* Employee Header Card */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start space-x-6">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 gap-4">
               <div className="relative">
                 <img
                   src={employee.profileImage || `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150`}

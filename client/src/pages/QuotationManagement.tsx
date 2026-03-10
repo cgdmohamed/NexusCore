@@ -84,12 +84,10 @@ export default function QuotationManagement() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quotation Management</h1>
-          <p className="text-gray-600">Manage and review all quotations</p>
-        </div>
+    <div className="p-3 md:p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quotation Management</h1>
+        <p className="text-gray-600 mt-1">Manage and review all quotations</p>
       </div>
 
       {/* Statistics Overview */}

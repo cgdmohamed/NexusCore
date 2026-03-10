@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil } from "lucide-react";
+import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -329,51 +330,46 @@ export default function QuotationDetail() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Link href="/quotations">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Quotations
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{quotation.quotationNumber}</h1>
-            <p className="text-gray-600">{quotation.title}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3">
+    <div className="p-3 md:p-6 max-w-7xl mx-auto">
+      <DetailPageHeader
+        backHref="/quotations"
+        backLabel="Back to Quotations"
+        title={quotation.quotationNumber}
+        subtitle={quotation.title}
+        badge={
           <Badge className={getStatusColor(quotation.status)}>
             {quotation.status}
           </Badge>
-          <div className="flex space-x-2">
+        }
+        actions={
+          <>
             <Button variant="outline" size="sm" onClick={handleExportPDF}>
               <Download className="w-4 h-4 mr-2" />
-              Export PDF
+              <span className="hidden sm:inline">Export PDF</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setIsEditing(true)}
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
             {quotation.status === 'accepted' && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={() => convertToInvoiceMutation.mutate()}
                 disabled={convertToInvoiceMutation.isPending}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Convert to Invoice
+                <span className="hidden sm:inline">Convert to Invoice</span>
+                <span className="sm:hidden">Convert</span>
               </Button>
             )}
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Quotation Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

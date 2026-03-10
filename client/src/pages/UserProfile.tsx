@@ -163,7 +163,7 @@ export default function UserProfile() {
         subtitle={`Profile details for ${user.employee?.firstName} ${user.employee?.lastName}`}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6">
         {/* Back Navigation */}
         <Button variant="outline" onClick={() => setLocation("/team-roles")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -181,13 +181,12 @@ export default function UserProfile() {
             {/* Profile Header */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center space-x-4">
                     <ProfilePictureUpload
                       currentImage={user.employee?.profileImage || user.profileImageUrl}
                       initials={`${user.employee?.firstName?.[0] || user.firstName?.[0] || 'U'}${user.employee?.lastName?.[0] || user.lastName?.[0] || ''}`}
                       onImageChange={(imageUrl) => {
-                        // Immediately update the profile picture
                         const updateData = { profileImageUrl: imageUrl || "" };
                         updateProfileMutation.mutate(updateData);
                       }}
@@ -195,7 +194,7 @@ export default function UserProfile() {
                       editable={true}
                     />
                     <div>
-                      <CardTitle className="text-2xl">
+                      <CardTitle className="text-xl sm:text-2xl">
                         {user.employee?.firstName} {user.employee?.lastName}
                       </CardTitle>
                       <p className="text-muted-foreground">{user.email}</p>
@@ -204,7 +203,7 @@ export default function UserProfile() {
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button onClick={handleEditProfile}>
                       <Edit3 className="h-4 w-4 mr-2" />
                       Edit Profile

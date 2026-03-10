@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw } from "lucide-react";
+import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw } from "lucide-react";
+import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
@@ -150,31 +151,28 @@ export default function ClientProfile() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Link href="/clients">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Clients
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
-            <p className="text-gray-600">Client Profile</p>
-          </div>
-        </div>
-        <Dialog open={isEditingClient} onOpenChange={(open) => {
-          setIsEditingClient(open);
-          if (open) setEditStatus(client.status);
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Client
-            </Button>
-          </DialogTrigger>
+    <div className="p-3 md:p-6 max-w-7xl mx-auto">
+      <DetailPageHeader
+        backHref="/clients"
+        backLabel="Back to Clients"
+        title={client.name}
+        subtitle="Client Profile"
+        badge={
+          <Badge className={getStatusColor(client.status)}>
+            {client.status}
+          </Badge>
+        }
+        actions={
+          <Dialog open={isEditingClient} onOpenChange={(open) => {
+            setIsEditingClient(open);
+            if (open) setEditStatus(client.status);
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Client
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Client Information</DialogTitle>
@@ -253,7 +251,8 @@ export default function ClientProfile() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+        }
+      />
 
       {/* Client Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

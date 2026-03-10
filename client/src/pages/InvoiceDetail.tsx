@@ -744,8 +744,8 @@ export default function InvoiceDetail() {
       />
       
       {/* Action Buttons */}
-      <div className="px-6 pb-4">
-        <div className="flex space-x-2">
+      <div className="px-3 md:px-6 pb-4">
+        <div className="flex flex-wrap gap-2">
           <Link href="/invoices">
             <Button variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />

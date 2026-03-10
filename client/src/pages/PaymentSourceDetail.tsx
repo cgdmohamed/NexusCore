@@ -209,7 +209,7 @@ export default function PaymentSourceDetail() {
         subtitle={`Payment Source #${paymentSource.id.slice(0, 8)}`}
       />
       
-      <div className="p-6">
+      <div className="p-3 md:p-6">
         <Link href="/payment-sources">
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -218,26 +218,26 @@ export default function PaymentSourceDetail() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 pb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 px-3 md:px-6 pb-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Payment Source Overview */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold text-gray-900">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
                     {paymentSource.name}
                   </CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     {getStatusBadge(paymentSource.isActive)}
                     <Badge variant="outline">
                       {getTypeBadge(paymentSource.accountType)}
                     </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-gray-900">
+                <div className="sm:text-right flex-shrink-0">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {formatCurrency(paymentSource.currentBalance || "0")}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">

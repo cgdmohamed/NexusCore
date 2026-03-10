@@ -252,12 +252,12 @@ export default function ProjectKanban() {
   };
 
   return (
-    <div className="flex-1 flex flex-col p-6 overflow-hidden bg-slate-50/50 min-h-0">
+    <div className="flex-1 flex flex-col p-3 md:p-6 overflow-hidden bg-slate-50/50 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 flex-shrink-0">
+        <div className="flex flex-col gap-1 min-w-0">
           <Link href="/projects">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="w-fit -ms-2">
               <ChevronLeft className="h-4 w-4 me-1" />
               {t("kanban.back_to_projects")}
             </Button>
@@ -265,7 +265,7 @@ export default function ProjectKanban() {
           <div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
-              <h1 className="text-2xl font-bold text-slate-900">{project?.name ?? t("nav.projects")}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{project?.name ?? t("nav.projects")}</h1>
             </div>
             {project?.clientName ? (
               <Link href={`/clients/${project.clientId}`}>
@@ -279,7 +279,7 @@ export default function ProjectKanban() {
             )}
           </div>
         </div>
-        <Button onClick={() => openCreateDialog("pending")} size="sm">
+        <Button onClick={() => openCreateDialog("pending")} size="sm" className="w-fit sm:flex-shrink-0">
           <Plus className="h-4 w-4 me-1.5" />
           {t("kanban.new_task")}
         </Button>
