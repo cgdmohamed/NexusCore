@@ -40,12 +40,12 @@ export function registerAnalyticsRoutes(app: Express) {
         : await revenueQuery;
 
       // Total Expenses - need separate date filter for expenses table
-      let expenseFilter: any = eq(expenses.status, 'approved');
+      let expenseFilter: any = eq(expenses.status, 'paid');
       if (startDate && endDate) {
         expenseFilter = and(
-          eq(expenses.status, 'approved'),
-          gte(expenses.date, new Date(startDate as string)),
-          lte(expenses.date, new Date(endDate as string))
+          eq(expenses.status, 'paid'),
+          gte(expenses.expenseDate, new Date(startDate as string)),
+          lte(expenses.expenseDate, new Date(endDate as string))
         );
       }
       
@@ -196,7 +196,7 @@ export function registerAnalyticsRoutes(app: Express) {
             count: count()
           })
           .from(expenses)
-          .where(eq(expenses.status, 'approved'));
+          .where(eq(expenses.status, 'paid'));
 
         const expensesByCategory = expenseData.map(row => ({
           category: row.category,
@@ -224,7 +224,7 @@ export function registerAnalyticsRoutes(app: Express) {
           })
           .from(expenses)
           .where(and(
-            eq(expenses.status, 'approved'),
+            eq(expenses.status, 'paid'),
             dateFilter as any
           ));
 
@@ -283,7 +283,7 @@ export function registerAnalyticsRoutes(app: Express) {
             count: count()
           })
           .from(expenses)
-          .where(eq(expenses.status, 'approved'))
+          .where(eq(expenses.status, 'paid'))
           .groupBy(expenseGroupBy)
           .orderBy(expenseGroupBy)
           .limit(12);
@@ -348,7 +348,7 @@ export function registerAnalyticsRoutes(app: Express) {
             total: sql<number>`COALESCE(SUM(CAST(${expenses.amount} AS DECIMAL)), 0)` 
           })
           .from(expenses)
-          .where(and(eq(expenses.status, 'approved'), expenseFilter as any));
+          .where(and(eq(expenses.status, 'paid'), expenseFilter as any));
 
         const clientFilter = and(
           gte(clients.createdAt, new Date(startDate)),
