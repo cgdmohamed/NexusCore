@@ -178,7 +178,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
           title={t('nav.reports_kpis')}
           subtitle={t('analytics.subtitle')}
         />
-        <div className="p-6">
+        <div className="p-3 md:p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -197,7 +197,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         subtitle={t('analytics.subtitle')}
       />
       
-      <div className="p-3 md:p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
         {/* Filter Bar */}
         <FilterBar
           onDateRangeChange={handleDateRangeChange}
@@ -205,14 +205,14 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
           onExport={handleExport}
         />
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <div className="overflow-x-auto pb-1">
-            <TabsList className="grid grid-cols-5 min-w-[380px] w-full">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="financial">Financial</TabsTrigger>
-              <TabsTrigger value="trends">Trends</TabsTrigger>
-              <TabsTrigger value="comparison">Comparison</TabsTrigger>
-              <TabsTrigger value="outstanding">Outstanding</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">
+          <div className="overflow-x-auto pb-1 -mx-3 md:mx-0 px-3 md:px-0">
+            <TabsList className="flex w-max md:grid md:grid-cols-5 md:w-full">
+              <TabsTrigger value="overview" className="whitespace-nowrap px-4 md:px-2">Overview</TabsTrigger>
+              <TabsTrigger value="financial" className="whitespace-nowrap px-4 md:px-2">Financial</TabsTrigger>
+              <TabsTrigger value="trends" className="whitespace-nowrap px-4 md:px-2">Trends</TabsTrigger>
+              <TabsTrigger value="comparison" className="whitespace-nowrap px-4 md:px-2">Comparison</TabsTrigger>
+              <TabsTrigger value="outstanding" className="whitespace-nowrap px-4 md:px-2">Outstanding</TabsTrigger>
             </TabsList>
           </div>
 
