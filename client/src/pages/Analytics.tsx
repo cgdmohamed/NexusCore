@@ -191,7 +191,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         subtitle={t('analytics.subtitle')}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6">
         {/* Filter Bar */}
         <FilterBar
           onDateRangeChange={handleDateRangeChange}
@@ -200,13 +200,15 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         />
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-            <TabsTrigger value="comparison">Comparison</TabsTrigger>
-            <TabsTrigger value="outstanding">Outstanding</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-1">
+            <TabsList className="grid grid-cols-5 min-w-[380px] w-full">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="financial">Financial</TabsTrigger>
+              <TabsTrigger value="trends">Trends</TabsTrigger>
+              <TabsTrigger value="comparison">Comparison</TabsTrigger>
+              <TabsTrigger value="outstanding">Outstanding</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">

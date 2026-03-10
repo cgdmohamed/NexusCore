@@ -284,10 +284,10 @@ export default function Tasks() {
         subtitle="Assign, track, and evaluate tasks across all departments"
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6">
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
@@ -541,20 +541,20 @@ export default function Tasks() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('common.search')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                <div className="flex gap-2">
+            <div className="flex flex-col gap-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('common.search')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 w-full"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex gap-3 flex-1">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -567,7 +567,7 @@ export default function Tasks() {
                   </Select>
                   
                   <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="flex-1 sm:w-[140px] sm:flex-none">
                       <SelectValue placeholder="All Priority" />
                     </SelectTrigger>
                     <SelectContent>
@@ -739,7 +739,7 @@ export default function Tasks() {
                 ))}
               </div>
             ) : (
-              <Card>
+              <Card className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

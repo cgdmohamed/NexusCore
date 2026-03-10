@@ -179,7 +179,7 @@ export default function Projects() {
         subtitle={t("projects.subtitle")}
       />
       
-      <div className="p-6">
+      <div className="p-3 md:p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-slate-900">{t("projects.all_projects")}</h2>
           <Dialog 

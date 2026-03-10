@@ -215,9 +215,9 @@ export default function Messages() {
         actions={newConvAction}
       />
 
-      <div className="flex flex-1 overflow-hidden p-6 gap-4">
+      <div className="flex flex-1 overflow-hidden p-2 sm:p-4 md:p-6 gap-4">
         {/* Left panel — conversation list */}
-        <div className="w-80 flex-shrink-0 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden">
+        <div className={`w-full sm:w-80 flex-shrink-0 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden ${selectedConvId ? "hidden sm:flex" : "flex"}`}>
           <div className="px-4 py-3 border-b border-gray-100">
             <span className="font-semibold text-gray-800 text-sm">{t("nav.messages")}</span>
           </div>
@@ -282,7 +282,7 @@ export default function Messages() {
         </div>
 
         {/* Right panel — message thread */}
-        <div className="flex-1 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden">
+        <div className={`flex-1 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden ${selectedConvId ? "flex" : "hidden sm:flex"}`}>
           {!selectedConvId ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
               <MessageSquare className="w-12 h-12 opacity-30" />
@@ -291,7 +291,16 @@ export default function Messages() {
           ) : (
             <>
               {/* Thread header */}
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+              <div className="px-3 sm:px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+                <button
+                  className="sm:hidden p-1 -ml-1 rounded hover:bg-gray-100 text-gray-500"
+                  onClick={() => setSelectedConvId(null)}
+                  aria-label="Back to conversations"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="text-xs bg-primary/10 text-primary">
                     {getInitials(selectedConversation?.otherUser?.name || "?")}

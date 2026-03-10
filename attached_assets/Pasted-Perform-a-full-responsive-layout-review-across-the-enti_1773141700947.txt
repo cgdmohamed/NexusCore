@@ -1,0 +1,82 @@
+Perform a full responsive layout review across the entire application and fix mobile layout issues consistently across all modules.
+
+The desktop layout works correctly, but multiple pages display layout problems on mobile devices such as cramped action buttons, misaligned filters, and poor spacing.
+
+Your task is to audit and improve the mobile responsiveness of the entire system while preserving the current desktop layout.
+
+Scope:
+
+Review all modules including but not limited to:
+
+* Dashboard
+* Clients
+* Quotations
+* Invoices
+* Payments
+* Expenses
+* Tasks
+* Projects
+* Messages
+* Services & Offerings
+* Reports & KPIs
+
+Requirements:
+
+1. Mobile-first layout adjustments
+
+For screens below tablet size, ensure page headers, action buttons, search inputs, and filters are stacked vertically instead of trying to fit into a single horizontal row.
+
+2. Action buttons
+
+Primary actions (e.g. Create, Add, New) should appear on their own row on mobile devices.
+
+Secondary actions such as Export, View Toggle, or Filters should appear below them with proper spacing.
+
+3. Search fields
+
+Search inputs must expand to full width on mobile screens and should appear on their own row.
+
+4. Filters
+
+Filter dropdowns (status, sorting, date ranges, etc.) must stack vertically on smaller screens instead of appearing side-by-side.
+
+5. Table-heavy pages
+
+For pages with tables (Clients, Invoices, Quotations, etc.) ensure:
+
+* proper horizontal scrolling where necessary
+* no layout breaking
+* readable spacing
+
+6. Spacing consistency
+
+Ensure consistent vertical spacing between sections:
+
+* page headers
+* actions
+* filters
+* content blocks
+
+Use the same spacing scale already present in the design system.
+
+7. Sidebar behavior
+
+Confirm the sidebar behaves correctly on mobile devices:
+
+* hidden by default
+* accessible via a hamburger menu
+* displayed as a slide-in drawer
+
+8. Header alignment
+
+Ensure header elements (logo, search, language selector, notifications, user avatar) remain aligned and do not wrap awkwardly on smaller screens.
+
+9. Do not modify desktop layout
+
+All fixes must apply only to mobile and small screen breakpoints.
+
+The desktop interface must remain unchanged.
+
+10. UI consistency
+
+Reuse the existing UI components, Tailwind utilities, and layout patterns already used in the project.
