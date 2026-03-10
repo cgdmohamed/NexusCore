@@ -460,7 +460,8 @@ app.post('/api/users', isAuthenticated, (req, res) => {
 app.put('/api/users/:id', isAuthenticated, (req, res) => {
   const index = users.findIndex(u => u.id === req.params.id);
   if (index !== -1) {
-    users[index] = { ...users[index], ...req.body, updatedAt: new Date().toISOString() };
+    const { username, email, firstName, lastName } = req.body;
+    users[index] = { ...users[index], username, email, firstName, lastName, updatedAt: new Date().toISOString() };
     res.json(users[index]);
   } else {
     res.status(404).json({ message: 'User not found' });
