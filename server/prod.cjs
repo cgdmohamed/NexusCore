@@ -630,7 +630,8 @@ app.post('/api/expenses', isAuthenticated, (req, res) => {
 app.put('/api/expenses/:id', isAuthenticated, (req, res) => {
   const index = expenses.findIndex(e => e.id === req.params.id);
   if (index !== -1) {
-    expenses[index] = { ...expenses[index], ...req.body, updatedAt: new Date().toISOString() };
+    const { id, createdAt, ...allowedUpdates } = req.body;
+    expenses[index] = { ...expenses[index], ...allowedUpdates, updatedAt: new Date().toISOString() };
     res.json(expenses[index]);
   } else {
     res.status(404).json({ message: 'Expense not found' });
