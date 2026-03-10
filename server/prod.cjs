@@ -408,9 +408,11 @@ app.get('/api/clients/:id', isAuthenticated, (req, res) => {
 });
 
 app.post('/api/clients', isAuthenticated, (req, res) => {
+  const { name, email, phone, address, city, country, status } = req.body;
   const client = {
     id: generateId(),
-    ...req.body,
+    name, email, phone, address, city, country,
+    status: status || 'active',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -421,7 +423,8 @@ app.post('/api/clients', isAuthenticated, (req, res) => {
 app.put('/api/clients/:id', isAuthenticated, (req, res) => {
   const index = clients.findIndex(c => c.id === req.params.id);
   if (index !== -1) {
-    clients[index] = { ...clients[index], ...req.body, updatedAt: new Date().toISOString() };
+    const { name, email, phone, address, city, country, status } = req.body;
+    clients[index] = { ...clients[index], name, email, phone, address, city, country, status, updatedAt: new Date().toISOString() };
     res.json(clients[index]);
   } else {
     res.status(404).json({ message: 'Client not found' });
@@ -968,7 +971,8 @@ app.patch('/api/clients/:id', isAuthenticated, (req, res) => {
   try {
     const index = clients.findIndex(c => c.id === req.params.id);
     if (index !== -1) {
-      clients[index] = { ...clients[index], ...req.body, updatedAt: new Date().toISOString() };
+      const { name, email, phone, address, city, country, status } = req.body;
+      clients[index] = { ...clients[index], name, email, phone, address, city, country, status, updatedAt: new Date().toISOString() };
       // Log API request
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - 200`);
       res.json(clients[index]);
