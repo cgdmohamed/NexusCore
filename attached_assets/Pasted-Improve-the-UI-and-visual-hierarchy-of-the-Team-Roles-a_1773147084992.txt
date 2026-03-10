@@ -1,0 +1,80 @@
+Improve the UI and visual hierarchy of the "Team & Roles" and "Employee Profile / KPI" sections without changing any existing functionality, logic, or data structure.
+
+Focus only on UI/UX improvements.
+
+Goals:
+
+* Improve visual hierarchy
+* Reduce visual clutter
+* Make KPI cards easier to scan
+* Improve spacing, alignment, and layout consistency
+* Keep the existing design system and components
+
+General UI Improvements:
+
+* Increase spacing between major sections (header, stats, filters, content).
+* Use consistent padding for cards and containers.
+* Align action buttons consistently across pages.
+* Ensure all badges and status labels have consistent styling and spacing.
+
+Employee Profile Page:
+Improve the header layout for the employee profile.
+
+Requirements:
+
+* Align avatar, name, title, and status more clearly.
+* Group contact information (email, phone, department, hire date) in a clean horizontal layout.
+* Ensure the employee header feels like a clear profile section.
+
+KPI Summary Section:
+Improve the KPI statistics cards.
+
+Requirements:
+
+* Reduce visual weight of the KPI summary cards.
+* Improve spacing between cards.
+* Align icons, numbers, and labels consistently.
+* Ensure numbers are visually emphasized.
+
+KPI Filters Bar:
+Improve the filter area.
+
+Requirements:
+
+* Align search field, period filter, and status filter on one row.
+* Place primary actions (Add KPI, Export CSV) clearly on the right side.
+* Ensure responsive wrapping on smaller screens.
+
+KPI Cards:
+Improve the design of the KPI cards.
+
+Requirements:
+
+* Reduce excessive vertical spacing.
+* Align KPI title, period, and status badge consistently.
+* Improve the progress bar spacing and readability.
+* Display target and actual values in a compact format.
+* Ensure action buttons (edit/delete) are aligned and visually subtle.
+
+Roles Page:
+Improve the display of role permissions.
+
+Requirements:
+
+* Improve readability of permission tags.
+* Ensure tags wrap properly and maintain spacing.
+* Group permissions visually by module if possible.
+* Prevent permission chips from overflowing or looking crowded.
+
+Consistency Improvements:
+
+* Ensure status badges (active, on track, etc.) have consistent styling.
+* Ensure button sizes and icon alignment are consistent across the module.
+* Ensure responsive behavior works correctly on tablet and mobile.
+
+Important:
+
+* Do not change database schema.
+* Do not change API behavior.
+* Do not modify logic or business rules.
+* Only improve layout, spacing, alignment, and visual hierarchy.
