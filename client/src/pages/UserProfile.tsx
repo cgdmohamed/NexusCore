@@ -21,8 +21,15 @@ import {
   Briefcase,
   Save,
   ArrowLeft,
-  Key
+  Key,
+  Bell,
+  MessageSquare,
+  CheckSquare,
+  FileText
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { NotificationSettings } from "@shared/schema";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +86,84 @@ export default function UserProfile() {
       });
     },
   });
+
+  // Notification preferences
+  const { data: notifSettingsRaw, isLoading: notifLoading } = useQuery<{ success: boolean; data: NotificationSettings[] }>({
+    queryKey: ["/api/notifications/settings"],
+  });
+  const notifSettings = notifSettingsRaw?.data ?? [];
+
+  const updateNotifPrefsMutation = useMutation({
+    mutationFn: async (preferences: { notificationType: string; inAppEnabled?: boolean; emailEnabled?: boolean }[]) => {
+      const res = await apiRequest("PUT", "/api/notifications/settings/bulk", { preferences });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/settings"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to update preferences", variant: "destructive" });
+    },
+  });
+
+  const NOTIF_GROUPS = [
+    {
+      channel: "inApp" as const,
+      label: "Messages",
+      description: "Notifications when you receive a direct message",
+      icon: MessageSquare,
+      types: ["direct_message"],
+    },
+    {
+      channel: "inApp" as const,
+      label: "Task Updates",
+      description: "Notifications for task assignments and status changes",
+      icon: CheckSquare,
+      types: ["task_assigned", "task_updated", "task_completed", "task_overdue"],
+    },
+    {
+      channel: "inApp" as const,
+      label: "Invoice & Quotation Updates",
+      description: "Notifications for invoice and quotation events",
+      icon: FileText,
+      types: ["invoice_created","invoice_updated","invoice_paid","invoice_overdue","quotation_created","quotation_sent","quotation_accepted","quotation_rejected","quotation_expired"],
+    },
+    {
+      channel: "email" as const,
+      label: "New Messages",
+      description: "Email digest when you receive unread messages",
+      icon: MessageSquare,
+      types: ["direct_message"],
+    },
+    {
+      channel: "email" as const,
+      label: "Task Assignment",
+      description: "Email when a task is assigned to you",
+      icon: CheckSquare,
+      types: ["task_assigned"],
+    },
+    {
+      channel: "email" as const,
+      label: "Financial Events",
+      description: "Email for invoice payments, overdue alerts, and quotation decisions",
+      icon: FileText,
+      types: ["invoice_paid","invoice_overdue","quotation_accepted","quotation_rejected","quotation_expired"],
+    },
+  ] as const;
+
+  function getGroupEnabled(group: typeof NOTIF_GROUPS[number]): boolean {
+    const flag = group.channel === "inApp" ? "inAppEnabled" : "emailEnabled";
+    // If no setting rows exist for any type in the group, default is true
+    const relevantSettings = notifSettings.filter(s => (group.types as readonly string[]).includes(s.notificationType));
+    if (relevantSettings.length === 0) return true;
+    return relevantSettings.every(s => s[flag] !== false);
+  }
+
+  function handleToggleGroup(group: typeof NOTIF_GROUPS[number], enabled: boolean) {
+    const flag = group.channel === "inApp" ? "inAppEnabled" : "emailEnabled";
+    const preferences = (group.types as readonly string[]).map(t => ({ notificationType: t, [flag]: enabled }));
+    updateNotifPrefsMutation.mutate(preferences);
+  }
 
   // Change password mutation
   const changePasswordMutation = useMutation({
@@ -285,6 +370,94 @@ export default function UserProfile() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Notification Preferences */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Notification Preferences
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Control how you receive notifications. Changes apply immediately.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {notifLoading ? (
+                  <div className="space-y-3">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="flex items-center justify-between py-2">
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-52" />
+                        </div>
+                        <Skeleton className="h-5 w-9 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* In-App Notifications */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                        In-App Notifications
+                      </p>
+                      <div className="space-y-1 divide-y divide-border">
+                        {NOTIF_GROUPS.filter(g => g.channel === "inApp").map(group => {
+                          const Icon = group.icon;
+                          return (
+                            <div key={group.label} className="flex items-center justify-between py-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium leading-none mb-1">{group.label}</p>
+                                  <p className="text-xs text-muted-foreground">{group.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={getGroupEnabled(group)}
+                                onCheckedChange={(val) => handleToggleGroup(group, val)}
+                                disabled={updateNotifPrefsMutation.isPending}
+                                className="ml-4 shrink-0"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Email Notifications */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                        Email Notifications
+                      </p>
+                      <div className="space-y-1 divide-y divide-border">
+                        {NOTIF_GROUPS.filter(g => g.channel === "email").map(group => {
+                          const Icon = group.icon;
+                          return (
+                            <div key={group.label} className="flex items-center justify-between py-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium leading-none mb-1">{group.label}</p>
+                                  <p className="text-xs text-muted-foreground">{group.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={getGroupEnabled(group)}
+                                onCheckedChange={(val) => handleToggleGroup(group, val)}
+                                disabled={updateNotifPrefsMutation.isPending}
+                                className="ml-4 shrink-0"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6">

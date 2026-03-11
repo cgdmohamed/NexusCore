@@ -13,7 +13,7 @@
 
 import nodemailer from "nodemailer";
 import { db } from "./db";
-import { users, conversationParticipants } from "@shared/schema";
+import { users, conversationParticipants, notificationSettings } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 const EMAIL_DELAY_MS = 3 * 60 * 1000; // 3 minutes
@@ -114,6 +114,21 @@ async function sendDeferredEmail(
       .where(eq(users.id, recipientId));
 
     if (!recipient?.email) return;
+
+    // Respect the user's email preference for direct messages
+    const [msgEmailPref] = await db
+      .select()
+      .from(notificationSettings)
+      .where(
+        and(
+          eq(notificationSettings.userId, recipientId),
+          eq(notificationSettings.notificationType, "direct_message")
+        )
+      );
+    if (msgEmailPref && msgEmailPref.emailEnabled === false) {
+      console.log("[Messaging Email] Email disabled by user preference, skipping for", recipient.email);
+      return;
+    }
 
     const replitDomains = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
     const appUrl =

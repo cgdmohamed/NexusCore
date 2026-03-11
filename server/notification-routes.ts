@@ -192,6 +192,70 @@ router.put("/settings", async (req: any, res) => {
 });
 
 /**
+ * Bulk update user notification settings
+ * PUT /api/notifications/settings/bulk
+ */
+router.put("/settings/bulk", async (req: any, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { preferences } = req.body;
+    if (!Array.isArray(preferences) || preferences.length === 0) {
+      return res.status(400).json({ success: false, message: "preferences array is required" });
+    }
+
+    for (const pref of preferences) {
+      const { notificationType, inAppEnabled, emailEnabled } = pref;
+      if (!notificationType) continue;
+
+      const [existing] = await db
+        .select()
+        .from(notificationSettings)
+        .where(
+          and(
+            eq(notificationSettings.userId, userId),
+            eq(notificationSettings.notificationType, notificationType)
+          )
+        );
+
+      if (existing) {
+        await db
+          .update(notificationSettings)
+          .set({
+            inAppEnabled: inAppEnabled ?? existing.inAppEnabled,
+            emailEnabled: emailEnabled ?? existing.emailEnabled,
+            updatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(notificationSettings.userId, userId),
+              eq(notificationSettings.notificationType, notificationType)
+            )
+          );
+      } else {
+        await db
+          .insert(notificationSettings)
+          .values({
+            userId,
+            notificationType,
+            inAppEnabled: inAppEnabled ?? true,
+            emailEnabled: emailEnabled ?? true,
+            pushEnabled: false
+          });
+      }
+    }
+
+    res.json({ success: true, message: "Notification preferences updated" });
+  } catch (error) {
+    console.error("Failed to bulk update notification settings:", error);
+    res.status(500).json({ success: false, message: "Failed to update notification preferences" });
+  }
+});
+
+/**
  * Test notification (admin only)
  * POST /api/notifications/test
  */

@@ -76,6 +76,12 @@ class NotificationService {
         )
       );
 
+    // Respect in-app preference: if a setting row exists with inAppEnabled=false, skip notification creation entirely
+    const inAppSetting = userSettings.find(s => s.notificationType === payload.type);
+    if (inAppSetting && inAppSetting.inAppEnabled === false) {
+      return { id: "", userId: payload.userId, type: payload.type as any, title: payload.title, message: payload.message } as any;
+    }
+
     // Create the notification
     const [notification] = await db
       .insert(notifications)
