@@ -23,34 +23,30 @@ const projectInputSchema = insertProjectSchema.extend({
 });
 
 async function runProjectMigrations(): Promise<void> {
-  try {
-    await db.execute(sql`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='start_date') THEN
-          ALTER TABLE projects ADD COLUMN start_date TIMESTAMP;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='due_date') THEN
-          ALTER TABLE projects ADD COLUMN due_date TIMESTAMP;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='budget') THEN
-          ALTER TABLE projects ADD COLUMN budget NUMERIC;
-        END IF;
-      END $$;
-    `);
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS project_members (
-        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-        project_id VARCHAR NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        role VARCHAR NOT NULL DEFAULT 'member',
-        created_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(project_id, user_id)
-      );
-    `);
-    console.log("✅ Project migrations completed");
-  } catch (err) {
-    console.error("⚠️ Project migration error:", err);
-  }
+  await db.execute(sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='start_date') THEN
+        ALTER TABLE projects ADD COLUMN start_date TIMESTAMP;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='due_date') THEN
+        ALTER TABLE projects ADD COLUMN due_date TIMESTAMP;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='budget') THEN
+        ALTER TABLE projects ADD COLUMN budget NUMERIC;
+      END IF;
+    END $$;
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS project_members (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id VARCHAR NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role VARCHAR NOT NULL DEFAULT 'member',
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(project_id, user_id)
+    );
+  `);
+  console.log("✅ Project migrations completed");
 }
 
 async function getMembersForProjects(projectIds: string[]): Promise<Map<string, ProjectMemberInfo[]>> {
@@ -244,22 +240,21 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
       const [project] = await db.select({ id: projects.id }).from(projects).where(eq(projects.id, id));
       if (!project) return res.status(404).json({ message: "Project not found" });
 
+      const [user] = await db
+        .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username })
+        .from(users)
+        .where(eq(users.id, userId));
+      if (!user) return res.status(400).json({ message: "User not found" });
+
       await db.execute(sql`
         INSERT INTO project_members (project_id, user_id, role)
         VALUES (${id}, ${userId}, ${role})
         ON CONFLICT (project_id, user_id) DO UPDATE SET role = EXCLUDED.role
       `);
 
-      const [user] = await db
-        .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username })
-        .from(users)
-        .where(eq(users.id, userId));
-
-      const name = user
-        ? (user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.username ?? userId)
-        : userId;
+      const name = user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.username ?? userId;
 
       res.status(201).json({ userId, name, role } satisfies ProjectMemberInfo);
     } catch (error) {
