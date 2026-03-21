@@ -49,28 +49,31 @@ async function runProjectMigrations(): Promise<void> {
   console.log("✅ Project migrations completed");
 }
 
+interface MemberJoinRow {
+  project_id: string;
+  user_id: string;
+  role: string;
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+}
+
 async function getMembersForProjects(projectIds: string[]): Promise<Map<string, ProjectMemberInfo[]>> {
   if (projectIds.length === 0) return new Map();
 
-  const allUsers = await db.select({
-    id: users.id,
-    firstName: users.firstName,
-    lastName: users.lastName,
-    username: users.username,
-  }).from(users);
-  const userMap = new Map(allUsers.map(u => [u.id, u]));
-
   const result = await db.execute(sql`
-    SELECT project_id, user_id, role FROM project_members
-    WHERE project_id = ANY(${projectIds})
+    SELECT pm.project_id, pm.user_id, pm.role,
+           u.first_name, u.last_name, u.username
+    FROM project_members pm
+    JOIN users u ON u.id = pm.user_id
+    WHERE pm.project_id = ANY(${projectIds})
   `);
 
   const memberMap = new Map<string, ProjectMemberInfo[]>();
-  for (const row of result.rows as MemberRow[]) {
-    const u = userMap.get(row.user_id);
-    const name = u
-      ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username ?? row.user_id)
-      : row.user_id;
+  for (const row of result.rows as MemberJoinRow[]) {
+    const name = row.first_name && row.last_name
+      ? `${row.first_name} ${row.last_name}`
+      : row.username ?? row.user_id;
     if (!memberMap.has(row.project_id)) memberMap.set(row.project_id, []);
     memberMap.get(row.project_id)!.push({ userId: row.user_id, name, role: row.role });
   }
