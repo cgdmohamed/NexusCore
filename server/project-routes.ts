@@ -1,11 +1,28 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { db } from "./db";
 import { projects, tasks, users, clients, insertProjectSchema } from "@shared/schema";
 import { eq, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "./auth";
 
-async function runProjectMigrations() {
+interface MemberRow {
+  project_id: string;
+  user_id: string;
+  role: string;
+}
+
+interface ProjectMemberInfo {
+  userId: string;
+  name: string;
+  role: string;
+}
+
+const projectInputSchema = insertProjectSchema.extend({
+  startDate: z.coerce.date().nullable().optional(),
+  dueDate: z.coerce.date().nullable().optional(),
+});
+
+async function runProjectMigrations(): Promise<void> {
   try {
     await db.execute(sql`
       DO $$ BEGIN
@@ -36,29 +53,40 @@ async function runProjectMigrations() {
   }
 }
 
-async function getMembersForProjects(projectIds: string[]): Promise<Map<string, any[]>> {
+async function getMembersForProjects(projectIds: string[]): Promise<Map<string, ProjectMemberInfo[]>> {
   if (projectIds.length === 0) return new Map();
-  const allUsers = await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username }).from(users);
+
+  const allUsers = await db.select({
+    id: users.id,
+    firstName: users.firstName,
+    lastName: users.lastName,
+    username: users.username,
+  }).from(users);
   const userMap = new Map(allUsers.map(u => [u.id, u]));
 
-  const members = await db.execute(sql`
+  const result = await db.execute(sql`
     SELECT project_id, user_id, role FROM project_members
     WHERE project_id = ANY(${projectIds})
   `);
 
-  const result = new Map<string, any[]>();
-  for (const row of members.rows as any[]) {
+  const memberMap = new Map<string, ProjectMemberInfo[]>();
+  for (const row of result.rows as MemberRow[]) {
     const u = userMap.get(row.user_id);
     const name = u
-      ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || row.user_id)
+      ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username ?? row.user_id)
       : row.user_id;
-    if (!result.has(row.project_id)) result.set(row.project_id, []);
-    result.get(row.project_id)!.push({ userId: row.user_id, name, role: row.role });
+    if (!memberMap.has(row.project_id)) memberMap.set(row.project_id, []);
+    memberMap.get(row.project_id)!.push({ userId: row.user_id, name, role: row.role });
   }
-  return result;
+  return memberMap;
 }
 
-export async function registerProjectRoutes(app: Express) {
+function getUserId(req: Request): string {
+  const user = req.user;
+  return user?.id ?? "";
+}
+
+export async function registerProjectRoutes(app: Express): Promise<void> {
   await runProjectMigrations();
 
   app.get("/api/projects", requireAuth, async (req, res) => {
@@ -89,8 +117,8 @@ export async function registerProjectRoutes(app: Express) {
           return {
             ...project,
             taskCounts: counts,
-            clientName: client?.name || null,
-            members: membersMap.get(project.id) || [],
+            clientName: client?.name ?? null,
+            members: membersMap.get(project.id) ?? [],
           };
         })
       );
@@ -104,15 +132,20 @@ export async function registerProjectRoutes(app: Express) {
 
   app.post("/api/projects", requireAuth, async (req, res) => {
     try {
-      const validatedData = insertProjectSchema.parse(req.body);
-      const userId = (req.user as any)?.id;
+      const validatedData = projectInputSchema.parse(req.body);
+      const userId = getUserId(req);
 
       const [newProject] = await db
         .insert(projects)
         .values({ ...validatedData, createdBy: userId })
         .returning();
 
-      res.status(201).json({ ...newProject, taskCounts: { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 }, clientName: null, members: [] });
+      res.status(201).json({
+        ...newProject,
+        taskCounts: { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 },
+        clientName: null,
+        members: [],
+      });
     } catch (error) {
       console.error("Error creating project:", error);
       if (error instanceof z.ZodError) {
@@ -129,7 +162,12 @@ export async function registerProjectRoutes(app: Express) {
       if (!project) return res.status(404).json({ message: "Project not found" });
 
       const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, id));
-      const allUsers = await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username }).from(users);
+      const allUsers = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username,
+      }).from(users);
       const userMap = new Map(allUsers.map(u => [u.id, u]));
 
       const enrichedTasks = projectTasks.map(task => {
@@ -137,21 +175,25 @@ export async function registerProjectRoutes(app: Express) {
         return {
           ...task,
           assigneeName: assignee
-            ? (assignee.firstName && assignee.lastName ? `${assignee.firstName} ${assignee.lastName}` : assignee.username || task.assignedTo)
+            ? (assignee.firstName && assignee.lastName
+                ? `${assignee.firstName} ${assignee.lastName}`
+                : assignee.username ?? task.assignedTo)
             : null,
         };
       });
 
       let clientName: string | null = null;
       if (project.clientId) {
-        const [client] = await db.select({ id: clients.id, name: clients.name }).from(clients).where(eq(clients.id, project.clientId));
-        clientName = client?.name || null;
+        const [client] = await db
+          .select({ id: clients.id, name: clients.name })
+          .from(clients)
+          .where(eq(clients.id, project.clientId));
+        clientName = client?.name ?? null;
       }
 
       const membersMap = await getMembersForProjects([id]);
-      const members = membersMap.get(id) || [];
 
-      res.json({ ...project, tasks: enrichedTasks, clientName, members });
+      res.json({ ...project, tasks: enrichedTasks, clientName, members: membersMap.get(id) ?? [] });
     } catch (error) {
       console.error("Error fetching project details:", error);
       res.status(500).json({ message: "Failed to fetch project details" });
@@ -161,7 +203,7 @@ export async function registerProjectRoutes(app: Express) {
   app.put("/api/projects/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const validatedData = insertProjectSchema.partial().parse(req.body);
+      const validatedData = projectInputSchema.partial().parse(req.body);
 
       const [updatedProject] = await db
         .update(projects)
@@ -196,8 +238,8 @@ export async function registerProjectRoutes(app: Express) {
   app.post("/api/projects/:id/members", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { userId, role = "member" } = req.body;
-      if (!userId) return res.status(400).json({ message: "userId is required" });
+      const bodySchema = z.object({ userId: z.string(), role: z.enum(["lead", "member"]).default("member") });
+      const { userId, role } = bodySchema.parse(req.body);
 
       const [project] = await db.select({ id: projects.id }).from(projects).where(eq(projects.id, id));
       if (!project) return res.status(404).json({ message: "Project not found" });
@@ -208,15 +250,23 @@ export async function registerProjectRoutes(app: Express) {
         ON CONFLICT (project_id, user_id) DO UPDATE SET role = EXCLUDED.role
       `);
 
-      const [user] = await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username })
-        .from(users).where(eq(users.id, userId));
+      const [user] = await db
+        .select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username })
+        .from(users)
+        .where(eq(users.id, userId));
+
       const name = user
-        ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || userId)
+        ? (user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.username ?? userId)
         : userId;
 
-      res.status(201).json({ userId, name, role });
+      res.status(201).json({ userId, name, role } satisfies ProjectMemberInfo);
     } catch (error) {
       console.error("Error adding project member:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
       res.status(500).json({ message: "Failed to add member" });
     }
   });
