@@ -52,6 +52,7 @@ const translations: Translations = {
   'services.update_error': { en: 'Failed to update service', ar: 'فشل في تحديث الخدمة' },
   'nav.notifications': { en: 'Notifications', ar: 'الإشعارات' },
   'nav.messages': { en: 'Messages', ar: 'الرسائل' },
+  'nav.settings': { en: 'Settings', ar: 'الإعدادات' },
   'nav.systemStatus': { en: 'System Status: Active', ar: 'حالة النظام: نشط' },
   'nav.allModulesOperational': { en: 'All modules operational', ar: 'جميع الوحدات تعمل' },
 

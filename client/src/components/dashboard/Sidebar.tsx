@@ -19,6 +19,7 @@ import {
   UserCog,
   Briefcase,
   MessageSquare,
+  Settings,
   ChevronLeft,
   ChevronRight,
   X,
@@ -123,6 +124,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     { name: "nav.services", href: "/services", icon: Briefcase, module: "quotations" },
     { name: "nav.team_roles", href: "/team-roles", icon: UserCog, module: "employees", adminOnly: true },
     { name: "nav.reports_kpis", href: "/reports-kpis", icon: TrendingUp, module: "analytics" },
+    { name: "nav.settings", href: "/settings", icon: Settings, module: "employees", adminOnly: true },
   ];
 
   const navigation = allNavigation.filter((item) => {
