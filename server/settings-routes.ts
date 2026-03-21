@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { requireAuth } from "./auth";
+import { requireAuth, requireAdmin } from "./auth";
 import { db } from "./db";
 import {
   roles, employees, users, employeeKpis, clients, quotations, quotationItems,
@@ -10,14 +10,6 @@ import {
   conversations, conversationParticipants, messages,
 } from "@shared/schema";
 import { count } from "drizzle-orm";
-
-function requireAdmin(req: any, res: any, next: any) {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-  if (req.user.role !== "admin" && req.user.role !== "manager") {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-  next();
-}
 
 export function registerSettingsRoutes(app: Express) {
 
