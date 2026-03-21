@@ -1,0 +1,144 @@
+# ==============================================
+# Production Environment Template
+# ==============================================
+#
+# SECURITY WARNING: This is a template file!
+# - DO NOT use these example values in production
+# - Generate secure random secrets before deployment
+# - Never commit real credentials to version control
+# - Copy this file to .env and update with real values
+#
+# ==============================================
+
+# ==============================================
+# DATABASE (REQUIRED)
+# ==============================================
+DATABASE_URL=postgresql://creativenexus_user:StrongPasswordHere@localhost:5432/creativenexus
+
+# Individual PostgreSQL connection parameters (auto-set by Replit)
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=creativenexus
+PGUSER=postgres
+PGPASSWORD=postgres
+
+# ==============================================
+# SESSION SECURITY (REQUIRED - CRITICAL!)
+# ==============================================
+# Generate a secure random secret with:
+#   openssl rand -base64 32
+# OR:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+#
+# WARNING: Application will NOT start without this!
+# NEVER use the example value below - generate your own!
+SESSION_SECRET=NNHdwJekN2evTNgEy/N5AlZcTHIK/mz0OSjyi43nV04=
+
+# ==============================================
+# CSRF PROTECTION SECRET (REQUIRED - CRITICAL!)
+# ==============================================
+# Generate a secure random secret with:
+#   openssl rand -base64 32
+# OR:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+#
+# WARNING: Application will NOT start without this!
+# NEVER use the example value below - generate your own!
+# Must be different from SESSION_SECRET!
+CSRF_SECRET=9f3c0cc9c3fbe2a8f4682a1e7d901cc1
+
+# ==============================================
+# COMPANY BRANDING
+# ==============================================
+# Used in the UI, email sender names, PDF documents, and notifications
+COMPANY_NAME=Creative Code
+COMPANY_TAGLINE=Digital Solutions & Innovation
+
+# Contact details used in generated PDF invoices and quotations
+COMPANY_EMAIL=info@creativecode.com.eg
+COMPANY_PHONE=+2 (0111) 2026-922
+COMPANY_ADDRESS=Tolba Awida St, Zagazig City, Egypt
+
+# Legal registration numbers displayed in PDF invoice and quotation headers
+COMPANY_VAT_NUMBER=721462553
+COMPANY_REGISTRATION_NUMBER=14548
+
+
+# ==============================================
+# SERVER CONFIGURATION
+# ==============================================
+NODE_ENV=production
+PORT=9000
+
+# Public-facing URL of the app (used in email notification links)
+# Must be an absolute URL including protocol, e.g. https://app.yourdomain.com
+# If not set, the app falls back to REPLIT_DEV_DOMAIN or REPLIT_DOMAINS automatically
+APP_URL=https://nexus.creativecode.com.eg
+
+# CORS - Comma-separated allowed origins (production only)
+# Example: https://yourdomain.com,https://app.yourdomain.com
+ALLOWED_ORIGINS=https://nexus.creativecode.com.eg
+
+# ==============================================
+# EMAIL / SMTP CONFIGURATION (OPTIONAL)
+# ==============================================
+# Configure SMTP to enable email notifications, task assignments,
+# invoice alerts, and messaging digests.
+# Leave SMTP_USER and SMTP_PASS blank to disable all email sending.
+#
+SMTP_HOST=mail.creativecode.com.eg
+SMTP_PORT=465
+SMTP_USER=nexus@creativecode.com.eg
+SMTP_PASS=Nu7e-nbG)Y%=QnhD
+
+# Address that appears in the From: header of outgoing emails
+SMTP_FROM=nexus@creativecode.com.eg
+
+# Display name that appears alongside the From: address
+# Falls back to COMPANY_NAME if not set
+SMTP_FROM_NAME=Creative Code Nexus
+
+# For Gmail, use an App Password:
+# 1. Enable 2-Step Verification on your Google Account
+# 2. Go to myaccount.google.com/apppasswords
+# 3. Generate an app password for "Mail"
+# 4. Use that 16-character password as SMTP_PASS
+
+# ==============================================
+# REPLIT PLATFORM (auto-set by Replit)
+# ==============================================
+# These variables are set automatically by the Replit platform.
+# You do not need to set them manually when running on Replit.
+# They are documented here for self-hosted deployments.
+#
+# REPL_ID=your-repl-id
+# ISSUER_URL=https://replit.com/oidc
+# REPLIT_DEV_DOMAIN=your-repl-name.username.repl.co
+# REPLIT_DOMAINS=your-app.replit.app
+
+# ==============================================
+# PRODUCTION DEPLOYMENT CHECKLIST
+# ==============================================
+# Before deploying to production:
+#
+# 1. Generate unique SESSION_SECRET (use openssl command above)
+# 2. Generate unique CSRF_SECRET (different from SESSION_SECRET)
+# 3. Update DATABASE_URL with production database credentials
+# 4. Set NODE_ENV=production
+# 5. Set APP_URL to your public-facing domain (required for email links)
+# 6. Configure ALLOWED_ORIGINS with your production domain(s)
+# 7. Set COMPANY_NAME, COMPANY_TAGLINE, COMPANY_EMAIL, COMPANY_PHONE, COMPANY_ADDRESS
+# 8. Configure SMTP_* variables to enable email notifications
+# 9. Enable HTTPS (required for secure cookies)
+# 10. Configure database backups
+# 11. Never commit .env file to version control
+#
+# SECURITY FEATURES ENABLED:
+# - PostgreSQL-backed session storage (persistent across restarts)
+# - CSRF protection on all POST/PATCH/DELETE routes
+# - HTTP-only cookies (prevents XSS attacks)
+# - SameSite cookie protection
+# - Secure cookies in production (HTTPS only)
+# - Session timeout (7 days)
+# - Bcrypt password hashing
+# - Environment-based secrets (no hardcoded credentials)
