@@ -11,38 +11,6 @@ interface ProjectMemberInfo {
   role: string;
 }
 
-const projectInputSchema = insertProjectSchema.extend({
-  startDate: z.coerce.date().nullable().optional(),
-  dueDate: z.coerce.date().nullable().optional(),
-});
-
-async function runProjectMigrations(): Promise<void> {
-  await db.execute(sql`
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='start_date') THEN
-        ALTER TABLE projects ADD COLUMN start_date TIMESTAMP;
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='due_date') THEN
-        ALTER TABLE projects ADD COLUMN due_date TIMESTAMP;
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='budget') THEN
-        ALTER TABLE projects ADD COLUMN budget NUMERIC;
-      END IF;
-    END $$;
-  `);
-  await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS project_members (
-      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-      project_id VARCHAR NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      role VARCHAR NOT NULL DEFAULT 'member',
-      created_at TIMESTAMP DEFAULT NOW(),
-      UNIQUE(project_id, user_id)
-    );
-  `);
-  console.log("✅ Project migrations completed");
-}
-
 interface MemberJoinRow {
   project_id: string;
   user_id: string;
@@ -52,26 +20,68 @@ interface MemberJoinRow {
   username: string | null;
 }
 
+const projectInputSchema = insertProjectSchema.extend({
+  startDate: z.coerce.date().nullable().optional(),
+  dueDate: z.coerce.date().nullable().optional(),
+});
+
+async function runProjectMigrations(): Promise<void> {
+  try {
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='start_date') THEN
+          ALTER TABLE projects ADD COLUMN start_date TIMESTAMP;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='due_date') THEN
+          ALTER TABLE projects ADD COLUMN due_date TIMESTAMP;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='budget') THEN
+          ALTER TABLE projects ADD COLUMN budget NUMERIC;
+        END IF;
+      END $$;
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS project_members (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        project_id VARCHAR NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR NOT NULL DEFAULT 'member',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(project_id, user_id)
+      );
+    `);
+    console.log("✅ Project migrations completed");
+  } catch (err) {
+    console.error("⚠️ Project migrations failed (non-fatal):", err);
+  }
+}
+
 async function getMembersForProjects(projectIds: string[]): Promise<Map<string, ProjectMemberInfo[]>> {
   if (projectIds.length === 0) return new Map();
 
-  const result = await db.execute(sql`
-    SELECT pm.project_id, pm.user_id, pm.role,
-           u.first_name, u.last_name, u.username
-    FROM project_members pm
-    JOIN users u ON u.id = pm.user_id
-    WHERE pm.project_id = ANY(${projectIds})
-  `);
+  try {
+    const idList = sql.join(projectIds.map(id => sql`${id}`), sql`, `);
+    const result = await db.execute(sql`
+      SELECT pm.project_id, pm.user_id, pm.role,
+             u.first_name, u.last_name, u.username
+      FROM project_members pm
+      JOIN users u ON u.id = pm.user_id
+      WHERE pm.project_id IN (${idList})
+    `);
 
-  const memberMap = new Map<string, ProjectMemberInfo[]>();
-  for (const row of result.rows as MemberJoinRow[]) {
-    const name = row.first_name && row.last_name
-      ? `${row.first_name} ${row.last_name}`
-      : row.username ?? row.user_id;
-    if (!memberMap.has(row.project_id)) memberMap.set(row.project_id, []);
-    memberMap.get(row.project_id)!.push({ userId: row.user_id, name, role: row.role });
+    const memberMap = new Map<string, ProjectMemberInfo[]>();
+    for (const row of result.rows as MemberJoinRow[]) {
+      const name = row.first_name && row.last_name
+        ? `${row.first_name} ${row.last_name}`
+        : row.username ?? row.user_id;
+      if (!memberMap.has(row.project_id)) memberMap.set(row.project_id, []);
+      memberMap.get(row.project_id)!.push({ userId: row.user_id, name, role: row.role });
+    }
+    return memberMap;
+  } catch (err) {
+    console.error("⚠️ getMembersForProjects failed (non-fatal):", err);
+    return new Map();
   }
-  return memberMap;
 }
 
 function getUserId(req: Request): string {
