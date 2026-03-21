@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 import {
   index,
+  unique,
   jsonb,
   pgTable,
   text,
@@ -288,7 +289,9 @@ export const projectMembers = pgTable("project_members", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   role: varchar("role").notNull().default("member"), // lead, member
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueMember: unique("project_members_project_user_unique").on(table.projectId, table.userId),
+}));
 
 // Task Comments table for internal collaboration
 export const taskComments = pgTable("task_comments", {
