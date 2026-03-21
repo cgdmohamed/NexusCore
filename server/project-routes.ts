@@ -81,8 +81,8 @@ async function getMembersForProjects(projectIds: string[]): Promise<Map<string, 
 }
 
 function getUserId(req: Request): string {
-  const user = req.user;
-  return user?.id ?? "";
+  const user = req.user as (Express.User & { claims?: { sub?: string } }) | undefined;
+  return user?.claims?.sub ?? user?.id ?? "";
 }
 
 export async function registerProjectRoutes(app: Express): Promise<void> {
