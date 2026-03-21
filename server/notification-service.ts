@@ -355,7 +355,7 @@ class NotificationService {
   async markAsRead(notificationId: string, userId: string): Promise<void> {
     await db.execute(sql`
       UPDATE notifications 
-      SET is_read = true, updated_at = ${new Date().toISOString()}
+      SET status = 'read', updated_at = ${new Date().toISOString()}
       WHERE id = ${notificationId} AND user_id = ${userId}
     `);
 
@@ -378,8 +378,8 @@ class NotificationService {
   async markAllAsRead(userId: string): Promise<void> {
     await db.execute(sql`
       UPDATE notifications 
-      SET is_read = true, updated_at = ${new Date().toISOString()}
-      WHERE user_id = ${userId} AND is_read = false
+      SET status = 'read', updated_at = ${new Date().toISOString()}
+      WHERE user_id = ${userId} AND status = 'unread'
     `);
   }
 
@@ -392,7 +392,7 @@ class NotificationService {
       FROM notifications 
       WHERE user_id = ${userId} 
         AND type = ${type} 
-        AND is_read = false
+        AND status = 'unread'
         ${entityUrl ? sql`AND entity_url = ${entityUrl}` : sql``}
     `);
     return Number((result.rows[0] as any)?.count || 0) > 0;
@@ -410,12 +410,12 @@ class NotificationService {
     const offset = (page - 1) * limit;
     
     const whereClause = unreadOnly 
-      ? sql`user_id = ${userId} AND is_read = false`
+      ? sql`user_id = ${userId} AND status = 'unread'`
       : sql`user_id = ${userId}`;
 
     // Get notifications using raw SQL for consistency
     const notificationsQuery = unreadOnly 
-      ? sql`SELECT * FROM notifications WHERE user_id = ${userId} AND is_read = false ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
+      ? sql`SELECT * FROM notifications WHERE user_id = ${userId} AND status = 'unread' ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
       : sql`SELECT * FROM notifications WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
     
     const notificationsResult = await db.execute(notificationsQuery);
@@ -435,7 +435,7 @@ class NotificationService {
       const unreadResult = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM notifications 
-        WHERE user_id = ${userId} AND is_read = false
+        WHERE user_id = ${userId} AND status = 'unread'
       `);
       unreadCount = Number((unreadResult.rows[0] as any)?.count || 0);
     } catch (error) {
@@ -457,7 +457,7 @@ class NotificationService {
       const result = await db.execute(sql`
         SELECT COUNT(*) as count 
         FROM notifications 
-        WHERE user_id = ${userId} AND is_read = false
+        WHERE user_id = ${userId} AND status = 'unread'
       `);
       
       return Number((result.rows[0] as any)?.count || 0);

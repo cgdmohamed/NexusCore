@@ -1,0 +1,31 @@
+0|nexus-app  | 8:42:57 PM [express] GET /api/messages/unread-count 304 in 56ms :: {"unreadCount":0}
+0|nexus-app  | ⚠️ Notifications table not found - returning 0 count
+0|nexus-app  | Error getting unread count in getUserNotifications: error: column "is_read" does not exist
+0|nexus-app  |     at /home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/node_modules/pg-pool/index.js:45:11
+0|nexus-app  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|nexus-app  |     at async NotificationService.getUserNotifications (file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:1934:28)
+0|nexus-app  |     at async file:///home/creativecode-nexus/htdocs/nexus.creativecode.com.eg/dist/index.js:6507:22 {
+0|nexus-app  |   length: 107,
+0|nexus-app  |   severity: 'ERROR',
+0|nexus-app  |   code: '42703',
+0|nexus-app  |   detail: undefined,
+0|nexus-app  |   hint: undefined,
+0|nexus-app  |   position: '95',
+0|nexus-app  |   internalPosition: undefined,
+0|nexus-app  |   internalQuery: undefined,
+0|nexus-app  |   where: undefined,
+0|nexus-app  |   schema: undefined,
+0|nexus-app  |   table: undefined,
+0|nexus-app  |   column: undefined,
+0|nexus-app  |   dataType: undefined,
+0|nexus-app  |   constraint: undefined,
+0|nexus-app  |   file: 'parse_relation.c',
+0|nexus-app  |   line: '3722',
+0|nexus-app  |   routine: 'errorMissingColumn'
+0|nexus-app  | }
+0|nexus-app  | 8:43:11 PM [express] GET /api/notifications 304 in 178ms :: {"success":true,"data":[{"id":"a2e789a3-…
+0|nexus-app  | 8:43:11 PM [express] GET /api/notifications/unread-count 304 in 184ms :: {"success":true,"data":{"un…
+0|nexus-app  | 8:43:12 PM [express] GET /api/invoices 304 in 63ms :: [{"id":"6ff58a26-36d3-45a7-859c-53e30b8de86d",…
+0|nexus-app  | 8:43:12 PM [express] GET /api/clients 304 in 123ms :: [{"id":"75aa873a-d6bf-48bc-b19d-f52dd9fbdae1",…
+0|nexus-app  | 8:43:12 PM [express] GET /api/tasks/stats 304 in 177ms :: {"statusBreakdown":{"completed":25,"pendin…
+0|nexus-app  | 8:43:17 PM [express] GET /api/messages/unread-count 304 in 33ms :: {"unreadCount":0}
