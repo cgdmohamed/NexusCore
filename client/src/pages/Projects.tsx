@@ -7,7 +7,9 @@ import {
   Trash2, 
   FolderKanban, 
   ExternalLink,
-  User2
+  User2,
+  CalendarDays,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +61,8 @@ import { Header } from "@/components/dashboard/Header";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency";
+import { format } from "date-fns";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -79,11 +83,39 @@ const projectFormSchema = insertProjectSchema.extend({
 
 type ProjectFormData = z.infer<typeof projectFormSchema>;
 
+type StatusFilter = "all" | "active" | "on_hold" | "completed" | "archived";
+
+const STATUS_BADGE_CLS: Record<string, string> = {
+  active:   "bg-green-50 text-green-700 border-green-200",
+  on_hold:  "bg-yellow-50 text-yellow-700 border-yellow-200",
+  completed:"bg-blue-50 text-blue-700 border-blue-200",
+  archived: "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+function ProjectProgressBar({ completed, total, tasksLabel }: { completed: number; total: number; tasksLabel: string }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center text-xs text-muted-foreground">
+        <span>{completed}/{total} {tasksLabel}</span>
+        <span className="font-medium">{pct}%</span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-primary transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Projects() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const { data: projects = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
@@ -194,6 +226,21 @@ export default function Projects() {
     form.reset();
   };
 
+  const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+    { key: "all",       label: t("projects.filter_all") },
+    { key: "active",    label: t("projects.status_active") },
+    { key: "on_hold",   label: t("projects.status_on_hold") },
+    { key: "completed", label: t("projects.status_completed") },
+    { key: "archived",  label: t("projects.status_archived") },
+  ];
+
+  const filteredProjects = statusFilter === "all"
+    ? projects
+    : projects.filter((p) => p.status === statusFilter);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <div className="flex-1 overflow-auto bg-slate-50/50">
       <Header 
@@ -202,7 +249,7 @@ export default function Projects() {
       />
       
       <div className="p-3 md:p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-slate-900">{t("projects.all_projects")}</h2>
           <Dialog 
             open={isCreateDialogOpen || !!editingProject} 
@@ -386,6 +433,29 @@ export default function Projects() {
           </Dialog>
         </div>
 
+        {/* Status filter tabs */}
+        <div className="flex gap-1.5 mb-6 flex-wrap">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setStatusFilter(f.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                statusFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              {f.label}
+              {f.key !== "all" && (
+                <span className="ms-1.5 text-xs opacity-70">
+                  ({projects.filter((p) => p.status === f.key).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
@@ -401,7 +471,7 @@ export default function Projects() {
               </Card>
             ))}
           </div>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="bg-slate-100 p-6 rounded-full mb-4">
               <FolderKanban className="h-12 w-12 text-slate-400" />
@@ -410,100 +480,130 @@ export default function Projects() {
             <p className="text-slate-500 max-w-sm mt-2">
               {t("projects.no_projects_desc")}
             </p>
-            <Button className="mt-6" onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 me-2" />
-              {t("projects.create_btn")}
-            </Button>
+            {statusFilter === "all" && (
+              <Button className="mt-6" onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 me-2" />
+                {t("projects.create_btn")}
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <Card key={project.id} className="group hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: project.color }}
-                      />
-                      <CardTitle className="text-lg font-semibold truncate">{project.name}</CardTitle>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ms-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => startEdit(project)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{t("projects.delete_title")}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t("projects.delete_desc")}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(project.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {t("common.delete")}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
+            {filteredProjects.map((project) => {
+              const totalTasks = (project.taskCounts?.pending || 0) + (project.taskCounts?.in_progress || 0) + (project.taskCounts?.completed || 0) + (project.taskCounts?.cancelled || 0);
+              const completedTasks = project.taskCounts?.completed || 0;
+              const dueDate = project.dueDate ? new Date(project.dueDate) : null;
+              const isOverdue = dueDate && dueDate < today && project.status !== "completed";
+              const statusLabel = {
+                active: t("projects.status_active"),
+                on_hold: t("projects.status_on_hold"),
+                completed: t("projects.status_completed"),
+                archived: t("projects.status_archived"),
+              }[project.status as string] ?? project.status;
 
-                  {project.clientName ? (
-                    <Link href={`/clients/${project.clientId}`}>
-                      <div className="flex items-center gap-1.5 mt-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
-                        <User2 className="h-3.5 w-3.5" />
-                        <span>{project.clientName}</span>
+              return (
+                <Card key={project.id} className="group hover:shadow-md transition-shadow flex flex-col">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div 
+                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: project.color }}
+                        />
+                        <CardTitle className="text-lg font-semibold truncate">{project.name}</CardTitle>
                       </div>
-                    </Link>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-1">{t("common.internal_project")}</p>
-                  )}
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ms-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => startEdit(project)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("projects.delete_title")}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("projects.delete_desc")}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteMutation.mutate(project.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {t("common.delete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
 
-                  {project.description && (
-                    <CardDescription className="line-clamp-2 mt-2">
-                      {project.description}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="bg-slate-50">
-                      {project.taskCounts?.pending || 0} {t("projects.pending")}
-                    </Badge>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
-                      {project.taskCounts?.in_progress || 0} {t("projects.in_progress")}
-                    </Badge>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100">
-                      {project.taskCounts?.completed || 0} {t("projects.completed_tasks")}
-                    </Badge>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Link href={`/projects/${project.id}`} className="w-full">
-                    <Button variant="secondary" className="w-full">
-                      {t("projects.open_board")}
-                      <ExternalLink className="ms-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE_CLS[project.status] ?? "")}>
+                        {statusLabel}
+                      </Badge>
+                      {project.clientName ? (
+                        <Link href={`/clients/${project.clientId}`}>
+                          <div className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
+                            <User2 className="h-3.5 w-3.5" />
+                            <span>{project.clientName}</span>
+                          </div>
+                        </Link>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">{t("common.internal_project")}</p>
+                      )}
+                    </div>
+
+                    {project.description && (
+                      <CardDescription className="line-clamp-2 mt-2">
+                        {project.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="pb-4 flex-1 space-y-3">
+                    <ProjectProgressBar completed={completedTasks} total={totalTasks} tasksLabel={t("projects.tasks_count")} />
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                      {dueDate && (
+                        <span className={cn("flex items-center gap-1", isOverdue && "text-red-600 font-medium")}>
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {format(dueDate, "MMM d, yyyy")}
+                          {isOverdue && (
+                            <Badge className="ms-1 bg-red-100 text-red-700 border-red-200 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>
+                          )}
+                        </span>
+                      )}
+                      {project.budget != null && (
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          {t("projects.budget_label")}: {formatCurrency(project.budget)}
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+
+                  <CardFooter className="pt-0">
+                    <Link href={`/projects/${project.id}`} className="w-full">
+                      <Button variant="secondary" className="w-full">
+                        {t("projects.open_board")}
+                        <ExternalLink className="ms-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

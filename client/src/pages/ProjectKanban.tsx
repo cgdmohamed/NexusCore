@@ -23,8 +23,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { 
   Card, 
   CardContent, 
-  CardHeader, 
-  CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +50,9 @@ import {
   Calendar as CalendarIcon, 
   Clock,
   Edit,
+  CalendarDays,
+  DollarSign,
+  X,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency";
 
 const taskFormSchema = z.object({
   title: z.string().min(1),
@@ -85,6 +87,13 @@ const priorityColors: Record<string, string> = {
   low:    "bg-gray-100 text-gray-700 border-gray-200",
   medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
   high:   "bg-red-100 text-red-700 border-red-200",
+};
+
+const STATUS_BADGE_CLS: Record<string, string> = {
+  active:    "bg-green-50 text-green-700 border-green-200",
+  on_hold:   "bg-yellow-50 text-yellow-700 border-yellow-200",
+  completed: "bg-blue-50 text-blue-700 border-blue-200",
+  archived:  "bg-slate-100 text-slate-600 border-slate-200",
 };
 
 function DroppableColumn({ colId, children }: { colId: string; children: React.ReactNode }) {
@@ -113,6 +122,11 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
   } = useSortable({ id: task.id, data: { type: "Task", task } });
 
   const style = { transition, transform: CSS.Translate.toString(transform) };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const isOverdue = dueDate && dueDate < today && task.status !== "completed" && task.status !== "cancelled";
 
   if (isDragging) {
     return (
@@ -147,15 +161,33 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
               {task.assigneeName}
             </span>
           )}
-          {task.dueDate && (
-            <span className="flex items-center gap-1">
+          {dueDate && (
+            <span className={cn("flex items-center gap-1", isOverdue && "text-red-600 font-medium")}>
               <CalendarIcon className="h-3 w-3" />
-              {format(new Date(task.dueDate), "MMM d")}
+              {format(dueDate, "MMM d")}
+              {isOverdue && <span className="text-red-600">!</span>}
             </span>
           )}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function MemberAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <div
+      title={name}
+      className="w-7 h-7 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-xs font-semibold flex-shrink-0"
+    >
+      {initials}
+    </div>
   );
 }
 
@@ -168,6 +200,8 @@ export default function ProjectKanban() {
   const [selectedTask, setSelectedTask]               = useState<any>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen]       = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen]   = useState(false);
+  const [filterAssignee, setFilterAssignee]           = useState<string>("all");
+  const [filterPriority, setFilterPriority]           = useState<string>("all");
 
   const { data: projectData, isLoading } = useQuery<any>({
     queryKey: ["/api/projects", id],
@@ -215,7 +249,41 @@ export default function ProjectKanban() {
   }
 
   const project = projectData;
-  const tasks: any[] = projectData?.tasks ?? [];
+  const allTasks: any[] = projectData?.tasks ?? [];
+
+  const filteredTasks = allTasks.filter((task) => {
+    if (filterAssignee !== "all" && task.assignedTo !== filterAssignee) return false;
+    if (filterPriority !== "all" && task.priority !== filterPriority) return false;
+    return true;
+  });
+
+  const totalTasks = allTasks.length;
+  const completedTasks = allTasks.filter((t) => t.status === "completed").length;
+  const progressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = project?.dueDate ? new Date(project.dueDate) : null;
+  const isProjectOverdue = dueDate && dueDate < today && project?.status !== "completed";
+
+  const members: any[] = project?.members ?? [];
+
+  const activeFilters: { key: string; label: string; clear: () => void }[] = [];
+  if (filterAssignee !== "all") {
+    const user = users.find((u: any) => u.id === filterAssignee);
+    const name = user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || user.email) : filterAssignee;
+    activeFilters.push({ key: "assignee", label: `${t("kanban.filter_assignee")}: ${name}`, clear: () => setFilterAssignee("all") });
+  }
+  if (filterPriority !== "all") {
+    activeFilters.push({ key: "priority", label: `${t("kanban.filter_priority")}: ${filterPriority}`, clear: () => setFilterPriority("all") });
+  }
+
+  const statusLabel = {
+    active: t("projects.status_active"),
+    on_hold: t("projects.status_on_hold"),
+    completed: t("projects.status_completed"),
+    archived: t("projects.status_archived"),
+  }[project?.status as string] ?? project?.status;
 
   const onDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === "Task") {
@@ -236,11 +304,11 @@ export default function ProjectKanban() {
     if (columnIds.includes(overId)) {
       newStatus = overId;
     } else {
-      const overTask = tasks.find((t) => t.id === overId);
+      const overTask = allTasks.find((t) => t.id === overId);
       newStatus = overTask?.status ?? overId;
     }
 
-    const draggedTask = tasks.find((t) => t.id === taskId);
+    const draggedTask = allTasks.find((t) => t.id === taskId);
     if (draggedTask && draggedTask.status !== newStatus) {
       updateTaskMutation.mutate({ taskId, data: { status: newStatus } });
     }
@@ -253,36 +321,136 @@ export default function ProjectKanban() {
 
   return (
     <div className="flex-1 flex flex-col p-3 md:p-6 overflow-hidden bg-slate-50/50 min-h-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 flex-shrink-0">
-        <div className="flex flex-col gap-1 min-w-0">
-          <Link href="/projects">
-            <Button variant="ghost" size="sm" className="w-fit -ms-2">
-              <ChevronLeft className="h-4 w-4 me-1" />
-              {t("kanban.back_to_projects")}
-            </Button>
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{project?.name ?? t("nav.projects")}</h1>
-            </div>
-            {project?.clientName ? (
-              <Link href={`/clients/${project.clientId}`}>
-                <div className="flex items-center gap-1.5 mt-0.5 text-sm text-primary hover:underline cursor-pointer w-fit ms-6">
-                  <User className="h-3.5 w-3.5" />
-                  <span>{project.clientName}</span>
+      {/* Enhanced Header */}
+      <div className="mb-4 flex-shrink-0">
+        <Link href="/projects">
+          <Button variant="ghost" size="sm" className="w-fit -ms-2 mb-2">
+            <ChevronLeft className="h-4 w-4 me-1" />
+            {t("kanban.back_to_projects")}
+          </Button>
+        </Link>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="space-y-2 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
+                <h1 className="text-xl font-bold text-slate-900 truncate">{project?.name ?? t("nav.projects")}</h1>
+                {project?.status && (
+                  <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE_CLS[project.status] ?? "")}>
+                    {statusLabel}
+                  </Badge>
+                )}
+              </div>
+
+              {project?.clientName ? (
+                <Link href={`/clients/${project.clientId}`}>
+                  <div className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
+                    <User className="h-3.5 w-3.5" />
+                    <span>{project.clientName}</span>
+                  </div>
+                </Link>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t("common.internal_project")}</p>
+              )}
+
+              <div className="space-y-1 max-w-xs">
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>{completedTasks}/{totalTasks} {t("projects.tasks_count")}</span>
+                  <span className="font-medium">{progressPct}%</span>
                 </div>
-              </Link>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-0.5 ms-6">{t("common.internal_project")}</p>
-            )}
+                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {dueDate && (
+                  <span className={cn("flex items-center gap-1", isProjectOverdue && "text-red-600 font-medium")}>
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {t("projects.due_label")} {format(dueDate, "MMM d, yyyy")}
+                    {isProjectOverdue && <Badge className="ms-1 bg-red-100 text-red-700 border-red-200 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>}
+                  </span>
+                )}
+                {project?.budget != null && (
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="h-3.5 w-3.5" />
+                    {t("projects.budget_label")}: {formatCurrency(project.budget)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end gap-3">
+              <Button onClick={() => openCreateDialog("pending")} size="sm">
+                <Plus className="h-4 w-4 me-1.5" />
+                {t("kanban.new_task")}
+              </Button>
+              {members.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {members.slice(0, 5).map((m: any) => (
+                    <MemberAvatar key={m.userId} name={m.name ?? m.userId} />
+                  ))}
+                  {members.length > 5 && (
+                    <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                      +{members.length - 5}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <Button onClick={() => openCreateDialog("pending")} size="sm" className="w-fit sm:flex-shrink-0">
-          <Plus className="h-4 w-4 me-1.5" />
-          {t("kanban.new_task")}
-        </Button>
+      </div>
+
+      {/* Filter bar */}
+      <div className="mb-3 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+            <SelectTrigger className="w-40 h-8 text-xs bg-white">
+              <SelectValue placeholder={t("kanban.filter_assignee")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("kanban.filter_all_assignees")}</SelectItem>
+              {users.map((u: any) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || u.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="w-36 h-8 text-xs bg-white">
+              <SelectValue placeholder={t("kanban.filter_priority")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("kanban.filter_all_priorities")}</SelectItem>
+              <SelectItem value="low">{t("tasks.low")}</SelectItem>
+              <SelectItem value="medium">{t("tasks.medium")}</SelectItem>
+              <SelectItem value="high">{t("tasks.high")}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {activeFilters.map((f) => (
+            <Badge
+              key={f.key}
+              variant="outline"
+              className="h-8 px-2.5 text-xs flex items-center gap-1.5 bg-primary/5 border-primary/20 text-primary cursor-default"
+            >
+              {f.label}
+              <button
+                onClick={f.clear}
+                className="ml-0.5 hover:text-primary/70 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Board */}
@@ -294,7 +462,7 @@ export default function ProjectKanban() {
       >
         <div className="flex gap-5 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
           {COLUMN_DEFS.map((col) => {
-            const columnTasks = tasks.filter((t: any) => t.status === col.id);
+            const columnTasks = filteredTasks.filter((t: any) => t.status === col.id);
             return (
               <div key={col.id} className="flex flex-col w-80 flex-shrink-0 min-w-[18rem]">
                 <div

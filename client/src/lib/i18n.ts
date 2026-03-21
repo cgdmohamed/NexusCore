@@ -298,6 +298,15 @@ const translations: Translations = {
   'projects.status_on_hold': { en: 'On Hold', ar: 'معلق' },
   'projects.status_completed': { en: 'Completed', ar: 'مكتمل' },
   'projects.status_archived': { en: 'Archived', ar: 'مؤرشف' },
+  'projects.filter_all': { en: 'All', ar: 'الكل' },
+  'projects.overdue': { en: 'Overdue', ar: 'متأخر' },
+  'projects.tasks_count': { en: 'tasks', ar: 'مهام' },
+  'projects.budget_label': { en: 'Budget', ar: 'الميزانية' },
+  'projects.due_label': { en: 'Due', ar: 'الاستحقاق' },
+  'kanban.filter_all_assignees': { en: 'All Assignees', ar: 'جميع المكلفين' },
+  'kanban.filter_all_priorities': { en: 'All Priorities', ar: 'جميع الأولويات' },
+  'kanban.filter_assignee': { en: 'Assignee', ar: 'المكلف' },
+  'kanban.filter_priority': { en: 'Priority', ar: 'الأولوية' },
 
   // Kanban
   'kanban.pending': { en: 'Pending', ar: 'معلق' },
