@@ -5,12 +5,6 @@ import { eq, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "./auth";
 
-interface MemberRow {
-  project_id: string;
-  user_id: string;
-  role: string;
-}
-
 interface ProjectMemberInfo {
   userId: string;
   name: string;
