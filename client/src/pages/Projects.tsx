@@ -71,6 +71,10 @@ const PRESET_COLORS = [
 
 const projectFormSchema = insertProjectSchema.extend({
   clientId: z.string().nullable().optional(),
+  startDate: z.string().nullable().optional(),
+  dueDate: z.string().nullable().optional(),
+  budget: z.string().nullable().optional(),
+  status: z.enum(["active", "on_hold", "completed", "archived"]).default("active"),
 });
 
 type ProjectFormData = z.infer<typeof projectFormSchema>;
@@ -97,12 +101,21 @@ export default function Projects() {
       color: "#3b82f6",
       status: "active",
       clientId: null,
+      startDate: null,
+      dueDate: null,
+      budget: null,
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: ProjectFormData) => {
-      const payload = { ...data, clientId: data.clientId || null };
+      const payload = {
+        ...data,
+        clientId: data.clientId || null,
+        startDate: data.startDate || null,
+        dueDate: data.dueDate || null,
+        budget: data.budget || null,
+      };
       const res = await apiRequest("POST", "/api/projects", payload);
       return res.json();
     },
@@ -119,7 +132,13 @@ export default function Projects() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ProjectFormData }) => {
-      const payload = { ...data, clientId: data.clientId || null };
+      const payload = {
+        ...data,
+        clientId: data.clientId || null,
+        startDate: data.startDate || null,
+        dueDate: data.dueDate || null,
+        budget: data.budget || null,
+      };
       const res = await apiRequest("PUT", `/api/projects/${id}`, payload);
       return res.json();
     },
@@ -163,6 +182,9 @@ export default function Projects() {
       color: project.color || "#3b82f6",
       status: project.status || "active",
       clientId: project.clientId || null,
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : null,
+      dueDate: project.dueDate ? new Date(project.dueDate).toISOString().split("T")[0] : null,
+      budget: project.budget ? String(project.budget) : null,
     });
   };
 
@@ -192,7 +214,7 @@ export default function Projects() {
                 {t("projects.new_project")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingProject ? t("projects.edit_project") : t("projects.create_project")}</DialogTitle>
               </DialogHeader>
@@ -273,6 +295,75 @@ export default function Projects() {
                               />
                             ))}
                           </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("projects.status")}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="active">{t("projects.status_active")}</SelectItem>
+                            <SelectItem value="on_hold">{t("projects.status_on_hold")}</SelectItem>
+                            <SelectItem value="completed">{t("projects.status_completed")}</SelectItem>
+                            <SelectItem value="archived">{t("projects.status_archived")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("projects.start_date")}</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("projects.due_date")}</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="budget"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("projects.budget")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder={t("projects.budget_placeholder")}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

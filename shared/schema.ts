@@ -271,11 +271,23 @@ export const projects = pgTable("projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description"),
-  status: varchar("status").notNull().default("active"),
+  status: varchar("status").notNull().default("active"), // active, on_hold, completed, archived
   color: varchar("color").notNull().default("#3b82f6"),
   clientId: varchar("client_id").references(() => clients.id),
+  startDate: timestamp("start_date"),
+  dueDate: timestamp("due_date"),
+  budget: decimal("budget"),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Project Members join table
+export const projectMembers = pgTable("project_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role").notNull().default("member"), // lead, member
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Task Comments table for internal collaboration
@@ -535,6 +547,11 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
   createdAt: true,
@@ -549,6 +566,8 @@ export const insertEmployeeKpiSchema = createInsertSchema(employeeKpis).omit({
 // Types
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
 
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;

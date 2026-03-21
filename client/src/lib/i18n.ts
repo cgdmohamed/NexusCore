@@ -289,6 +289,15 @@ const translations: Translations = {
   'projects.pending': { en: 'pending', ar: 'معلق' },
   'projects.in_progress': { en: 'in progress', ar: 'قيد التنفيذ' },
   'projects.completed_tasks': { en: 'completed', ar: 'مكتمل' },
+  'projects.start_date': { en: 'Start Date', ar: 'تاريخ البدء' },
+  'projects.due_date': { en: 'Due Date', ar: 'تاريخ الاستحقاق' },
+  'projects.budget': { en: 'Budget', ar: 'الميزانية' },
+  'projects.budget_placeholder': { en: 'e.g. 5000', ar: 'مثال: 5000' },
+  'projects.status': { en: 'Status', ar: 'الحالة' },
+  'projects.status_active': { en: 'Active', ar: 'نشط' },
+  'projects.status_on_hold': { en: 'On Hold', ar: 'معلق' },
+  'projects.status_completed': { en: 'Completed', ar: 'مكتمل' },
+  'projects.status_archived': { en: 'Archived', ar: 'مؤرشف' },
 
   // Kanban
   'kanban.pending': { en: 'Pending', ar: 'معلق' },

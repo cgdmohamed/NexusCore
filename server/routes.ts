@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerKpiRoutes(app);
   registerAnalyticsRoutes(app);
   registerTaskManagementRoutes(app);
-  registerProjectRoutes(app);
+  await registerProjectRoutes(app);
   registerServicesRoutes(app);
   registerMessagingRoutes(app);
   registerSettingsRoutes(app);
