@@ -420,13 +420,6 @@ export function registerExpenseRoutes(app: Express) {
         notes 
       } = req.body;
 
-      // Validate mandatory attachment for payment
-      if (!attachmentUrl) {
-        return res.status(400).json({ 
-          message: "Payment attachment is mandatory" 
-        });
-      }
-
       // Get the expense first to check payment source
       const [existingExpense] = await db
         .select()
