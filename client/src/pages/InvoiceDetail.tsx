@@ -18,7 +18,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
 import { useParams, Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   ArrowLeft,
   Edit,
@@ -43,9 +43,12 @@ import {
   File,
   Image,
   X,
-  Ban
+  Ban,
+  History,
+  QrCode,
+  Sparkles
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,
@@ -77,7 +80,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Invoice, InvoiceItem, Payment, Client } from "@shared/schema";
+import type { Invoice, InvoiceItem, Payment, Client, InvoiceHistory } from "@shared/schema";
 
 interface InvoiceItemFormData {
   name: string;
@@ -169,6 +172,13 @@ export default function InvoiceDetail() {
     enabled: !!invoice?.clientId,
   });
 
+  const { data: invoiceHistoryData = [] } = useQuery<InvoiceHistory[]>({
+    queryKey: [`/api/invoices/${id}/history`],
+    enabled: !!id,
+  });
+
+  const qrFileInputRef = useRef<HTMLInputElement>(null);
+
   // Initialize tax/discount form when invoice loads or updates
   useEffect(() => {
     if (invoice) {
@@ -198,6 +208,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       setShowCreditInfo(false);
       toast({
         title: "Success",
@@ -220,6 +231,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/items`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       setIsAddingItem(false);
       setItemForm({ name: '', description: '', quantity: 1, unitPrice: 0 });
       toast({
@@ -243,6 +255,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/items`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       setIsEditingItem(false);
       setEditingItemId(null);
       setEditItemForm({ name: '', description: '', quantity: 1, unitPrice: 0 });
@@ -271,6 +284,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       setIsAddingPayment(false);
       setOverpaymentWarning(null);
       setPaymentForm({
@@ -320,6 +334,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/items`] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       toast({
         title: "Success",
         description: "Invoice item removed successfully",
@@ -343,6 +358,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       
       setIsProcessingRefund(false);
       setRefundForm({
@@ -404,6 +420,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       setShowCancelConfirm(false);
       toast({
         title: "Invoice Cancelled",
@@ -490,6 +507,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       toast({
         title: "Invoice Recalculated",
         description: data?.message || "Invoice totals and status have been recalculated.",
@@ -511,6 +529,7 @@ export default function InvoiceDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
       toast({
         title: "Invoice Updated",
         description: "Tax and discount settings have been updated.",
@@ -525,6 +544,75 @@ export default function InvoiceDetail() {
       });
     }
   });
+
+  const generateQrCodeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/invoices/${id}/qr-code`, { generate: true });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      toast({ title: "QR Code Generated", description: "QR code has been generated and saved." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to generate QR code", variant: "destructive" });
+    },
+  });
+
+  const uploadQrCodeMutation = useMutation({
+    mutationFn: async (file: File) => {
+      return new Promise<void>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const imageData = e.target?.result as string;
+            const res = await apiRequest("POST", `/api/invoices/${id}/qr-code`, { imageData });
+            if (!res.ok) {
+              const err = await res.json();
+              reject(new Error(err.message || "Upload failed"));
+            } else {
+              resolve();
+            }
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      toast({ title: "QR Code Uploaded", description: "Custom QR code has been saved." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Upload Failed", description: error.message || "Failed to upload QR code", variant: "destructive" });
+    },
+  });
+
+  const removeQrCodeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/invoices/${id}/qr-code`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      toast({ title: "QR Code Removed", description: "The QR code has been removed." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to remove QR code", variant: "destructive" });
+    },
+  });
+
+  const handleQrFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadQrCodeMutation.mutate(file, {
+      onSettled: () => { e.target.value = ''; }
+    });
+  };
 
   const handleRefund = () => {
     const refundAmount = parseFloat(refundForm.refundAmount);
@@ -1731,6 +1819,130 @@ export default function InvoiceDetail() {
             )}
           </CardContent>
         </Card>
+
+
+        {/* QR Code Panel */}
+        <Card className="print:block" data-testid="card-qr-code">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              QR Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {invoice.qrCodeImage ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="border rounded-lg p-3 bg-white inline-block shadow-sm">
+                  <img
+                    src={invoice.qrCodeImage}
+                    alt="Invoice QR Code"
+                    className="w-48 h-48 object-contain"
+                    data-testid="img-qr-code"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 text-center">
+                  This QR code encodes information about invoice <strong>{invoice.invoiceNumber}</strong> and will appear on printed/exported invoices.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeQrCodeMutation.mutate()}
+                  disabled={removeQrCodeMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  data-testid="button-remove-qr-code"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  {removeQrCodeMutation.isPending ? "Removing..." : "Remove QR Code"}
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <QrCode className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm mb-6">
+                  No QR code attached yet. Generate one automatically or upload a custom image.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={() => generateQrCodeMutation.mutate()}
+                    disabled={generateQrCodeMutation.isPending}
+                    data-testid="button-generate-qr-code"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {generateQrCodeMutation.isPending ? "Generating..." : "Generate QR Code"}
+                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      ref={qrFileInputRef}
+                      className="hidden"
+                      accept=".svg,.png"
+                      onChange={handleQrFileUpload}
+                      data-testid="input-qr-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => qrFileInputRef.current?.click()}
+                      disabled={uploadQrCodeMutation.isPending}
+                      data-testid="button-upload-qr-code"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadQrCodeMutation.isPending ? "Uploading..." : "Upload Custom QR (SVG/PNG)"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Invoice History */}
+        <Card data-testid="card-invoice-history">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <History className="w-5 h-5" />
+              History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {invoiceHistoryData.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">No history events yet. Changes to this invoice will appear here.</p>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+                <div className="space-y-4">
+                  {invoiceHistoryData.map((entry) => (
+                    <div key={entry.id} className="flex gap-4 pl-10 relative">
+                      <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
+                      <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{entry.event}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                          {entry.actor && (
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {entry.actor}
+                            </span>
+                          )}
+                          {entry.createdAt && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span title={format(new Date(entry.createdAt), 'MMM dd, yyyy HH:mm')}>
+                                {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
       </div>
       
       {/* Credit Balance Dialog */}

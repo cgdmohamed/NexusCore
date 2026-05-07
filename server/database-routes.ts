@@ -1,11 +1,12 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities } from "@shared/schema";
-import { eq, sql, count, ne } from "drizzle-orm";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory } from "@shared/schema";
+import { eq, sql, count, ne, desc } from "drizzle-orm";
 import multer from "multer";
 import { notificationService } from "./notification-service";
 import path from "path";
 import fs from "fs";
+import QRCode from "qrcode";
 
 // Configure multer for invoice file uploads
 const invoiceStorage = multer.diskStorage({
@@ -94,6 +95,18 @@ export function setupDatabaseRoutes(app: Express) {
         .returning();
       res.json(updatedQuotation);
 
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: req.params.id,
+          event: `Status changed to ${req.body.status}`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error('Error recording quotation history:', historyError);
+      }
+
       // Trigger notification when quotation is accepted
       if (req.body.status === 'accepted' && updatedQuotation) {
         try {
@@ -114,7 +127,20 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/invoices/:id/status', async (req, res) => {
+  // Quotation history endpoint
+  app.get('/api/quotations/:id/history', async (req: any, res) => {
+    try {
+      const history = await db.select().from(quotationHistory)
+        .where(eq(quotationHistory.quotationId, req.params.id))
+        .orderBy(desc(quotationHistory.createdAt));
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching quotation history:", error);
+      res.status(500).json({ message: "Failed to fetch quotation history" });
+    }
+  });
+
+  app.patch('/api/invoices/:id/status', async (req: any, res) => {
     try {
       const updateData: any = { 
         status: req.body.status, 
@@ -131,9 +157,34 @@ export function setupDatabaseRoutes(app: Express) {
         .where(eq(invoices.id, req.params.id))
         .returning();
       res.json(updatedInvoice);
+
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.id,
+          event: `Status changed to ${req.body.status}`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error('Error recording invoice history:', historyError);
+      }
     } catch (error) {
       console.error("Error updating invoice status:", error);
       res.status(500).json({ message: "Failed to update invoice status" });
+    }
+  });
+
+  // Invoice history endpoint
+  app.get('/api/invoices/:id/history', async (req: any, res) => {
+    try {
+      const history = await db.select().from(invoiceHistory)
+        .where(eq(invoiceHistory.invoiceId, req.params.id))
+        .orderBy(desc(invoiceHistory.createdAt));
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching invoice history:", error);
+      res.status(500).json({ message: "Failed to fetch invoice history" });
     }
   });
 
@@ -162,10 +213,102 @@ export function setupDatabaseRoutes(app: Express) {
         .where(eq(invoices.id, invoiceId))
         .returning();
 
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId,
+          event: 'Invoice cancelled',
+          actor,
+        });
+      } catch (historyError) {
+        console.error('Error recording invoice history:', historyError);
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error cancelling invoice:", error);
       res.status(500).json({ message: "Failed to cancel invoice" });
+    }
+  });
+
+  // Invoice QR code - generate or upload
+  app.post('/api/invoices/:id/qr-code', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      let qrCodeImage: string;
+
+      if (req.body.generate) {
+        // Auto-generate QR code encoding the invoice number/URL
+        const qrContent = `${process.env.APP_URL || 'https://app.company.com'}/invoices/${invoiceId} | ${invoice.invoiceNumber}`;
+        qrCodeImage = await QRCode.toDataURL(qrContent, { 
+          width: 256, 
+          margin: 2,
+          color: { dark: '#000000', light: '#ffffff' }
+        });
+      } else if (req.body.imageData) {
+        // Use uploaded base64 image — validate SVG or PNG only
+        const imageData: string = req.body.imageData;
+        const isPng = imageData.startsWith('data:image/png;base64,');
+        const isSvg = imageData.startsWith('data:image/svg+xml;base64,');
+        if (!isPng && !isSvg) {
+          return res.status(400).json({ message: "Only PNG and SVG images are accepted for QR codes" });
+        }
+        // Basic size guard: 512 KB max for base64 payload
+        if (imageData.length > 700000) {
+          return res.status(400).json({ message: "QR code image exceeds the 512 KB size limit" });
+        }
+        qrCodeImage = imageData;
+      } else {
+        return res.status(400).json({ message: "Either 'generate: true' or 'imageData' must be provided" });
+      }
+
+      const [updated] = await db.update(invoices)
+        .set({ qrCodeImage, updatedAt: new Date() })
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        const eventText = req.body.generate ? 'QR code generated' : 'Custom QR code uploaded';
+        await db.insert(invoiceHistory).values({ invoiceId, event: eventText, actor });
+      } catch (historyError) {
+        console.error('Error recording invoice history:', historyError);
+      }
+
+      res.json({ success: true, qrCodeImage: updated.qrCodeImage });
+    } catch (error) {
+      console.error("Error setting invoice QR code:", error);
+      res.status(500).json({ message: "Failed to set QR code" });
+    }
+  });
+
+  // Invoice QR code - delete
+  app.delete('/api/invoices/:id/qr-code', async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      await db.update(invoices)
+        .set({ qrCodeImage: null, updatedAt: new Date() })
+        .where(eq(invoices.id, invoiceId));
+
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({ invoiceId, event: 'QR code removed', actor });
+      } catch (historyError) {
+        console.error('Error recording invoice history:', historyError);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing invoice QR code:", error);
+      res.status(500).json({ message: "Failed to remove QR code" });
     }
   });
 
@@ -371,6 +514,18 @@ export function setupDatabaseRoutes(app: Express) {
         console.error("Error logging activity:", activityError);
       }
 
+      // Record creation history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: newQuotation.id,
+          event: `Quotation ${newQuotation.quotationNumber} created`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording quotation history:", historyError);
+      }
+
       res.status(201).json(newQuotation);
     } catch (error) {
       console.error("Error creating quotation:", error);
@@ -413,6 +568,19 @@ export function setupDatabaseRoutes(app: Express) {
       };
 
       const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
+
+      // Record creation history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: newInvoice.id,
+          event: `Invoice ${newInvoice.invoiceNumber} created`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
+
       res.status(201).json(newInvoice);
     } catch (error) {
       console.error("Error creating invoice:", error);
@@ -458,6 +626,28 @@ export function setupDatabaseRoutes(app: Express) {
         .set(updateData)
         .where(eq(invoices.id, req.params.id))
         .returning();
+
+      // Record edit history — summarise changed fields
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        const changedFields = Object.keys(req.body).filter(k => k !== 'updatedAt');
+        if (changedFields.length > 0) {
+          const fieldLabels: Record<string, string> = {
+            title: 'title', dueDate: 'due date', notes: 'notes',
+            paymentTerms: 'payment terms', taxRate: 'tax rate',
+            taxAmount: 'tax amount', discountRate: 'discount rate',
+            discountAmount: 'discount amount', description: 'description',
+          };
+          const readable = changedFields.map(f => fieldLabels[f] || f).join(', ');
+          await db.insert(invoiceHistory).values({
+            invoiceId: req.params.id,
+            event: `Invoice details updated (${readable})`,
+            actor,
+          });
+        }
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
       
       res.json(updatedInvoice);
     } catch (error) {
@@ -550,7 +740,19 @@ export function setupDatabaseRoutes(app: Express) {
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.id));
-      
+
+      // Record item-added history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.id,
+          event: `Item "${newItem.name}" added (qty: ${newItem.quantity}, unit price: ${parseFloat(newItem.unitPrice).toFixed(2)})`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
+
       res.status(201).json(newItem);
     } catch (error) {
       console.error("Error creating invoice item:", error);
@@ -590,7 +792,19 @@ export function setupDatabaseRoutes(app: Express) {
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));
-      
+
+      // Record item-edited history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.invoiceId,
+          event: `Item "${updatedItem.name}" updated (qty: ${updatedItem.quantity}, unit price: ${parseFloat(updatedItem.unitPrice).toFixed(2)})`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
+
       res.json(updatedItem);
     } catch (error) {
       console.error("Error updating invoice item:", error);
@@ -600,6 +814,9 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.delete('/api/invoices/:invoiceId/items/:itemId', async (req: any, res) => {
     try {
+      // Fetch item name before deleting for history
+      const [deletedItem] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
+
       await db.delete(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
       
       // Recalculate invoice totals
@@ -619,6 +836,18 @@ export function setupDatabaseRoutes(app: Express) {
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));
+
+      // Record item-deleted history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.invoiceId,
+          event: `Item "${deletedItem?.name || 'Unknown'}" removed from invoice`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
       
       res.json({ message: "Invoice item deleted successfully" });
     } catch (error) {
@@ -796,6 +1025,22 @@ export function setupDatabaseRoutes(app: Express) {
         console.error("Error updating client total value:", clientUpdateError);
       }
 
+      // Record history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        const paymentMethod = (req.body.paymentMethod || 'unknown').replace(/_/g, ' ');
+        const eventText = isOverpayment && isAdminApproved
+          ? `Payment of ${paymentAmount.toFixed(2)} recorded via ${paymentMethod} (overpayment of ${overpaymentAmount.toFixed(2)} added to client credit)`
+          : `Payment of ${paymentAmount.toFixed(2)} recorded via ${paymentMethod}`;
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.id,
+          event: eventText,
+          actor,
+        });
+      } catch (historyError) {
+        console.error('Error recording invoice history:', historyError);
+      }
+
       res.status(201).json({
         payment: newPayment,
         overpaymentHandled: isOverpayment && isAdminApproved,
@@ -865,6 +1110,18 @@ export function setupDatabaseRoutes(app: Express) {
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.id));
+
+      // Record refund history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.id,
+          event: `Refund of ${refundAmountNum.toFixed(2)} processed via ${refundMethod || 'bank transfer'} — status changed to "${newStatus}"`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
 
       res.json({ 
         success: true, 
@@ -1057,6 +1314,18 @@ export function setupDatabaseRoutes(app: Express) {
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));
+
+      // Record history for credit application
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(invoiceHistory).values({
+          invoiceId: req.params.invoiceId,
+          event: `Client credit of ${actualCreditUsed.toFixed(2)} applied — status updated to "${newStatus}"`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording invoice history:", historyError);
+      }
       
       res.json({
         payment: newPayment,
@@ -1407,7 +1676,19 @@ export function setupDatabaseRoutes(app: Express) {
       await db.update(quotations)
         .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
-      
+
+      // Record item-added history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: req.params.id,
+          event: `Item "${newItem.description}" added (qty: ${newItem.quantity}, unit price: ${parseFloat(newItem.unitPrice).toFixed(2)})`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording quotation history:", historyError);
+      }
+
       res.status(201).json(newItem);
     } catch (error) {
       console.error("Error creating quotation item:", error);
@@ -1444,6 +1725,34 @@ export function setupDatabaseRoutes(app: Express) {
         .set(updateData)
         .where(eq(quotations.id, req.params.id))
         .returning();
+
+      // Record history for status changes and/or field edits
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        // Log status change separately for clear audit trail
+        if (req.body.status) {
+          await db.insert(quotationHistory).values({
+            quotationId: req.params.id,
+            event: `Status changed to "${req.body.status}"`,
+            actor,
+          });
+        }
+        const changedFields = Object.keys(req.body).filter(k => !['updatedAt', 'status', 'amount'].includes(k));
+        if (changedFields.length > 0) {
+          const fieldLabels: Record<string, string> = {
+            title: 'title', validUntil: 'valid until', notes: 'notes',
+            terms: 'terms', description: 'description',
+          };
+          const readable = changedFields.map(f => fieldLabels[f] || f).join(', ');
+          await db.insert(quotationHistory).values({
+            quotationId: req.params.id,
+            event: `Quotation details updated (${readable})`,
+            actor,
+          });
+        }
+      } catch (historyError) {
+        console.error("Error recording quotation history:", historyError);
+      }
       
       res.json(updatedQuotation);
     } catch (error) {
@@ -1541,6 +1850,23 @@ export function setupDatabaseRoutes(app: Express) {
       await db.update(quotations)
         .set({ status: 'invoiced', updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
+
+      // Record history for both the quotation (status change) and the new invoice (creation)
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: req.params.id,
+          event: `Status changed to "invoiced" — converted to invoice ${invoiceNumber}`,
+          actor,
+        });
+        await db.insert(invoiceHistory).values({
+          invoiceId: newInvoice.id,
+          event: `Invoice ${invoiceNumber} created from quotation ${quotation.quotationNumber}`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording history for convert-to-invoice:", historyError);
+      }
 
       // Return the invoice with its items for immediate display
       const createdItems = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, newInvoice.id));
@@ -1769,6 +2095,18 @@ export function setupDatabaseRoutes(app: Express) {
         .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
+      // Record item-edited history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: req.params.id,
+          event: `Item "${updatedItem.description}" updated (qty: ${updatedItem.quantity}, unit price: ${parseFloat(updatedItem.unitPrice).toFixed(2)})`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording quotation history:", historyError);
+      }
+
       res.json(updatedItem);
     } catch (error) {
       console.error("Error updating quotation item:", error);
@@ -1779,6 +2117,9 @@ export function setupDatabaseRoutes(app: Express) {
   // Delete quotation item
   app.delete('/api/quotations/:id/items/:itemId', async (req: any, res) => {
     try {
+      // Fetch item before deleting for history
+      const [deletedItem] = await db.select().from(quotationItems).where(eq(quotationItems.id, req.params.itemId));
+
       await db.delete(quotationItems)
         .where(eq(quotationItems.id, req.params.itemId));
 
@@ -1788,6 +2129,18 @@ export function setupDatabaseRoutes(app: Express) {
       await db.update(quotations)
         .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
+
+      // Record item-deleted history
+      try {
+        const actor = req.user?.email || req.user?.username || 'System';
+        await db.insert(quotationHistory).values({
+          quotationId: req.params.id,
+          event: `Item "${deletedItem?.description || 'Unknown'}" removed from quotation`,
+          actor,
+        });
+      } catch (historyError) {
+        console.error("Error recording quotation history:", historyError);
+      }
 
       res.json({ message: "Item deleted successfully" });
     } catch (error) {
@@ -1985,6 +2338,22 @@ export function setupDatabaseRoutes(app: Express) {
       </div>
     </div>
   </div>
+
+  ${(() => {
+        // Only embed base64 data URLs (never raw SVG strings) to prevent XSS
+        const qr = invoice.qrCodeImage;
+        const safeQr = qr && (qr.startsWith('data:image/png;base64,') || qr.startsWith('data:image/svg+xml;base64,'))
+          ? qr.replace(/"/g, '&quot;')
+          : null;
+        return safeQr ? `
+  <!-- QR CODE -->
+  <div style="display:flex;justify-content:flex-end;margin-bottom:32px">
+    <div style="text-align:center">
+      <img src="${safeQr}" alt="QR Code" style="width:100px;height:100px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;padding:4px" />
+      <div style="font-size:9px;color:#9ca3af;margin-top:4px">Scan to verify</div>
+    </div>
+  </div>` : '';
+      })()}
 
   <!-- FOOTER -->
   <div class="doc-footer">

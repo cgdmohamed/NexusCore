@@ -9,15 +9,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil, History, Clock, User } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
-import type { Quotation, QuotationItem, Service, Client } from "@shared/schema";
+import type { Quotation, QuotationItem, Service, Client, QuotationHistory } from "@shared/schema";
 
 export default function QuotationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +55,11 @@ export default function QuotationDetail() {
     queryKey: ["/api/quotations", id, "items"],
   });
 
+  const { data: history = [] } = useQuery<QuotationHistory[]>({
+    queryKey: ["/api/quotations", id, "history"],
+    enabled: !!id,
+  });
+
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
@@ -87,6 +92,7 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
       setIsAddingItem(false);
       resetForm();
       toast({
@@ -112,6 +118,7 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
       setEditingItem(null);
       toast({ title: t("quotations.item_updated"), description: t("quotations.item_updated_desc") });
     },
@@ -128,6 +135,7 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
       toast({ title: t("quotations.item_deleted"), description: t("quotations.item_deleted_desc") });
     },
     onError: (error: any) => {
@@ -235,6 +243,7 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
       setIsEditing(false);
       toast({
         title: t("quotations.updated"),
@@ -273,6 +282,7 @@ export default function QuotationDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
       toast({
         title: t("quotations.status_updated"),
         description: t("quotations.status_updated_desc"),
@@ -823,6 +833,54 @@ export default function QuotationDetail() {
                 </div>
               </div>
             </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* History Section */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="w-5 h-5" />
+            History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <div className="text-center py-8">
+              <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No history events yet. Changes to this quotation will appear here.</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+              <div className="space-y-4">
+                {history.map((entry) => (
+                  <div key={entry.id} className="flex gap-4 pl-10 relative">
+                    <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
+                    <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{entry.event}</p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                        {entry.actor && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {entry.actor}
+                          </span>
+                        )}
+                        {entry.createdAt && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span title={format(new Date(entry.createdAt), 'MMM dd, yyyy HH:mm')}>
+                              {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

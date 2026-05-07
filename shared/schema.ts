@@ -192,6 +192,7 @@ export const invoices = pgTable("invoices", {
   notes: text("notes"),
   paymentTerms: text("payment_terms"),
   attachments: text("attachments").array(), // Array of attachment file paths/URLs
+  qrCodeImage: text("qr_code_image"), // Base64 data URL or SVG for QR code
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -250,6 +251,24 @@ export const clientCreditHistory = pgTable("client_credit_history", {
 });
 
 
+
+// Quotation History table for audit trail
+export const quotationHistory = pgTable("quotation_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quotationId: varchar("quotation_id").references(() => quotations.id, { onDelete: "cascade" }).notNull(),
+  event: text("event").notNull(),
+  actor: varchar("actor"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Invoice History table for audit trail
+export const invoiceHistory = pgTable("invoice_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").references(() => invoices.id, { onDelete: "cascade" }).notNull(),
+  event: text("event").notNull(),
+  actor: varchar("actor"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // Tasks table - Basic structure matching actual database
 export const tasks = pgTable("tasks", {
@@ -662,6 +681,12 @@ export type InsertPayment = typeof payments.$inferInsert;
 
 export type ClientCreditHistory = typeof clientCreditHistory.$inferSelect;
 export type InsertClientCreditHistory = typeof clientCreditHistory.$inferInsert;
+
+export type QuotationHistory = typeof quotationHistory.$inferSelect;
+export type InsertQuotationHistory = typeof quotationHistory.$inferInsert;
+
+export type InvoiceHistory = typeof invoiceHistory.$inferSelect;
+export type InsertInvoiceHistory = typeof invoiceHistory.$inferInsert;
 
 // Quotation line items
 export const quotationItems = pgTable("quotation_items", {
