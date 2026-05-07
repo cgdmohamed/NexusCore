@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { db } from "./db";
 import { requireAuth } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory } from "@shared/schema";
-import { eq, sql, count, ne, desc } from "drizzle-orm";
+import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
 import multer from "multer";
 import { notificationService } from "./notification-service";
 import path from "path";
@@ -671,7 +671,9 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Invoice not found" });
       }
 
-      const updateData = { ...req.body, updatedAt: new Date() };
+      // Strip paidAmount — must not be settable directly; it is derived from the payments table
+      const { paidAmount: _stripped, ...bodyWithoutPaid } = req.body;
+      const updateData = { ...bodyWithoutPaid, updatedAt: new Date() };
       
       // Recalculate amount if tax or discount changed
       if (req.body.taxAmount !== undefined || req.body.discountAmount !== undefined || 
@@ -783,9 +785,11 @@ export function setupDatabaseRoutes(app: Express) {
 
       const [newItem] = await db.insert(invoiceItems).values(itemData).returning();
       
-      // Recalculate invoice totals
-      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate invoice totals using DB SUM
+      const [subtotalResult] = await db.select({
+        subtotal: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`
+      }).from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
+      const subtotal = parseFloat(subtotalResult?.subtotal || '0');
       
       // Get invoice to preserve tax/discount calculations
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
@@ -835,19 +839,21 @@ export function setupDatabaseRoutes(app: Express) {
         .where(eq(invoiceItems.id, req.params.itemId))
         .returning();
       
-      // Recalculate invoice totals
-      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate invoice totals using DB SUM
+      const [subtotalResult2] = await db.select({
+        subtotal: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`
+      }).from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
+      const subtotal2 = parseFloat(subtotalResult2?.subtotal || '0');
       
       // Get invoice to preserve tax/discount calculations
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
       const taxAmount = parseFloat(invoice?.taxAmount || '0');
       const discountAmount = parseFloat(invoice?.discountAmount || '0');
-      const newTotal = subtotal + taxAmount - discountAmount;
+      const newTotal = subtotal2 + taxAmount - discountAmount;
       
       await db.update(invoices)
         .set({ 
-          subtotal: subtotal.toFixed(2),
+          subtotal: subtotal2.toFixed(2),
           amount: newTotal.toFixed(2),
           updatedAt: new Date()
         })
@@ -879,19 +885,21 @@ export function setupDatabaseRoutes(app: Express) {
 
       await db.delete(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
       
-      // Recalculate invoice totals
-      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate invoice totals using DB SUM
+      const [subtotalResult3] = await db.select({
+        subtotal: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`
+      }).from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.invoiceId));
+      const subtotal3 = parseFloat(subtotalResult3?.subtotal || '0');
       
       // Get invoice to preserve tax/discount calculations
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
       const taxAmount = parseFloat(invoice?.taxAmount || '0');
       const discountAmount = parseFloat(invoice?.discountAmount || '0');
-      const newTotal = subtotal + taxAmount - discountAmount;
+      const newTotal = subtotal3 + taxAmount - discountAmount;
       
       await db.update(invoices)
         .set({ 
-          subtotal: subtotal.toFixed(2),
+          subtotal: subtotal3.toFixed(2),
           amount: newTotal.toFixed(2),
           updatedAt: new Date()
         })
@@ -942,8 +950,10 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(400).json({ message: "Cannot record payments against a cancelled invoice." });
       }
       
-      const currentPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
-      const currentPaidAmount = currentPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const [paidSumResult] = await db.select({
+        total: sql<string>`COALESCE(SUM(${payments.amount}), 0)`
+      }).from(payments).where(eq(payments.invoiceId, req.params.id));
+      const currentPaidAmount = parseFloat(paidSumResult?.total || '0');
       const invoiceAmount = parseFloat(invoice.amount);
       const remainingAmount = invoiceAmount - currentPaidAmount;
       
@@ -1070,10 +1080,10 @@ export function setupDatabaseRoutes(app: Express) {
 
       // Auto-update client totalValue based on all paid invoice amounts
       try {
-        const allClientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, invoice.clientId));
-        const clientTotalPaidValue = allClientInvoices.reduce((sum, inv) => {
-          return sum + parseFloat(inv.paidAmount || '0');
-        }, 0);
+        const [clientTotalSumResult] = await db.select({
+          total: sql<string>`COALESCE(SUM(${invoices.paidAmount}), 0)`
+        }).from(invoices).where(eq(invoices.clientId, invoice.clientId));
+        const clientTotalPaidValue = parseFloat(clientTotalSumResult?.total || '0');
         
         await db.update(clients)
           .set({ 
@@ -1307,8 +1317,10 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Invoice not found" });
       }
       
-      const currentPayments = await db.select().from(payments).where(eq(payments.invoiceId, req.params.invoiceId));
-      const currentPaidAmount = currentPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+      const [creditPaidSumResult] = await db.select({
+        total: sql<string>`COALESCE(SUM(${payments.amount}), 0)`
+      }).from(payments).where(eq(payments.invoiceId, req.params.invoiceId));
+      const currentPaidAmount = parseFloat(creditPaidSumResult?.total || '0');
       const remainingAmount = parseFloat(invoice.amount) - currentPaidAmount;
       
       const actualCreditUsed = Math.min(creditAmountNum, remainingAmount);
@@ -1456,9 +1468,11 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Invoice not found" });
       }
 
-      // Get invoice items and calculate subtotal
-      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
+      // Get invoice subtotal using DB SUM
+      const [recalcSubtotalResult] = await db.select({
+        subtotal: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`
+      }).from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+      const subtotal = parseFloat(recalcSubtotalResult?.subtotal || '0');
       
       // Calculate tax and discount amounts from rates if available
       const taxRate = parseFloat(invoice.taxRate || '0');
@@ -1530,11 +1544,11 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Client not found" });
       }
 
-      // Calculate total paid amount from all invoices for this client
-      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, clientId));
-      const totalPaidValue = clientInvoices.reduce((sum, invoice) => {
-        return sum + parseFloat(invoice.paidAmount || '0');
-      }, 0);
+      // Calculate total paid amount from all invoices for this client using DB SUM
+      const [clientPaidSumResult] = await db.select({
+        total: sql<string>`COALESCE(SUM(${invoices.paidAmount}), 0)`
+      }).from(invoices).where(eq(invoices.clientId, clientId));
+      const totalPaidValue = parseFloat(clientPaidSumResult?.total || '0');
 
       // Update client totalValue
       const [updatedClient] = await db.update(clients)
@@ -1735,12 +1749,18 @@ export function setupDatabaseRoutes(app: Express) {
 
       const [newItem] = await db.insert(quotationItems).values(itemData).returning();
       
-      // Recalculate and update quotation amount
-      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate and update quotation amount using DB-level SUM
+      const [qTotals] = await db.select({
+        subtotalAgg: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+        totalAgg: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const qSubtotal = parseFloat(qTotals?.subtotalAgg || '0');
+      const qTotal = parseFloat(qTotals?.totalAgg || '0');
+      const qDiscountAmt = qSubtotal - qTotal;
+      const qDiscountRate = qSubtotal > 0 ? ((qDiscountAmt / qSubtotal) * 100).toFixed(2) : '0.00';
       
       await db.update(quotations)
-        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .set({ amount: qTotal.toFixed(2), subtotal: qSubtotal.toFixed(2), discountAmount: qDiscountAmt.toFixed(2), discountRate: qDiscountRate, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
       // Record item-added history
@@ -1804,11 +1824,20 @@ export function setupDatabaseRoutes(app: Express) {
         }
       }
 
-      // If updating amount, recalculate from items
+      // If updating status without an explicit amount, recalculate from items using DB-level SUM
       if (req.body.status && !req.body.amount) {
-        const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-        const totalAmount = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-        updateData.amount = totalAmount.toFixed(2);
+        const [patchTotals] = await db.select({
+          subtotalAgg: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+          totalAgg: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+        }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+        const patchSubtotal = parseFloat(patchTotals?.subtotalAgg || '0');
+        const patchTotal = parseFloat(patchTotals?.totalAgg || '0');
+        const patchDiscountAmt = patchSubtotal - patchTotal;
+        const patchDiscountRate = patchSubtotal > 0 ? ((patchDiscountAmt / patchSubtotal) * 100).toFixed(2) : '0.00';
+        updateData.amount = patchTotal.toFixed(2);
+        updateData.subtotal = patchSubtotal.toFixed(2);
+        updateData.discountAmount = patchDiscountAmt.toFixed(2);
+        updateData.discountRate = patchDiscountRate;
       }
 
       const [updatedQuotation] = await db.update(quotations)
@@ -1884,23 +1913,37 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Quotation not found" });
       }
 
-      // Get quotation items
+      // Fetch quotation items (needed both for financial aggregates and item copying)
       const qItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 
-      // Calculate financial summary
-      // subtotal = sum of (qty × unitPrice) before per-item discounts
-      const subtotal = qItems.reduce((sum, item) => {
-        return sum + parseFloat(item.quantity) * parseFloat(item.unitPrice);
-      }, 0);
-      // totalAfterItemDiscounts = sum of item totalPrice (discount already baked in)
-      const totalAfterItemDiscounts = qItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-      const discountAmount = subtotal - totalAfterItemDiscounts;
+      // Calculate financial summary using DB-level aggregates to avoid float drift
+      const [conversionFinancials] = await db.select({
+        subtotal: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+        totalAfterDiscounts: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+
+      const subtotal = parseFloat(conversionFinancials?.subtotal || '0');
+      const totalAfterItemDiscounts = parseFloat(conversionFinancials?.totalAfterDiscounts || '0');
+      // Item-level discount = gross subtotal minus discounted line totals
+      const itemDiscountAmount = subtotal - totalAfterItemDiscounts;
+      // Carry over stored quotation-level tax/discount fields
+      const quotationTaxAmount = parseFloat(quotation.taxAmount || '0');
+      const quotationDiscountAmount = parseFloat(quotation.discountAmount || '0');
+      // Use stored quotation discount if set (covers quotation-level discount); else use item-level discount
+      const effectiveDiscountAmount = quotationDiscountAmount > 0 ? quotationDiscountAmount : itemDiscountAmount;
+      const effectiveDiscountRate = parseFloat(quotation.discountRate || '0') > 0
+        ? quotation.discountRate!
+        : (subtotal > 0 ? ((effectiveDiscountAmount / subtotal) * 100).toFixed(2) : '0.00');
+      const effectiveTaxAmount = quotationTaxAmount;
+      const effectiveTaxRate = quotation.taxRate ?? '0.00';
+      // Single coherent formula: total = subtotal - discount + tax
+      const finalAmount = subtotal - effectiveDiscountAmount + effectiveTaxAmount;
 
       // Generate a unique invoice number
       const year = new Date().getFullYear();
       const invoiceNumber = `INV-${year}-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`;
 
-      // Create invoice record with full financial data
+      // Create invoice record carrying over all financial data from the quotation
       const invoiceData = {
         invoiceNumber,
         clientId: quotation.clientId,
@@ -1909,11 +1952,11 @@ export function setupDatabaseRoutes(app: Express) {
         description: quotation.description,
         notes: quotation.notes,
         subtotal: subtotal.toFixed(2),
-        discountAmount: discountAmount.toFixed(2),
-        discountRate: '0.00',
-        taxRate: '0.00',
-        taxAmount: '0.00',
-        amount: totalAfterItemDiscounts.toFixed(2),
+        discountAmount: effectiveDiscountAmount.toFixed(2),
+        discountRate: effectiveDiscountRate,
+        taxRate: effectiveTaxRate,
+        taxAmount: effectiveTaxAmount.toFixed(2),
+        amount: finalAmount.toFixed(2),
         paidAmount: '0.00',
         status: 'pending',
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
@@ -1985,10 +2028,11 @@ export function setupDatabaseRoutes(app: Express) {
       const companyVatNumber = process.env.COMPANY_VAT_NUMBER || '';
       const companyRegNumber = process.env.COMPANY_REGISTRATION_NUMBER || '';
 
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
+      // Use stored quotation financial fields (kept in sync by item CRUD handlers)
+      const subtotal = parseFloat(quotation.subtotal || quotation.amount || '0');
       const taxAmount = parseFloat(quotation.taxAmount || '0');
       const discountAmount = parseFloat(quotation.discountAmount || '0');
-      const totalAmount = subtotal + taxAmount - discountAmount;
+      const totalAmount = parseFloat(quotation.amount || '0');
 
       const statusBadgeStyles: Record<string, string> = {
         draft:    'background:#f3f4f6;color:#374151',
@@ -2184,11 +2228,17 @@ export function setupDatabaseRoutes(app: Express) {
         .where(eq(quotationItems.id, req.params.itemId))
         .returning();
 
-      // Recalculate and update quotation total
-      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate and update quotation total using DB-level SUM
+      const [editTotals] = await db.select({
+        subtotalAgg: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+        totalAgg: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const editSubtotal = parseFloat(editTotals?.subtotalAgg || '0');
+      const editTotal = parseFloat(editTotals?.totalAgg || '0');
+      const editDiscountAmt = editSubtotal - editTotal;
+      const editDiscountRate = editSubtotal > 0 ? ((editDiscountAmt / editSubtotal) * 100).toFixed(2) : '0.00';
       await db.update(quotations)
-        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .set({ amount: editTotal.toFixed(2), subtotal: editSubtotal.toFixed(2), discountAmount: editDiscountAmt.toFixed(2), discountRate: editDiscountRate, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
       // Record item-edited history
@@ -2225,11 +2275,17 @@ export function setupDatabaseRoutes(app: Express) {
       await db.delete(quotationItems)
         .where(eq(quotationItems.id, req.params.itemId));
 
-      // Recalculate and update quotation total
-      const allItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-      const totalAmount = allItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+      // Recalculate and update quotation total using DB-level SUM
+      const [delTotals] = await db.select({
+        subtotalAgg: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+        totalAgg: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
+      const delSubtotal = parseFloat(delTotals?.subtotalAgg || '0');
+      const delTotal = parseFloat(delTotals?.totalAgg || '0');
+      const delDiscountAmt = delSubtotal - delTotal;
+      const delDiscountRate = delSubtotal > 0 ? ((delDiscountAmt / delSubtotal) * 100).toFixed(2) : '0.00';
       await db.update(quotations)
-        .set({ amount: totalAmount.toFixed(2), updatedAt: new Date() })
+        .set({ amount: delTotal.toFixed(2), subtotal: delSubtotal.toFixed(2), discountAmount: delDiscountAmt.toFixed(2), discountRate: delDiscountRate, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
       // Record item-deleted history
@@ -2269,10 +2325,11 @@ export function setupDatabaseRoutes(app: Express) {
       const companyVatNumber = process.env.COMPANY_VAT_NUMBER || '';
       const companyRegNumber = process.env.COMPANY_REGISTRATION_NUMBER || '';
 
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice || '0'), 0);
+      // Use stored invoice financial fields to avoid float drift
+      const subtotal = parseFloat(invoice.subtotal || invoice.amount || '0');
       const taxAmount = parseFloat(invoice.taxAmount || '0');
       const discountAmount = parseFloat(invoice.discountAmount || '0');
-      const totalAmount = subtotal + taxAmount - discountAmount;
+      const totalAmount = parseFloat(invoice.amount || '0');
       const paidAmount = parseFloat(invoice.paidAmount || '0');
       const balanceDue = totalAmount - paidAmount;
 

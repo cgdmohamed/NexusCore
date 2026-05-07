@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { eq, desc, and, gte, lte, ilike, or } from "drizzle-orm";
+import { eq, desc, and, gte, lte, ilike, or, sql } from "drizzle-orm";
 import { db } from "./db";
 import { 
   expenses, 
@@ -36,29 +36,31 @@ async function handlePaymentSourceTransaction(
     throw new Error("Payment source not found");
   }
 
-  const balanceBefore = parseFloat(paymentSource.currentBalance || "0");
+  const balanceBefore = paymentSource.currentBalance ?? "0";
   const expenseAmount = parseFloat(amount);
-  const balanceAfter = balanceBefore - expenseAmount;
 
-  // Update payment source balance
-  await db
+  // Update payment source balance using DB arithmetic to preserve decimal precision
+  const [updatedSource] = await db
     .update(paymentSources)
     .set({ 
-      currentBalance: balanceAfter.toString(),
+      currentBalance: sql`${paymentSources.currentBalance} - ${expenseAmount}::numeric`,
       updatedAt: new Date()
     })
-    .where(eq(paymentSources.id, paymentSourceId));
+    .where(eq(paymentSources.id, paymentSourceId))
+    .returning();
+
+  const balanceAfter = updatedSource?.currentBalance ?? (parseFloat(balanceBefore) - expenseAmount).toFixed(2);
 
   // Create transaction record
   await db.insert(paymentSourceTransactions).values({
     paymentSourceId,
     type: "expense",
-    amount: expenseAmount.toString(),
+    amount: expenseAmount.toFixed(2),
     description: `Expense payment: ${expenseTitle}`,
     referenceId: expenseId,
     referenceType: "expense",
-    balanceBefore: balanceBefore.toString(),
-    balanceAfter: balanceAfter.toString(),
+    balanceBefore,
+    balanceAfter,
     createdBy: userId,
   });
 }
@@ -121,65 +123,59 @@ export function registerExpenseRoutes(app: Express) {
           break;
       }
 
-      // Get all expenses in period
-      const expenseResults = await db
-        .select({
-          expense: expenses,
-          category: expenseCategories,
-        })
+      const periodFilter = and(
+        gte(expenses.expenseDate, startDate),
+        lte(expenses.expenseDate, now)
+      );
+
+      // Use DB-level aggregates for financial totals to avoid float drift
+      const [totals] = await db.select({
+        totalExpenses: sql<number>`COUNT(*)`,
+        totalAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+      }).from(expenses).where(periodFilter);
+
+      const [paidTotals] = await db.select({
+        paidExpenses: sql<number>`COUNT(*)`,
+        paidAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+      }).from(expenses).where(and(periodFilter, eq(expenses.status, "paid")));
+
+      const [pendingTotals] = await db.select({
+        pendingExpenses: sql<number>`COUNT(*)`,
+        pendingAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+      }).from(expenses).where(and(periodFilter, eq(expenses.status, "pending")));
+
+      const [overdueCount] = await db.select({
+        overdueExpenses: sql<number>`COUNT(*)`,
+      }).from(expenses).where(and(periodFilter, eq(expenses.status, "overdue")));
+
+      // Category breakdown using DB-level GROUP BY and SUM
+      const categoryRows = await db.select({
+        name: expenseCategories.name,
+        color: expenseCategories.color,
+        amount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+        count: sql<number>`COUNT(*)`,
+      })
         .from(expenses)
-        .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
-        .where(
-          and(
-            gte(expenses.expenseDate, startDate),
-            lte(expenses.expenseDate, now)
-          )
-        );
-      
-      const allExpenses = Array.isArray(expenseResults) ? expenseResults : [];
+        .innerJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+        .where(periodFilter)
+        .groupBy(expenseCategories.id, expenseCategories.name, expenseCategories.color);
 
-      // Calculate statistics
-      const totalExpenses = allExpenses.length;
-      const totalAmount = allExpenses.reduce((sum, item) => sum + parseFloat(item.expense.amount), 0);
-      
-      const paidExpenses = allExpenses.filter(item => item.expense.status === "paid");
-      const pendingExpenses = allExpenses.filter(item => item.expense.status === "pending");
-      const overdueExpenses = allExpenses.filter(item => item.expense.status === "overdue");
-      
-      const paidAmount = paidExpenses.reduce((sum, item) => sum + parseFloat(item.expense.amount), 0);
-      const pendingAmount = pendingExpenses.reduce((sum, item) => sum + parseFloat(item.expense.amount), 0);
-
-      // Category breakdown
-      const categoryBreakdown = allExpenses.reduce((acc, item) => {
-        const category = item.category;
-        const expense = item.expense;
-        
-        if (!category) return acc;
-        
-        if (!acc[category.name]) {
-          acc[category.name] = {
-            name: category.name,
-            color: category.color,
-            amount: 0,
-            count: 0,
-          };
-        }
-        
-        acc[category.name].amount += parseFloat(expense.amount);
-        acc[category.name].count += 1;
-        
-        return acc;
-      }, {} as Record<string, any>);
+      const categoryBreakdown = categoryRows.map(row => ({
+        name: row.name,
+        color: row.color,
+        amount: parseFloat(row.amount),
+        count: Number(row.count),
+      }));
 
       res.json({
-        totalExpenses,
-        totalAmount,
-        paidExpenses: paidExpenses.length,
-        paidAmount,
-        pendingExpenses: pendingExpenses.length,
-        pendingAmount,
-        overdueExpenses: overdueExpenses.length,
-        categoryBreakdown: Object.values(categoryBreakdown),
+        totalExpenses: Number(totals?.totalExpenses || 0),
+        totalAmount: parseFloat(totals?.totalAmount || '0'),
+        paidExpenses: Number(paidTotals?.paidExpenses || 0),
+        paidAmount: parseFloat(paidTotals?.paidAmount || '0'),
+        pendingExpenses: Number(pendingTotals?.pendingExpenses || 0),
+        pendingAmount: parseFloat(pendingTotals?.pendingAmount || '0'),
+        overdueExpenses: Number(overdueCount?.overdueExpenses || 0),
+        categoryBreakdown,
       });
     } catch (error) {
       console.error("Error calculating expense statistics:", error);

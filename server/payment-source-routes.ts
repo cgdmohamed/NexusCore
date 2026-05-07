@@ -209,29 +209,30 @@ export function registerPaymentSourceRoutes(app: Express) {
         return res.status(404).json({ message: "Payment source not found" });
       }
 
-      const currentBalance = parseFloat(source.currentBalance);
+      const balanceBefore = source.currentBalance ?? "0";
       const adjustmentAmount = parseFloat(amount);
-      const newBalance = currentBalance + adjustmentAmount;
 
-      // Update balance
+      // Update balance using DB arithmetic to preserve decimal precision
       const [updatedSource] = await db
         .update(paymentSources)
         .set({
-          currentBalance: newBalance.toString(),
+          currentBalance: sql`${paymentSources.currentBalance} + ${adjustmentAmount}::numeric`,
           updatedAt: new Date(),
         })
         .where(eq(paymentSources.id, id))
         .returning();
 
+      const balanceAfter = updatedSource?.currentBalance ?? (parseFloat(balanceBefore) + adjustmentAmount).toFixed(2);
+
       // Create transaction record
       await db.insert(paymentSourceTransactions).values({
         paymentSourceId: id,
         type,
-        amount: amount,
+        amount: adjustmentAmount.toFixed(2),
         description,
         referenceType: "manual_adjustment",
-        balanceBefore: currentBalance.toString(),
-        balanceAfter: newBalance.toString(),
+        balanceBefore,
+        balanceAfter,
         createdBy: userId,
       });
 

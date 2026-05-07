@@ -162,6 +162,11 @@ export const quotations = pgTable("quotations", {
   title: text("title").notNull(),
   description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0"),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  discountRate: decimal("discount_rate", { precision: 5, scale: 2 }).default("0"),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0"),
   status: varchar("status").notNull().default("draft"), // draft, sent, accepted, rejected, expired, invoiced
   validUntil: timestamp("valid_until"),
   notes: text("notes"), // Internal notes
@@ -613,8 +618,8 @@ export const paymentSources = pgTable("payment_sources", {
   description: varchar("description"),
   accountType: varchar("account_type").notNull().default("bank"), // cash, bank, wallet
   currency: varchar("currency").default("USD"),
-  initialBalance: varchar("initial_balance").default("0"),
-  currentBalance: varchar("current_balance").default("0"),
+  initialBalance: decimal("initial_balance", { precision: 12, scale: 2 }).default("0"),
+  currentBalance: decimal("current_balance", { precision: 12, scale: 2 }).default("0"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -628,12 +633,12 @@ export const paymentSourceTransactions = pgTable("payment_source_transactions", 
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   paymentSourceId: varchar("payment_source_id").notNull().references(() => paymentSources.id, { onDelete: "cascade" }),
   type: varchar("type").notNull(), // expense, income, adjustment
-  amount: varchar("amount").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   description: varchar("description"),
   referenceId: varchar("reference_id"), // expense ID, income ID, etc.
   referenceType: varchar("reference_type"), // "expense", "income", "manual_adjustment"
-  balanceBefore: varchar("balance_before").notNull(),
-  balanceAfter: varchar("balance_after").notNull(),
+  balanceBefore: decimal("balance_before", { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 12, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });
@@ -793,7 +798,7 @@ export const expenses = pgTable("expenses", {
   attachmentType: varchar("attachment_type").notNull(), // receipt, invoice, bank_statement, photo
   notes: text("notes"),
   // Optional project/client linking for internal reporting
-  relatedProjectId: varchar("related_project_id"),
+  relatedProjectId: varchar("related_project_id").references(() => projects.id, { onDelete: "set null" }),
   relatedClientId: varchar("related_client_id").references(() => clients.id),
   // Recurring expense tracking
   isRecurring: boolean("is_recurring").default(false),
