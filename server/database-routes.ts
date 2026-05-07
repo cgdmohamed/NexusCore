@@ -38,6 +38,34 @@ const uploadInvoiceFile = multer({
   },
 });
 
+async function generateQuotationNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `QUO-${year}-`;
+  const result = await db.execute(
+    sql`SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(quotation_number, ${prefix}, ''), '') AS INTEGER)), 0) AS max_seq
+        FROM quotations
+        WHERE quotation_number LIKE ${prefix + '%'}`
+  );
+  const row = result.rows[0] as any;
+  const nextSeq = (parseInt(row?.max_seq ?? '0', 10) || 0) + 1;
+  return `${prefix}${String(nextSeq).padStart(4, '0')}`;
+}
+
+async function generateInvoiceNumber(): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `INV-${year}-`;
+  const result = await db.execute(
+    sql`SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(invoice_number, ${prefix}, ''), '') AS INTEGER)), 0) AS max_seq
+        FROM invoices
+        WHERE invoice_number LIKE ${prefix + '%'}`
+  );
+  const row = result.rows[0] as any;
+  const nextSeq = (parseInt(row?.max_seq ?? '0', 10) || 0) + 1;
+  return `${prefix}${String(nextSeq).padStart(4, '0')}`;
+}
+
+const MAX_NUMBER_RETRIES = 5;
+
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
   app.patch('/api/clients/:id/status', requireAuth, async (req, res) => {
@@ -594,20 +622,37 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      const quotationData = {
-        quotationNumber: `QUO-2024-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-        clientId: req.body.clientId,
-        title: req.body.title,
-        description: req.body.description,
-        amount: 0, // Start with 0, will be calculated from items
-        status: 'draft',
-        validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
-        notes: req.body.notes || null,
-        terms: req.body.terms || null,
-        createdBy: userId,
-      };
+      let newQuotation: any;
+      let lastError: any;
+      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        const quotationNumber = await generateQuotationNumber();
+        try {
+          [newQuotation] = await db.insert(quotations).values({
+            quotationNumber,
+            clientId: req.body.clientId,
+            title: req.body.title,
+            description: req.body.description,
+            amount: 0,
+            status: 'draft',
+            validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
+            notes: req.body.notes || null,
+            terms: req.body.terms || null,
+            createdBy: userId,
+          }).returning();
+          break;
+        } catch (insertError: any) {
+          if (insertError?.code === '23505' && insertError?.constraint?.includes('quotation_number')) {
+            lastError = insertError;
+            continue;
+          }
+          throw insertError;
+        }
+      }
 
-      const [newQuotation] = await db.insert(quotations).values(quotationData).returning();
+      if (!newQuotation) {
+        console.error("Failed to generate unique quotation number after retries:", lastError);
+        return res.status(500).json({ message: "Failed to generate a unique quotation number. Please try again." });
+      }
 
       // Log activity for quotation creation
       try {
@@ -655,8 +700,11 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/invoices', requireAuth, async (req: any, res) => {
     try {
-      const invoiceData = {
-        invoiceNumber: `INV-2025-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const baseInvoiceData = {
         clientId: req.body.clientId,
         quotationId: req.body.quotationId || null,
         title: req.body.title || 'New Invoice',
@@ -673,14 +721,29 @@ export function setupDatabaseRoutes(app: Express) {
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         notes: req.body.notes || null,
         paymentTerms: req.body.paymentTerms || null,
-        createdBy: req.user?.id,
+        createdBy: req.user.id,
       };
 
-      if (!invoiceData.createdBy) {
-        return res.status(401).json({ message: "Authentication required" });
+      let newInvoice: any;
+      let lastError: any;
+      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        const invoiceNumber = await generateInvoiceNumber();
+        try {
+          [newInvoice] = await db.insert(invoices).values({ ...baseInvoiceData, invoiceNumber }).returning();
+          break;
+        } catch (insertError: any) {
+          if (insertError?.code === '23505' && insertError?.constraint?.includes('invoice_number')) {
+            lastError = insertError;
+            continue;
+          }
+          throw insertError;
+        }
       }
 
-      const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
+      if (!newInvoice) {
+        console.error("Failed to generate unique invoice number after retries:", lastError);
+        return res.status(500).json({ message: "Failed to generate a unique invoice number. Please try again." });
+      }
 
       // Record creation history
       try {
@@ -1992,13 +2055,8 @@ export function setupDatabaseRoutes(app: Express) {
       // Single coherent formula: total = subtotal - discount + tax
       const finalAmount = subtotal - effectiveDiscountAmount + effectiveTaxAmount;
 
-      // Generate a unique invoice number
-      const year = new Date().getFullYear();
-      const invoiceNumber = `INV-${year}-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`;
-
       // Create invoice record carrying over all financial data from the quotation
-      const invoiceData = {
-        invoiceNumber,
+      const baseConvertData = {
         clientId: quotation.clientId,
         quotationId: quotation.id,
         title: quotation.title,
@@ -2016,7 +2074,28 @@ export function setupDatabaseRoutes(app: Express) {
         createdBy: req.user?.id,
       };
 
-      const [newInvoice] = await db.insert(invoices).values(invoiceData).returning();
+      let newInvoice: any;
+      let lastConvertError: any;
+      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        const invoiceNumber = await generateInvoiceNumber();
+        try {
+          [newInvoice] = await db.insert(invoices).values({ ...baseConvertData, invoiceNumber }).returning();
+          break;
+        } catch (insertError: any) {
+          if (insertError?.code === '23505' && insertError?.constraint?.includes('invoice_number')) {
+            lastConvertError = insertError;
+            continue;
+          }
+          throw insertError;
+        }
+      }
+
+      if (!newInvoice) {
+        console.error("Failed to generate unique invoice number during conversion after retries:", lastConvertError);
+        return res.status(500).json({ message: "Failed to generate a unique invoice number. Please try again." });
+      }
+
+      const invoiceNumber = newInvoice.invoiceNumber;
 
       // Copy quotation items into invoice items
       if (qItems.length > 0) {
