@@ -1,0 +1,137 @@
+Print-Time Currency Display with Browser Print Snapshot
+
+What & Why
+All quotation and invoice amounts remain stored and reported in EGP. Before printing, the user can select a display currency and enter an exchange rate. The system renders a browser print page using converted amounts, while the original database values remain unchanged.
+
+The system currently does not generate PDFs on the backend. It relies on browser printing / window.print(). Therefore, each print action must store a complete printSnapshotJson. Reprinting uses the saved snapshot, not the live quotation or invoice data, so old printed content is not affected by later edits.
+
+Done looks like
+- The original quotation/invoice data remains stored in EGP.
+- Before printing, a dialog asks the user to select:
+  - display currency: EGP, USD, or SAR
+  - exchange rate
+- If display currency is EGP, exchange rate is locked to 1.
+- If display currency is USD or SAR, exchange rate must be greater than 0.
+- The system calculates:
+  displayAmount = amountEgp / exchangeRate
+- All display values are rounded to 2 decimal places.
+- A print record is created containing the complete printSnapshotJson.
+- The frontend opens a dedicated printable page/view that renders from printSnapshotJson and calls window.print().
+- Reprinting opens the same printable page/view using the saved printSnapshotJson only.
+- The live quotation or invoice is not read during reprint.
+- Existing edit history remains unchanged. Print and reprint actions can optionally be appended to the history log as text events.
+- On the detail page, a Print History section lists all past print records.
+- If the document was edited after the print date, show:
+  "This document may have changed since this print."
+
+Out of scope
+- Backend PDF generation.
+- Automatic exchange rate fetching.
+- Currencies beyond EGP, USD, SAR.
+- Changing how amounts are stored in the database.
+- Admin settings page for default exchange rates.
+- Per-print rounding rule selection.
+- Full document version control or version numbering.
+- Currency conversion on invoice payments.
+- Analytics changes.
+
+Database
+Create quotation_print_records and invoice_print_records with:
+- id
+- documentId
+- displayCurrency
+- exchangeRate
+- sourceTotalEgp
+- convertedTotal
+- printSnapshotJson
+- printedAt
+- printedByUserId
+
+Backend — print endpoints
+Add:
+- POST /api/quotations/:id/print
+- POST /api/invoices/:id/print
+
+Each endpoint:
+1. Validates displayCurrency.
+2. If displayCurrency = EGP, force exchangeRate = 1.
+3. If displayCurrency = USD or SAR, require exchangeRate > 0.
+4. Reads the current quotation/invoice and its line items.
+5. Converts all printable monetary values using:
+   displayValue = egpValue / exchangeRate
+6. Rounds display values to 2 decimal places.
+7. Builds printSnapshotJson containing:
+   - document header
+   - customer data
+   - line items
+   - EGP source values if needed
+   - converted display values
+   - display currency
+   - exchange rate
+   - totals
+   - print date
+8. Saves the print record.
+9. Returns:
+   {
+     printRecordId,
+     printUrl
+   }
+
+Backend — print record read endpoints
+Add:
+- GET /api/quotation-print-records/:id
+- GET /api/invoice-print-records/:id
+
+Each endpoint returns the stored printSnapshotJson for rendering the browser print page.
+
+Backend — print history endpoints
+Add:
+- GET /api/quotations/:id/print-records
+- GET /api/invoices/:id/print-records
+
+Return all print records for a document ordered by printedAt descending.
+
+Frontend — print dialog
+On quotation and invoice detail pages, update the print button to open a dialog with:
+- display currency dropdown: EGP / USD / SAR
+- exchange rate input
+
+Behavior:
+- If EGP is selected, exchange rate is locked to 1.
+- If USD or SAR is selected, exchange rate is editable and must be greater than 0.
+- Show a live converted total preview:
+  amountEgp / exchangeRate rounded to 2 decimals.
+- On submit, call the print endpoint.
+- Use the returned printUrl or printRecordId to open the browser print page.
+
+Frontend — browser print page
+Add dedicated print routes such as:
+- /quotations/print/:printRecordId
+- /invoices/print/:printRecordId
+
+Each print page:
+1. Fetches the print record by ID.
+2. Renders only from printSnapshotJson.
+3. Shows all amounts in the selected display currency.
+4. Shows the correct currency symbol:
+   - EGP: ج.م
+   - USD: $
+   - SAR: ر.س
+5. Adds a note:
+   "Exchange rate: 1 USD = 50.00 EGP"
+   or:
+   "Amounts shown in EGP"
+6. Uses print-specific CSS.
+7. Calls window.print() after the page is fully rendered.
+
+Frontend — reprint
+In Print History, each row has a Reprint button.
+
+Reprint behavior:
+- Opens the existing browser print page for that printRecordId.
+- The print page fetches and renders the saved printSnapshotJson.
+- It must not use current quotation/invoice values.
+- This ensures the same visible print content is shown, even if the document was edited later.
+
+Important note
+Because the system uses browser printing, the system can guarantee the same saved print data and same rendered print view, but it cannot guarantee a byte-for-byte identical PDF file. Browser, printer, margins, paper size, and Save as PDF settings may affect the final output.

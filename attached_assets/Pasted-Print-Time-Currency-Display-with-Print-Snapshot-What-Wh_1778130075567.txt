@@ -1,0 +1,61 @@
+Print-Time Currency Display with Print Snapshot
+
+What & Why
+All quotation and invoice amounts remain stored and reported in EGP. Before printing/exporting, the user can select a display currency and enter an exchange rate. The PDF is rendered in the selected display currency, while the original database values remain unchanged.
+
+To support reprinting, each print action stores a complete print snapshot. Reprinting uses the saved snapshot, not the live quotation or invoice data, so old printed documents are not affected by later edits.
+
+Done looks like
+- The original quotation/invoice data remains stored in EGP.
+- Before printing, a dialog asks for:
+  - display currency: EGP, USD, or SAR
+  - exchange rate
+- If display currency is EGP, exchange rate is locked to 1.
+- If display currency is USD or SAR, exchange rate must be greater than 0.
+- The system calculates:
+  displayAmount = amountEgp / exchangeRate
+- The PDF shows the selected currency and exchange rate used.
+- Each print action creates a print record with a full snapshot of the rendered document.
+- Reprint uses the saved print snapshot, not the current live document.
+- Existing edit history remains unchanged, but print/reprint actions can be added to the history log as text events.
+
+Database
+Create quotation_print_records and invoice_print_records with:
+- id
+- documentId
+- displayCurrency
+- exchangeRate
+- sourceAmountEgp
+- convertedAmount
+- printSnapshotJson
+- printedAt
+- printedByUserId
+
+Backend
+Add:
+- POST /api/quotations/:id/print
+- POST /api/invoices/:id/print
+- GET /api/quotations/:id/print-records
+- GET /api/invoices/:id/print-records
+- POST /api/quotation-print-records/:id/reprint
+- POST /api/invoice-print-records/:id/reprint
+
+Print endpoint behavior:
+- Read the current quotation/invoice and its items.
+- Convert all printable amounts from EGP to the selected display currency.
+- Round display values to 2 decimal places.
+- Save the rendered data inside printSnapshotJson.
+- Return the PDF data.
+
+Reprint behavior:
+- Read printSnapshotJson from the selected print record.
+- Regenerate the PDF from the saved snapshot only.
+- Do not read current quotation/invoice values for reprint.
+
+Frontend
+- Add a print dialog with display currency and exchange rate.
+- Show a live converted total preview.
+- Add Print History on detail pages.
+- Each print history row has Reprint.
+- If the document was edited after the print date, optionally show:
+  "This document may have changed since this print."
