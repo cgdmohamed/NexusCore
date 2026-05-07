@@ -1038,6 +1038,47 @@ export const notificationLogsRelations = relations(notificationLogs, ({ one }) =
   }),
 }));
 
+// ─── Client Credential Vault ─────────────────────────────────────────────────
+
+export const credentialTypeEnum = pgEnum("credential_type", ["social", "website", "server", "email", "other"]);
+
+export const clientCredentials = pgTable("client_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").references(() => clients.id, { onDelete: "cascade" }).notNull(),
+  label: varchar("label").notNull(),
+  type: credentialTypeEnum("type").notNull().default("other"),
+  username: text("username"),
+  encryptedPassword: text("encrypted_password"),
+  url: text("url"),
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertClientCredentialSchema = createInsertSchema(clientCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  encryptedPassword: true,
+}).extend({
+  password: z.string().optional(),
+});
+
+export type ClientCredential = typeof clientCredentials.$inferSelect;
+export type InsertClientCredential = z.infer<typeof insertClientCredentialSchema>;
+
+export const clientCredentialsRelations = relations(clientCredentials, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientCredentials.clientId],
+    references: [clients.id],
+  }),
+  createdBy: one(users, {
+    fields: [clientCredentials.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // ─── Messaging System ────────────────────────────────────────────────────────
 
 export const conversations = pgTable("conversations", {

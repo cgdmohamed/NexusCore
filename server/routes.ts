@@ -14,6 +14,7 @@ import { registerProjectRoutes } from "./project-routes";
 import { registerServicesRoutes } from "./services-routes";
 import { registerMessagingRoutes } from "./messaging-routes";
 import { registerSettingsRoutes } from "./settings-routes";
+import { registerCredentialRoutes } from "./credential-routes";
 import { seedUserData } from "./seed-user-data";
 import { db } from "./db";
 import { users } from "@shared/schema";
@@ -98,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerServicesRoutes(app);
   registerMessagingRoutes(app);
   registerSettingsRoutes(app);
+  registerCredentialRoutes(app);
 
   // Activities endpoint
   app.get('/api/activities', requireAuth, async (req, res) => {

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { validateVaultKey } from "./crypto-utils";
 
 const app = express();
 
@@ -43,14 +44,20 @@ async function setupProductionMiddleware() {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Paths whose response bodies must never appear in logs (contain sensitive credential data)
+const SENSITIVE_PATHS = [/^\/api\/clients\/[^/]+\/credentials/];
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
+  const isSensitive = SENSITIVE_PATHS.some((re) => re.test(path));
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
+    if (!isSensitive) {
+      capturedJsonResponse = bodyJson;
+    }
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
@@ -74,6 +81,16 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Validate vault encryption key at startup — hard fail if missing or malformed
+  try {
+    validateVaultKey();
+  } catch (err) {
+    console.error("[VAULT] FATAL:", (err as Error).message);
+    console.error("[VAULT] Set VAULT_ENCRYPTION_KEY to a 64-character hex string (32 bytes).");
+    console.error("[VAULT] Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"");
+    process.exit(1);
+  }
+
   await setupProductionMiddleware();
   const server = await registerRoutes(app);
 

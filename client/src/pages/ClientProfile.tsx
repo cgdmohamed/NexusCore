@@ -1,29 +1,456 @@
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw, Wallet, FolderKanban, ExternalLink, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw, Wallet, FolderKanban, ExternalLink, TrendingDown, TrendingUp, Minus, KeyRound, Plus, Eye, EyeOff, Copy, Trash2, Globe, Server, AtSign, Share2 } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { formatDistanceToNow, format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { Client, Quotation, Invoice, ClientNote } from "@shared/schema";
+
+type CredentialType = "social" | "website" | "server" | "email" | "other";
+
+interface Credential {
+  id: string;
+  clientId: string;
+  label: string;
+  type: CredentialType;
+  username: string | null;
+  url: string | null;
+  notes: string | null;
+  hasPassword: boolean;
+  createdBy: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+const CREDENTIAL_TYPE_LABELS: Record<CredentialType, string> = {
+  social: "Social Media",
+  website: "Website",
+  server: "Server / SSH",
+  email: "Email",
+  other: "Other",
+};
+
+const CREDENTIAL_TYPE_COLORS: Record<CredentialType, string> = {
+  social: "bg-pink-100 text-pink-800",
+  website: "bg-blue-100 text-blue-800",
+  server: "bg-gray-100 text-gray-800",
+  email: "bg-yellow-100 text-yellow-800",
+  other: "bg-purple-100 text-purple-800",
+};
+
+function CredentialTypeIcon({ type }: { type: CredentialType }) {
+  switch (type) {
+    case "social": return <Share2 className="w-4 h-4" />;
+    case "website": return <Globe className="w-4 h-4" />;
+    case "server": return <Server className="w-4 h-4" />;
+    case "email": return <AtSign className="w-4 h-4" />;
+    default: return <KeyRound className="w-4 h-4" />;
+  }
+}
+
+const credentialFormSchema = z.object({
+  label: z.string().min(1, "Label is required"),
+  type: z.enum(["social", "website", "server", "email", "other"]),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  url: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type CredentialFormValues = z.infer<typeof credentialFormSchema>;
+
+function CredentialDialogForm({
+  defaultValues,
+  isEditing,
+  isPending,
+  onSubmit,
+  onCancel,
+}: {
+  defaultValues: CredentialFormValues;
+  isEditing: boolean;
+  isPending: boolean;
+  onSubmit: (values: CredentialFormValues) => void;
+  onCancel: () => void;
+}) {
+  const form = useForm<CredentialFormValues>({
+    resolver: zodResolver(credentialFormSchema),
+    defaultValues,
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="label"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Label *</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Instagram Admin" {...field} data-testid="input-credential-label" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-credential-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {(Object.keys(CREDENTIAL_TYPE_LABELS) as CredentialType[]).map((t) => (
+                    <SelectItem key={t} value={t}>{CREDENTIAL_TYPE_LABELS[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username / Login</FormLabel>
+              <FormControl>
+                <Input placeholder="username or email" {...field} data-testid="input-credential-username" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Password{isEditing && <span className="text-xs text-gray-400 ml-1">(leave blank to keep existing)</span>}
+              </FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="password" {...field} data-testid="input-credential-password" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL / Host</FormLabel>
+              <FormControl>
+                <Input placeholder="https://example.com or 192.168.1.1" {...field} data-testid="input-credential-url" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Optional notes..." rows={2} {...field} data-testid="input-credential-notes" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex gap-2 pt-1">
+          <Button type="submit" disabled={isPending} data-testid="button-save-credential">
+            {isPending ? "Saving..." : "Save Credential"}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+function CredentialsVault({ clientId, canManage }: { clientId: string; canManage: boolean }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingCred, setEditingCred] = useState<Credential | null>(null);
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
+  const [loadingPassword, setLoadingPassword] = useState<Record<string, boolean>>({});
+
+  const { data: credentials = [], isLoading } = useQuery<Credential[]>({
+    queryKey: ["/api/clients", clientId, "credentials"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (values: CredentialFormValues) => {
+      const res = await apiRequest("POST", `/api/clients/${clientId}/credentials`, values);
+      if (!res.ok) throw new Error((await res.json()).message || "Failed to create credential");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "credentials"] });
+      setShowAddDialog(false);
+      toast({ title: "Credential added", description: "The credential has been saved securely." });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: CredentialFormValues }) => {
+      const res = await apiRequest("PATCH", `/api/clients/${clientId}/credentials/${id}`, values);
+      if (!res.ok) throw new Error((await res.json()).message || "Failed to update credential");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "credentials"] });
+      setEditingCred(null);
+      toast({ title: "Credential updated", description: "Changes have been saved." });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (credId: string) => {
+      const res = await apiRequest("DELETE", `/api/clients/${clientId}/credentials/${credId}`, {});
+      if (!res.ok) throw new Error("Failed to delete credential");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "credentials"] });
+      toast({ title: "Credential deleted" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  async function revealPassword(credId: string) {
+    if (revealedPasswords[credId] !== undefined) {
+      setRevealedPasswords((p) => { const n = { ...p }; delete n[credId]; return n; });
+      return;
+    }
+    setLoadingPassword((p) => ({ ...p, [credId]: true }));
+    try {
+      const res = await apiRequest("GET", `/api/clients/${clientId}/credentials/${credId}/password`, undefined);
+      const data = await res.json();
+      setRevealedPasswords((p) => ({ ...p, [credId]: data.password }));
+    } catch {
+      toast({ title: "Failed to reveal password", variant: "destructive" });
+    } finally {
+      setLoadingPassword((p) => ({ ...p, [credId]: false }));
+    }
+  }
+
+  function copyToClipboard(text: string, label: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: `${label} copied`, description: "Copied to clipboard." });
+    });
+  }
+
+  function openEdit(cred: Credential) {
+    setEditingCred(cred);
+  }
+
+  const addDefaults: CredentialFormValues = { label: "", type: "other", username: "", password: "", url: "", notes: "" };
+  const editDefaults: CredentialFormValues = editingCred
+    ? { label: editingCred.label, type: editingCred.type, username: editingCred.username ?? "", password: "", url: editingCred.url ?? "", notes: editingCred.notes ?? "" }
+    : addDefaults;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Credential Vault</h3>
+          <p className="text-sm text-gray-500">Stored access credentials for this client. Passwords are encrypted at rest.</p>
+        </div>
+        {canManage && (
+          <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-credential">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Credential
+          </Button>
+        )}
+      </div>
+
+      {/* Add Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" />Add Credential</DialogTitle>
+          </DialogHeader>
+          <CredentialDialogForm
+            defaultValues={addDefaults}
+            isEditing={false}
+            isPending={createMutation.isPending}
+            onSubmit={(values) => createMutation.mutate(values)}
+            onCancel={() => setShowAddDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingCred} onOpenChange={(o) => { if (!o) setEditingCred(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" />Edit Credential</DialogTitle>
+          </DialogHeader>
+          {editingCred && (
+            <CredentialDialogForm
+              key={editingCred.id}
+              defaultValues={editDefaults}
+              isEditing={true}
+              isPending={updateMutation.isPending}
+              onSubmit={(values) => updateMutation.mutate({ id: editingCred.id, values })}
+              onCancel={() => setEditingCred(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {isLoading ? (
+        <div className="text-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+      ) : credentials.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <KeyRound className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No credentials stored</p>
+          {canManage && <p className="text-sm mt-1">Add client logins, API keys, and access details.</p>}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {credentials.map((cred) => {
+            const revealed = revealedPasswords[cred.id];
+            const loading = loadingPassword[cred.id];
+            return (
+              <Card key={cred.id} data-testid={`card-credential-${cred.id}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-gray-50 rounded-lg shrink-0 mt-0.5">
+                        <CredentialTypeIcon type={cred.type} />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{cred.label}</span>
+                          <Badge className={`text-xs ${CREDENTIAL_TYPE_COLORS[cred.type]}`}>
+                            {CREDENTIAL_TYPE_LABELS[cred.type]}
+                          </Badge>
+                        </div>
+
+                        {cred.username && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 w-20 shrink-0">Username</span>
+                            <span className="text-sm font-mono">{cred.username}</span>
+                            <Button variant="ghost" size="sm" className="h-6 px-1" onClick={() => copyToClipboard(cred.username!, "Username")} data-testid={`button-copy-username-${cred.id}`}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {cred.hasPassword && canManage && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 w-20 shrink-0">Password</span>
+                            <span className="text-sm font-mono">{revealed !== undefined ? revealed : "••••••••"}</span>
+                            <Button variant="ghost" size="sm" className="h-6 px-1" onClick={() => revealPassword(cred.id)} disabled={loading} data-testid={`button-reveal-password-${cred.id}`}>
+                              {loading ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" /> : revealed !== undefined ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </Button>
+                            {revealed !== undefined && (
+                              <Button variant="ghost" size="sm" className="h-6 px-1" onClick={() => copyToClipboard(revealed, "Password")} data-testid={`button-copy-password-${cred.id}`}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+
+                        {cred.url && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 w-20 shrink-0">URL / Host</span>
+                            <a href={cred.url.startsWith("http") ? cred.url : `https://${cred.url}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-xs flex items-center gap-1" data-testid={`link-credential-url-${cred.id}`}>
+                              {cred.url}
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </a>
+                          </div>
+                        )}
+
+                        {cred.notes && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-500 w-20 shrink-0 mt-0.5">Notes</span>
+                            <span className="text-sm text-gray-600">{cred.notes}</span>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-400">
+                          Last updated {cred.updatedAt ? formatDistanceToNow(new Date(cred.updatedAt), { addSuffix: true }) : "unknown"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {canManage && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openEdit(cred)} data-testid={`button-edit-credential-${cred.id}`}>
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-50" data-testid={`button-delete-credential-${cred.id}`}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Credential</AlertDialogTitle>
+                              <AlertDialogDescription>Are you sure you want to permanently delete "{cred.label}"? This cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(cred.id)} className="bg-red-600 hover:bg-red-700" data-testid={`button-confirm-delete-credential-${cred.id}`}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { isAdmin, roleName } = usePermissions();
   const [isEditingClient, setIsEditingClient] = useState(false);
   const [editStatus, setEditStatus] = useState<string>("");
   const [newNote, setNewNote] = useState("");
@@ -392,12 +819,16 @@ export default function ClientProfile() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="details" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="quotations">Quotations</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="credit">Credit History</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="credentials" data-testid="tab-credentials" className="flex items-center gap-1">
+            <KeyRound className="w-3.5 h-3.5" />
+            Vault
+          </TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
@@ -661,6 +1092,14 @@ export default function ClientProfile() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="credentials">
+          <Card>
+            <CardContent className="p-6">
+              <CredentialsVault clientId={id!} canManage={isAdmin || roleName === "Manager"} />
             </CardContent>
           </Card>
         </TabsContent>
