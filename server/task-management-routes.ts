@@ -57,7 +57,8 @@ export function registerTaskManagementRoutes(app: Express) {
         myTasks // Special filter for current user's tasks
       } = req.query;
 
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Query tasks with assignee user info
       const allTasks = await db.select().from(tasks);
@@ -132,7 +133,8 @@ export function registerTaskManagementRoutes(app: Express) {
   app.get("/api/tasks/stats", requireAuth, async (req, res) => {
     try {
       const { assignedTo, department } = req.query;
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       let baseConditions = [];
       
@@ -347,7 +349,8 @@ export function registerTaskManagementRoutes(app: Express) {
   app.post("/api/tasks", requireAuth, async (req, res) => {
     try {
       const validatedData = createTaskSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       const taskData = {
         title: validatedData.title,
@@ -394,7 +397,8 @@ export function registerTaskManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = createTaskSchema.partial().parse(req.body);
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       // Get current task for activity logging
       const [currentTask] = await db.select().from(tasks).where(eq(tasks.id, id));
@@ -473,7 +477,6 @@ export function registerTaskManagementRoutes(app: Express) {
   app.delete("/api/tasks/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
 
       // Check if task exists
       const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));
@@ -501,7 +504,8 @@ export function registerTaskManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = createCommentSchema.parse(req.body);
-      const userId = req.user?.claims?.sub || req.user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       // Check if task exists
       const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));
@@ -543,7 +547,8 @@ export function registerTaskManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { dependsOnTaskId } = req.body;
-      const userId = req.user?.claims?.sub || req.user?.id || '';
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       if (!dependsOnTaskId) {
         return res.status(400).json({ message: "dependsOnTaskId is required" });

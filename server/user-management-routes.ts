@@ -143,7 +143,8 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/roles", requireAdmin, async (req, res) => {
     try {
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       const [newRole] = await db
         .insert(roles)
@@ -167,7 +168,8 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const validatedData = insertRoleSchema.parse(req.body);
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Get old values for audit
       const [oldRole] = await db.select().from(roles).where(eq(roles.id, id));
@@ -198,7 +200,8 @@ export function registerUserManagementRoutes(app: Express) {
   app.delete("/api/roles/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Check if role is in use
       const [roleInUse] = await db.select().from(users).where(eq(users.roleId, id));
@@ -301,7 +304,8 @@ export function registerUserManagementRoutes(app: Express) {
         hiringDate: body.hiringDate ? new Date(body.hiringDate) : null,
       };
       const validatedData = insertEmployeeSchema.parse(dataToValidate);
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       const [newEmployee] = await db
         .insert(employees)
@@ -331,7 +335,8 @@ export function registerUserManagementRoutes(app: Express) {
         hiringDate: body.hiringDate ? new Date(body.hiringDate) : null,
       };
       const validatedData = insertEmployeeSchema.parse(dataToValidate);
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Get old values for audit
       const [oldEmployee] = await db.select().from(employees).where(eq(employees.id, id));
@@ -362,7 +367,8 @@ export function registerUserManagementRoutes(app: Express) {
   app.delete("/api/employees/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Get employee for audit
       const [employee] = await db.select().from(employees).where(eq(employees.id, id));
@@ -481,7 +487,8 @@ export function registerUserManagementRoutes(app: Express) {
   app.post("/api/users", requireAdmin, async (req, res) => {
     try {
       const { password, confirmPassword, ...userData } = req.body;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       // Password is required for new users
       if (!password || password.length < 8) {
@@ -529,7 +536,8 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { password, confirmPassword, firstName, lastName, phone, jobTitle, department, profileImageUrl, ...userData } = req.body;
-      const authUserId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const authUserId = (req as any).user?.id;
+      if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
       
       // First, get the user to find the employee ID
       const [existingUser] = await db.select().from(users).where(eq(users.id, id));
@@ -609,7 +617,8 @@ export function registerUserManagementRoutes(app: Express) {
   app.put("/api/users/:id/deactivate", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
       const [updatedUser] = await db
         .update(users)
@@ -718,7 +727,8 @@ export function registerUserManagementRoutes(app: Express) {
     try {
       const { id } = req.params;
       const { currentPassword, newPassword } = req.body;
-      const userId = (req as any).user?.claims?.sub || (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req as any).user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       // For this demo, we'll skip password validation
       // In production, you'd verify the current password and hash the new one
