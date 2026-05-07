@@ -10,15 +10,17 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertRoleSchema, type Role } from "@shared/schema";
+import { CheckSquare, XSquare } from "lucide-react";
 
 type FormData = typeof insertRoleSchema._type;
 
 interface RoleFormProps {
-  role?: Role;
+  role?: Role | null;
+  initialData?: Partial<Role> | null;
   onClose: () => void;
 }
 
-const modules = [
+export const modules = [
   { key: "dashboard", label: "Dashboard", description: "Main dashboard and KPI access" },
   { key: "crm", label: "CRM", description: "Client relationship management" },
   { key: "quotations", label: "Quotations", description: "Quotation creation and management" },
@@ -41,26 +43,31 @@ const permissions = [
   { key: "approve", label: "Approve", description: "Can approve/reject records" },
 ];
 
-export function RoleForm({ role, onClose }: RoleFormProps) {
-  const { toast } = useToast();
-  const isEditing = !!role;
+type PermissionsMatrix = Record<string, Record<string, boolean>>;
 
-  // Initialize permissions with default values
-  const defaultPermissions = modules.reduce((acc, module) => {
+function buildDefaultPermissions(overrides?: PermissionsMatrix): PermissionsMatrix {
+  return modules.reduce((acc, module) => {
     acc[module.key] = permissions.reduce((modulePerms, perm) => {
-      modulePerms[perm.key] = false;
+      modulePerms[perm.key] = overrides?.[module.key]?.[perm.key] ?? false;
       return modulePerms;
     }, {} as Record<string, boolean>);
     return acc;
-  }, {} as Record<string, Record<string, boolean>>);
+  }, {} as PermissionsMatrix);
+}
+
+export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
+  const { toast } = useToast();
+  const isEditing = !!role;
+
+  const source = role || initialData;
 
   const form = useForm<FormData>({
     resolver: zodResolver(insertRoleSchema),
     defaultValues: {
-      name: role?.name || "",
-      description: role?.description || "",
-      permissions: role?.permissions || defaultPermissions,
-      isActive: role?.isActive ?? true,
+      name: source?.name || "",
+      description: source?.description || "",
+      permissions: buildDefaultPermissions(source?.permissions as PermissionsMatrix | undefined),
+      isActive: source?.isActive ?? true,
     },
   });
 
@@ -96,28 +103,41 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
 
   const handlePermissionChange = (moduleKey: string, permissionKey: string, value: boolean) => {
     const currentPermissions = form.getValues("permissions") as any;
-    const updatedPermissions = {
+    form.setValue("permissions", {
       ...currentPermissions,
       [moduleKey]: {
         ...currentPermissions[moduleKey],
         [permissionKey]: value,
       },
-    };
-    form.setValue("permissions", updatedPermissions);
+    });
   };
 
   const handleModuleSelectAll = (moduleKey: string, selectAll: boolean) => {
     const currentPermissions = form.getValues("permissions") as any;
-    const modulePermissions = permissions.reduce((acc, perm) => {
-      acc[perm.key] = selectAll;
-      return acc;
-    }, {} as Record<string, boolean>);
-
-    const updatedPermissions = {
+    form.setValue("permissions", {
       ...currentPermissions,
-      [moduleKey]: modulePermissions,
-    };
-    form.setValue("permissions", updatedPermissions);
+      [moduleKey]: permissions.reduce((acc, perm) => {
+        acc[perm.key] = selectAll;
+        return acc;
+      }, {} as Record<string, boolean>),
+    });
+  };
+
+  const handleGrantAll = () => {
+    form.setValue(
+      "permissions",
+      modules.reduce((acc, module) => {
+        acc[module.key] = permissions.reduce((mp, perm) => {
+          mp[perm.key] = true;
+          return mp;
+        }, {} as Record<string, boolean>);
+        return acc;
+      }, {} as Record<string, Record<string, boolean>>)
+    );
+  };
+
+  const handleRevokeAll = () => {
+    form.setValue("permissions", buildDefaultPermissions());
   };
 
   const currentPermissions = form.watch("permissions") as any;
@@ -131,6 +151,7 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
             id="name"
             placeholder="Admin"
             {...form.register("name")}
+            data-testid="input-role-name"
           />
           {form.formState.errors.name && (
             <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
@@ -142,6 +163,7 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
             id="isActive"
             checked={form.watch("isActive")}
             onCheckedChange={(checked) => form.setValue("isActive", checked)}
+            data-testid="switch-role-active"
           />
           <Label htmlFor="isActive">Role Active</Label>
         </div>
@@ -153,6 +175,7 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
             placeholder="Describe the role and its responsibilities..."
             rows={3}
             {...form.register("description")}
+            data-testid="textarea-role-description"
           />
           {form.formState.errors.description && (
             <p className="text-sm text-red-600">{form.formState.errors.description.message}</p>
@@ -161,26 +184,55 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Permissions</h3>
-        <p className="text-sm text-gray-600">
-          Configure what this role can access and perform in each module
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">Permissions</h3>
+            <p className="text-sm text-gray-600">
+              Configure what this role can access and perform in each module
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGrantAll}
+              className="text-green-700 border-green-300 hover:bg-green-50"
+              data-testid="button-grant-all"
+            >
+              <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
+              Grant All
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRevokeAll}
+              className="text-red-700 border-red-300 hover:bg-red-50"
+              data-testid="button-revoke-all"
+            >
+              <XSquare className="h-3.5 w-3.5 mr-1.5" />
+              Revoke All
+            </Button>
+          </div>
+        </div>
 
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4">
           {modules.map((module) => (
             <Card key={module.key}>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <CardTitle className="text-base">{module.label}</CardTitle>
                     <p className="text-sm text-gray-600">{module.description}</p>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2 shrink-0">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => handleModuleSelectAll(module.key, true)}
+                      data-testid={`button-select-all-${module.key}`}
                     >
                       Select All
                     </Button>
@@ -189,27 +241,32 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleModuleSelectAll(module.key, false)}
+                      data-testid={`button-clear-all-${module.key}`}
                     >
-                      Clear All
+                      Clear
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                   {permissions.map((permission) => (
-                    <div key={permission.key} className="flex items-center space-x-2">
+                    <div
+                      key={permission.key}
+                      className="flex items-center gap-2.5 min-w-0"
+                      title={permission.description}
+                    >
                       <Switch
                         id={`${module.key}-${permission.key}`}
                         checked={currentPermissions?.[module.key]?.[permission.key] || false}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handlePermissionChange(module.key, permission.key, checked)
                         }
+                        data-testid={`switch-${module.key}-${permission.key}`}
                       />
-                      <Label 
+                      <Label
                         htmlFor={`${module.key}-${permission.key}`}
-                        className="text-sm"
-                        title={permission.description}
+                        className="text-sm cursor-pointer select-none"
                       >
                         {permission.label}
                       </Label>
@@ -226,9 +283,9 @@ export function RoleForm({ role, onClose }: RoleFormProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending 
-            ? (isEditing ? "Updating..." : "Creating...") 
+        <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-role">
+          {createMutation.isPending
+            ? (isEditing ? "Updating..." : "Creating...")
             : (isEditing ? "Update Role" : "Create Role")
           }
         </Button>

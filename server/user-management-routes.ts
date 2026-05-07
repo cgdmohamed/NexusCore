@@ -16,7 +16,7 @@ import {
   type InsertEmployee,
   type InsertRole
 } from "@shared/schema";
-import { eq, desc, and, like, sql } from "drizzle-orm";
+import { eq, desc, and, like, sql, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, requireAdmin } from "./auth";
 
@@ -49,18 +49,73 @@ export function registerUserManagementRoutes(app: Express) {
   
   // ========== ROLES MANAGEMENT ==========
   
-  // Get all roles
+  // Get all roles with user counts
   app.get("/api/roles", requireAuth, async (req, res) => {
     try {
       const rolesList = await db
         .select()
         .from(roles)
         .orderBy(desc(roles.createdAt));
-      
-      res.json(rolesList);
+
+      // Get user counts per role
+      const userCounts = await db
+        .select({ roleId: users.roleId, count: sql<number>`count(*)::int` })
+        .from(users)
+        .where(sql`${users.roleId} IS NOT NULL`)
+        .groupBy(users.roleId);
+
+      const countMap: Record<string, number> = {};
+      for (const row of userCounts) {
+        if (row.roleId) countMap[row.roleId] = row.count;
+      }
+
+      const rolesWithCount = rolesList.map(role => ({
+        ...role,
+        userCount: countMap[role.id] ?? 0,
+      }));
+
+      res.json(rolesWithCount);
     } catch (error) {
       console.error("Error fetching roles:", error);
       res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  // Get users assigned to a specific role
+  app.get("/api/roles/:id/users", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const assignedUsers = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          isActive: users.isActive,
+          employeeId: users.employeeId,
+        })
+        .from(users)
+        .where(eq(users.roleId, id));
+
+      // Attach employee names
+      const employeeIds = assignedUsers.map(u => u.employeeId).filter((id): id is string => id !== null && id !== undefined);
+      type EmpRecord = { id: string; firstName: string; lastName: string; profileImage: string | null };
+      const employeeMap: Record<string, EmpRecord> = {};
+      if (employeeIds.length > 0) {
+        const emps = await db
+          .select({ id: employees.id, firstName: employees.firstName, lastName: employees.lastName, profileImage: employees.profileImage })
+          .from(employees)
+          .where(inArray(employees.id, employeeIds));
+        for (const emp of emps) employeeMap[emp.id] = emp;
+      }
+
+      const result = assignedUsers.map(u => ({
+        ...u,
+        employee: u.employeeId ? employeeMap[u.employeeId] : null,
+      }));
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching role users:", error);
+      res.status(500).json({ message: "Failed to fetch role users" });
     }
   });
 
