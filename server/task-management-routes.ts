@@ -417,6 +417,10 @@ export function registerTaskManagementRoutes(app: Express) {
       if (validatedData.status === 'completed' && currentTask.status !== 'completed') {
         updateData.completedDate = new Date();
       }
+      // Clear completedDate when task is moved away from completed
+      if (validatedData.status && validatedData.status !== 'completed' && currentTask.completedDate) {
+        updateData.completedDate = null;
+      }
 
       const [updatedTask] = await db
         .update(tasks)

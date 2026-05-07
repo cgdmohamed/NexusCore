@@ -377,6 +377,15 @@ export default function QuotationDetail() {
                 <span className="sm:hidden">Convert</span>
               </Button>
             )}
+            {quotation.status === 'invoiced' && quotation.invoiceId && (
+              <Link href={`/invoices/${quotation.invoiceId}`}>
+                <Button size="sm" variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">View Invoice</span>
+                  <span className="sm:hidden">Invoice</span>
+                </Button>
+              </Link>
+            )}
           </>
         }
       />

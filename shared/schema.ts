@@ -12,6 +12,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -165,6 +166,7 @@ export const quotations = pgTable("quotations", {
   validUntil: timestamp("valid_until"),
   notes: text("notes"), // Internal notes
   terms: text("terms"), // Terms and conditions
+  invoiceId: varchar("invoice_id").references((): AnyPgColumn => invoices.id), // Set after conversion to invoice
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -227,7 +229,7 @@ export const payments = pgTable("payments", {
   // Refund fields
   isRefund: boolean("is_refund").default(false),
   refundReference: varchar("refund_reference"),
-  originalPaymentId: varchar("original_payment_id").references(() => payments.id),
+  originalPaymentId: varchar("original_payment_id").references((): AnyPgColumn => payments.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
   approvedBy: varchar("approved_by").references(() => users.id),
@@ -795,10 +797,14 @@ export const expenses = pgTable("expenses", {
   relatedClientId: varchar("related_client_id").references(() => clients.id),
   // Recurring expense tracking
   isRecurring: boolean("is_recurring").default(false),
-  parentExpenseId: varchar("parent_expense_id").references(() => expenses.id),
+  parentExpenseId: varchar("parent_expense_id").references((): AnyPgColumn => expenses.id),
   // Payment source tracking
   paymentSourceId: varchar("payment_source_id").references(() => paymentSources.id),
   nextDueDate: timestamp("next_due_date"),
+  // Rejection
+  rejectionReason: text("rejection_reason"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),

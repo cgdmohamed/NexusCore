@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { format } from "date-fns";
@@ -14,17 +15,22 @@ import {
   FileText,
   DollarSign,
   Wallet,
+  XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/dashboard/Header";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/currency";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { Expense, ExpenseCategory } from "@shared/schema";
 
 export default function ExpenseDetail() {
@@ -32,6 +38,9 @@ export default function ExpenseDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { canApprove } = usePermissions();
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const { data: expense, isLoading } = useQuery<Expense>({
     queryKey: ["/api/expenses", id],
@@ -70,6 +79,30 @@ export default function ExpenseDetail() {
     },
   });
 
+  const rejectMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      await apiRequest("POST", `/api/expenses/${id}/reject`, { rejectionReason: reason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense Rejected",
+        description: "The expense has been rejected and the submitter has been notified.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses/stats"] });
+      setRejectDialogOpen(false);
+      setRejectionReason("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: t("common.error"),
+        description: error.message || "Failed to reject expense.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const paymentMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", `/api/expenses/${id}/pay`, {
@@ -102,25 +135,17 @@ export default function ExpenseDetail() {
   });
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: "secondary",
-      paid: "default",
-      overdue: "destructive",
-      cancelled: "outline",
-    } as const;
-
-    const colors = {
+    const colors: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800",
       paid: "bg-green-100 text-green-800",
+      approved: "bg-blue-100 text-blue-800",
       overdue: "bg-red-100 text-red-800",
       cancelled: "bg-gray-100 text-gray-800",
-    } as const;
+      rejected: "bg-red-100 text-red-800",
+    };
 
     return (
-      <Badge 
-        variant={variants[status as keyof typeof variants] || "outline"}
-        className={colors[status as keyof typeof colors] || ""}
-      >
+      <Badge className={colors[status] || ""}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
@@ -380,6 +405,18 @@ export default function ExpenseDetail() {
                 </Button>
               )}
 
+              {canApprove("expenses") && expense.status !== "rejected" && expense.status !== "paid" && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => setRejectDialogOpen(true)}
+                  data-testid="button-reject-expense"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject Expense
+                </Button>
+              )}
+
               <Button
                 className="w-full"
                 variant="destructive"
@@ -429,8 +466,62 @@ export default function ExpenseDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Rejection Info */}
+          {expense.status === "rejected" && expense.rejectionReason && (
+            <Card className="border-red-200">
+              <CardHeader>
+                <CardTitle className="text-red-700 flex items-center gap-2">
+                  <XCircle className="h-5 w-5" />
+                  Rejection Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700">{expense.rejectionReason}</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Expense</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-600">
+              Please provide a reason for rejecting this expense. The submitter will be notified.
+            </p>
+            <div>
+              <Label htmlFor="rejection-reason">Rejection Reason</Label>
+              <Textarea
+                id="rejection-reason"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter the reason for rejection..."
+                rows={4}
+                className="mt-1"
+                data-testid="input-rejection-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectDialogOpen(false); setRejectionReason(""); }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => rejectMutation.mutate(rejectionReason)}
+              disabled={!rejectionReason.trim() || rejectMutation.isPending}
+              data-testid="button-confirm-reject"
+            >
+              {rejectMutation.isPending ? "Rejecting..." : "Reject Expense"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

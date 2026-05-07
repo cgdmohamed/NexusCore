@@ -511,6 +511,71 @@ export function registerExpenseRoutes(app: Express) {
     }
   });
 
+  // Reject expense (manager/admin only)
+  app.post("/api/expenses/:id/reject", requirePermission('expenses', 'approve'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const rejectionReason = req.body.rejectionReason?.trim();
+      if (!rejectionReason) {
+        return res.status(400).json({ message: "A rejection reason is required." });
+      }
+
+      const [existingExpense] = await db.select().from(expenses).where(eq(expenses.id, id));
+      if (!existingExpense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+
+      const rejectableStatuses = ['pending', 'approved'];
+      if (!rejectableStatuses.includes(existingExpense.status)) {
+        return res.status(400).json({
+          message: `Cannot reject an expense with status "${existingExpense.status}".`,
+        });
+      }
+
+      const [expense] = await db
+        .update(expenses)
+        .set({
+          status: "rejected",
+          rejectionReason,
+          rejectedBy: userId,
+          rejectedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(expenses.id, id))
+        .returning();
+
+      res.json(expense);
+
+      // Notify the submitter (non-blocking)
+      if (existingExpense.createdBy && existingExpense.createdBy !== userId) {
+        try {
+          await notificationService.createNotification({
+            userId: existingExpense.createdBy,
+            type: "expense_rejected",
+            title: "Expense Rejected",
+            message: `Your expense "${existingExpense.title}" has been rejected. Reason: ${rejectionReason}`,
+            priority: "high",
+            entityType: "expense",
+            entityId: id,
+            entityUrl: `/expenses/${id}`,
+            metadata: { rejectionReason, rejectedBy: userId },
+            createdBy: userId,
+          });
+        } catch (notifyError) {
+          console.error("Error sending expense rejected notification:", notifyError);
+        }
+      }
+    } catch (error) {
+      console.error("Error rejecting expense:", error);
+      res.status(500).json({ message: "Failed to reject expense" });
+    }
+  });
+
   // Get expense payments history
   app.get("/api/expenses/:id/payments", requireAuth, async (req, res) => {
     try {

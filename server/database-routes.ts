@@ -75,10 +75,32 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/expenses/:id/status', requireAuth, async (req, res) => {
+  app.patch('/api/expenses/:id/status', requireAuth, async (req: any, res) => {
     try {
+      const newStatus = req.body.status;
+
+      // "rejected" transitions must go through the dedicated reject endpoint
+      // which enforces requirePermission('expenses','approve') and captures the reason.
+      if (newStatus === 'rejected') {
+        return res.status(403).json({
+          message: "Use POST /api/expenses/:id/reject to reject an expense."
+        });
+      }
+
+      // Approve/paid transitions also require approve permission
+      const approvalStatuses = ['approved', 'paid'];
+      if (approvalStatuses.includes(newStatus)) {
+        const user = req.user;
+        const userPerms = user?.permissions as Record<string, any> | undefined;
+        const canApprove = user?.role === 'admin' ||
+          userPerms?.expenses?.approve === true;
+        if (!canApprove) {
+          return res.status(403).json({ message: "You do not have permission to approve expenses." });
+        }
+      }
+
       const [updatedExpense] = await db.update(expenses)
-        .set({ status: req.body.status, updatedAt: new Date() })
+        .set({ status: newStatus, updatedAt: new Date() })
         .where(eq(expenses.id, req.params.id))
         .returning();
       res.json(updatedExpense);
@@ -90,8 +112,34 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/quotations/:id/status', requireAuth, async (req: any, res) => {
     try {
+      const newStatus = req.body.status;
+
+      // Fetch current quotation to validate transition
+      const [currentQuotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+      if (!currentQuotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Transition matrix: maps current status to the set of statuses it can move TO
+      const allowedTransitions: Record<string, string[]> = {
+        draft:    ['sent', 'accepted', 'rejected', 'expired'],
+        sent:     ['draft', 'accepted', 'rejected', 'expired'],
+        accepted: ['rejected'],
+        rejected: ['draft', 'sent'],
+        expired:  ['draft', 'sent'],
+        invoiced: [], // terminal — no transitions allowed
+      };
+
+      const currentStatus = currentQuotation.status;
+      const allowed = allowedTransitions[currentStatus] ?? [];
+      if (!allowed.includes(newStatus)) {
+        return res.status(400).json({
+          message: `Cannot transition quotation from "${currentStatus}" to "${newStatus}". Allowed transitions from "${currentStatus}": ${allowed.length ? allowed.join(', ') : 'none'}.`,
+        });
+      }
+
       const [updatedQuotation] = await db.update(quotations)
-        .set({ status: req.body.status, updatedAt: new Date() })
+        .set({ status: newStatus, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id))
         .returning();
       res.json(updatedQuotation);
@@ -101,7 +149,7 @@ export function setupDatabaseRoutes(app: Express) {
         const actor = req.user?.email || req.user?.username || 'System';
         await db.insert(quotationHistory).values({
           quotationId: req.params.id,
-          event: `Status changed to ${req.body.status}`,
+          event: `Status changed to ${newStatus}`,
           actor,
         });
       } catch (historyError) {
@@ -109,7 +157,7 @@ export function setupDatabaseRoutes(app: Express) {
       }
 
       // Trigger notification when quotation is accepted
-      if (req.body.status === 'accepted' && updatedQuotation) {
+      if (newStatus === 'accepted' && updatedQuotation) {
         try {
           const [client] = await db.select().from(clients).where(eq(clients.id, updatedQuotation.clientId));
           await notificationService.notifyQuotationAccepted(
@@ -202,10 +250,11 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(400).json({ message: "Invoice is already cancelled" });
       }
 
-      // Fully paid invoices cannot be cancelled without a refund
-      if (invoice.status === 'paid' || invoice.status === 'refunded') {
+      // Block cancellation of paid/refunded invoices unless paidAmount is 0 (fully refunded)
+      const paidAmount = parseFloat(invoice.paidAmount || '0');
+      if ((invoice.status === 'paid' || invoice.status === 'refunded') && paidAmount > 0) {
         return res.status(400).json({ 
-          message: "Paid or refunded invoices cannot be cancelled. Process a refund first if needed." 
+          message: "Paid invoices cannot be cancelled. Process a full refund first to zero the paid amount." 
         });
       }
 
@@ -1668,6 +1717,12 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/quotations/:id/items', requireAuth, async (req: any, res) => {
     try {
+      // Lock items when quotation is accepted or invoiced
+      const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
+      if (parentQuotation && (parentQuotation.status === 'accepted' || parentQuotation.status === 'invoiced')) {
+        return res.status(409).json({ message: `Cannot add items to a quotation with status "${parentQuotation.status}".` });
+      }
+
       const itemData = {
         quotationId: req.params.id,
         serviceId: req.body.serviceId,
@@ -1724,7 +1779,31 @@ export function setupDatabaseRoutes(app: Express) {
   app.patch('/api/quotations/:id', requireAuth, async (req: any, res) => {
     try {
       const updateData = { ...req.body, updatedAt: new Date() };
-      
+
+      // If a status change is requested, enforce the transition matrix
+      if (req.body.status) {
+        const [currentQuotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+        if (!currentQuotation) {
+          return res.status(404).json({ message: "Quotation not found" });
+        }
+        const allowedTransitions: Record<string, string[]> = {
+          draft:    ['sent', 'accepted', 'rejected', 'expired'],
+          sent:     ['draft', 'accepted', 'rejected', 'expired'],
+          accepted: ['rejected'],
+          rejected: ['draft', 'sent'],
+          expired:  ['draft', 'sent'],
+          invoiced: [],
+        };
+        const current = currentQuotation.status;
+        const next = req.body.status;
+        const allowed = allowedTransitions[current] ?? [];
+        if (!allowed.includes(next)) {
+          return res.status(400).json({
+            message: `Cannot transition quotation from "${current}" to "${next}".`,
+          });
+        }
+      }
+
       // If updating amount, recalculate from items
       if (req.body.status && !req.body.amount) {
         const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
@@ -1857,9 +1936,9 @@ export function setupDatabaseRoutes(app: Express) {
         await db.insert(invoiceItems).values(invoiceItemsData);
       }
 
-      // Update quotation status to invoiced
+      // Update quotation status to invoiced and store the resulting invoiceId
       await db.update(quotations)
-        .set({ status: 'invoiced', updatedAt: new Date() })
+        .set({ status: 'invoiced', invoiceId: newInvoice.id, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id));
 
       // Record history for both the quotation (status change) and the new invoice (creation)
@@ -2082,6 +2161,12 @@ export function setupDatabaseRoutes(app: Express) {
   // Update quotation item
   app.patch('/api/quotations/:id/items/:itemId', requireAuth, async (req: any, res) => {
     try {
+      // Lock items when quotation is accepted or invoiced
+      const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
+      if (parentQuotation && (parentQuotation.status === 'accepted' || parentQuotation.status === 'invoiced')) {
+        return res.status(409).json({ message: `Cannot edit items on a quotation with status "${parentQuotation.status}".` });
+      }
+
       const qty = parseFloat(req.body.quantity) || 0;
       const price = parseFloat(req.body.unitPrice) || 0;
       const disc = parseFloat(req.body.discount) || 0;
@@ -2128,6 +2213,12 @@ export function setupDatabaseRoutes(app: Express) {
   // Delete quotation item
   app.delete('/api/quotations/:id/items/:itemId', requireAuth, async (req: any, res) => {
     try {
+      // Lock items when quotation is accepted or invoiced
+      const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
+      if (parentQuotation && (parentQuotation.status === 'accepted' || parentQuotation.status === 'invoiced')) {
+        return res.status(409).json({ message: `Cannot delete items from a quotation with status "${parentQuotation.status}".` });
+      }
+
       // Fetch item before deleting for history
       const [deletedItem] = await db.select().from(quotationItems).where(eq(quotationItems.id, req.params.itemId));
 
