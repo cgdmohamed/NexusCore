@@ -181,11 +181,12 @@ export async function seedUserData() {
     console.log(`Created ${createdEmployees.length} default employees`);
 
     // Create default users with system access
+    const testEmployee = createdEmployees.find(e => e.email === "test@company.com");
     const adminEmployee = createdEmployees.find(e => e.email === "admin@company.com");
     const managerEmployee = createdEmployees.find(e => e.email === "john.manager@company.com");
     const financeEmployee = createdEmployees.find(e => e.email === "sarah.finance@company.com");
 
-    if (!adminEmployee || !managerEmployee || !financeEmployee) {
+    if (!testEmployee || !adminEmployee || !managerEmployee || !financeEmployee) {
       throw new Error("Required employees not found");
     }
 

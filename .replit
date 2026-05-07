@@ -8,7 +8,7 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "./dist/index.cjs"]
 
 [[ports]]
 localPort = 5000
@@ -40,6 +40,7 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_auth_all_persistance:1.0.0"]
+stack = "FULLSTACK_JS"
 
 [postMerge]
 path = "scripts/post-merge.sh"
