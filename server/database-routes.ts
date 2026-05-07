@@ -2781,7 +2781,10 @@ export function setupDatabaseRoutes(app: Express) {
 
       const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, quotationId));
 
-      const egpSubtotal = items.reduce((s, i) => s + parseFloat(i.totalPrice), 0);
+      const [qPrintSum] = await db.select({
+        totalSum: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+      const egpSubtotal = parseFloat(qPrintSum?.totalSum || '0');
       const egpTaxAmount = parseFloat(quotation.taxAmount || "0");
       const egpDiscountAmount = parseFloat(quotation.discountAmount || "0");
       const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
@@ -2917,7 +2920,10 @@ export function setupDatabaseRoutes(app: Express) {
 
       const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
 
-      const egpSubtotal = items.reduce((s, i) => s + parseFloat(i.totalPrice), 0);
+      const [iPrintSum] = await db.select({
+        totalSum: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`,
+      }).from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+      const egpSubtotal = parseFloat(iPrintSum?.totalSum || '0');
       const egpTaxAmount = parseFloat(invoice.taxAmount || "0");
       const egpDiscountAmount = parseFloat(invoice.discountAmount || "0");
       const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
