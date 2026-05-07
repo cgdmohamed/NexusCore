@@ -185,16 +185,6 @@ export default function InvoicePrint() {
           </div>
         </div>
 
-        {/* QR Code */}
-        {snap.qrCodeImage && (
-          <div className="flex justify-end mb-6">
-            <div>
-              <p className="text-xs text-gray-400 mb-1 text-right">Scan to verify</p>
-              <img src={snap.qrCodeImage} alt="QR Code" className="w-20 h-20" />
-            </div>
-          </div>
-        )}
-
         {/* Notes */}
         {snap.notes && (
           <div className="mb-4">
@@ -209,8 +199,18 @@ export default function InvoicePrint() {
           </div>
         )}
 
+        {/* QR Code — bottom of invoice so recipients can scan it */}
+        {snap.qrCodeImage && (
+          <div className="flex justify-end mt-6 mb-4">
+            <div className="text-center">
+              <img src={snap.qrCodeImage} alt="QR Code" className="w-28 h-28 object-contain" />
+              <p className="text-xs text-gray-400 mt-1">Scan to verify</p>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4 mt-8 text-xs text-gray-400 text-center">
+        <div className="border-t border-gray-200 pt-4 mt-4 text-xs text-gray-400 text-center">
           This is a print snapshot. Original amounts are stored in EGP.
         </div>
       </div>

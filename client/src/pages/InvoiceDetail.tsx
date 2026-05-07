@@ -1871,7 +1871,7 @@ export default function InvoiceDetail() {
 
 
         {/* QR Code Panel */}
-        <Card className="print:block" data-testid="card-qr-code">
+        <Card className={!invoice.qrCodeImage ? "print:hidden" : ""} data-testid="card-qr-code">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <QrCode className="w-5 h-5" />
@@ -1889,7 +1889,7 @@ export default function InvoiceDetail() {
                     data-testid="img-qr-code"
                   />
                 </div>
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-gray-500 text-center print:hidden">
                   This QR code encodes information about invoice <strong>{invoice.invoiceNumber}</strong> and will appear on printed/exported invoices.
                 </p>
                 <Button
@@ -1897,7 +1897,7 @@ export default function InvoiceDetail() {
                   size="sm"
                   onClick={() => removeQrCodeMutation.mutate()}
                   disabled={removeQrCodeMutation.isPending}
-                  className="text-red-600 hover:text-red-700 hover:border-red-300"
+                  className="text-red-600 hover:text-red-700 hover:border-red-300 print:hidden"
                   data-testid="button-remove-qr-code"
                 >
                   <X className="w-4 h-4 mr-2" />
@@ -1905,7 +1905,7 @@ export default function InvoiceDetail() {
                 </Button>
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="text-center py-6 print:hidden">
                 <QrCode className="w-14 h-14 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 text-sm mb-6">
                   No QR code attached yet. Generate one automatically or upload a custom image.
