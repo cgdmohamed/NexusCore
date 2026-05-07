@@ -15,7 +15,7 @@ import {
   type InsertExpensePayment,
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
-import { requireAuth } from "./auth";
+import { requireAuth, requirePermission } from "./auth";
 import { notificationService } from "./notification-service";
 
 // Helper function to handle payment source transactions
@@ -297,8 +297,11 @@ export function registerExpenseRoutes(app: Express) {
   // Create expense
   app.post("/api/expenses", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
-      
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       console.log("Received expense payload:", JSON.stringify(req.body, null, 2));
       
       // Convert date strings to Date objects
@@ -368,7 +371,10 @@ export function registerExpenseRoutes(app: Express) {
   app.put("/api/expenses/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78'; // Use logged-in user or admin
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       console.log("Received expense update payload:", JSON.stringify(req.body, null, 2));
       
@@ -403,10 +409,13 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Mark expense as paid
-  app.post("/api/expenses/:id/pay", requireAuth, async (req, res) => {
+  app.post("/api/expenses/:id/pay", requirePermission('expenses', 'approve'), async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = 'ab376fce-7111-44a1-8e2a-a3bc6f01e4a0'; // Development user ID
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       const { 
         amount, 
         paymentMethod, 

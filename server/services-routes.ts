@@ -1,12 +1,12 @@
 import type { Express } from "express";
 import { z } from "zod";
-import { eq, desc, asc, and, ilike, or } from "drizzle-orm";
+import { requireAuth } from "./auth";
 import { storage } from "./storage";
 import { insertServiceSchema, updateServiceSchema, type Service, type InsertService } from "@shared/schema";
 
 export function registerServicesRoutes(app: Express) {
   // Get all services with pagination and filtering
-  app.get("/api/services", async (req, res) => {
+  app.get("/api/services", requireAuth, async (req, res) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -34,7 +34,7 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Get service by ID
-  app.get("/api/services/:id", async (req, res) => {
+  app.get("/api/services/:id", requireAuth, async (req, res) => {
     try {
       const service = await storage.getService(req.params.id);
       if (!service) {
@@ -48,10 +48,9 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Create new service
-  app.post("/api/services", async (req, res) => {
+  app.post("/api/services", requireAuth, async (req, res) => {
     try {
       const validatedData = insertServiceSchema.parse(req.body);
-      const userId = (req.user as any)?.id;
 
       const service = await storage.createService(validatedData);
 
@@ -66,7 +65,7 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Update service
-  app.put("/api/services/:id", async (req, res) => {
+  app.put("/api/services/:id", requireAuth, async (req, res) => {
     try {
       const validatedData = updateServiceSchema.parse({
         id: req.params.id,
@@ -89,7 +88,7 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Delete service
-  app.delete("/api/services/:id", async (req, res) => {
+  app.delete("/api/services/:id", requireAuth, async (req, res) => {
     try {
       const success = await storage.deleteService(req.params.id);
       if (!success) {
@@ -103,7 +102,7 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Get service categories
-  app.get("/api/services/categories", async (req, res) => {
+  app.get("/api/services/categories", requireAuth, async (req, res) => {
     try {
       const categories = await storage.getServiceCategories();
       res.json(categories);
@@ -114,10 +113,10 @@ export function registerServicesRoutes(app: Express) {
   });
 
   // Bulk activate/deactivate services
-  app.patch("/api/services/bulk-status", async (req, res) => {
+  app.patch("/api/services/bulk-status", requireAuth, async (req, res) => {
     try {
       const { serviceIds, isActive } = req.body;
-      
+
       if (!Array.isArray(serviceIds) || typeof isActive !== "boolean") {
         return res.status(400).json({ error: "Invalid bulk update data" });
       }

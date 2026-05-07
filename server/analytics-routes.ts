@@ -11,12 +11,12 @@ import {
   employees 
 } from "@shared/schema";
 import { eq, gte, lte, and, sum, count, desc, sql } from "drizzle-orm";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 
 export function registerAnalyticsRoutes(app: Express) {
   
   // Company KPIs - High-level performance indicators
-  app.get("/api/analytics/kpis", requireAuth, async (req, res) => {
+  app.get("/api/analytics/kpis", requirePermission('analytics', 'view'), async (req, res) => {
     try {
       const { startDate, endDate, period = 'month' } = req.query;
       
@@ -157,7 +157,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Financial Reports - Detailed breakdown
-  app.get("/api/analytics/financial-reports", requireAuth, async (req, res) => {
+  app.get("/api/analytics/financial-reports", requirePermission('analytics', 'view'), async (req, res) => {
     try {
       const { startDate, endDate, type = 'summary' } = req.query;
       
@@ -248,7 +248,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Trend Analysis - Monthly/Quarterly data
-  app.get("/api/analytics/trends", requireAuth, async (req, res) => {
+  app.get("/api/analytics/trends", requirePermission('analytics', 'view'), async (req, res) => {
     try {
       const { period = 'month', metric = 'revenue' } = req.query;
       
@@ -316,7 +316,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Period Comparison
-  app.get("/api/analytics/comparison", requireAuth, async (req, res) => {
+  app.get("/api/analytics/comparison", requirePermission('analytics', 'view'), async (req, res) => {
     try {
       const { period1Start, period1End, period2Start, period2End } = req.query;
 
@@ -418,7 +418,7 @@ export function registerAnalyticsRoutes(app: Express) {
   });
 
   // Outstanding Receivables and Payables
-  app.get("/api/analytics/outstanding", requireAuth, async (req, res) => {
+  app.get("/api/analytics/outstanding", requirePermission('analytics', 'view'), async (req, res) => {
     try {
       // Outstanding Receivables (Unpaid/Partial invoices)
       const receivables = await db

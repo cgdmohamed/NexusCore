@@ -1,20 +1,13 @@
 import type { Express } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
+import { requireAuth } from "./auth";
 import { employeeKpis, employees } from "@shared/schema";
 import { insertEmployeeKpiSchema } from "@shared/schema";
 
-// Simple dev auth middleware - uses actual admin user ID for FK constraints
-const devAuth = (req: any, res: any, next: any) => {
-  if (!req.user) {
-    req.user = { id: '8742bebf-9138-4247-85c8-fd2cb70e7d78', claims: { sub: '8742bebf-9138-4247-85c8-fd2cb70e7d78' } };
-  }
-  next();
-};
-
 export function registerKpiRoutes(app: Express) {
   // Get all KPIs for an employee
-  app.get("/api/employees/:employeeId/kpis", devAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpis", requireAuth, async (req, res) => {
     try {
       const { employeeId } = req.params;
       const { period } = req.query;
@@ -36,7 +29,7 @@ export function registerKpiRoutes(app: Express) {
             )
           )
           .orderBy(desc(employeeKpis.createdAt));
-        
+
         const periodResults = await periodsQuery;
         return res.json(periodResults);
       }
@@ -50,7 +43,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Get KPI statistics for an employee
-  app.get("/api/employees/:employeeId/kpi-stats", devAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpi-stats", requireAuth, async (req, res) => {
     try {
       const { employeeId } = req.params;
 
@@ -75,10 +68,14 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Create a new KPI
-  app.post("/api/employees/:employeeId/kpis", devAuth, async (req, res) => {
+  app.post("/api/employees/:employeeId/kpis", requireAuth, async (req, res) => {
     try {
       const { employeeId } = req.params;
-      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id || '8742bebf-9138-4247-85c8-fd2cb70e7d78';
+      const userId = (req.user as any)?.id;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
 
       const validatedData = insertEmployeeKpiSchema.parse({
         ...req.body,
@@ -99,7 +96,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Update a KPI
-  app.put("/api/kpis/:kpiId", devAuth, async (req, res) => {
+  app.put("/api/kpis/:kpiId", requireAuth, async (req, res) => {
     try {
       const { kpiId } = req.params;
 
@@ -126,7 +123,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Delete a KPI
-  app.delete("/api/kpis/:kpiId", devAuth, async (req, res) => {
+  app.delete("/api/kpis/:kpiId", requireAuth, async (req, res) => {
     try {
       const { kpiId } = req.params;
 
@@ -147,7 +144,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Get unique evaluation periods for an employee
-  app.get("/api/employees/:employeeId/kpi-periods", devAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpi-periods", requireAuth, async (req, res) => {
     try {
       const { employeeId } = req.params;
 
