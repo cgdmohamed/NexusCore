@@ -92,12 +92,15 @@ const STATUS_BADGE_CLS: Record<string, string> = {
   archived: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-function ProjectProgressBar({ completed, total, tasksLabel }: { completed: number; total: number; tasksLabel: string }) {
+function ProjectProgressBar({ completed, total, cancelled = 0, tasksLabel }: { completed: number; total: number; cancelled?: number; tasksLabel: string }) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   return (
     <div className="space-y-1">
       <div className="flex justify-between items-center text-xs text-muted-foreground">
-        <span>{completed}/{total} {tasksLabel}</span>
+        <span>
+          {completed}/{total} {tasksLabel}
+          {cancelled > 0 && <span className="ms-1 opacity-60">({cancelled} cancelled)</span>}
+        </span>
         <span className="font-medium">{pct}%</span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -490,7 +493,8 @@ export default function Projects() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => {
-              const totalTasks = (project.taskCounts?.pending || 0) + (project.taskCounts?.in_progress || 0) + (project.taskCounts?.completed || 0) + (project.taskCounts?.cancelled || 0);
+              const cancelledTasks = project.taskCounts?.cancelled || 0;
+              const totalTasks = project.taskCounts?.total || 0;
               const completedTasks = project.taskCounts?.completed || 0;
               const dueDate = project.dueDate ? new Date(project.dueDate) : null;
               const isOverdue = dueDate && dueDate < today && project.status !== "completed";
@@ -572,7 +576,7 @@ export default function Projects() {
                   </CardHeader>
 
                   <CardContent className="pb-4 flex-1 space-y-3">
-                    <ProjectProgressBar completed={completedTasks} total={totalTasks} tasksLabel={t("projects.tasks_count")} />
+                    <ProjectProgressBar completed={completedTasks} total={totalTasks} cancelled={cancelledTasks} tasksLabel={t("projects.tasks_count")} />
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                       {dueDate && (

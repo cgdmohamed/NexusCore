@@ -259,7 +259,9 @@ export default function ProjectKanban() {
 
   const totalTasks = allTasks.length;
   const completedTasks = allTasks.filter((t) => t.status === "completed").length;
-  const progressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const cancelledTasks = allTasks.filter((t) => t.status === "cancelled").length;
+  const activeDenominator = totalTasks - cancelledTasks;
+  const progressPct = activeDenominator > 0 ? Math.round((completedTasks / activeDenominator) * 100) : 0;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -356,7 +358,10 @@ export default function ProjectKanban() {
 
               <div className="space-y-1 max-w-xs">
                 <div className="flex justify-between items-center text-xs text-muted-foreground">
-                  <span>{completedTasks}/{totalTasks} {t("projects.tasks_count")}</span>
+                  <span>
+                    {completedTasks}/{activeDenominator} {t("projects.tasks_count")}
+                    {cancelledTasks > 0 && <span className="ms-1 opacity-60">({cancelledTasks} cancelled)</span>}
+                  </span>
                   <span className="font-medium">{progressPct}%</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">

@@ -112,7 +112,9 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
             const status = stat.status as keyof typeof counts;
             if (status in counts) {
               counts[status] = Number(stat.count);
-              counts.total += Number(stat.count);
+              if (status !== "cancelled") {
+                counts.total += Number(stat.count);
+              }
             }
           });
 
