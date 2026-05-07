@@ -25,7 +25,9 @@ import {
   Bell,
   MessageSquare,
   CheckSquare,
-  FileText
+  FileText,
+  Activity,
+  ClipboardList,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +35,70 @@ import type { NotificationSettings } from "@shared/schema";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 import type { User as UserType, Employee } from "@shared/schema";
+
+function UserActivityFeed({ userId }: { userId: string | undefined }) {
+  const { data: activityData, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/users", userId, "activity"],
+    enabled: !!userId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="flex gap-3">
+            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+            <div className="space-y-1.5 flex-1">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!activityData || activityData.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Activity className="h-10 w-10 mx-auto mb-3 opacity-40" />
+        <p className="text-sm">No recent activity found.</p>
+      </div>
+    );
+  }
+
+  const getActionIcon = (action: string) => {
+    if (action.includes('task') || action.includes('assigned') || action.includes('status')) return <CheckSquare className="h-4 w-4" />;
+    if (action.includes('comment')) return <MessageSquare className="h-4 w-4" />;
+    if (action.includes('invoice') || action.includes('quotation')) return <FileText className="h-4 w-4" />;
+    return <ClipboardList className="h-4 w-4" />;
+  };
+
+  return (
+    <div className="space-y-4">
+      {activityData.map((item: any) => (
+        <div key={item.id} className="flex gap-3">
+          <div className="p-2 rounded-full bg-muted shrink-0 h-8 w-8 flex items-center justify-center text-muted-foreground">
+            {getActionIcon(item.action || item.type || '')}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium leading-snug">
+              {item.notes || item.title || `${item.action || item.type} — ${item.newValue || item.description || ''}`}
+            </p>
+            {item.taskTitle && (
+              <p className="text-xs text-muted-foreground">Task: {item.taskTitle}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {item.createdAt ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }) : ''}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
@@ -506,10 +571,7 @@ export default function UserProfile() {
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Activity tracking is not yet implemented</p>
-                </div>
+                <UserActivityFeed userId={id} />
               </CardContent>
             </Card>
           </TabsContent>

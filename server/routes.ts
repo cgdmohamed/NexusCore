@@ -19,14 +19,19 @@ import { db } from "./db";
 import { users } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint (no auth required)
-  app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'healthy', 
+  // Health check endpoint (no auth required) - includes DB connectivity check
+  app.get('/api/health', async (req, res) => {
+    let dbOk = false;
+    try {
+      await db.select().from(users).limit(1);
+      dbOk = true;
+    } catch (_) {}
+    const statusCode = dbOk ? 200 : 503;
+    res.status(statusCode).json({ 
+      status: dbOk ? 'ok' : 'degraded',
+      db: dbOk,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      version: process.env.npm_package_version || '1.0.0'
     });
   });
 

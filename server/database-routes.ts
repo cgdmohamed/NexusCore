@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { requireAuth } from "./auth";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
 import multer from "multer";
 import { notificationService } from "./notification-service";
@@ -462,6 +462,59 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching dashboard KPIs:", error);
       res.status(500).json({ message: "Failed to fetch dashboard KPIs" });
+    }
+  });
+
+  // User activity feed - combines task activity log + general activities
+  app.get('/api/users/:id/activity', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      // Only the user themselves or an admin/manager may view activity
+      const requestingUser = req.user;
+      const isSelf = requestingUser?.id === id || requestingUser?.claims?.sub === id;
+      const isPrivileged = ['admin', 'manager'].includes(requestingUser?.role);
+      if (!isSelf && !isPrivileged) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Get task activity entries created by this user
+      const taskActivity = await db
+        .select({
+          id: taskActivityLog.id,
+          action: taskActivityLog.action,
+          notes: taskActivityLog.notes,
+          newValue: taskActivityLog.newValue,
+          oldValue: taskActivityLog.oldValue,
+          createdAt: taskActivityLog.createdAt,
+          taskId: taskActivityLog.taskId,
+          taskTitle: tasks.title,
+        })
+        .from(taskActivityLog)
+        .leftJoin(tasks, eq(taskActivityLog.taskId, tasks.id))
+        .where(eq(taskActivityLog.createdBy, id))
+        .orderBy(desc(taskActivityLog.createdAt))
+        .limit(30);
+
+      // Get general activities created by this user
+      const generalActivity = await db
+        .select()
+        .from(activities)
+        .where(eq(activities.createdBy, id))
+        .orderBy(desc(activities.createdAt))
+        .limit(20);
+
+      // Merge and sort by date
+      const combined = [
+        ...taskActivity.map(a => ({ ...a, source: 'task' })),
+        ...generalActivity.map(a => ({ ...a, source: 'general' })),
+      ].sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+       .slice(0, 40);
+
+      res.json(combined);
+    } catch (error) {
+      console.error("Error fetching user activity:", error);
+      res.status(500).json({ message: "Failed to fetch user activity" });
     }
   });
 

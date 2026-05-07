@@ -22,6 +22,11 @@ export function QuickActions() {
     queryKey: ["/api/invoices"],
   });
 
+  const { data: healthData, isLoading: healthLoading } = useQuery<{ status: string; db: boolean }>({
+    queryKey: ["/api/health"],
+    refetchInterval: 60000,
+  });
+
   const taskData = taskStats as any;
   const clientsData = clients as any[];
   const invoicesData = invoices as any[];
@@ -97,10 +102,22 @@ export function QuickActions() {
         <div className="pt-3 mt-6 border-t border-gray-200">
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral">System Status</span>
-            <span className="text-green-600 flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              Online
-            </span>
+            {healthLoading ? (
+              <span className="text-gray-400 flex items-center gap-1">
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                Checking...
+              </span>
+            ) : healthData?.db ? (
+              <span className="text-green-600 flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                Online
+              </span>
+            ) : (
+              <span className="text-red-600 flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                Degraded
+              </span>
+            )}
           </div>
           {overdueInvoices > 0 && (
             <div className="flex items-center justify-between text-sm mt-2">

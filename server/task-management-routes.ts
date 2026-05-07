@@ -538,6 +538,58 @@ export function registerTaskManagementRoutes(app: Express) {
     }
   });
 
+  // Add dependency to a task
+  app.post("/api/tasks/:id/dependencies", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { dependsOnTaskId } = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id || '';
+
+      if (!dependsOnTaskId) {
+        return res.status(400).json({ message: "dependsOnTaskId is required" });
+      }
+      if (id === dependsOnTaskId) {
+        return res.status(400).json({ message: "A task cannot depend on itself" });
+      }
+
+      const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+      if (!task) return res.status(404).json({ message: "Task not found" });
+
+      const [depTask] = await db.select().from(tasks).where(eq(tasks.id, dependsOnTaskId));
+      if (!depTask) return res.status(404).json({ message: "Dependency task not found" });
+
+      const existing = await db.select().from(taskDependencies)
+        .where(and(eq(taskDependencies.taskId, id), eq(taskDependencies.dependsOnTaskId, dependsOnTaskId)));
+      if (existing.length > 0) {
+        return res.status(409).json({ message: "Dependency already exists" });
+      }
+
+      const [dep] = await db.insert(taskDependencies).values({
+        taskId: id,
+        dependsOnTaskId,
+        createdBy: userId,
+      }).returning();
+
+      res.status(201).json(dep);
+    } catch (error) {
+      console.error("Error adding task dependency:", error);
+      res.status(500).json({ message: "Failed to add task dependency" });
+    }
+  });
+
+  // Remove a dependency from a task
+  app.delete("/api/tasks/:id/dependencies/:dependsOnId", requireAuth, async (req, res) => {
+    try {
+      const { id, dependsOnId } = req.params;
+      await db.delete(taskDependencies)
+        .where(and(eq(taskDependencies.taskId, id), eq(taskDependencies.dependsOnTaskId, dependsOnId)));
+      res.json({ message: "Dependency removed" });
+    } catch (error) {
+      console.error("Error removing task dependency:", error);
+      res.status(500).json({ message: "Failed to remove task dependency" });
+    }
+  });
+
   // Get task performance metrics
   app.get("/api/tasks/performance", requireAuth, async (req, res) => {
     try {

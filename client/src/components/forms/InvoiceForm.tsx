@@ -152,15 +152,23 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="dueDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Due Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isPast = field.value ? new Date(field.value) < new Date(new Date().toDateString()) : false;
+                return (
+                  <FormItem>
+                    <FormLabel>Due Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    {isPast && (
+                      <p className="text-sm text-amber-600 flex items-center gap-1">
+                        ⚠ The selected date is in the past.
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <div className="flex justify-end space-x-2 pt-4">
               <Button

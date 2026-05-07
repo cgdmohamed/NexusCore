@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw } from "lucide-react";
+import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw, Wallet, FolderKanban, ExternalLink, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,6 +44,18 @@ export default function ClientProfile() {
   const { data: notes = [] } = useQuery<ClientNote[]>({
     queryKey: ["/api/clients", id, "notes"],
   });
+
+  const { data: creditData } = useQuery<{ currentBalance: number; history: any[] }>({
+    queryKey: ["/api/clients", id, "credit"],
+    enabled: !!id,
+  });
+
+  const { data: allProjects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+    enabled: !!id,
+  });
+
+  const clientProjects = (allProjects as any[]).filter((p: any) => p.clientId === id);
 
   const updateClientMutation = useMutation({
     mutationFn: async (data: Partial<Client>) => {
@@ -137,6 +149,7 @@ export default function ClientProfile() {
       case 'active': return 'bg-green-100 text-green-800';
       case 'inactive': return 'bg-red-100 text-red-800';
       case 'prospect': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -149,6 +162,39 @@ export default function ClientProfile() {
       default: return <MessageSquare className="w-4 h-4" />;
     }
   };
+
+  const getCreditTypeIcon = (type: string) => {
+    switch (type) {
+      case 'credit_added':
+      case 'credit_refunded': return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'credit_used':
+      case 'credit_applied': return <TrendingDown className="w-4 h-4 text-red-600" />;
+      default: return <Minus className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getCreditTypeColor = (type: string) => {
+    switch (type) {
+      case 'credit_added':
+      case 'credit_refunded': return 'text-green-700';
+      case 'credit_used':
+      case 'credit_applied': return 'text-red-700';
+      default: return 'text-gray-700';
+    }
+  };
+
+  const getProjectStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const creditBalance = creditData?.currentBalance ?? parseFloat(client.creditBalance || '0');
+  const creditHistory = creditData?.history ?? [];
 
   return (
     <div className="p-3 md:p-6 max-w-7xl mx-auto">
@@ -224,6 +270,7 @@ export default function ClientProfile() {
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -255,12 +302,12 @@ export default function ClientProfile() {
       />
 
       {/* Client Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-blue-100 rounded-lg">
-                <Mail className="w-6 h-6 text-blue-600" />
+                <Mail className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Status</p>
@@ -273,15 +320,15 @@ export default function ClientProfile() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                  <DollarSign className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Value</p>
-                  <p className="text-xl font-bold">EGP {client.totalValue}</p>
+                  <p className="text-lg font-bold">EGP {parseFloat(client.totalValue || '0').toLocaleString()}</p>
                 </div>
               </div>
               <Button 
@@ -299,10 +346,26 @@ export default function ClientProfile() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+          <CardContent className="p-5">
+            <div className="flex items-center space-x-3">
+              <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-emerald-100' : 'bg-gray-100'}`}>
+                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-emerald-600' : 'text-gray-400'}`} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Credit Balance</p>
+                <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
+                  EGP {creditBalance.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center space-x-3">
               <div className="p-3 bg-purple-100 rounded-lg">
-                <FileText className="w-6 h-6 text-purple-600" />
+                <FileText className="w-5 h-5 text-purple-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Quotations</p>
@@ -313,10 +376,10 @@ export default function ClientProfile() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+          <CardContent className="p-5">
+            <div className="flex items-center space-x-3">
               <div className="p-3 bg-orange-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-orange-600" />
+                <Calendar className="w-5 h-5 text-orange-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Invoices</p>
@@ -329,11 +392,13 @@ export default function ClientProfile() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="details" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="quotations">Quotations</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
-          <TabsTrigger value="notes">Notes & Activity</TabsTrigger>
+          <TabsTrigger value="credit">Credit History</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -403,7 +468,7 @@ export default function ClientProfile() {
                       <TableRow key={quotation.id}>
                         <TableCell className="font-medium">{quotation.quotationNumber}</TableCell>
                         <TableCell>{quotation.title}</TableCell>
-                        <TableCell>${quotation.amount}</TableCell>
+                        <TableCell>EGP {parseFloat(quotation.amount || '0').toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(quotation.status)}>
                             {quotation.status}
@@ -450,7 +515,7 @@ export default function ClientProfile() {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                        <TableCell>${invoice.amount}</TableCell>
+                        <TableCell>EGP {parseFloat(invoice.amount || '0').toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(invoice.status)}>
                             {invoice.status}
@@ -471,6 +536,130 @@ export default function ClientProfile() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="credit">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Credit History</CardTitle>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Current Balance</p>
+                  <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
+                    EGP {creditBalance.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {creditHistory.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <Wallet className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No credit transactions found for this client.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Balance After</TableHead>
+                      <TableHead>Related Invoice</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {creditHistory.map((entry: any) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getCreditTypeIcon(entry.type)}
+                            <span className="capitalize text-sm">{entry.type.replace(/_/g, ' ')}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm max-w-xs truncate">{entry.description}</TableCell>
+                        <TableCell className={`font-medium ${getCreditTypeColor(entry.type)}`}>
+                          {entry.type === 'credit_used' || entry.type === 'credit_applied' ? '-' : '+'}
+                          EGP {parseFloat(entry.amount).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          EGP {parseFloat(entry.newBalance).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {entry.relatedInvoiceId ? (
+                            <Link href={`/invoices/${entry.relatedInvoiceId}`} className="text-blue-600 hover:underline flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              #{entry.relatedInvoiceId.slice(0, 8)}
+                            </Link>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-500">
+                          {entry.createdAt ? format(new Date(entry.createdAt), 'MMM dd, yyyy') : '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="projects">
+          <Card>
+            <CardHeader>
+              <CardTitle>Projects</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clientProjects.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <FolderKanban className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No projects linked to this client.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {clientProjects.map((project: any) => (
+                    <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: project.color || '#3b82f6' }}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{project.name}</p>
+                          {project.description && (
+                            <p className="text-sm text-gray-500 truncate">{project.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                            {project.taskCounts && (
+                              <span>{project.taskCounts.total} tasks</span>
+                            )}
+                            {project.dueDate && (
+                              <span>Due {formatDistanceToNow(new Date(project.dueDate), { addSuffix: true })}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Badge className={getProjectStatusColor(project.status)}>
+                          {project.status.replace('_', ' ')}
+                        </Badge>
+                        <Link href={`/projects/${project.id}`}>
+                          <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" />
+                            Kanban
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

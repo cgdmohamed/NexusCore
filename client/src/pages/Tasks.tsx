@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient as useQC } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +82,7 @@ const statusColors = {
 export default function Tasks() {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const qc = useQC();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -93,6 +94,8 @@ export default function Tasks() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
+  const [depTaskIds, setDepTaskIds] = useState<string[]>([]);
+  const [depPickerOpen, setDepPickerOpen] = useState(false);
 
   // Fetch tasks with filtering
   const { data: allTasks = [], isLoading } = useQuery({
@@ -266,8 +269,48 @@ export default function Tasks() {
     });
   };
 
+  // Full task detail query (includes dependencies) — active when detail dialog open
+  const { data: fullTaskDetail } = useQuery<any>({
+    queryKey: ["/api/tasks", selectedTask?.id],
+    enabled: !!selectedTask?.id && isDetailDialogOpen,
+  });
+
+  // Add dependency mutation
+  const addDepMutation = useMutation({
+    mutationFn: async ({ taskId, dependsOnTaskId }: { taskId: string; dependsOnTaskId: string }) => {
+      const res = await apiRequest("POST", `/api/tasks/${taskId}/dependencies`, { dependsOnTaskId });
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/tasks", selectedTask?.id] });
+      setDepTaskIds([]);
+      setDepPickerOpen(false);
+      toast({ title: "Dependency added" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to add dependency", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Remove dependency mutation
+  const removeDepMutation = useMutation({
+    mutationFn: async ({ taskId, dependsOnId }: { taskId: string; dependsOnId: string }) => {
+      const res = await apiRequest("DELETE", `/api/tasks/${taskId}/dependencies/${dependsOnId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/tasks", selectedTask?.id] });
+      toast({ title: "Dependency removed" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to remove dependency", description: err.message, variant: "destructive" });
+    },
+  });
+
   const viewTaskDetails = (task: any) => {
     setSelectedTask(task);
+    setDepTaskIds([]);
+    setDepPickerOpen(false);
     setIsDetailDialogOpen(true);
   };
 
@@ -798,6 +841,95 @@ export default function Tasks() {
                   </p>
                 </div>
               )}
+
+              <Separator />
+
+              {/* Dependencies Section */}
+              <div>
+                <Label className="text-base font-semibold">Dependencies</Label>
+                <p className="text-xs text-muted-foreground mb-3">Tasks that must be completed before this one.</p>
+
+                {/* Existing dependencies */}
+                {fullTaskDetail?.dependencies && fullTaskDetail.dependencies.length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {fullTaskDetail.dependencies.map((dep: any) => (
+                      <div key={dep.dependsOnTaskId || dep.id} className="flex items-center justify-between p-2 rounded border bg-gray-50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Badge className={cn("text-xs", statusColors[(dep.dependentTask?.status || 'pending') as keyof typeof statusColors])}>
+                            {(dep.dependentTask?.status || 'pending').replace('_', ' ')}
+                          </Badge>
+                          <span className="text-sm truncate">{dep.dependentTask?.title || dep.dependsOnTaskId}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 shrink-0"
+                          disabled={removeDepMutation.isPending}
+                          onClick={() => removeDepMutation.mutate({ taskId: selectedTask.id, dependsOnId: dep.dependsOnTaskId || dep.id })}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-3">No dependencies set.</p>
+                )}
+
+                {/* Add dependency — multi-select via checkbox popover */}
+                {(() => {
+                  const availableTasks = (allTasks as any[]).filter((t: any) => {
+                    if (t.id === selectedTask.id) return false;
+                    if (t.projectId !== (selectedTask.projectId ?? null)) return false;
+                    return !fullTaskDetail?.dependencies?.some(
+                      (d: any) => (d.dependsOnTaskId || d.id) === t.id
+                    );
+                  });
+                  return (
+                    <div className="flex gap-2">
+                      <Popover open={depPickerOpen} onOpenChange={setDepPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1 justify-start text-sm font-normal truncate">
+                            {depTaskIds.length === 0
+                              ? "Select tasks to depend on…"
+                              : `${depTaskIds.length} task${depTaskIds.length > 1 ? "s" : ""} selected`}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-2 max-h-56 overflow-y-auto" align="start">
+                          {availableTasks.length === 0 ? (
+                            <p className="text-sm text-muted-foreground px-2 py-1">No available tasks.</p>
+                          ) : (
+                            availableTasks.map((t: any) => (
+                              <label key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer">
+                                <Checkbox
+                                  checked={depTaskIds.includes(t.id)}
+                                  onCheckedChange={(checked) => {
+                                    setDepTaskIds(prev =>
+                                      checked ? [...prev, t.id] : prev.filter(id => id !== t.id)
+                                    );
+                                  }}
+                                />
+                                <span className="text-sm">{t.title}</span>
+                              </label>
+                            ))
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        size="sm"
+                        disabled={depTaskIds.length === 0 || addDepMutation.isPending}
+                        onClick={async () => {
+                          for (const id of depTaskIds) {
+                            await addDepMutation.mutateAsync({ taskId: selectedTask.id, dependsOnTaskId: id });
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  );
+                })()}
+              </div>
 
               <Separator />
 
