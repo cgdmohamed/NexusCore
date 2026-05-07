@@ -46,7 +46,12 @@ import {
   Ban,
   History,
   QrCode,
-  Sparkles
+  Sparkles,
+  Printer,
+  ExternalLink,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -148,6 +153,13 @@ export default function InvoiceDetail() {
   });
   const [isUploadingFile, setIsUploadingFile] = useState(false);
 
+  // Print dialog state
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [printHistoryOpen, setPrintHistoryOpen] = useState(false);
+  const [printCurrency, setPrintCurrency] = useState("EGP");
+  const [printRate, setPrintRate] = useState("1");
+  const [isPrinting, setIsPrinting] = useState(false);
+
   const { data: invoice, isLoading: invoiceLoading } = useQuery<Invoice>({
     queryKey: [`/api/invoices/${id}`],
     enabled: !!id,
@@ -178,6 +190,35 @@ export default function InvoiceDetail() {
   });
 
   const qrFileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: printRecords = [] } = useQuery<any[]>({
+    queryKey: [`/api/invoices/${id}/print-records`],
+    enabled: !!id,
+  });
+
+  const handlePrint = async () => {
+    const rate = printCurrency === "EGP" ? 1 : parseFloat(printRate);
+    if (printCurrency !== "EGP" && (isNaN(rate) || rate <= 0)) {
+      toast({ title: "Invalid rate", description: "Exchange rate must be greater than 0.", variant: "destructive" });
+      return;
+    }
+    setIsPrinting(true);
+    try {
+      const res = await apiRequest("POST", `/api/invoices/${id}/print`, {
+        displayCurrency: printCurrency,
+        exchangeRate: rate.toString(),
+      });
+      const data = await res.json();
+      setIsPrintDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/print-records`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      window.open(data.printUrl, "_blank");
+    } catch (err: any) {
+      toast({ title: "Print failed", description: err.message || "Failed to create print record.", variant: "destructive" });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   // Initialize tax/discount form when invoice loads or updates
   useEffect(() => {
@@ -840,6 +881,14 @@ export default function InvoiceDetail() {
               Back to Invoices
             </Button>
           </Link>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsPrintDialogOpen(true)}
+            data-testid="button-print-invoice"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Print
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => window.open(`/api/invoices/${id}/export-pdf`, '_blank')}
@@ -1895,6 +1944,84 @@ export default function InvoiceDetail() {
           </CardContent>
         </Card>
 
+        {/* Print History */}
+        <Card data-testid="card-invoice-print-history">
+          <CardHeader
+            className="cursor-pointer select-none"
+            onClick={() => setPrintHistoryOpen(o => !o)}
+            data-testid="card-header-invoice-print-history"
+          >
+            <CardTitle className="text-lg flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <Printer className="w-5 h-5" />
+                Print History
+                {printRecords.length > 0 && (
+                  <span className="ml-1 text-xs font-normal text-gray-500">({printRecords.length})</span>
+                )}
+              </span>
+              {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </CardTitle>
+          </CardHeader>
+          {printHistoryOpen && (
+            <CardContent>
+              {printRecords.length === 0 ? (
+                <div className="text-center py-8">
+                  <Printer className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No prints yet. Use the Print button to create a print record.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {printRecords.map((record: any) => {
+                    const isStale = invoice.updatedAt && record.printedAt && new Date(invoice.updatedAt) > new Date(record.printedAt);
+                    return (
+                      <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <span>{record.displayCurrency}</span>
+                            {record.displayCurrency !== "EGP" && (
+                              <span className="text-gray-500">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
+                            )}
+                            <span className="text-gray-700">→ {parseFloat(record.convertedTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span title={format(new Date(record.printedAt), 'MMM dd, yyyy HH:mm')}>
+                                {formatDistanceToNow(new Date(record.printedAt), { addSuffix: true })}
+                              </span>
+                            </span>
+                            {(record.printedByName || record.printedByEmail) && (
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {record.printedByName || record.printedByEmail}
+                              </span>
+                            )}
+                          </div>
+                          {isStale && (
+                            <div className="flex items-center gap-1 text-xs text-amber-600">
+                              <AlertTriangle className="w-3 h-3" />
+                              This document may have changed since this print.
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/invoices/print/${record.id}`, "_blank")}
+                          data-testid={`button-reprint-${record.id}`}
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Reprint
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
         {/* Invoice History */}
         <Card data-testid="card-invoice-history">
           <CardHeader>
@@ -1945,7 +2072,83 @@ export default function InvoiceDetail() {
 
       </div>
       
-      {/* Credit Balance Dialog */}
+      {/* Print Dialog */}
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              Print Invoice
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Display Currency</Label>
+              <Select value={printCurrency} onValueChange={(v) => { setPrintCurrency(v); if (v === "EGP") setPrintRate("1"); }}>
+                <SelectTrigger data-testid="select-print-currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EGP">EGP — Egyptian Pound (ج.م)</SelectItem>
+                  <SelectItem value="USD">USD — US Dollar ($)</SelectItem>
+                  <SelectItem value="SAR">SAR — Saudi Riyal (ر.س)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Exchange Rate (1 {printCurrency} = ? EGP)</Label>
+              <Input
+                type="number"
+                value={printRate}
+                onChange={(e) => setPrintRate(e.target.value)}
+                disabled={printCurrency === "EGP"}
+                min="0.0001"
+                step="0.01"
+                placeholder="e.g. 50.00"
+                data-testid="input-print-rate"
+              />
+              {printCurrency === "EGP" && (
+                <p className="text-xs text-gray-500 mt-1">Rate is locked to 1 for EGP.</p>
+              )}
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 border">
+              <p className="text-sm text-gray-600 mb-1">Live converted total preview</p>
+              {(() => {
+                const rate = printCurrency === "EGP" ? 1 : (parseFloat(printRate) || 0);
+                const converted = rate > 0 ? Math.round((totalAmount / rate) * 100) / 100 : 0;
+                const symbol = printCurrency === "USD" ? "$" : printCurrency === "SAR" ? "ر.س" : "ج.م";
+                const formatted = converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return (
+                  <>
+                    <p className="text-xl font-bold text-gray-900">
+                      {printCurrency === "USD" ? `${symbol}${formatted}` : `${formatted} ${symbol}`}
+                    </p>
+                    {printCurrency !== "EGP" && (
+                      <p className="text-xs text-gray-400 mt-1">Source total: {formatCurrency(totalAmount)}</p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePrint}
+                disabled={isPrinting || (printCurrency !== "EGP" && (parseFloat(printRate) <= 0 || isNaN(parseFloat(printRate))))}
+                className="flex-1"
+                data-testid="button-confirm-print"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                {isPrinting ? "Preparing..." : "Print"}
+              </Button>
+              <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showCreditInfo} onOpenChange={setShowCreditInfo}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

@@ -37,6 +37,8 @@ import Messages from "@/pages/Messages";
 import Settings from "@/pages/Settings";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import QuotationPrint from "@/pages/QuotationPrint";
+import InvoicePrint from "@/pages/InvoicePrint";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -66,46 +68,55 @@ function Router() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <Navbar onMenuClick={() => setMobileSidebarOpen(true)} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
-        />
-        <main className="flex-1 overflow-auto">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/clients" component={CRM} />
-            <Route path="/clients/:id" component={ClientProfile} />
-            <Route path="/quotations" component={Quotations} />
-            <Route path="/quotations/:id" component={QuotationDetail} />
-            <Route path="/quotation-management" component={QuotationManagement} />
-            <Route path="/invoices" component={Invoices} />
-            <Route path="/invoices/:id" component={InvoiceDetail} />
-            <Route path="/expenses" component={Expenses} />
-            <Route path="/expenses/:id" component={ExpenseDetail} />
-            <Route path="/expenses/:id/edit" component={ExpenseEdit} />
-            <Route path="/payment-sources" component={PaymentSources} />
-            <Route path="/payment-sources/:id" component={PaymentSourceDetail} />
-            <Route path="/payment-sources/:id/edit" component={PaymentSourceEdit} />
+    <Switch>
+      {/* Print pages — no sidebar, no navbar */}
+      <Route path="/quotations/print/:printRecordId" component={QuotationPrint} />
+      <Route path="/invoices/print/:printRecordId" component={InvoicePrint} />
 
-            <Route path="/team-roles" component={UserManagement} />
-            <Route path="/users/:id" component={UserProfile} />
-            <Route path="/employees/:id" component={EmployeeProfile} />
-            <Route path="/tasks" component={Tasks} />
-            <Route path="/projects" component={Projects} />
-            <Route path="/projects/:id" component={ProjectKanban} />
-            <Route path="/services" component={Services} />
-            <Route path="/reports-kpis" component={Analytics} />
-            <Route path="/notifications" component={Notifications} />
-            <Route path="/messages" component={Messages} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-      </div>
-    </div>
+      {/* Main app layout */}
+      <Route>
+        <div className="flex flex-col h-screen overflow-hidden">
+          <Navbar onMenuClick={() => setMobileSidebarOpen(true)} />
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar
+              mobileOpen={mobileSidebarOpen}
+              onMobileClose={() => setMobileSidebarOpen(false)}
+            />
+            <main className="flex-1 overflow-auto">
+              <Switch>
+                <Route path="/" component={Dashboard} />
+                <Route path="/clients" component={CRM} />
+                <Route path="/clients/:id" component={ClientProfile} />
+                <Route path="/quotations" component={Quotations} />
+                <Route path="/quotations/:id" component={QuotationDetail} />
+                <Route path="/quotation-management" component={QuotationManagement} />
+                <Route path="/invoices" component={Invoices} />
+                <Route path="/invoices/:id" component={InvoiceDetail} />
+                <Route path="/expenses" component={Expenses} />
+                <Route path="/expenses/:id" component={ExpenseDetail} />
+                <Route path="/expenses/:id/edit" component={ExpenseEdit} />
+                <Route path="/payment-sources" component={PaymentSources} />
+                <Route path="/payment-sources/:id" component={PaymentSourceDetail} />
+                <Route path="/payment-sources/:id/edit" component={PaymentSourceEdit} />
+
+                <Route path="/team-roles" component={UserManagement} />
+                <Route path="/users/:id" component={UserProfile} />
+                <Route path="/employees/:id" component={EmployeeProfile} />
+                <Route path="/tasks" component={Tasks} />
+                <Route path="/projects" component={Projects} />
+                <Route path="/projects/:id" component={ProjectKanban} />
+                <Route path="/services" component={Services} />
+                <Route path="/reports-kpis" component={Analytics} />
+                <Route path="/notifications" component={Notifications} />
+                <Route path="/messages" component={Messages} />
+                <Route path="/settings" component={Settings} />
+                <Route component={NotFound} />
+              </Switch>
+            </main>
+          </div>
+        </div>
+      </Route>
+    </Switch>
   );
 }
 

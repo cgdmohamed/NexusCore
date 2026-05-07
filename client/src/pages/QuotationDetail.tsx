@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil, History, Clock, User } from "lucide-react";
+import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil, History, Clock, User, Printer, ExternalLink, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, format } from "date-fns";
@@ -34,6 +34,13 @@ export default function QuotationDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState("");
   const [terms, setTerms] = useState("");
+
+  // Print dialog state
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [printHistoryOpen, setPrintHistoryOpen] = useState(false);
+  const [printCurrency, setPrintCurrency] = useState("EGP");
+  const [printRate, setPrintRate] = useState("1");
+  const [isPrinting, setIsPrinting] = useState(false);
 
   // Edit item state
   const [editingItem, setEditingItem] = useState<QuotationItem | null>(null);
@@ -298,6 +305,43 @@ export default function QuotationDetail() {
     },
   });
 
+  const { data: printRecords = [] } = useQuery<any[]>({
+    queryKey: ["/api/quotations", id, "print-records"],
+    enabled: !!id,
+  });
+
+  const liveTotalEgp = quotationItems.reduce((s, item) => s + parseFloat(item.totalPrice), 0);
+
+  const printLiveTotal = (() => {
+    const rate = printCurrency === "EGP" ? 1 : (parseFloat(printRate) || 0);
+    if (rate <= 0) return 0;
+    return Math.round((liveTotalEgp / rate) * 100) / 100;
+  })();
+
+  const handlePrint = async () => {
+    const rate = printCurrency === "EGP" ? 1 : parseFloat(printRate);
+    if (printCurrency !== "EGP" && (isNaN(rate) || rate <= 0)) {
+      toast({ title: "Invalid rate", description: "Exchange rate must be greater than 0.", variant: "destructive" });
+      return;
+    }
+    setIsPrinting(true);
+    try {
+      const res = await apiRequest("POST", `/api/quotations/${id}/print`, {
+        displayCurrency: printCurrency,
+        exchangeRate: rate.toString(),
+      });
+      const data = await res.json();
+      setIsPrintDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "print-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations", id, "history"] });
+      window.open(data.printUrl, "_blank");
+    } catch (err: any) {
+      toast({ title: "Print failed", description: err.message || "Failed to create print record.", variant: "destructive" });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   const handleExportPDF = () => {
     window.open(`/api/quotations/${id}/export-pdf`, '_blank');
   };
@@ -353,6 +397,11 @@ export default function QuotationDetail() {
         }
         actions={
           <>
+            <Button variant="outline" size="sm" onClick={() => setIsPrintDialogOpen(true)} data-testid="button-print-quotation">
+              <Printer className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Print</span>
+              <span className="sm:hidden">Print</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={handleExportPDF}>
               <Download className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Export PDF</span>
@@ -892,6 +941,154 @@ export default function QuotationDetail() {
             </div>
           )}
         </CardContent>
+      </Card>
+
+      {/* Print Dialog */}
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              Print Quotation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Display Currency</Label>
+              <Select value={printCurrency} onValueChange={(v) => { setPrintCurrency(v); if (v === "EGP") setPrintRate("1"); }}>
+                <SelectTrigger data-testid="select-print-currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EGP">EGP — Egyptian Pound (ج.م)</SelectItem>
+                  <SelectItem value="USD">USD — US Dollar ($)</SelectItem>
+                  <SelectItem value="SAR">SAR — Saudi Riyal (ر.س)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Exchange Rate (1 {printCurrency} = ? EGP)</Label>
+              <Input
+                type="number"
+                value={printRate}
+                onChange={(e) => setPrintRate(e.target.value)}
+                disabled={printCurrency === "EGP"}
+                min="0.0001"
+                step="0.01"
+                placeholder="e.g. 50.00"
+                data-testid="input-print-rate"
+              />
+              {printCurrency === "EGP" && (
+                <p className="text-xs text-gray-500 mt-1">Rate is locked to 1 for EGP.</p>
+              )}
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 border">
+              <p className="text-sm text-gray-600 mb-1">Live converted total preview</p>
+              <p className="text-xl font-bold text-gray-900">
+                {printCurrency === "EGP"
+                  ? `${liveTotalEgp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`
+                  : printCurrency === "USD"
+                  ? `$${printLiveTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : `${printLiveTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+                }
+              </p>
+              {printCurrency !== "EGP" && (
+                <p className="text-xs text-gray-400 mt-1">Source total: {formatCurrency(liveTotalEgp)}</p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePrint}
+                disabled={isPrinting || (printCurrency !== "EGP" && (parseFloat(printRate) <= 0 || isNaN(parseFloat(printRate))))}
+                className="flex-1"
+                data-testid="button-confirm-print"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                {isPrinting ? "Preparing..." : "Print"}
+              </Button>
+              <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print History Section */}
+      <Card className="mt-8">
+        <CardHeader
+          className="cursor-pointer select-none"
+          onClick={() => setPrintHistoryOpen(o => !o)}
+          data-testid="card-header-print-history"
+        >
+          <CardTitle className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              Print History
+              {printRecords.length > 0 && (
+                <span className="ml-1 text-xs font-normal text-gray-500">({printRecords.length})</span>
+              )}
+            </span>
+            {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          </CardTitle>
+        </CardHeader>
+        {printHistoryOpen && <CardContent>
+          {printRecords.length === 0 ? (
+            <div className="text-center py-8">
+              <Printer className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No prints yet. Use the Print button to create a print record.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {printRecords.map((record: any) => {
+                const isStale = quotation.updatedAt && record.printedAt && new Date(quotation.updatedAt) > new Date(record.printedAt);
+                return (
+                  <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <span>{record.displayCurrency}</span>
+                        {record.displayCurrency !== "EGP" && (
+                          <span className="text-gray-500">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
+                        )}
+                        <span className="text-gray-700">→ {parseFloat(record.convertedTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span title={format(new Date(record.printedAt), 'MMM dd, yyyy HH:mm')}>
+                            {formatDistanceToNow(new Date(record.printedAt), { addSuffix: true })}
+                          </span>
+                        </span>
+                        {(record.printedByName || record.printedByEmail) && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {record.printedByName || record.printedByEmail}
+                          </span>
+                        )}
+                      </div>
+                      {isStale && (
+                        <div className="flex items-center gap-1 text-xs text-amber-600">
+                          <AlertTriangle className="w-3 h-3" />
+                          This document may have changed since this print.
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/quotations/print/${record.id}`, "_blank")}
+                      data-testid={`button-reprint-${record.id}`}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Reprint
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>}
       </Card>
 
       {/* Edit Item Dialog */}

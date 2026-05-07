@@ -1079,6 +1079,69 @@ export const clientCredentialsRelations = relations(clientCredentials, ({ one })
   }),
 }));
 
+// ─── Print Records ───────────────────────────────────────────────────────────
+
+export const quotationPrintRecords = pgTable("quotation_print_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quotationId: varchar("quotation_id").references(() => quotations.id, { onDelete: "cascade" }).notNull(),
+  displayCurrency: varchar("display_currency").notNull(), // EGP, USD, SAR
+  exchangeRate: decimal("exchange_rate", { precision: 12, scale: 6 }).notNull(),
+  sourceTotalEgp: decimal("source_total_egp", { precision: 12, scale: 2 }).notNull(),
+  convertedTotal: decimal("converted_total", { precision: 12, scale: 2 }).notNull(),
+  printSnapshotJson: jsonb("print_snapshot_json").notNull(),
+  printedAt: timestamp("printed_at").defaultNow().notNull(),
+  printedByUserId: varchar("printed_by_user_id").references(() => users.id),
+});
+
+export const invoicePrintRecords = pgTable("invoice_print_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").references(() => invoices.id, { onDelete: "cascade" }).notNull(),
+  displayCurrency: varchar("display_currency").notNull(), // EGP, USD, SAR
+  exchangeRate: decimal("exchange_rate", { precision: 12, scale: 6 }).notNull(),
+  sourceTotalEgp: decimal("source_total_egp", { precision: 12, scale: 2 }).notNull(),
+  convertedTotal: decimal("converted_total", { precision: 12, scale: 2 }).notNull(),
+  printSnapshotJson: jsonb("print_snapshot_json").notNull(),
+  printedAt: timestamp("printed_at").defaultNow().notNull(),
+  printedByUserId: varchar("printed_by_user_id").references(() => users.id),
+});
+
+export const insertQuotationPrintRecordSchema = createInsertSchema(quotationPrintRecords).omit({
+  id: true,
+  printedAt: true,
+});
+
+export const insertInvoicePrintRecordSchema = createInsertSchema(invoicePrintRecords).omit({
+  id: true,
+  printedAt: true,
+});
+
+export type QuotationPrintRecord = typeof quotationPrintRecords.$inferSelect;
+export type InsertQuotationPrintRecord = z.infer<typeof insertQuotationPrintRecordSchema>;
+export type InvoicePrintRecord = typeof invoicePrintRecords.$inferSelect;
+export type InsertInvoicePrintRecord = z.infer<typeof insertInvoicePrintRecordSchema>;
+
+export const quotationPrintRecordsRelations = relations(quotationPrintRecords, ({ one }) => ({
+  quotation: one(quotations, {
+    fields: [quotationPrintRecords.quotationId],
+    references: [quotations.id],
+  }),
+  printedBy: one(users, {
+    fields: [quotationPrintRecords.printedByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const invoicePrintRecordsRelations = relations(invoicePrintRecords, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoicePrintRecords.invoiceId],
+    references: [invoices.id],
+  }),
+  printedBy: one(users, {
+    fields: [invoicePrintRecords.printedByUserId],
+    references: [users.id],
+  }),
+}));
+
 // ─── Messaging System ────────────────────────────────────────────────────────
 
 export const conversations = pgTable("conversations", {

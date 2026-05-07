@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { db } from "./db";
 import { requireAuth } from "./auth";
-import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog } from "@shared/schema";
+import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
 import multer from "multer";
 import { notificationService } from "./notification-service";
@@ -2667,6 +2667,291 @@ export function setupDatabaseRoutes(app: Express) {
     } catch (error) {
       console.error("Error deleting invoice attachment:", error);
       res.status(500).json({ message: "Failed to delete attachment" });
+    }
+  });
+
+  // ─── Print Records ─────────────────────────────────────────────────────────
+
+  const VALID_CURRENCIES = ["EGP", "USD", "SAR"];
+
+  function convertAmount(egpValue: number, exchangeRate: number): number {
+    return Math.round((egpValue / exchangeRate) * 100) / 100;
+  }
+
+  // POST /api/quotations/:id/print — create print record & return printUrl
+  app.post('/api/quotations/:id/print', requireAuth, async (req: any, res) => {
+    try {
+      const quotationId = req.params.id;
+      const { displayCurrency, exchangeRate: rateStr } = req.body;
+
+      if (!VALID_CURRENCIES.includes(displayCurrency)) {
+        return res.status(400).json({ message: "displayCurrency must be one of EGP, USD, SAR" });
+      }
+
+      const exchangeRate = displayCurrency === "EGP" ? 1 : parseFloat(rateStr);
+      if (displayCurrency !== "EGP" && (isNaN(exchangeRate) || exchangeRate <= 0)) {
+        return res.status(400).json({ message: "exchangeRate must be greater than 0 for non-EGP currencies" });
+      }
+
+      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, quotationId));
+      if (!quotation) return res.status(404).json({ message: "Quotation not found" });
+
+      const [client] = quotation.clientId
+        ? await db.select().from(clients).where(eq(clients.id, quotation.clientId))
+        : [undefined];
+
+      const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+
+      const egpSubtotal = items.reduce((s, i) => s + parseFloat(i.totalPrice), 0);
+      const egpTaxAmount = parseFloat(quotation.taxAmount || "0");
+      const egpDiscountAmount = parseFloat(quotation.discountAmount || "0");
+      const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
+      const convertedTotal = convertAmount(egpGrandTotal, exchangeRate);
+
+      const snapshotItems = items.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        discount: item.discount || "0",
+        egpUnitPrice: item.unitPrice,
+        egpTotalPrice: item.totalPrice,
+        displayUnitPrice: convertAmount(parseFloat(item.unitPrice), exchangeRate).toFixed(2),
+        displayTotalPrice: convertAmount(parseFloat(item.totalPrice), exchangeRate).toFixed(2),
+      }));
+
+      const printSnapshotJson = {
+        type: "quotation",
+        quotationId,
+        quotationNumber: quotation.quotationNumber,
+        title: quotation.title,
+        description: quotation.description,
+        status: quotation.status,
+        validUntil: quotation.validUntil,
+        createdAt: quotation.createdAt,
+        notes: quotation.notes,
+        terms: quotation.terms,
+        taxRate: quotation.taxRate,
+        displayCurrency,
+        exchangeRate: exchangeRate.toString(),
+        clientName: client?.name,
+        clientEmail: client?.email,
+        clientPhone: client?.phone,
+        clientAddress: client?.address,
+        items: snapshotItems,
+        egpSubtotal: egpSubtotal.toFixed(2),
+        egpTaxAmount: egpTaxAmount.toFixed(2),
+        egpDiscountAmount: egpDiscountAmount.toFixed(2),
+        egpTotal: egpGrandTotal.toFixed(2),
+        displaySubtotal: convertAmount(egpSubtotal, exchangeRate).toFixed(2),
+        displayTaxAmount: convertAmount(egpTaxAmount, exchangeRate).toFixed(2),
+        displayDiscountAmount: convertAmount(egpDiscountAmount, exchangeRate).toFixed(2),
+        displayTotal: convertAmount(egpGrandTotal, exchangeRate).toFixed(2),
+        printDate: new Date().toISOString(),
+        companyName: process.env.COMPANY_NAME || "CompanyOS",
+      };
+
+      const [printRecord] = await db.insert(quotationPrintRecords).values({
+        quotationId,
+        displayCurrency,
+        exchangeRate: exchangeRate.toString(),
+        sourceTotalEgp: egpGrandTotal.toFixed(2),
+        convertedTotal: convertedTotal.toFixed(2),
+        printSnapshotJson,
+        printedByUserId: req.user?.id,
+      }).returning();
+
+      // Optionally append to history
+      try {
+        const actor = req.user?.email || req.user?.username || "System";
+        await db.insert(quotationHistory).values({
+          quotationId,
+          event: `Printed in ${displayCurrency}${displayCurrency !== "EGP" ? ` at rate ${exchangeRate.toFixed(2)}` : ""}`,
+          actor,
+        });
+      } catch (_) {}
+
+      res.json({
+        printRecordId: printRecord.id,
+        printUrl: `/quotations/print/${printRecord.id}`,
+      });
+    } catch (error) {
+      console.error("Error creating quotation print record:", error);
+      res.status(500).json({ message: "Failed to create print record" });
+    }
+  });
+
+  // GET /api/quotation-print-records/:id — fetch single print record
+  app.get('/api/quotation-print-records/:id', requireAuth, async (req: any, res) => {
+    try {
+      const [record] = await db.select().from(quotationPrintRecords).where(eq(quotationPrintRecords.id, req.params.id));
+      if (!record) return res.status(404).json({ message: "Print record not found" });
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching quotation print record:", error);
+      res.status(500).json({ message: "Failed to fetch print record" });
+    }
+  });
+
+  // GET /api/quotations/:id/print-records — list print records for a quotation
+  app.get('/api/quotations/:id/print-records', requireAuth, async (req: any, res) => {
+    try {
+      const records = await db.select({
+        id: quotationPrintRecords.id,
+        displayCurrency: quotationPrintRecords.displayCurrency,
+        exchangeRate: quotationPrintRecords.exchangeRate,
+        convertedTotal: quotationPrintRecords.convertedTotal,
+        printedAt: quotationPrintRecords.printedAt,
+        printedByUserId: quotationPrintRecords.printedByUserId,
+        printedByName: users.fullName,
+        printedByEmail: users.email,
+      }).from(quotationPrintRecords)
+        .leftJoin(users, eq(quotationPrintRecords.printedByUserId, users.id))
+        .where(eq(quotationPrintRecords.quotationId, req.params.id))
+        .orderBy(desc(quotationPrintRecords.printedAt));
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching quotation print records:", error);
+      res.status(500).json({ message: "Failed to fetch print records" });
+    }
+  });
+
+  // POST /api/invoices/:id/print — create print record & return printUrl
+  app.post('/api/invoices/:id/print', requireAuth, async (req: any, res) => {
+    try {
+      const invoiceId = req.params.id;
+      const { displayCurrency, exchangeRate: rateStr } = req.body;
+
+      if (!VALID_CURRENCIES.includes(displayCurrency)) {
+        return res.status(400).json({ message: "displayCurrency must be one of EGP, USD, SAR" });
+      }
+
+      const exchangeRate = displayCurrency === "EGP" ? 1 : parseFloat(rateStr);
+      if (displayCurrency !== "EGP" && (isNaN(exchangeRate) || exchangeRate <= 0)) {
+        return res.status(400).json({ message: "exchangeRate must be greater than 0 for non-EGP currencies" });
+      }
+
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+
+      const [client] = invoice.clientId
+        ? await db.select().from(clients).where(eq(clients.id, invoice.clientId))
+        : [undefined];
+
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+
+      const egpSubtotal = items.reduce((s, i) => s + parseFloat(i.totalPrice), 0);
+      const egpTaxAmount = parseFloat(invoice.taxAmount || "0");
+      const egpDiscountAmount = parseFloat(invoice.discountAmount || "0");
+      const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
+      const egpPaidAmount = parseFloat(invoice.paidAmount || "0");
+
+      const snapshotItems = items.map(item => ({
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        egpUnitPrice: item.unitPrice,
+        egpTotalPrice: item.totalPrice,
+        displayUnitPrice: convertAmount(parseFloat(item.unitPrice), exchangeRate).toFixed(2),
+        displayTotalPrice: convertAmount(parseFloat(item.totalPrice), exchangeRate).toFixed(2),
+      }));
+
+      const printSnapshotJson = {
+        type: "invoice",
+        invoiceId,
+        invoiceNumber: invoice.invoiceNumber,
+        title: invoice.title,
+        description: invoice.description,
+        status: invoice.status,
+        invoiceDate: invoice.invoiceDate,
+        dueDate: invoice.dueDate,
+        notes: invoice.notes,
+        paymentTerms: invoice.paymentTerms,
+        taxRate: invoice.taxRate,
+        qrCodeImage: invoice.qrCodeImage,
+        displayCurrency,
+        exchangeRate: exchangeRate.toString(),
+        clientName: client?.name,
+        clientEmail: client?.email,
+        clientPhone: client?.phone,
+        clientAddress: client?.address,
+        items: snapshotItems,
+        egpSubtotal: egpSubtotal.toFixed(2),
+        egpTaxAmount: egpTaxAmount.toFixed(2),
+        egpDiscountAmount: egpDiscountAmount.toFixed(2),
+        egpTotal: egpGrandTotal.toFixed(2),
+        egpPaidAmount: egpPaidAmount.toFixed(2),
+        displaySubtotal: convertAmount(egpSubtotal, exchangeRate).toFixed(2),
+        displayTaxAmount: convertAmount(egpTaxAmount, exchangeRate).toFixed(2),
+        displayDiscountAmount: convertAmount(egpDiscountAmount, exchangeRate).toFixed(2),
+        displayTotal: convertAmount(egpGrandTotal, exchangeRate).toFixed(2),
+        displayPaidAmount: convertAmount(egpPaidAmount, exchangeRate).toFixed(2),
+        printDate: new Date().toISOString(),
+        companyName: process.env.COMPANY_NAME || "CompanyOS",
+      };
+
+      const convertedTotal = convertAmount(egpGrandTotal, exchangeRate);
+
+      const [printRecord] = await db.insert(invoicePrintRecords).values({
+        invoiceId,
+        displayCurrency,
+        exchangeRate: exchangeRate.toString(),
+        sourceTotalEgp: egpGrandTotal.toFixed(2),
+        convertedTotal: convertedTotal.toFixed(2),
+        printSnapshotJson,
+        printedByUserId: req.user?.id,
+      }).returning();
+
+      // Optionally append to history
+      try {
+        const actor = req.user?.email || req.user?.username || "System";
+        await db.insert(invoiceHistory).values({
+          invoiceId,
+          event: `Printed in ${displayCurrency}${displayCurrency !== "EGP" ? ` at rate ${exchangeRate.toFixed(2)}` : ""}`,
+          actor,
+        });
+      } catch (_) {}
+
+      res.json({
+        printRecordId: printRecord.id,
+        printUrl: `/invoices/print/${printRecord.id}`,
+      });
+    } catch (error) {
+      console.error("Error creating invoice print record:", error);
+      res.status(500).json({ message: "Failed to create print record" });
+    }
+  });
+
+  // GET /api/invoice-print-records/:id — fetch single print record
+  app.get('/api/invoice-print-records/:id', requireAuth, async (req: any, res) => {
+    try {
+      const [record] = await db.select().from(invoicePrintRecords).where(eq(invoicePrintRecords.id, req.params.id));
+      if (!record) return res.status(404).json({ message: "Print record not found" });
+      res.json(record);
+    } catch (error) {
+      console.error("Error fetching invoice print record:", error);
+      res.status(500).json({ message: "Failed to fetch print record" });
+    }
+  });
+
+  // GET /api/invoices/:id/print-records — list print records for an invoice
+  app.get('/api/invoices/:id/print-records', requireAuth, async (req: any, res) => {
+    try {
+      const records = await db.select({
+        id: invoicePrintRecords.id,
+        displayCurrency: invoicePrintRecords.displayCurrency,
+        exchangeRate: invoicePrintRecords.exchangeRate,
+        convertedTotal: invoicePrintRecords.convertedTotal,
+        printedAt: invoicePrintRecords.printedAt,
+        printedByUserId: invoicePrintRecords.printedByUserId,
+        printedByName: users.fullName,
+        printedByEmail: users.email,
+      }).from(invoicePrintRecords)
+        .leftJoin(users, eq(invoicePrintRecords.printedByUserId, users.id))
+        .where(eq(invoicePrintRecords.invoiceId, req.params.id))
+        .orderBy(desc(invoicePrintRecords.printedAt));
+      res.json(records);
+    } catch (error) {
+      console.error("Error fetching invoice print records:", error);
+      res.status(500).json({ message: "Failed to fetch print records" });
     }
   });
 
