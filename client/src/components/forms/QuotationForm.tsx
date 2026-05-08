@@ -24,13 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ClientCombobox } from "@/components/ui/client-combobox";
 import { Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Client } from "@shared/schema";
@@ -144,20 +138,14 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Client *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ClientCombobox
+                      clients={clients}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select a client"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
