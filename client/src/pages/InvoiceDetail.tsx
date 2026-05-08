@@ -22,7 +22,6 @@ import { useState, useEffect, useRef } from "react";
 import { 
   ArrowLeft,
   Edit,
-  Download,
   Send,
   DollarSign,
   Calendar,
@@ -887,15 +886,7 @@ export default function InvoiceDetail() {
             data-testid="button-print-invoice"
           >
             <Printer className="w-4 h-4 mr-2" />
-            Print
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => window.open(`/api/invoices/${id}/export-pdf`, '_blank')}
-            data-testid="button-download-pdf"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            Download / Print
           </Button>
           <Button>
             <Send className="w-4 h-4 mr-2" />

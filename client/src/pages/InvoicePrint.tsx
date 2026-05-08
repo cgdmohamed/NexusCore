@@ -15,6 +15,17 @@ function formatDisplay(amount: number, currency: string): string {
   return `${formatted} ${symbol}`;
 }
 
+const STATUS_BADGE_STYLES: Record<string, { background: string; color: string }> = {
+  paid:               { background: "#dcfce7", color: "#15803d" },
+  partially_paid:     { background: "#dbeafe", color: "#2563eb" },
+  sent:               { background: "#e0f2fe", color: "#0369a1" },
+  draft:              { background: "#f3f4f6", color: "#374151" },
+  overdue:            { background: "#fee2e2", color: "#dc2626" },
+  cancelled:          { background: "#f3f4f6", color: "#6b7280" },
+  refunded:           { background: "#ede9fe", color: "#7c3aed" },
+  partially_refunded: { background: "#fef3c7", color: "#d97706" },
+};
+
 export default function InvoicePrint() {
   const { printRecordId } = useParams<{ printRecordId: string }>();
 
@@ -53,93 +64,115 @@ export default function InvoicePrint() {
   const currency = snap.displayCurrency || "EGP";
   const rate = parseFloat(snap.exchangeRate || "1");
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
+  const badgeStyle = STATUS_BADGE_STYLES[snap.status] || STATUS_BADGE_STYLES.draft;
+  const displayTotal = parseFloat(snap.displayTotal || "0");
+  const displayPaid = parseFloat(snap.displayPaidAmount || "0");
+  const balanceDue = Math.max(0, displayTotal - displayPaid);
+  const balanceColor = balanceDue > 0 ? "#dc2626" : "#16a34a";
+
+  const companyName = snap.companyName || "CompanyOS";
 
   return (
     <>
       <style>{`
+        *{box-sizing:border-box;margin:0;padding:0}
         @media print {
-          body { margin: 0; }
+          body { margin: 0; padding: 0; }
           .no-print { display: none !important; }
+          @page { margin: 1cm; }
         }
-        body { font-family: Arial, sans-serif; background: white; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #fff; }
       `}</style>
 
-      <div className="no-print bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 text-sm text-center">
+      <div className="no-print" style={{ background: "#fefce8", borderBottom: "1px solid #fde68a", color: "#92400e", padding: "8px 16px", fontSize: "13px", textAlign: "center" }}>
         Print dialog will open automatically. Use your browser&apos;s print settings to save as PDF.
       </div>
 
-      <div className="max-w-3xl mx-auto p-8 bg-white">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">INVOICE</h1>
-            <p className="text-gray-500 mt-1">{snap.invoiceNumber}</p>
-          </div>
-          <div className="text-right text-sm text-gray-600">
-            <p className="font-semibold text-gray-900 text-lg">{snap.companyName || "CompanyOS"}</p>
-            <p className="mt-1">Print date: {snap.printDate ? new Date(snap.printDate).toLocaleDateString() : ""}</p>
-          </div>
-        </div>
+      <div style={{ padding: "48px", maxWidth: "900px", margin: "0 auto", background: "#fff" }}>
 
-        {/* Currency note */}
-        <div className="bg-gray-50 border border-gray-200 rounded px-4 py-2 mb-6 text-sm text-gray-600">
-          {currency === "EGP"
-            ? "Amounts shown in EGP (Egyptian Pound)"
-            : `Exchange rate: 1 ${currency} = ${rate.toFixed(2)} EGP — Amounts shown in ${currency} (${symbol})`}
-        </div>
-
-        {/* Client & Document Info */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <p className="text-xs uppercase text-gray-400 font-semibold mb-1">Bill To</p>
-            <p className="font-semibold text-gray-900">{snap.clientName || "—"}</p>
-            {snap.clientEmail && <p className="text-sm text-gray-600">{snap.clientEmail}</p>}
-            {snap.clientPhone && <p className="text-sm text-gray-600">{snap.clientPhone}</p>}
-            {snap.clientAddress && <p className="text-sm text-gray-600">{snap.clientAddress}</p>}
+        {/* TWO-COLUMN HEADER */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "48px", paddingBottom: "32px", borderBottom: "3px solid #1a1a2e" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "3px", maxWidth: "260px" }}>
+            <img src="/assets/logo.png" alt={companyName} style={{ width: "72px", height: "72px", objectFit: "contain", marginBottom: "14px" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "#1a1a2e", marginBottom: "4px" }}>{companyName}</div>
+            {snap.companyAddress && <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.7 }}>{snap.companyAddress}</div>}
+            {snap.companyPhone && <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.7 }}>Tel: {snap.companyPhone}</div>}
+            {snap.companyEmail && <div style={{ fontSize: "11.5px", color: "#6b7280", lineHeight: 1.7 }}>{snap.companyEmail}</div>}
           </div>
-          <div className="text-right">
-            <div className="space-y-1 text-sm">
-              <div><span className="text-gray-500">Status: </span><span className="font-medium capitalize">{snap.status}</span></div>
-              {snap.invoiceDate && (
-                <div><span className="text-gray-500">Invoice Date: </span><span>{new Date(snap.invoiceDate).toLocaleDateString()}</span></div>
-              )}
-              {snap.dueDate && (
-                <div><span className="text-gray-500">Due Date: </span><span>{new Date(snap.dueDate).toLocaleDateString()}</span></div>
-              )}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "34px", fontWeight: 800, color: "#1a1a2e", letterSpacing: "3px", marginBottom: "18px" }}>INVOICE</div>
+            <table style={{ marginLeft: "auto", borderCollapse: "collapse" }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" }}>Invoice No.</td>
+                  <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", fontWeight: 600, color: "#1a1a2e" }}>{snap.invoiceNumber}</td>
+                </tr>
+                {snap.invoiceDate && (
+                  <tr>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" }}>Invoice Date</td>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", fontWeight: 600, color: "#1a1a2e" }}>{new Date(snap.invoiceDate).toLocaleDateString()}</td>
+                  </tr>
+                )}
+                {snap.dueDate && (
+                  <tr>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" }}>Due Date</td>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", fontWeight: 600, color: "#1a1a2e" }}>{new Date(snap.dueDate).toLocaleDateString()}</td>
+                  </tr>
+                )}
+                {snap.title && (
+                  <tr>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap" }}>Subject</td>
+                    <td style={{ padding: "4px 0 4px 28px", fontSize: "12px", fontWeight: 600, color: "#1a1a2e" }}>{snap.title}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <div style={{ marginTop: "14px" }}>
+              <span style={{ display: "inline-block", padding: "5px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, letterSpacing: "0.5px", background: badgeStyle.background, color: badgeStyle.color }}>
+                {(snap.status || "").toUpperCase().replace(/_/g, " ")}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Title */}
-        {snap.title && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">{snap.title}</h2>
-            {snap.description && <p className="text-sm text-gray-600 mt-1">{snap.description}</p>}
+        {/* CURRENCY NOTE */}
+        {currency !== "EGP" && (
+          <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", padding: "10px 16px", marginBottom: "28px", fontSize: "12px", color: "#6b7280" }}>
+            Exchange rate: 1 {currency} = {rate.toFixed(2)} EGP — Amounts shown in {currency} ({symbol})
           </div>
         )}
 
-        {/* Line Items */}
-        <table className="w-full mb-6" style={{ borderCollapse: "collapse" }}>
+        {/* BILL TO */}
+        <div style={{ marginBottom: "36px", padding: "20px 24px", background: "#f9fafb", borderLeft: "4px solid #1a1a2e", borderRadius: "0 6px 6px 0" }}>
+          <div style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "#9ca3af", marginBottom: "8px" }}>Bill To</div>
+          <div style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a2e", marginBottom: "4px" }}>{snap.clientName || "—"}</div>
+          {snap.clientEmail && <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.clientEmail}</div>}
+          {snap.clientPhone && <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.clientPhone}</div>}
+          {snap.clientAddress && <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.clientAddress}</div>}
+        </div>
+
+        {/* ITEMS TABLE */}
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "36px" }}>
           <thead>
-            <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
-              <th className="text-left py-2 text-sm font-semibold text-gray-700">Description</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-16">Qty</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-28">Unit Price</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-28">Total</th>
+            <tr style={{ background: "#1a1a2e" }}>
+              <th style={{ padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", color: "#fff", textAlign: "left" }}>Description</th>
+              <th style={{ padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", color: "#fff", textAlign: "right" }}>Quantity</th>
+              <th style={{ padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", color: "#fff", textAlign: "right" }}>Unit Price</th>
+              <th style={{ padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", color: "#fff", textAlign: "right" }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {(snap.items || []).map((item: any, idx: number) => (
-              <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td className="py-2 text-sm text-gray-800">
-                  <div>{item.name}</div>
-                  {item.description && <div className="text-xs text-gray-500">{item.description}</div>}
+              <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6", background: idx % 2 === 1 ? "#f9fafb" : "#fff" }}>
+                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", verticalAlign: "top" }}>
+                  <div style={{ fontWeight: 600, color: "#1a1a2e" }}>{item.name}</div>
+                  {item.description && <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "3px" }}>{item.description}</div>}
                 </td>
-                <td className="py-2 text-sm text-gray-800 text-right">{item.quantity}</td>
-                <td className="py-2 text-sm text-gray-800 text-right">
+                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>{item.quantity}</td>
+                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>
                   {formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
                 </td>
-                <td className="py-2 text-sm text-gray-800 text-right font-medium">
+                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right", fontWeight: 600 }}>
                   {formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
                 </td>
               </tr>
@@ -147,72 +180,76 @@ export default function InvoicePrint() {
           </tbody>
         </table>
 
-        {/* Totals */}
-        <div className="flex justify-end mb-8">
-          <div className="w-64">
-            <div className="flex justify-between py-1 text-sm text-gray-600">
-              <span>Subtotal</span>
-              <span>{formatDisplay(parseFloat(snap.displaySubtotal || "0"), currency)}</span>
+        {/* TOTALS */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "48px" }}>
+          <div style={{ width: "300px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", fontSize: "13px", borderBottom: "1px solid #f3f4f6" }}>
+              <span style={{ color: "#6b7280" }}>Subtotal</span>
+              <span style={{ fontWeight: 600, color: "#1a1a2e" }}>{formatDisplay(parseFloat(snap.displaySubtotal || "0"), currency)}</span>
             </div>
-            {parseFloat(snap.displayTaxAmount || "0") > 0 && (
-              <div className="flex justify-between py-1 text-sm text-gray-600">
-                <span>Tax ({snap.taxRate || 0}%)</span>
-                <span>{formatDisplay(parseFloat(snap.displayTaxAmount || "0"), currency)}</span>
-              </div>
-            )}
             {parseFloat(snap.displayDiscountAmount || "0") > 0 && (
-              <div className="flex justify-between py-1 text-sm text-gray-600">
-                <span>Discount</span>
-                <span>-{formatDisplay(parseFloat(snap.displayDiscountAmount || "0"), currency)}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", fontSize: "13px", borderBottom: "1px solid #f3f4f6" }}>
+                <span style={{ color: "#6b7280" }}>Discount</span>
+                <span style={{ fontWeight: 600, color: "#1a1a2e" }}>− {formatDisplay(parseFloat(snap.displayDiscountAmount || "0"), currency)}</span>
               </div>
             )}
-            <div className="flex justify-between py-2 text-base font-bold text-gray-900 border-t border-gray-300 mt-1">
-              <span>Total</span>
-              <span>{formatDisplay(parseFloat(snap.displayTotal || "0"), currency)}</span>
+            {parseFloat(snap.displayTaxAmount || "0") > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", fontSize: "13px", borderBottom: "1px solid #f3f4f6" }}>
+                <span style={{ color: "#6b7280" }}>VAT{snap.taxRate ? ` (${snap.taxRate}%)` : ""}</span>
+                <span style={{ fontWeight: 600, color: "#1a1a2e" }}>+ {formatDisplay(parseFloat(snap.displayTaxAmount || "0"), currency)}</span>
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", fontSize: "15px", fontWeight: 700, borderTop: "2px solid #1a1a2e", borderBottom: "2px solid #1a1a2e", marginTop: "4px" }}>
+              <span style={{ color: "#6b7280" }}>Total</span>
+              <span style={{ color: "#1a1a2e" }}>{formatDisplay(displayTotal, currency)}</span>
             </div>
-            {parseFloat(snap.displayPaidAmount || "0") > 0 && (
-              <>
-                <div className="flex justify-between py-1 text-sm text-green-700">
-                  <span>Paid</span>
-                  <span>-{formatDisplay(parseFloat(snap.displayPaidAmount || "0"), currency)}</span>
-                </div>
-                <div className="flex justify-between py-1 text-sm font-semibold text-gray-900 border-t border-gray-200 mt-1">
-                  <span>Balance Due</span>
-                  <span>{formatDisplay(Math.max(0, parseFloat(snap.displayTotal || "0") - parseFloat(snap.displayPaidAmount || "0")), currency)}</span>
-                </div>
-              </>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", fontSize: "13px", borderBottom: "1px solid #f3f4f6" }}>
+              <span style={{ color: "#6b7280" }}>Paid Amount</span>
+              <span style={{ fontWeight: 600, color: "#16a34a" }}>{formatDisplay(displayPaid, currency)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 7px", fontSize: "16px", fontWeight: 800 }}>
+              <span style={{ color: "#6b7280" }}>Balance Due</span>
+              <span style={{ color: balanceColor }}>{formatDisplay(balanceDue, currency)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* NOTES & PAYMENT TERMS */}
+        {(snap.notes || snap.paymentTerms) && (
+          <div style={{ marginBottom: "32px" }}>
+            {snap.notes && (
+              <div style={{ marginBottom: "12px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "#9ca3af", marginBottom: "6px" }}>Notes</div>
+                <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.notes}</div>
+              </div>
+            )}
+            {snap.paymentTerms && (
+              <div>
+                <div style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "#9ca3af", marginBottom: "6px" }}>Payment Terms</div>
+                <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.paymentTerms}</div>
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Notes */}
-        {snap.notes && (
-          <div className="mb-4">
-            <p className="text-xs uppercase text-gray-400 font-semibold mb-1">Notes</p>
-            <p className="text-sm text-gray-700">{snap.notes}</p>
-          </div>
-        )}
-        {snap.paymentTerms && (
-          <div className="mb-4">
-            <p className="text-xs uppercase text-gray-400 font-semibold mb-1">Payment Terms</p>
-            <p className="text-sm text-gray-700">{snap.paymentTerms}</p>
-          </div>
         )}
 
-        {/* QR Code — bottom of invoice so recipients can scan it */}
+        {/* QR CODE */}
         {snap.qrCodeImage && (
-          <div className="flex justify-end mt-6 mb-4">
-            <div className="text-center">
-              <img src={snap.qrCodeImage} alt="QR Code" className="w-28 h-28 object-contain" />
-              <p className="text-xs text-gray-400 mt-1">Scan to verify</p>
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "32px" }}>
+            <img src={snap.qrCodeImage} alt="QR Code" style={{ width: "100px", height: "100px", objectFit: "contain", border: "1px solid #e5e7eb", borderRadius: "6px", padding: "4px" }} />
           </div>
         )}
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 pt-4 mt-4 text-xs text-gray-400 text-center">
-          This is a print snapshot. Original amounts are stored in EGP.
+        {/* FOOTER */}
+        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "24px", fontSize: "11px", color: "#9ca3af", lineHeight: 1.7 }}>
+          <p>
+            {currency === "EGP"
+              ? "Payment is due within 30 days of the invoice date. All amounts are in Egyptian Pounds (EGP) and include applicable VAT."
+              : `Payment is due within 30 days of the invoice date. Amounts shown in ${currency} at a rate of ${rate.toFixed(2)} EGP per ${currency}. Original amounts are recorded in EGP.`}
+          </p>
+          <br />
+          <p>Thank you for your business with <strong>{companyName}</strong>. We appreciate your continued partnership.</p>
         </div>
+
       </div>
     </>
   );
