@@ -1,0 +1,25 @@
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [nexus-app](ids: [ 0 ])
+[PM2] [nexus-app](0) ✓
+┌────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ nexus-app    │ default     │ 1.0.0   │ fork    │ 2640443  │ 0s     │ 8    │ online    │ 0%       │ 26.8mb   │ cre… │ disabled │
+└────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 list
+┌────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ nexus-app    │ default     │ 1.0.0   │ fork    │ 2640580  │ 0s     │ 20   │ online    │ 100%     │ 104.7mb  │ cre… │ disabled │
+└────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 flush
+[PM2] Flushing /home/creativecode-nexus/.pm2/pm2.log
+[PM2] Flushing:
+[PM2] /home/creativecode-nexus/.pm2/logs/nexus-app-out.log
+[PM2] /home/creativecode-nexus/.pm2/logs/nexus-app-error.log
+[PM2] Logs flushed
+creativecode-nexus@testcceg:~/htdocs/nexus.creativecode.com.eg$ pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/creativecode-nexus/.pm2/pm2.log last 15 lines:
+/home/creativecode-nexus/.pm2/logs/nexus-app-out.log last 15 lines:
+/home/creativecode-nexus/.pm2/logs/nexus-app-error.log last 15 lines:
