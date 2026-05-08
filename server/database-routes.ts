@@ -424,10 +424,10 @@ export function setupDatabaseRoutes(app: Express) {
         total: sql<number>`COALESCE(SUM(CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
       }).from(invoices).where(ne(invoices.status, 'cancelled'));
 
-      // Pending invoices amount
+      // Pending invoices amount — all unpaid balances excluding cancelled invoices
       const [pendingResult] = await db.select({ 
-        total: sql<number>`COALESCE(SUM(CAST(${invoices.amount} AS DECIMAL) - CAST(${invoices.paidAmount} AS DECIMAL)), 0)` 
-      }).from(invoices).where(eq(invoices.status, 'pending'));
+        total: sql<number>`COALESCE(SUM(GREATEST(CAST(${invoices.amount} AS DECIMAL) - CAST(${invoices.paidAmount} AS DECIMAL), 0)), 0)` 
+      }).from(invoices).where(ne(invoices.status, 'cancelled'));
 
       // Total Expenses (approved)
       const [expensesResult] = await db.select({ 
