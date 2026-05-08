@@ -42,7 +42,7 @@ export function DataExportButton({ data, filename, type }: DataExportButtonProps
           }).join(',')
         );
         
-        content = [csvHeaders, ...csvRows].join('\n');
+        content = '\uFEFF' + [csvHeaders, ...csvRows].join('\n');
         mimeType = 'text/csv';
       } else {
         content = JSON.stringify(data, null, 2);
