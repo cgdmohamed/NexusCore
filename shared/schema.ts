@@ -794,8 +794,8 @@ export const expenses = pgTable("expenses", {
   paymentReference: varchar("payment_reference"), // reference number for bank transfers, check numbers, etc.
   status: varchar("status").notNull().default("pending"), // pending, paid, overdue, cancelled
   paidDate: timestamp("paid_date"),
-  attachmentUrl: varchar("attachment_url").notNull(), // Mandatory attachment
-  attachmentType: varchar("attachment_type").notNull(), // receipt, invoice, bank_statement, photo
+  attachmentUrl: varchar("attachment_url"), // Optional attachment
+  attachmentType: varchar("attachment_type"), // receipt, invoice, bank_statement, photo
   notes: text("notes"),
   // Optional project/client linking for internal reporting
   relatedProjectId: varchar("related_project_id").references(() => projects.id, { onDelete: "set null" }),
@@ -823,7 +823,7 @@ export const expensePayments = pgTable("expense_payments", {
   paymentDate: timestamp("payment_date").notNull(),
   paymentMethod: varchar("payment_method").notNull(),
   paymentReference: varchar("payment_reference"),
-  attachmentUrl: varchar("attachment_url").notNull(),
+  attachmentUrl: varchar("attachment_url"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
