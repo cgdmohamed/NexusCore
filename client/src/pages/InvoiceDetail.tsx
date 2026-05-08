@@ -739,7 +739,7 @@ export default function InvoiceDetail() {
       case 'sent': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      case 'cancelled': return 'bg-gray-100 text-gray-600 border-gray-200';
       case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -753,7 +753,7 @@ export default function InvoiceDetail() {
       case 'sent': return <FileText className="w-4 h-4" />;
       case 'draft': return <Edit className="w-4 h-4" />;
       case 'overdue': return <AlertCircle className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
+      case 'cancelled': return <Ban className="w-4 h-4" />;
       case 'refunded': return <RotateCcw className="w-4 h-4" />;
       case 'partially_refunded': return <RefreshCw className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;

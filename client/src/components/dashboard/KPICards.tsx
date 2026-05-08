@@ -35,14 +35,19 @@ export function KPICards() {
 
   // Calculate real-time data from actual API responses
   const realTimeStats = {
-    totalRevenue: invoices.reduce((sum: number, inv: any) => sum + parseFloat(inv.paidAmount || 0), 0),
+    totalRevenue: invoices.reduce((sum: number, inv: any) => {
+      if (inv.status === 'cancelled') return sum;
+      return sum + parseFloat(inv.paidAmount || 0);
+    }, 0),
     activeClients: clients.filter((client: any) => client.status === 'active').length,
     pendingRevenue: invoices.reduce((sum: number, inv: any) => {
+      if (inv.status === 'cancelled') return sum;
       const remaining = parseFloat(inv.amount || 0) - parseFloat(inv.paidAmount || 0);
       return sum + (remaining > 0 ? remaining : 0);
     }, 0),
     overdueInvoices: invoices.filter((inv: any) => 
-      inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid')
+      inv.status !== 'cancelled' &&
+      (inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid'))
     ).length
   };
 
