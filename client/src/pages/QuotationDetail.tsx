@@ -799,7 +799,8 @@ export default function QuotationDetail() {
             </div>
           ) : (
             <>
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[580px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
@@ -872,6 +873,7 @@ export default function QuotationDetail() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               
               {/* Quotation Summary */}
               <div className="mt-6 bg-gray-50 p-6 rounded-lg">

@@ -268,7 +268,8 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
+        <div className="overflow-x-auto">
+        <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow>
               <TableHead>Quotation</TableHead>
@@ -322,6 +323,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
             ))}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   );

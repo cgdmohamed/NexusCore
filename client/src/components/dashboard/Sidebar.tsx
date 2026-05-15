@@ -151,7 +151,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         {isMobileDrawer ? (
           <button
             onClick={onMobileClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
@@ -159,7 +159,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         ) : (
           <button
             onClick={toggle}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}

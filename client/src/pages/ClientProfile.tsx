@@ -819,17 +819,17 @@ export default function ClientProfile() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="details" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="quotations">Quotations</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
-          <TabsTrigger value="credit">Credit History</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="credentials" data-testid="tab-credentials" className="flex items-center gap-1">
+        <TabsList className="flex w-full overflow-x-auto justify-start gap-0 h-auto flex-nowrap pb-px">
+          <TabsTrigger value="details" className="shrink-0 whitespace-nowrap">Details</TabsTrigger>
+          <TabsTrigger value="quotations" className="shrink-0 whitespace-nowrap">Quotations</TabsTrigger>
+          <TabsTrigger value="invoices" className="shrink-0 whitespace-nowrap">Invoices</TabsTrigger>
+          <TabsTrigger value="credit" className="shrink-0 whitespace-nowrap">Credit History</TabsTrigger>
+          <TabsTrigger value="projects" className="shrink-0 whitespace-nowrap">Projects</TabsTrigger>
+          <TabsTrigger value="credentials" data-testid="tab-credentials" className="shrink-0 whitespace-nowrap flex items-center gap-1">
             <KeyRound className="w-3.5 h-3.5" />
             Vault
           </TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="notes" className="shrink-0 whitespace-nowrap">Notes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -883,7 +883,8 @@ export default function ClientProfile() {
               {quotations.length === 0 ? (
                 <p className="text-gray-600 text-center py-8">No quotations found for this client.</p>
               ) : (
-                <Table>
+                <div className="overflow-x-auto">
+                <Table className="min-w-[520px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Quotation #</TableHead>
@@ -917,6 +918,7 @@ export default function ClientProfile() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -931,7 +933,8 @@ export default function ClientProfile() {
               {invoices.length === 0 ? (
                 <p className="text-gray-600 text-center py-8">No invoices found for this client.</p>
               ) : (
-                <Table>
+                <div className="overflow-x-auto">
+                <Table className="min-w-[480px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Invoice #</TableHead>
@@ -967,6 +970,7 @@ export default function ClientProfile() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -992,7 +996,8 @@ export default function ClientProfile() {
                   <p>No credit transactions found for this client.</p>
                 </div>
               ) : (
-                <Table>
+                <div className="overflow-x-auto">
+                <Table className="min-w-[520px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
@@ -1037,6 +1042,7 @@ export default function ClientProfile() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -475,7 +475,7 @@ export default function Tasks() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="priority"
@@ -689,7 +689,7 @@ export default function Tasks() {
               </div>
             ) : (
               <Card className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[560px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Title</TableHead>
@@ -786,7 +786,7 @@ export default function Tasks() {
           
           {selectedTask && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Status</Label>
                   <Badge className={cn(statusColors[selectedTask.status as keyof typeof statusColors])}>
@@ -808,7 +808,7 @@ export default function Tasks() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {selectedTask.assignedToEmployee && (
                   <div>
                     <Label>Assigned To</Label>
@@ -993,7 +993,7 @@ export default function Tasks() {
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
                   name="priority"

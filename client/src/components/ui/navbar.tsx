@@ -46,6 +46,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const currentUser = user as UserType | undefined;
 
@@ -164,12 +165,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-3 md:px-6 py-3 md:py-4">
-      <div className="flex items-center gap-2 md:gap-0 md:justify-between">
+    <nav className="bg-white border-b border-gray-200">
+      <div className="px-3 md:px-6 py-3 md:py-4 flex items-center gap-2 md:gap-0 md:justify-between">
 
         {/* Hamburger — mobile only */}
         <button
-          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          className="md:hidden flex-shrink-0 p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
           onClick={onMenuClick}
           aria-label="Open menu"
         >
@@ -258,7 +259,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         {/* Right Side Actions */}
         <div className="flex items-center gap-1 md:gap-4 rtl:space-x-reverse ml-auto md:ml-0">
           {/* Search icon — mobile only */}
-          <Button variant="ghost" size="sm" className="md:hidden h-9 w-9 p-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden h-9 w-9 p-0"
+            aria-label="Open search"
+            onClick={() => setShowMobileSearch((prev) => !prev)}
+          >
             <Search className="h-4 w-4" />
           </Button>
 
@@ -313,6 +320,59 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Mobile search overlay */}
+      {showMobileSearch && (
+        <div className="md:hidden border-t border-gray-100 px-3 py-2 bg-white relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder={t('common.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearchResults(e.target.value.length > 0);
+              }}
+              className="pl-9 w-full"
+              autoFocus
+              onBlur={() => setTimeout(() => { setShowSearchResults(false); setShowMobileSearch(false); }, 200)}
+            />
+          </div>
+          {showSearchResults && searchResults.length > 0 && (
+            <Card className="absolute left-3 right-3 top-full mt-1 z-50 shadow-lg">
+              <CardContent className="p-2">
+                {searchResults.map((result) => {
+                  const Icon = getTypeIcon(result.type);
+                  return (
+                    <Link key={result.id} href={result.href}>
+                      <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
+                        <Icon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                          {result.subtitle && (
+                            <p className="text-xs text-gray-500 truncate">{result.subtitle}</p>
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          {t(`search.${result.type}s`)}
+                        </Badge>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+          {showSearchResults && searchQuery.length >= 2 && searchResults.length === 0 && (
+            <Card className="absolute left-3 right-3 top-full mt-1 z-50 shadow-lg">
+              <CardContent className="p-4 text-center">
+                <p className="text-sm text-gray-500">{t('common.noResults')}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

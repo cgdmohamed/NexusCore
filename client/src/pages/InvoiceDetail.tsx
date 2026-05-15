@@ -1368,7 +1368,8 @@ export default function InvoiceDetail() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded-md border">
+              <div className="overflow-x-auto">
+              <div className="rounded-md border min-w-[560px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1422,6 +1423,7 @@ export default function InvoiceDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
               </div>
             )}
 
@@ -1733,7 +1735,8 @@ export default function InvoiceDetail() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded-md border">
+              <div className="overflow-x-auto">
+              <div className="rounded-md border min-w-[500px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1770,6 +1773,7 @@ export default function InvoiceDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
               </div>
             )}
           </CardContent>

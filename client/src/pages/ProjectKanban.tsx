@@ -560,7 +560,7 @@ export default function ProjectKanban() {
               <Label htmlFor="description">{t("kanban.description_label")}</Label>
               <Textarea id="description" {...form.register("description")} placeholder={t("kanban.task_desc_placeholder")} rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t("kanban.priority")}</Label>
                 <Select
@@ -625,7 +625,7 @@ export default function ProjectKanban() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-full">
                   <User className="h-4 w-4 text-slate-600" />

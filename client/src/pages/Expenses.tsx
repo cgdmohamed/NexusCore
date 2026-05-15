@@ -187,7 +187,7 @@ export default function Expenses() {
       
       <div className="p-3 md:p-6 space-y-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -274,7 +274,7 @@ export default function Expenses() {
                       Add Expense
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Create New Expense</DialogTitle>
                     </DialogHeader>
