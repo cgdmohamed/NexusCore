@@ -51,6 +51,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/dashboard/Header";
+import { DataExportButton } from "@/components/DataExportButton";
 import { useTranslation } from "@/lib/i18n";
 
 // Task form schema - simplified for existing database
@@ -66,19 +67,19 @@ const taskFormSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
-// Priority colors
+// Priority colors (outline badge style — matches Quotations/Invoices)
 const priorityColors = {
-  low: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300", 
-  high: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  low: "bg-green-100 text-green-800 border-green-200",
+  medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  high: "bg-red-100 text-red-800 border-red-200",
 };
 
-// Status colors  
+// Status colors (outline badge style — matches Quotations/Invoices)
 const statusColors = {
-  pending: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-  in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  completed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  pending: "bg-gray-100 text-gray-800 border-gray-200",
+  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
 };
 
 export default function Tasks() {
@@ -105,14 +106,33 @@ export default function Tasks() {
   });
   
   // Filter tasks based on current filters
-  const tasks = (allTasks as any[]).filter((task: any) => {
+  const filteredTasksBase = (allTasks as any[]).filter((task: any) => {
     const matchesSearch = !searchTerm || 
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
-    
     return matchesSearch && matchesStatus && matchesPriority;
+  });
+
+  const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+  const tasks = [...filteredTasksBase].sort((a, b) => {
+    let aVal: number | string;
+    let bVal: number | string;
+    if (sortBy === "priority") {
+      aVal = priorityOrder[a.priority as string] ?? 3;
+      bVal = priorityOrder[b.priority as string] ?? 3;
+    } else if (sortBy === "dueDate" || sortBy === "createdAt") {
+      aVal = a[sortBy] ? new Date(a[sortBy] as string).getTime() : 0;
+      bVal = b[sortBy] ? new Date(b[sortBy] as string).getTime() : 0;
+    } else {
+      aVal = String(a[sortBy] ?? "").toLowerCase();
+      bVal = String(b[sortBy] ?? "").toLowerCase();
+    }
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
   });
 
   const {
@@ -346,22 +366,24 @@ export default function Tasks() {
       <div className="p-3 md:p-6 space-y-6">
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {[
-              { label: "Total Tasks",   value: stats.totalTasks || 0,                           icon: Briefcase,   accent: "border-t-blue-500",   iconColor: "text-blue-500" },
-              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,            icon: CheckCircle2, accent: "border-t-green-500", iconColor: "text-green-500" },
-              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,          icon: Clock,       accent: "border-t-yellow-500", iconColor: "text-yellow-500" },
-              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,              icon: AlertCircle, accent: "border-t-orange-500", iconColor: "text-orange-500" },
-              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,               icon: AlertCircle, accent: "border-t-red-500",    iconColor: "text-red-500" },
-              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length,   icon: Users,       accent: "border-t-gray-400",   iconColor: "text-gray-400" },
-            ].map(({ label, value, icon: Icon, accent, iconColor }) => (
-              <Card key={label} className={`border-t-2 ${accent}`}>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-gray-500 leading-tight">{label}</p>
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
+              { label: "Total Tasks",   value: stats.totalTasks || 0,                         icon: Briefcase,    iconColor: "text-blue-600" },
+              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,          icon: CheckCircle2, iconColor: "text-green-600" },
+              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-yellow-600" },
+              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-orange-600" },
+              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-red-600" },
+              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-gray-600" },
+            ].map(({ label, value, icon: Icon, iconColor }) => (
+              <Card key={label}>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <Icon className={`h-4 w-4 ${iconColor}`} />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">{label}</p>
+                      <p className="text-2xl font-bold">{value}</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-text">{value}</p>
                 </CardContent>
               </Card>
             ))}
@@ -370,20 +392,83 @@ export default function Tasks() {
 
         {/* Controls and Filters */}
         <Card>
-          <CardContent className="p-4 space-y-3">
-            {/* Title row + actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <h2 className="text-base font-semibold text-text">Task Management</h2>
-              <div className="flex items-center gap-2 flex-wrap">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Task Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('common.search')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
+                    <SelectValue placeholder="All Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priority</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                  const parts = value.split('-');
+                  const order = parts.pop() as "asc" | "desc";
+                  setSortBy(parts.join('-'));
+                  setSortOrder(order);
+                }}>
+                  <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                    <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                    <SelectItem value="title-asc">Title A-Z</SelectItem>
+                    <SelectItem value="title-desc">Title Z-A</SelectItem>
+                    <SelectItem value="priority-asc">Priority (High first)</SelectItem>
+                    <SelectItem value="dueDate-asc">Due Date (Earliest)</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Button
+                  variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto"
-                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="shrink-0"
+                  onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('common.create')} Task
+                  <RotateCcw className="h-4 w-4 mr-1.5" />
+                  Clear
                 </Button>
-                <div className="flex border rounded-md ml-auto sm:ml-0">
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-sm text-gray-600">
+                Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+                {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && " matching your filters"}
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex border rounded-md">
                   <Button
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="sm"
@@ -401,56 +486,12 @@ export default function Tasks() {
                     <List className="h-3.5 w-3.5" />
                   </Button>
                 </div>
+                <DataExportButton data={tasks} filename="tasks-export" type="csv" />
+                <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('common.create')} Task
+                </Button>
               </div>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('common.search')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            {/* Filters row */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none h-9">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none h-9">
-                  <SelectValue placeholder="All Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 shrink-0"
-                onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
-              >
-                <RotateCcw className="h-4 w-4 mr-1.5" />
-                Clear
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -630,18 +671,14 @@ export default function Tasks() {
                           <h3 className="text-base font-semibold text-text leading-snug mb-1.5 truncate">{task.title}</h3>
                           <div className="flex flex-wrap items-center gap-1.5 mb-2">
                             <Badge
-                              variant="secondary"
+                              variant="outline"
                               className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
                             >
                               {task.status.replace("_", " ").toUpperCase()}
                             </Badge>
                             <Badge
                               variant="outline"
-                              className={`text-xs ${
-                                task.priority === 'high' ? 'text-red-600 border-red-200' :
-                                task.priority === 'medium' ? 'text-yellow-600 border-yellow-200' :
-                                'text-gray-600 border-gray-200'
-                              }`}
+                              className={`${priorityColors[task.priority as keyof typeof priorityColors]} text-xs`}
                             >
                               {task.priority.toUpperCase()}
                             </Badge>
@@ -729,21 +766,17 @@ export default function Tasks() {
                       <TableRow key={task.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="outline"
                             className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
                           >
                             {task.status.replace("_", " ").toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              task.priority === 'high' ? 'text-red-600 border-red-200' :
-                              task.priority === 'medium' ? 'text-yellow-600 border-yellow-200' :
-                              'text-gray-600 border-gray-200'
-                            }`}
+                          <Badge
+                            variant="outline"
+                            className={`${priorityColors[task.priority as keyof typeof priorityColors]} text-xs`}
                           >
                             {task.priority.toUpperCase()}
                           </Badge>
@@ -822,13 +855,13 @@ export default function Tasks() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Status</Label>
-                  <Badge className={cn(statusColors[selectedTask.status as keyof typeof statusColors])}>
+                  <Badge variant="outline" className={cn(statusColors[selectedTask.status as keyof typeof statusColors])}>
                     {selectedTask.status.replace('_', ' ')}
                   </Badge>
                 </div>
                 <div>
                   <Label>Priority</Label>
-                  <Badge className={cn(priorityColors[selectedTask.priority as keyof typeof priorityColors])}>
+                  <Badge variant="outline" className={cn(priorityColors[selectedTask.priority as keyof typeof priorityColors])}>
                     {selectedTask.priority}
                   </Badge>
                 </div>

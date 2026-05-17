@@ -1,8 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { DataExportButton } from "@/components/DataExportButton";
 import { usePagination } from "@/hooks/use-pagination";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Search, Grid, List, Edit, Trash2, Filter, Package } from "lucide-react";
+import { Loader2, Plus, Search, Grid, List, Edit, Trash2, Filter, Package, DollarSign, CheckCircle, Tag } from "lucide-react";
+import { Header } from "@/components/dashboard/Header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +58,8 @@ export default function Services() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
@@ -174,17 +186,37 @@ export default function Services() {
     }
   };
 
-  // Filter services based on search and category
+  // Filter and sort services
   const allServices = servicesData || [];
-  const filteredServices = allServices.filter((service: Service) => {
-    const matchesSearch = !search || 
-      service.name?.toLowerCase().includes(search.toLowerCase()) ||
-      service.description?.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesCategory = !selectedCategory || service.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const filteredServices = useMemo(() => {
+    const filtered = allServices.filter((service: Service) => {
+      const matchesSearch = !search || 
+        service.name?.toLowerCase().includes(search.toLowerCase()) ||
+        service.description?.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = !selectedCategory || service.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    type ServiceStrKey = "name" | "category";
+    return [...filtered].sort((a: Service, b: Service) => {
+      let aVal: number | string;
+      let bVal: number | string;
+      if (sortBy === "defaultPrice") {
+        aVal = parseFloat(a.defaultPrice ?? "0") || 0;
+        bVal = parseFloat(b.defaultPrice ?? "0") || 0;
+      } else if (sortBy === "createdAt") {
+        aVal = new Date(a.createdAt).getTime();
+        bVal = new Date(b.createdAt).getTime();
+      } else {
+        const key = sortBy as ServiceStrKey;
+        aVal = String(a[key] ?? "").toLowerCase();
+        bVal = String(b[key] ?? "").toLowerCase();
+      }
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [allServices, search, selectedCategory, sortBy, sortOrder]);
 
   const {
     currentPage: servicesPage,
@@ -218,239 +250,273 @@ export default function Services() {
     .filter((category: string | undefined): category is string => Boolean(category));
   const categories = Array.from(new Set([...defaultCategories, ...existingCategories]));
 
-  return (
-    <div className="p-3 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{t('nav.services')}</h1>
-          <p className="text-muted-foreground">
-            {t('services.subtitle')}
-          </p>
-        </div>
-        <Dialog 
-          open={isCreateDialogOpen || !!editingService} 
-          onOpenChange={(open) => {
-            if (!open) {
-              setIsCreateDialogOpen(false);
-              setEditingService(null);
-              form.reset();
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t('services.add_service')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? t('services.edit_service') : t('services.add_service')}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('services.name')} *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder={t('services.name_placeholder')} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('services.category')}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('services.select_category')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category || ""}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="defaultPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('services.default_price')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            type="number" 
-                            step="0.01"
-                            placeholder="0.00" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('services.description')}</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder={t('services.description_placeholder')} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsCreateDialogOpen(false);
-                      setEditingService(null);
-                      form.reset();
-                    }}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
-                  >
-                    {createServiceMutation.isPending || updateServiceMutation.isPending && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    )}
-                    {editingService ? t('common.save') : t('common.create')}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('services.total_services')}</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalServices}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('services.active_services')}</CardTitle>
-            <Package className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeServices}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('services.categories')}</CardTitle>
-            <Filter className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {categories.length}
+  const serviceDialog = (
+    <Dialog
+      open={isCreateDialogOpen || !!editingService}
+      onOpenChange={(open) => {
+        if (!open) {
+          setIsCreateDialogOpen(false);
+          setEditingService(null);
+          form.reset();
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {editingService ? t('services.edit_service') : t('services.add_service')}
+          </DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('services.name')} *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder={t('services.name_placeholder')} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('services.avg_price')}</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(allServices.length > 0 ? 
-                (allServices
-                  .filter((s: Service) => s.defaultPrice)
-                  .reduce((sum: number, s: Service) => sum + parseFloat(s.defaultPrice || '0'), 0) / 
-                 allServices.filter((s: Service) => s.defaultPrice).length
-                ) : 0)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('common.search_and_filters')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder={t('services.search_placeholder')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('services.category')}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('services.select_category')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category || ""}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="defaultPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('services.default_price')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder={t('services.all_categories')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('services.all_categories')}</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category || ""}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('services.description')}</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder={t('services.description_placeholder')} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  setEditingService(null);
+                  form.reset();
+                }}
               >
-                <Grid className="h-4 w-4" />
+                {t('common.cancel')}
               </Button>
               <Button
-                variant={viewMode === "table" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("table")}
+                type="submit"
+                disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
               >
-                <List className="h-4 w-4" />
+                {(createServiceMutation.isPending || updateServiceMutation.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                {editingService ? t('common.save') : t('common.create')}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <div className="space-y-6">
+      <Header
+        title={t('nav.services')}
+        subtitle={t('services.subtitle')}
+        hideExport={true}
+      />
+      {serviceDialog}
+
+      <div className="p-3 md:p-6 space-y-6">
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Package className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('services.total_services')}</p>
+                <p className="text-2xl font-bold">{totalServices}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('services.active_services')}</p>
+                <p className="text-2xl font-bold">{activeServices}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Tag className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('services.categories')}</p>
+                <p className="text-2xl font-bold">{categories.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">{t('services.avg_price')}</p>
+                <p className="text-xl font-bold">
+                  {formatCurrency(allServices.length > 0 ?
+                    (allServices
+                      .filter((s: Service) => s.defaultPrice)
+                      .reduce((sum: number, s: Service) => sum + parseFloat(s.defaultPrice || '0'), 0) /
+                     (allServices.filter((s: Service) => s.defaultPrice).length || 1)
+                    ) : 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Controls and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Services Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder={t('services.search_placeholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 w-full"
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder={t('services.all_categories')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('services.all_categories')}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category || ""}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                const parts = value.split("-");
+                const order = parts.pop() as "asc" | "desc";
+                setSortBy(parts.join("-"));
+                setSortOrder(order);
+              }}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name-asc">Name A–Z</SelectItem>
+                  <SelectItem value="name-desc">Name Z–A</SelectItem>
+                  <SelectItem value="defaultPrice-asc">Price (Low–High)</SelectItem>
+                  <SelectItem value="defaultPrice-desc">Price (High–Low)</SelectItem>
+                  <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                  <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-sm text-gray-600">
+              Showing {filteredServices.length} of {totalServices} services
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="rounded-r-none h-8 px-2.5"
+                >
+                  <Grid className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant={viewMode === "table" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("table")}
+                  className="rounded-l-none h-8 px-2.5"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <DataExportButton data={filteredServices} filename="services-export" type="csv" />
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('services.add_service')}
               </Button>
             </div>
           </div>
@@ -479,43 +545,40 @@ export default function Services() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginatedServices.map((service: Service) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {service.name}
-                    </CardTitle>
+                    <CardTitle className="text-lg">{service.name}</CardTitle>
                     {service.category && (
-                      <Badge variant="secondary" className="mt-2">
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 mt-2">
                         {service.category}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={service.isActive ? "default" : "secondary"}>
-                      {service.isActive ? t('common.active') : t('common.inactive')}
-                    </Badge>
-                  </div>
+                  <Badge
+                    variant="outline"
+                    className={service.isActive
+                      ? "bg-green-100 text-green-800 border-green-200"
+                      : "bg-gray-100 text-gray-800 border-gray-200"}
+                  >
+                    {service.isActive ? t('common.active') : t('common.inactive')}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-2">
                   {service.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-gray-600 line-clamp-2">
                       {service.description}
                     </p>
                   )}
                   {service.defaultPrice && (
-                    <p className="font-semibold text-green-600">
+                    <p className="font-semibold text-gray-900">
                       {formatCurrency(service.defaultPrice)}
                     </p>
                   )}
                   <div className="flex justify-end space-x-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(service)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(service)}>
                       <Edit className="h-4 w-4 mr-1" />
                       {t('common.edit')}
                     </Button>
@@ -545,87 +608,81 @@ export default function Services() {
         </>
       ) : (
         <>
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-left p-4 font-medium">{t('services.name')}</th>
-                    <th className="text-left p-4 font-medium">{t('services.category')}</th>
-                    <th className="text-left p-4 font-medium">{t('services.price')}</th>
-                    <th className="text-left p-4 font-medium">{t('common.status')}</th>
-                    <th className="text-left p-4 font-medium">{t('common.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedServices.map((service: Service) => (
-                    <tr key={service.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium">
-                            {service.name}
-                          </div>
-                          {service.description && (
-                            <div className="text-sm text-muted-foreground line-clamp-1">
-                              {service.description}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        {service.category && (
-                          <Badge variant="secondary">{service.category}</Badge>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {service.defaultPrice && (
-                          <span className="font-semibold text-green-600">
-                            {formatCurrency(service.defaultPrice)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Badge variant={service.isActive ? "default" : "secondary"}>
-                          {service.isActive ? t('common.active') : t('common.inactive')}
-                        </Badge>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(service)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(service)}
-                            disabled={deleteServiceMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          <TablePagination
-            currentPage={servicesPage}
-            totalPages={servicesTotalPages}
-            pageSize={servicesPageSize}
-            totalItems={filteredServices.length}
-            onPageChange={setServicesPage}
-            onPageSizeChange={setServicesPageSize}
-          />
-          </CardContent>
-        </Card>
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead>{t('services.name')}</TableHead>
+                <TableHead>{t('services.category')}</TableHead>
+                <TableHead>{t('services.price')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{t('common.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedServices.map((service: Service) => (
+                <TableRow key={service.id} className="hover:bg-gray-50">
+                  <TableCell>
+                    <div>
+                      <div className="font-medium text-gray-900">{service.name}</div>
+                      {service.description && (
+                        <div className="text-sm text-gray-500 line-clamp-1">{service.description}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {service.category && (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                        {service.category}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {service.defaultPrice ? formatCurrency(service.defaultPrice) : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={service.isActive
+                        ? "bg-green-100 text-green-800 border-green-200"
+                        : "bg-gray-100 text-gray-800 border-gray-200"}
+                    >
+                      {service.isActive ? t('common.active') : t('common.inactive')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(service)}>
+                        <Edit className="h-3 w-3 mr-1" />
+                        {t('common.edit')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(service)}
+                        disabled={deleteServiceMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        {t('common.delete')}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <TablePagination
+          currentPage={servicesPage}
+          totalPages={servicesTotalPages}
+          pageSize={servicesPageSize}
+          totalItems={filteredServices.length}
+          onPageChange={setServicesPage}
+          onPageSizeChange={setServicesPageSize}
+        />
         </>
       )}
+      </div>
     </div>
   );
 }

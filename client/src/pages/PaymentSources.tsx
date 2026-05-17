@@ -1,6 +1,7 @@
 import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataExportButton } from "@/components/DataExportButton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -159,21 +160,30 @@ export default function PaymentSources() {
     }
   };
 
+  const getAccountTypeColor = (type: string) => {
+    switch (type) {
+      case 'cash': return 'bg-green-100 text-green-800 border-green-200';
+      case 'bank': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'wallet': return 'bg-purple-100 text-purple-800 border-purple-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   const getAccountTypeBadge = (type: string) => {
-    const variants = {
-      cash: "default",
-      bank: "secondary", 
-      wallet: "outline"
-    } as const;
-    
     return (
-      <Badge variant={variants[type as keyof typeof variants] || "outline"}>
+      <Badge variant="outline" className={getAccountTypeColor(type)}>
         <span className="flex items-center gap-1">
           {getAccountTypeIcon(type)}
           {type.charAt(0).toUpperCase() + type.slice(1)}
         </span>
       </Badge>
     );
+  };
+
+  const getStatusColor = (isActive: boolean) => {
+    return isActive
+      ? 'bg-green-100 text-green-800 border-green-200'
+      : 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const toggleSort = (field: string) => {
@@ -267,75 +277,102 @@ export default function PaymentSources() {
           </Card>
         </div>
 
-        {/* Filters and Controls */}
-        <div className="flex flex-col gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search payment sources..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Account Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="bank">Bank</SelectItem>
-                  <SelectItem value="wallet">Wallet</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Controls and Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Payment Sources Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search payment sources..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Account Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
+                    <SelectItem value="wallet">Wallet</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-36">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-36">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                  const parts = value.split('-');
+                  const order = parts.pop() as "asc" | "desc";
+                  setSortBy(parts.join('-'));
+                  setSortOrder(order);
+                }}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name-asc">Name A-Z</SelectItem>
+                    <SelectItem value="name-desc">Name Z-A</SelectItem>
+                    <SelectItem value="currentBalance-desc">Highest Balance</SelectItem>
+                    <SelectItem value="currentBalance-asc">Lowest Balance</SelectItem>
+                    <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                    <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}
-              >
-                {viewMode === "table" ? "Card View" : "Table View"}
-              </Button>
-              
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Add Payment Source</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Add New Payment Source</DialogTitle>
-                  </DialogHeader>
-                  <PaymentSourceForm onClose={() => setIsCreateDialogOpen(false)} />
-                </DialogContent>
-              </Dialog>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Showing {filteredSources.length} of {paymentSources.length} payment sources
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}
+                >
+                  {viewMode === "table" ? "Card View" : "Table View"}
+                </Button>
+                <DataExportButton
+                  data={filteredSources}
+                  filename="payment-sources-export"
+                  type="csv"
+                />
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">Add Payment Source</span>
+                      <span className="sm:hidden">Add</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Add New Payment Source</DialogTitle>
+                    </DialogHeader>
+                    <PaymentSourceForm onClose={() => setIsCreateDialogOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="text-sm text-gray-600">
-          {filteredSources.length} of {paymentSources.length} payment sources
-        </div>
+          </CardContent>
+        </Card>
 
 
         {/* Payment Sources Display */}
@@ -384,7 +421,7 @@ export default function PaymentSources() {
                     </TableCell>
                     <TableCell>{source.currency}</TableCell>
                     <TableCell>
-                      <Badge variant={source.isActive ? "default" : "secondary"}>
+                      <Badge variant="outline" className={getStatusColor(source.isActive)}>
                         {source.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
@@ -495,7 +532,7 @@ export default function PaymentSources() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     {getAccountTypeBadge(source.accountType)}
-                    <Badge variant={source.isActive ? "default" : "secondary"}>
+                    <Badge variant="outline" className={getStatusColor(source.isActive)}>
                       {source.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>

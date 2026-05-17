@@ -1,4 +1,3 @@
-// import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +47,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Header } from "@/components/dashboard/Header";
-// import { DataExportButton } from "@/components/ui/data-export-button";
+import { DataExportButton } from "@/components/DataExportButton";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { Link } from "wouter";
 import { useTranslation } from "@/lib/i18n";
@@ -145,20 +144,27 @@ export default function Expenses() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
       paid: "bg-green-100 text-green-800 border-green-200",
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
       overdue: "bg-red-100 text-red-800 border-red-200",
       cancelled: "bg-gray-100 text-gray-800 border-gray-200",
+      draft: "bg-gray-100 text-gray-800 border-gray-200",
+      submitted: "bg-blue-100 text-blue-800 border-blue-200",
+      approved: "bg-green-100 text-green-800 border-green-200",
+      rejected: "bg-red-100 text-red-800 border-red-200",
     };
-    
+    return colorMap[status] || colorMap.pending;
+  };
+
+  const getStatusBadge = (status: string) => {
     return (
-      <Badge className={`${variants[status as keyof typeof variants] || variants.pending} border`}>
-        <span className="flex items-center gap-1">
+      <Badge variant="outline" className={getStatusColor(status)}>
+        <div className="flex items-center space-x-1">
           {getStatusIcon(status)}
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
+          <span className="capitalize">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+        </div>
       </Badge>
     );
   };
@@ -277,31 +283,7 @@ export default function Expenses() {
         {/* Controls and Filters */}
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg font-semibold">Expense Management</CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Expense
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Create New Expense</DialogTitle>
-                    </DialogHeader>
-                    <ExpenseForm onClose={() => setIsCreateDialogOpen(false)} />
-                  </DialogContent>
-                </Dialog>
-                <Button variant="outline" size="sm" onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}>
-                  {viewMode === "table" ? "Card View" : "Table View"}
-                </Button>
-                <Button variant="outline" size="sm">
-                  Export Data
-                </Button>
-              </div>
-            </div>
+            <CardTitle className="text-lg font-semibold">Expense Management</CardTitle>
           </CardHeader>
           
           <CardContent>
@@ -323,10 +305,20 @@ export default function Expenses() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Submitted</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="fixed">Fixed</SelectItem>
+                    <SelectItem value="variable">Variable</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -351,11 +343,31 @@ export default function Expenses() {
               </div>
             </div>
 
-            {/* Results Summary */}
-            <div className="flex items-center justify-between mb-4">
+            {/* Results Summary + Actions */}
+            <div className="flex items-center justify-between mt-2">
               <p className="text-sm text-muted-foreground">
                 Showing {filteredExpenses.length} of {expenses.length} expenses
               </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}>
+                  {viewMode === "table" ? "Card View" : "Table View"}
+                </Button>
+                <DataExportButton data={filteredExpenses} filename="expenses-export" type="csv" />
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Expense
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Expense</DialogTitle>
+                    </DialogHeader>
+                    <ExpenseForm onClose={() => setIsCreateDialogOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
           </CardContent>
@@ -457,13 +469,9 @@ export default function Expenses() {
                   </TableCell>
                   <TableCell>
                     {expense.category && (
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: expense.category.color }}
-                        />
-                        <span className="text-sm">{expense.category.name}</span>
-                      </div>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                        {expense.category.name}
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -571,13 +579,9 @@ export default function Expenses() {
                       {formatCurrency(expense.amount)}
                     </span>
                     {expense.category && (
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: expense.category.color }}
-                        />
-                        <span className="text-sm text-gray-600">{expense.category.name}</span>
-                      </div>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                        {expense.category.name}
+                      </Badge>
                     )}
                   </div>
                   
