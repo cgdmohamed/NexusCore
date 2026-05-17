@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Search, Grid, List, Edit, Trash2, Filter, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -183,6 +185,17 @@ export default function Services() {
     
     return matchesSearch && matchesCategory;
   });
+
+  const {
+    currentPage: servicesPage,
+    totalPages: servicesTotalPages,
+    pageSize: servicesPageSize,
+    paginatedItems: paginatedServices,
+    setCurrentPage: setServicesPage,
+    setPageSize: setServicesPageSize,
+  } = usePagination(filteredServices);
+
+  useEffect(() => { setServicesPage(1); }, [search, selectedCategory]);
 
   const services = filteredServices;
   const totalServices = allServices.length;
@@ -462,8 +475,9 @@ export default function Services() {
           </CardContent>
         </Card>
       ) : viewMode === "grid" ? (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {services.map((service: Service) => (
+          {paginatedServices.map((service: Service) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -520,7 +534,17 @@ export default function Services() {
             </Card>
           ))}
         </div>
+        <TablePagination
+          currentPage={servicesPage}
+          totalPages={servicesTotalPages}
+          pageSize={servicesPageSize}
+          totalItems={filteredServices.length}
+          onPageChange={setServicesPage}
+          onPageSizeChange={setServicesPageSize}
+        />
+        </>
       ) : (
+        <>
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -535,7 +559,7 @@ export default function Services() {
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map((service: Service) => (
+                  {paginatedServices.map((service: Service) => (
                     <tr key={service.id} className="border-b hover:bg-muted/50">
                       <td className="p-4">
                         <div>
@@ -590,8 +614,17 @@ export default function Services() {
                 </tbody>
               </table>
             </div>
+          <TablePagination
+            currentPage={servicesPage}
+            totalPages={servicesTotalPages}
+            pageSize={servicesPageSize}
+            totalItems={filteredServices.length}
+            onPageChange={setServicesPage}
+            onPageSizeChange={setServicesPageSize}
+          />
           </CardContent>
         </Card>
+        </>
       )}
     </div>
   );

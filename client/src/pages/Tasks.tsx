@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useQuery, useMutation, useQueryClient as useQC } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,6 +114,17 @@ export default function Tasks() {
     
     return matchesSearch && matchesStatus && matchesPriority;
   });
+
+  const {
+    currentPage: tasksPage,
+    totalPages: tasksTotalPages,
+    pageSize: tasksPageSize,
+    paginatedItems: paginatedTasks,
+    setCurrentPage: setTasksPage,
+    setPageSize: setTasksPageSize,
+  } = usePagination(tasks);
+
+  useEffect(() => { setTasksPage(1); }, [searchTerm, statusFilter, priorityFilter]);
 
   // Fetch task stats
   const { data: stats } = useQuery({
@@ -607,8 +620,9 @@ export default function Tasks() {
             </div>
             
             {viewMode === "cards" ? (
+              <>
               <div className="grid gap-4">
-                {tasks.map((task: any) => (
+                {paginatedTasks.map((task: any) => (
                   <Card key={task.id} className="hover:shadow-sm transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -687,7 +701,17 @@ export default function Tasks() {
                   </Card>
                 ))}
               </div>
+              <TablePagination
+                currentPage={tasksPage}
+                totalPages={tasksTotalPages}
+                pageSize={tasksPageSize}
+                totalItems={tasks.length}
+                onPageChange={setTasksPage}
+                onPageSizeChange={setTasksPageSize}
+              />
+              </>
             ) : (
+              <>
               <Card className="overflow-x-auto">
                 <Table className="min-w-[560px]">
                   <TableHeader>
@@ -701,7 +725,7 @@ export default function Tasks() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map((task: any) => (
+                    {paginatedTasks.map((task: any) => (
                       <TableRow key={task.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
@@ -768,7 +792,16 @@ export default function Tasks() {
                     ))}
                   </TableBody>
                 </Table>
+              <TablePagination
+                currentPage={tasksPage}
+                totalPages={tasksTotalPages}
+                pageSize={tasksPageSize}
+                totalItems={tasks.length}
+                onPageChange={setTasksPage}
+                onPageSizeChange={setTasksPageSize}
+              />
               </Card>
+              </>
             )}
           </div>
         )}

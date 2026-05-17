@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { 
   Plus, 
   Search, 
@@ -160,6 +162,17 @@ export default function CRM() {
 
     return filtered;
   }, [clientList, searchTerm, statusFilter, sortBy, sortOrder]);
+
+  const {
+    currentPage: clientsPage,
+    totalPages: clientsTotalPages,
+    pageSize: clientsPageSize,
+    paginatedItems: paginatedClients,
+    setCurrentPage: setClientsPage,
+    setPageSize: setClientsPageSize,
+  } = usePagination(filteredAndSortedClients);
+
+  useEffect(() => { setClientsPage(1); }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   // Statistics calculations
   const stats = useMemo(() => {
@@ -377,6 +390,7 @@ export default function CRM() {
               </p>
             </div>
 
+
             {/* Content */}
             {isLoading ? (
               <div className="text-center py-12">
@@ -399,6 +413,7 @@ export default function CRM() {
                 )}
               </div>
             ) : viewMode === "table" ? (
+              <>
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -439,7 +454,7 @@ export default function CRM() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAndSortedClients.map((client) => {
+                    {paginatedClients.map((client) => {
                       const clientQuotations = getClientQuotations(client.id);
                       const clientInvoices = getClientInvoices(client.id);
                       
@@ -549,10 +564,20 @@ export default function CRM() {
                   </TableBody>
                 </Table>
               </div>
+              <TablePagination
+                currentPage={clientsPage}
+                totalPages={clientsTotalPages}
+                pageSize={clientsPageSize}
+                totalItems={filteredAndSortedClients.length}
+                onPageChange={setClientsPage}
+                onPageSizeChange={setClientsPageSize}
+              />
+              </>
             ) : (
               /* Card View */
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredAndSortedClients.map((client) => {
+                {paginatedClients.map((client) => {
                   const clientQuotations = getClientQuotations(client.id);
                   const clientInvoices = getClientInvoices(client.id);
                   
@@ -669,6 +694,15 @@ export default function CRM() {
                   );
                 })}
               </div>
+              <TablePagination
+                currentPage={clientsPage}
+                totalPages={clientsTotalPages}
+                pageSize={clientsPageSize}
+                totalItems={filteredAndSortedClients.length}
+                onPageChange={setClientsPage}
+                onPageSizeChange={setClientsPageSize}
+              />
+              </>
             )}
           </CardContent>
         </Card>

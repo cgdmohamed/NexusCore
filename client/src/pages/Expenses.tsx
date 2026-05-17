@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { 
   Plus, 
   Search, 
@@ -116,6 +118,17 @@ export default function Expenses() {
 
     return filtered;
   }, [expenses, searchTerm, typeFilter, statusFilter, categoryFilter, sortBy, sortOrder]);
+
+  const {
+    currentPage: expensesPage,
+    totalPages: expensesTotalPages,
+    pageSize: expensesPageSize,
+    paginatedItems: paginatedExpenses,
+    setCurrentPage: setExpensesPage,
+    setPageSize: setExpensesPageSize,
+  } = usePagination(filteredExpenses);
+
+  useEffect(() => { setExpensesPage(1); }, [searchTerm, typeFilter, statusFilter, categoryFilter, sortBy, sortOrder]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -344,6 +357,7 @@ export default function Expenses() {
                 Showing {filteredExpenses.length} of {expenses.length} expenses
               </p>
             </div>
+
           </CardContent>
         </Card>
 
@@ -421,7 +435,7 @@ export default function Expenses() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredExpenses.map((expense) => (
+              {paginatedExpenses.map((expense) => (
                 <TableRow key={expense.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div>
@@ -518,10 +532,20 @@ export default function Expenses() {
                 </Button>
               </div>
             )}
+            {filteredExpenses.length > 0 && (
+              <TablePagination
+                currentPage={expensesPage}
+                totalPages={expensesTotalPages}
+                pageSize={expensesPageSize}
+                totalItems={filteredExpenses.length}
+                onPageChange={setExpensesPage}
+                onPageSizeChange={setExpensesPageSize}
+              />
+            )}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExpenses.map((expense) => (
+          {paginatedExpenses.map((expense) => (
             <Card key={expense.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -600,6 +624,18 @@ export default function Expenses() {
             </Card>
           ))}
           
+          {filteredExpenses.length > 0 && (
+            <div className="col-span-full">
+              <TablePagination
+                currentPage={expensesPage}
+                totalPages={expensesTotalPages}
+                pageSize={expensesPageSize}
+                totalItems={filteredExpenses.length}
+                onPageChange={setExpensesPage}
+                onPageSizeChange={setExpensesPageSize}
+              />
+            </div>
+          )}
           {filteredExpenses.length === 0 && (
             <div className="col-span-full text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />

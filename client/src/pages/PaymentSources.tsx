@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { 
   Plus, 
   Search, 
@@ -136,6 +138,17 @@ export default function PaymentSources() {
 
     return filtered;
   }, [paymentSources, searchTerm, typeFilter, statusFilter, sortBy, sortOrder]);
+
+  const {
+    currentPage: sourcesPage,
+    totalPages: sourcesTotalPages,
+    pageSize: sourcesPageSize,
+    paginatedItems: paginatedSources,
+    setCurrentPage: setSourcesPage,
+    setPageSize: setSourcesPageSize,
+  } = usePagination(filteredSources);
+
+  useEffect(() => { setSourcesPage(1); }, [searchTerm, typeFilter, statusFilter, sortBy, sortOrder]);
 
   const getAccountTypeIcon = (type: string) => {
     switch (type) {
@@ -324,6 +337,7 @@ export default function PaymentSources() {
           {filteredSources.length} of {paymentSources.length} payment sources
         </div>
 
+
         {/* Payment Sources Display */}
         {viewMode === "table" ? (
           <Card className="overflow-x-auto">
@@ -350,7 +364,7 @@ export default function PaymentSources() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSources.map((source) => (
+                {paginatedSources.map((source) => (
                   <TableRow key={source.id} className="hover:bg-gray-50">
                     <TableCell>
                       <div>
@@ -417,10 +431,19 @@ export default function PaymentSources() {
                 ))}
               </TableBody>
             </Table>
+          <TablePagination
+            currentPage={sourcesPage}
+            totalPages={sourcesTotalPages}
+            pageSize={sourcesPageSize}
+            totalItems={filteredSources.length}
+            onPageChange={setSourcesPage}
+            onPageSizeChange={setSourcesPageSize}
+          />
           </Card>
         ) : (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSources.map((source) => (
+            {paginatedSources.map((source) => (
               <Card key={source.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -497,6 +520,15 @@ export default function PaymentSources() {
               </Card>
             ))}
           </div>
+          <TablePagination
+            currentPage={sourcesPage}
+            totalPages={sourcesTotalPages}
+            pageSize={sourcesPageSize}
+            totalItems={filteredSources.length}
+            onPageChange={setSourcesPage}
+            onPageSizeChange={setSourcesPageSize}
+          />
+          </>
         )}
 
         {filteredSources.length === 0 && (

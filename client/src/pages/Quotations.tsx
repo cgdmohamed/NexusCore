@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePagination } from "@/hooks/use-pagination";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { 
   Plus, 
   Search, 
@@ -102,6 +104,17 @@ export default function Quotations() {
 
     return filtered;
   }, [quotationList, searchTerm, statusFilter, sortBy, sortOrder, clients]);
+
+  const {
+    currentPage: quotationsPage,
+    totalPages: quotationsTotalPages,
+    pageSize: quotationsPageSize,
+    paginatedItems: paginatedQuotations,
+    setCurrentPage: setQuotationsPage,
+    setPageSize: setQuotationsPageSize,
+  } = usePagination(filteredAndSortedQuotations);
+
+  useEffect(() => { setQuotationsPage(1); }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
   // Statistics calculations
   const stats = useMemo(() => ({
@@ -312,6 +325,7 @@ export default function Quotations() {
               </p>
             </div>
 
+
             {/* Content */}
             {isLoading ? (
               <div className="text-center py-12">
@@ -334,6 +348,7 @@ export default function Quotations() {
                 )}
               </div>
             ) : viewMode === "table" ? (
+              <>
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -379,7 +394,7 @@ export default function Quotations() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAndSortedQuotations.map((quotation) => (
+                    {paginatedQuotations.map((quotation) => (
                       <TableRow key={quotation.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">
                           <Link href={`/quotations/${quotation.id}`} className="text-blue-600 hover:text-blue-800">
@@ -451,10 +466,20 @@ export default function Quotations() {
                   </TableBody>
                 </Table>
               </div>
+              <TablePagination
+                currentPage={quotationsPage}
+                totalPages={quotationsTotalPages}
+                pageSize={quotationsPageSize}
+                totalItems={filteredAndSortedQuotations.length}
+                onPageChange={setQuotationsPage}
+                onPageSizeChange={setQuotationsPageSize}
+              />
+              </>
             ) : (
               /* Card View */
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredAndSortedQuotations.map((quotation) => (
+                {paginatedQuotations.map((quotation) => (
                   <Card key={quotation.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
@@ -515,6 +540,15 @@ export default function Quotations() {
                   </Card>
                 ))}
               </div>
+              <TablePagination
+                currentPage={quotationsPage}
+                totalPages={quotationsTotalPages}
+                pageSize={quotationsPageSize}
+                totalItems={filteredAndSortedQuotations.length}
+                onPageChange={setQuotationsPage}
+                onPageSizeChange={setQuotationsPageSize}
+              />
+              </>
             )}
           </CardContent>
         </Card>
