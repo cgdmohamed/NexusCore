@@ -2661,7 +2661,8 @@ export function setupDatabaseRoutes(app: Express) {
         convertedTotal: quotationPrintRecords.convertedTotal,
         printedAt: quotationPrintRecords.printedAt,
         printedByUserId: quotationPrintRecords.printedByUserId,
-        printedByName: users.fullName,
+        printedByFirstName: users.firstName,
+        printedByLastName: users.lastName,
         printedByEmail: users.email,
       }).from(quotationPrintRecords)
         .leftJoin(users, eq(quotationPrintRecords.printedByUserId, users.id))
@@ -2808,7 +2809,8 @@ export function setupDatabaseRoutes(app: Express) {
         convertedTotal: invoicePrintRecords.convertedTotal,
         printedAt: invoicePrintRecords.printedAt,
         printedByUserId: invoicePrintRecords.printedByUserId,
-        printedByName: users.fullName,
+        printedByFirstName: users.firstName,
+        printedByLastName: users.lastName,
         printedByEmail: users.email,
       }).from(invoicePrintRecords)
         .leftJoin(users, eq(invoicePrintRecords.printedByUserId, users.id))
