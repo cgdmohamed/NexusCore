@@ -36,7 +36,7 @@ import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-import type { User as UserType, Employee } from "@shared/schema";
+import type { AuthUser } from "@/hooks/useAuth";
 
 function UserActivityFeed({ userId }: { userId: string | undefined }) {
   const { data: activityData, isLoading } = useQuery<any[]>({
@@ -123,7 +123,7 @@ export default function UserProfile() {
   });
 
   // Fetch user data
-  const { data: user, isLoading } = useQuery<UserType>({
+  const { data: user, isLoading } = useQuery<AuthUser>({
     queryKey: ["/api/users", id],
   });
 
@@ -334,7 +334,7 @@ export default function UserProfile() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center space-x-4">
                     <ProfilePictureUpload
-                      currentImage={user.employee?.profileImage || user.profileImageUrl}
+                      currentImage={user.employee?.profileImage || user.profileImageUrl || undefined}
                       initials={`${user.employee?.firstName?.[0] || user.firstName?.[0] || 'U'}${user.employee?.lastName?.[0] || user.lastName?.[0] || ''}`}
                       onImageChange={(imageUrl) => {
                         const updateData = { profileImageUrl: imageUrl || "" };

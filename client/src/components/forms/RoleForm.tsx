@@ -27,6 +27,8 @@ export const modules = [
   { key: "invoices", label: "Invoices", description: "Invoice management and billing" },
   { key: "expenses", label: "Expenses", description: "Expense tracking and approval" },
   { key: "paymentSources", label: "Payment Sources", description: "Payment method management" },
+  { key: "services", label: "Services", description: "Service catalog management" },
+  { key: "projects", label: "Projects", description: "Project planning and delivery" },
   { key: "employees", label: "Employees", description: "Employee profile management" },
   { key: "users", label: "Users", description: "User account management" },
   { key: "roles", label: "Roles", description: "Role and permission management" },

@@ -1,13 +1,13 @@
 import type { Express } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 import { employeeKpis, employees } from "@shared/schema";
 import { insertEmployeeKpiSchema } from "@shared/schema";
 
 export function registerKpiRoutes(app: Express) {
   // Get all KPIs for an employee
-  app.get("/api/employees/:employeeId/kpis", requireAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpis", requirePermission("employees", "view"), async (req, res) => {
     try {
       const { employeeId } = req.params;
       const { period } = req.query;
@@ -43,7 +43,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Get KPI statistics for an employee
-  app.get("/api/employees/:employeeId/kpi-stats", requireAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpi-stats", requirePermission("employees", "view"), async (req, res) => {
     try {
       const { employeeId } = req.params;
 
@@ -68,7 +68,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Create a new KPI
-  app.post("/api/employees/:employeeId/kpis", requireAuth, async (req, res) => {
+  app.post("/api/employees/:employeeId/kpis", requirePermission("employees", "add"), async (req, res) => {
     try {
       const { employeeId } = req.params;
       const userId = (req.user as any)?.id;
@@ -96,7 +96,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Update a KPI
-  app.put("/api/kpis/:kpiId", requireAuth, async (req, res) => {
+  app.put("/api/kpis/:kpiId", requirePermission("employees", "edit"), async (req, res) => {
     try {
       const { kpiId } = req.params;
 
@@ -123,7 +123,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Delete a KPI
-  app.delete("/api/kpis/:kpiId", requireAuth, async (req, res) => {
+  app.delete("/api/kpis/:kpiId", requirePermission("employees", "delete"), async (req, res) => {
     try {
       const { kpiId } = req.params;
 
@@ -144,7 +144,7 @@ export function registerKpiRoutes(app: Express) {
   });
 
   // Get unique evaluation periods for an employee
-  app.get("/api/employees/:employeeId/kpi-periods", requireAuth, async (req, res) => {
+  app.get("/api/employees/:employeeId/kpi-periods", requirePermission("employees", "view"), async (req, res) => {
     try {
       const { employeeId } = req.params;
 

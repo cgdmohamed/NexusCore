@@ -159,11 +159,12 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Optional description of what this KPI measures"
-                  rows={3}
-                  {...field} 
-                />
+                  <Textarea 
+                    placeholder="Optional description of what this KPI measures"
+                    rows={3}
+                    {...field} 
+                    value={field.value ?? ""}
+                  />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -181,6 +182,7 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
                   <Input 
                     placeholder="e.g., 100, 95%, $50,000"
                     {...field} 
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -198,6 +200,7 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
                   <Input 
                     placeholder="e.g., 95, 98%, $48,500"
                     {...field} 
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -245,11 +248,12 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
             <FormItem>
               <FormLabel>Notes & Comments</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Additional notes, feedback, or comments about this KPI"
-                  rows={4}
-                  {...field} 
-                />
+                  <Textarea 
+                    placeholder="Additional notes, feedback, or comments about this KPI"
+                    rows={4}
+                    {...field} 
+                    value={field.value ?? ""}
+                  />
               </FormControl>
               <FormMessage />
             </FormItem>

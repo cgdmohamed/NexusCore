@@ -3,7 +3,7 @@ import { db } from "./db";
 import { projects, tasks, users, clients, insertProjectSchema } from "@shared/schema";
 import { eq, count, sql } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 
 interface ProjectMemberInfo {
   userId: string;
@@ -70,7 +70,7 @@ async function getMembersForProjects(projectIds: string[]): Promise<Map<string, 
     `);
 
     const memberMap = new Map<string, ProjectMemberInfo[]>();
-    for (const row of result.rows as MemberJoinRow[]) {
+    for (const row of result.rows as unknown as MemberJoinRow[]) {
       const name = row.first_name && row.last_name
         ? `${row.first_name} ${row.last_name}`
         : row.username ?? row.user_id;
@@ -92,7 +92,7 @@ function getUserId(req: Request): string {
 export async function registerProjectRoutes(app: Express): Promise<void> {
   await runProjectMigrations();
 
-  app.get("/api/projects", requireAuth, async (req, res) => {
+  app.get("/api/projects", requirePermission("projects", "view"), async (req, res) => {
     try {
       const allProjects = await db.select().from(projects);
       const allClients = await db.select({ id: clients.id, name: clients.name }).from(clients);
@@ -135,7 +135,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.post("/api/projects", requireAuth, async (req, res) => {
+  app.post("/api/projects", requirePermission("projects", "add"), async (req, res) => {
     try {
       const validatedData = projectInputSchema.parse(req.body);
       const userId = getUserId(req);
@@ -160,7 +160,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.get("/api/projects/:id", requireAuth, async (req, res) => {
+  app.get("/api/projects/:id", requirePermission("projects", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       const [project] = await db.select().from(projects).where(eq(projects.id, id));
@@ -205,7 +205,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.put("/api/projects/:id", requireAuth, async (req, res) => {
+  app.put("/api/projects/:id", requirePermission("projects", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = projectInputSchema.partial().parse(req.body);
@@ -227,7 +227,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.delete("/api/projects/:id", requireAuth, async (req, res) => {
+  app.delete("/api/projects/:id", requirePermission("projects", "delete"), async (req, res) => {
     try {
       const { id } = req.params;
       await db.update(tasks).set({ projectId: null }).where(eq(tasks.projectId, id));
@@ -240,7 +240,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.post("/api/projects/:id/members", requireAuth, async (req, res) => {
+  app.post("/api/projects/:id/members", requirePermission("projects", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const bodySchema = z.object({ userId: z.string(), role: z.enum(["lead", "member"]).default("member") });
@@ -275,7 +275,7 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.delete("/api/projects/:id/members/:userId", requireAuth, async (req, res) => {
+  app.delete("/api/projects/:id/members/:userId", requirePermission("projects", "edit"), async (req, res) => {
     try {
       const { id, userId } = req.params;
       await db.execute(sql`

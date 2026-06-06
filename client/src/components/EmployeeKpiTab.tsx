@@ -32,6 +32,14 @@ interface EmployeeKpiTabProps {
   employeeName: string;
 }
 
+type KpiStats = {
+  total: number;
+  exceeded: number;
+  onTrack: number;
+  belowTarget: number;
+  notEvaluated: number;
+};
+
 export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -41,13 +49,13 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
   const [showKpiForm, setShowKpiForm] = useState(false);
   const [editingKpi, setEditingKpi] = useState<EmployeeKpi | null>(null);
 
-  const { data: kpis = [], isLoading: kpisLoading } = useQuery({
+  const { data: kpis = [], isLoading: kpisLoading } = useQuery<EmployeeKpi[]>({
     queryKey: [`/api/employees/${employeeId}/kpis`],
   });
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<KpiStats>({
     queryKey: [`/api/employees/${employeeId}/kpi-stats`],
   });
-  const { data: periods = [] } = useQuery({
+  const { data: periods = [] } = useQuery<string[]>({
     queryKey: [`/api/employees/${employeeId}/kpi-periods`],
   });
 
@@ -132,7 +140,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
         `"${kpi.actualValue || ''}"`,
         `"${getStatusText(kpi.status)}"`,
         `"${kpi.notes || ''}"`,
-        `"${format(new Date(kpi.createdAt), 'yyyy-MM-dd')}"`,
+        `"${format(new Date(kpi.createdAt ?? new Date()), 'yyyy-MM-dd')}"`,
       ].join(","))
     ].join("\n");
 
@@ -312,7 +320,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                 {/* Card Footer */}
                 <div className="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-xs text-gray-400">
-                    {format(new Date(kpi.createdAt), 'MMM d, yyyy')}
+                    {format(new Date(kpi.createdAt ?? new Date()), 'MMM d, yyyy')}
                   </span>
                   <div className="flex gap-0.5">
                     <Button

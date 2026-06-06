@@ -106,7 +106,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
         <div className="space-y-2">
           <Label htmlFor="currency">Currency</Label>
           <Select
-            value={form.watch("currency")}
+            value={form.watch("currency") || "EGP"}
             onValueChange={(value) => form.setValue("currency", value)}
           >
             <SelectTrigger>
@@ -152,7 +152,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
       <div className="flex items-center space-x-2">
         <Switch
           id="isActive"
-          checked={form.watch("isActive")}
+          checked={form.watch("isActive") ?? true}
           onCheckedChange={(checked) => form.setValue("isActive", checked)}
         />
         <Label htmlFor="isActive">Active</Label>

@@ -47,6 +47,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: Partial<InsertUser> & { id: string; email?: string | null }): Promise<User>;
   
   // Client operations
   getClients(userId: string): Promise<Client[]>;
@@ -178,6 +179,37 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values(userData)
       .returning();
+    return user;
+  }
+
+  async upsertUser(userData: Partial<InsertUser> & { id: string; email?: string | null }): Promise<User> {
+    const email = userData.email || `${userData.id}@replit.local`;
+    const username = userData.username || email.split("@")[0] || userData.id;
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        username,
+        email,
+        passwordHash: userData.passwordHash || "external-auth",
+        firstName: userData.firstName ?? null,
+        lastName: userData.lastName ?? null,
+        profileImageUrl: userData.profileImageUrl ?? null,
+        isActive: userData.isActive ?? true,
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email,
+          firstName: userData.firstName ?? null,
+          lastName: userData.lastName ?? null,
+          profileImageUrl: userData.profileImageUrl ?? null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
     return user;
   }
 

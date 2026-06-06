@@ -15,6 +15,13 @@ function formatDisplay(amount: number, currency: string): string {
   return `${formatted} ${symbol}`;
 }
 
+function isIncludedItem(item: any): boolean {
+  if (typeof item.isIncluded === "boolean") return item.isIncluded;
+  return parseFloat(item.displayUnitPrice || item.egpUnitPrice || "0") === 0
+    && parseFloat(item.displayTotalPrice || item.egpTotalPrice || "0") === 0
+    && parseFloat(item.discount || "0") === 0;
+}
+
 export default function QuotationPrint() {
   const { printRecordId } = useParams<{ printRecordId: string }>();
 
@@ -128,21 +135,25 @@ export default function QuotationPrint() {
             </tr>
           </thead>
           <tbody>
-            {(snap.items || []).map((item: any, idx: number) => (
-              <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td className="py-2 text-sm text-gray-800">{item.description}</td>
-                <td className="py-2 text-sm text-gray-800 text-right">{item.quantity}</td>
-                <td className="py-2 text-sm text-gray-800 text-right">
-                  {formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
-                </td>
-                <td className="py-2 text-sm text-gray-800 text-right">
-                  {parseFloat(item.discount || "0").toFixed(1)}%
-                </td>
-                <td className="py-2 text-sm text-gray-800 text-right font-medium">
-                  {formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
-                </td>
-              </tr>
-            ))}
+            {(snap.items || []).map((item: any, idx: number) => {
+              const included = isIncludedItem(item);
+
+              return (
+                <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <td className="py-2 text-sm text-gray-800">{item.description}</td>
+                  <td className="py-2 text-sm text-gray-800 text-right">{item.quantity}</td>
+                  <td className="py-2 text-sm text-gray-800 text-right">
+                    {included ? "included" : formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
+                  </td>
+                  <td className="py-2 text-sm text-gray-800 text-right">
+                    {parseFloat(item.discount || "0").toFixed(1)}%
+                  </td>
+                  <td className="py-2 text-sm text-gray-800 text-right font-medium">
+                    {included ? "included" : formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

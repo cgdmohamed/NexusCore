@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 import { 
   paymentSources, 
   paymentSourceTransactions, 
@@ -16,7 +16,7 @@ import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 
 export function registerPaymentSourceRoutes(app: Express) {
   // Get all payment sources
-  app.get("/api/payment-sources", requireAuth, async (req, res) => {
+  app.get("/api/payment-sources", requirePermission("paymentSources", "view"), async (req, res) => {
     try {
       const sources = await db
         .select()
@@ -31,7 +31,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Get payment source statistics
-  app.get("/api/payment-sources/stats", requireAuth, async (req, res) => {
+  app.get("/api/payment-sources/stats", requirePermission("paymentSources", "view"), async (req, res) => {
     try {
       const { period = "month" } = req.query;
       
@@ -99,7 +99,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Get payment source by ID
-  app.get("/api/payment-sources/:id", requireAuth, async (req, res) => {
+  app.get("/api/payment-sources/:id", requirePermission("paymentSources", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -120,7 +120,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Create payment source
-  app.post("/api/payment-sources", requireAuth, async (req, res) => {
+  app.post("/api/payment-sources", requirePermission("paymentSources", "add"), async (req, res) => {
     try {
       const userId = (req.user as any)?.id;
       if (!userId) {
@@ -159,7 +159,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Update payment source
-  app.put("/api/payment-sources/:id", requireAuth, async (req, res) => {
+  app.put("/api/payment-sources/:id", requirePermission("paymentSources", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = insertPaymentSourceSchema.parse(req.body);
@@ -185,7 +185,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Adjust balance (manual adjustment)
-  app.post("/api/payment-sources/:id/adjust-balance", requireAuth, async (req, res) => {
+  app.post("/api/payment-sources/:id/adjust-balance", requirePermission("paymentSources", "approve"), async (req, res) => {
     try {
       const { id } = req.params;
       const { amount, description, type = "adjustment" } = req.body;
@@ -244,7 +244,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Delete payment source
-  app.delete("/api/payment-sources/:id", requireAuth, async (req, res) => {
+  app.delete("/api/payment-sources/:id", requirePermission("paymentSources", "delete"), async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -277,7 +277,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Get payment source transactions
-  app.get("/api/payment-sources/:id/transactions", requireAuth, async (req, res) => {
+  app.get("/api/payment-sources/:id/transactions", requirePermission("paymentSources", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -295,7 +295,7 @@ export function registerPaymentSourceRoutes(app: Express) {
   });
 
   // Get expenses by payment source
-  app.get("/api/payment-sources/:id/expenses", requireAuth, async (req, res) => {
+  app.get("/api/payment-sources/:id/expenses", requirePermission("paymentSources", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       

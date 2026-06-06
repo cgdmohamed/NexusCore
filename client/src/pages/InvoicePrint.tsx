@@ -15,6 +15,13 @@ function formatDisplay(amount: number, currency: string): string {
   return `${formatted} ${symbol}`;
 }
 
+function isIncludedItem(item: any): boolean {
+  if (typeof item.isIncluded === "boolean") return item.isIncluded;
+  return parseFloat(item.displayUnitPrice || item.egpUnitPrice || "0") === 0
+    && parseFloat(item.displayTotalPrice || item.egpTotalPrice || "0") === 0
+    && parseFloat(item.discount || "0") === 0;
+}
+
 const STATUS_BADGE_STYLES: Record<string, { background: string; color: string }> = {
   paid:               { background: "#dcfce7", color: "#15803d" },
   partially_paid:     { background: "#dbeafe", color: "#2563eb" },
@@ -162,21 +169,25 @@ export default function InvoicePrint() {
             </tr>
           </thead>
           <tbody>
-            {(snap.items || []).map((item: any, idx: number) => (
-              <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6", background: idx % 2 === 1 ? "#f9fafb" : "#fff" }}>
-                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", verticalAlign: "top" }}>
-                  <div style={{ fontWeight: 600, color: "#1a1a2e" }}>{item.name}</div>
-                  {item.description && <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "3px" }}>{item.description}</div>}
-                </td>
-                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>{item.quantity}</td>
-                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>
-                  {formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
-                </td>
-                <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right", fontWeight: 600 }}>
-                  {formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
-                </td>
-              </tr>
-            ))}
+            {(snap.items || []).map((item: any, idx: number) => {
+              const included = isIncludedItem(item);
+
+              return (
+                <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6", background: idx % 2 === 1 ? "#f9fafb" : "#fff" }}>
+                  <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", verticalAlign: "top" }}>
+                    <div style={{ fontWeight: 600, color: "#1a1a2e" }}>{item.name}</div>
+                    {item.description && <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "3px" }}>{item.description}</div>}
+                  </td>
+                  <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>{item.quantity}</td>
+                  <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right" }}>
+                    {included ? "included" : formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
+                  </td>
+                  <td style={{ padding: "13px 16px", fontSize: "13px", color: "#374151", textAlign: "right", fontWeight: 600 }}>
+                    {included ? "included" : formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

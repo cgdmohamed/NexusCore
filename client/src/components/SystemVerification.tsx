@@ -14,13 +14,13 @@ interface VerificationResult {
 export function SystemVerification() {
   const queryClient = useQueryClient();
 
-  const { data: clients = [] } = useQuery({ queryKey: ["/api/clients"] });
-  const { data: tasks = [] } = useQuery({ queryKey: ["/api/tasks"] });
-  const { data: expenses = [] } = useQuery({ queryKey: ["/api/expenses"] });
-  const { data: quotations = [] } = useQuery({ queryKey: ["/api/quotations"] });
-  const { data: invoices = [] } = useQuery({ queryKey: ["/api/invoices"] });
-  const { data: kpis } = useQuery({ queryKey: ["/api/dashboard/kpis"] });
-  const { data: activities = [] } = useQuery({ queryKey: ["/api/activities"] });
+  const { data: clients = [] } = useQuery<any[]>({ queryKey: ["/api/clients"] });
+  const { data: tasks = [] } = useQuery<any[]>({ queryKey: ["/api/tasks"] });
+  const { data: expenses = [] } = useQuery<any[]>({ queryKey: ["/api/expenses"] });
+  const { data: quotations = [] } = useQuery<any[]>({ queryKey: ["/api/quotations"] });
+  const { data: invoices = [] } = useQuery<any[]>({ queryKey: ["/api/invoices"] });
+  const { data: kpis } = useQuery<{ activeClients: number; totalRevenue: number }>({ queryKey: ["/api/dashboard/kpis"] });
+  const { data: activities = [] } = useQuery<any[]>({ queryKey: ["/api/activities"] });
 
   const verificationResults: VerificationResult[] = [
     {

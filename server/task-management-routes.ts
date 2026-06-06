@@ -5,14 +5,13 @@ import {
   taskComments, 
   taskDependencies, 
   taskActivityLog,
-  clients,
   users,
   employees
 } from "@shared/schema";
-import { eq, desc, and, or, gte, lte, count, sql, ilike } from "drizzle-orm";
+import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { notificationService } from "./notification-service";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 
 // Task creation schema - simplified for existing database
 const createTaskSchema = z.object({
@@ -34,23 +33,14 @@ const createCommentSchema = z.object({
 export function registerTaskManagementRoutes(app: Express) {
   
   // Get all tasks with advanced filtering
-  app.get("/api/tasks", requireAuth, async (req, res) => {
+  app.get("/api/tasks", requirePermission("tasks", "view"), async (req, res) => {
     try {
       const {
         status,
         priority,
         assignedTo,
         createdBy,
-        assignedBy,
-        category,
-        department,
-        linkedClientId,
-        linkedProjectId,
-        billable,
-        dueAfter,
-        dueBefore,
         search,
-        sortBy = 'createdAt',
         sortOrder = 'desc',
         limit = '50',
         offset = '0',
@@ -77,18 +67,19 @@ export function registerTaskManagementRoutes(app: Express) {
       // Filter tasks based on search criteria
       let filteredTasks = allTasks;
 
-      if (search) {
+      const searchTerm = typeof search === "string" ? search.toLowerCase() : "";
+      if (searchTerm) {
         filteredTasks = filteredTasks.filter(task => 
-          task.title.toLowerCase().includes(search.toLowerCase()) ||
-          (task.description && task.description.toLowerCase().includes(search.toLowerCase()))
+          task.title.toLowerCase().includes(searchTerm) ||
+          (task.description && task.description.toLowerCase().includes(searchTerm))
         );
       }
 
-      if (status) {
+      if (typeof status === "string") {
         filteredTasks = filteredTasks.filter(task => task.status === status);
       }
 
-      if (priority) {
+      if (typeof priority === "string") {
         filteredTasks = filteredTasks.filter(task => task.priority === priority);
       }
 
@@ -99,9 +90,9 @@ export function registerTaskManagementRoutes(app: Express) {
       // Sort tasks
       filteredTasks.sort((a, b) => {
         if (sortOrder === 'desc') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
         }
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
       });
 
       // Apply pagination
@@ -130,9 +121,9 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Get task statistics for dashboard
-  app.get("/api/tasks/stats", requireAuth, async (req, res) => {
+  app.get("/api/tasks/stats", requirePermission("tasks", "view"), async (req, res) => {
     try {
-      const { assignedTo, department } = req.query;
+      const { assignedTo } = req.query;
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
@@ -143,10 +134,6 @@ export function registerTaskManagementRoutes(app: Express) {
         baseConditions.push(eq(tasks.assignedTo, userId));
       } else if (assignedTo) {
         baseConditions.push(eq(tasks.assignedTo, assignedTo as string));
-      }
-
-      if (department) {
-        baseConditions.push(eq(tasks.departmentId, department as string));
       }
 
       // Get task counts by status
@@ -222,7 +209,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Get single task with full details
-  app.get("/api/tasks/:id", requireAuth, async (req, res) => {
+  app.get("/api/tasks/:id", requirePermission("tasks", "view"), async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -238,26 +225,10 @@ export function registerTaskManagementRoutes(app: Express) {
             lastName: employees.lastName,
             jobTitle: employees.jobTitle,
           },
-          assignedByUser: {
-            id: users.id,
-            email: users.email,
-          },
-          assignedByEmployee: {
-            firstName: employees.firstName,
-            lastName: employees.lastName,
-          },
-          client: {
-            id: clients.id,
-            name: clients.name,
-            email: clients.email,
-          }
         })
         .from(tasks)
         .leftJoin(users, eq(tasks.assignedTo, users.id))
         .leftJoin(employees, eq(users.employeeId, employees.id))
-        .leftJoin(users.as('assignedByUsers'), eq(tasks.assignedBy, users.id))
-        .leftJoin(employees.as('assignedByEmployees'), eq(users.employeeId, employees.id))
-        .leftJoin(clients, eq(tasks.linkedClientId, clients.id))
         .where(eq(tasks.id, id));
 
       if (!task) {
@@ -321,9 +292,6 @@ export function registerTaskManagementRoutes(app: Express) {
         ...task.task,
         assignedToUser: task.assignedToUser,
         assignedToEmployee: task.assignedToEmployee,
-        assignedByUser: task.assignedByUser,
-        assignedByEmployee: task.assignedByEmployee,
-        client: task.client,
         comments: comments.map(c => ({
           ...c.comment,
           user: c.user,
@@ -346,7 +314,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Create new task
-  app.post("/api/tasks", requireAuth, async (req, res) => {
+  app.post("/api/tasks", requirePermission("tasks", "add"), async (req, res) => {
     try {
       const validatedData = createTaskSchema.parse(req.body);
       const userId = req.user?.id;
@@ -393,7 +361,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Update task
-  app.put("/api/tasks/:id", requireAuth, async (req, res) => {
+  app.put("/api/tasks/:id", requirePermission("tasks", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = createTaskSchema.partial().parse(req.body);
@@ -449,7 +417,7 @@ export function registerTaskManagementRoutes(app: Express) {
       }
 
       // Log significant changes
-      const significantFields = ['status', 'priority', 'assignedTo', 'dueDate', 'progressPercentage'];
+      const significantFields = ['status', 'priority', 'assignedTo', 'dueDate'] as const;
       for (const field of significantFields) {
         if (validatedData[field] !== undefined && validatedData[field] !== currentTask[field]) {
           await db.insert(taskActivityLog).values({
@@ -474,7 +442,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Delete task
-  app.delete("/api/tasks/:id", requireAuth, async (req, res) => {
+  app.delete("/api/tasks/:id", requirePermission("tasks", "delete"), async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -500,7 +468,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Add comment to task
-  app.post("/api/tasks/:id/comments", requireAuth, async (req, res) => {
+  app.post("/api/tasks/:id/comments", requirePermission("tasks", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = createCommentSchema.parse(req.body);
@@ -543,7 +511,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Add dependency to a task
-  app.post("/api/tasks/:id/dependencies", requireAuth, async (req, res) => {
+  app.post("/api/tasks/:id/dependencies", requirePermission("tasks", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const { dependsOnTaskId } = req.body;
@@ -583,7 +551,7 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Remove a dependency from a task
-  app.delete("/api/tasks/:id/dependencies/:dependsOnId", requireAuth, async (req, res) => {
+  app.delete("/api/tasks/:id/dependencies/:dependsOnId", requirePermission("tasks", "edit"), async (req, res) => {
     try {
       const { id, dependsOnId } = req.params;
       await db.delete(taskDependencies)
@@ -596,18 +564,14 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Get task performance metrics
-  app.get("/api/tasks/performance", requireAuth, async (req, res) => {
+  app.get("/api/tasks/performance", requirePermission("tasks", "view"), async (req, res) => {
     try {
-      const { assignedTo, department, startDate, endDate } = req.query;
+      const { assignedTo, startDate, endDate } = req.query;
 
       let conditions = [];
       
       if (assignedTo) {
         conditions.push(eq(tasks.assignedTo, assignedTo as string));
-      }
-
-      if (department) {
-        conditions.push(eq(tasks.departmentId, department as string));
       }
 
       if (startDate) {

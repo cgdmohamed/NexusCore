@@ -8,11 +8,31 @@ import { User } from "@shared/schema";
 import { apiRequest, queryClient, clearCsrfToken, setCsrfToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+export type AuthUser = Omit<User, "passwordHash" | "role"> & {
+  passwordHash?: string;
+  role?: {
+    id: string | null;
+    name: string | null;
+    permissions?: Record<string, Record<string, boolean>> | null;
+  } | null;
+  roleName?: string;
+  permissions?: Record<string, Record<string, boolean>>;
+  employee?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    phone?: string | null;
+    jobTitle?: string | null;
+    department?: string | null;
+    profileImage?: string | null;
+  } | null;
+};
+
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginData>;
+  loginMutation: UseMutationResult<AuthUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
 
   isAuthenticated: boolean;
@@ -34,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
+  } = useQuery<AuthUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
@@ -71,9 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCsrfToken(data.csrfToken);
       }
       const { csrfToken: _token, ...user } = data;
-      return user as User;
+      return user as AuthUser;
     },
-    onSuccess: (user: User) => {
+    onSuccess: (user: AuthUser) => {
       // Set user data — React re-renders, auth-gated queries fire using the
       // already-established login session cookie.
       queryClient.setQueryData(["/api/user"], user);

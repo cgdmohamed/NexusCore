@@ -77,7 +77,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
 
   const watchedAmount = form.watch("amount");
   const watchedType = form.watch("type");
-  const currentBalance = parseFloat(paymentSource.currentBalance);
+  const currentBalance = parseFloat(paymentSource.currentBalance || "0");
   const adjustmentAmount = parseFloat(watchedAmount || "0");
   
   const newBalance = watchedType === "income" 

@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertUserSchema, type User } from "@shared/schema";
+import { insertUserSchema, type Employee, type Role, type User } from "@shared/schema";
 import { z } from "zod";
 
 const createFormSchema = (isEditing: boolean) => z.object({
@@ -61,12 +61,12 @@ export function UserForm({ user, onClose }: UserFormProps) {
   const isEditing = !!user;
 
   // Fetch employees without user accounts
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
 
   // Fetch roles
-  const { data: roles = [] } = useQuery({
+  const { data: roles = [] } = useQuery<Role[]>({
     queryKey: ["/api/roles"],
   });
 

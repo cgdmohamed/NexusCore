@@ -76,7 +76,7 @@ export function cancelMessageEmail(recipientId: string, conversationId: string):
  * Call this when the user opens the Messages page (general read).
  */
 export function cancelAllMessageEmails(recipientId: string): void {
-  for (const [key, pending] of pendingEmails.entries()) {
+  for (const [key, pending] of Array.from(pendingEmails.entries())) {
     if (pending.recipientId === recipientId) {
       clearTimeout(pending.timerId);
       pendingEmails.delete(key);

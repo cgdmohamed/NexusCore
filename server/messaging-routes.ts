@@ -225,7 +225,7 @@ export function registerMessagingRoutes(app: Express) {
         .orderBy(sql`${messages.createdAt} ASC`);
 
       // Attach sender names
-      const senderIds = [...new Set(msgs.map((m) => m.senderId).filter(Boolean))] as string[];
+      const senderIds = Array.from(new Set(msgs.map((m) => m.senderId).filter(Boolean))) as string[];
       let senderMap: Record<string, string> = {};
       if (senderIds.length > 0) {
         const senderUsers = await db

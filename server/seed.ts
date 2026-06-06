@@ -21,7 +21,7 @@ async function seed() {
     console.log("Clearing database...");
     
     const tablesToClear = [
-      'session',
+      'sessions',
       'notifications', 'notification_logs', 'notification_settings', 'email_templates',
       'task_activity_log', 'task_dependencies', 'task_comments', 'tasks', 'activities',
       'expense_payments', 'expenses', 'expense_categories', 'payments', 'invoice_items',
@@ -30,11 +30,11 @@ async function seed() {
       'audit_logs', 'employee_kpis', 'users', 'employees', 'roles'
     ];
     
-    // Drop session table and its index to avoid conflicts on app restart
+    // Drop sessions table and its index to avoid conflicts on app restart
     try {
       await db.execute(sql.raw(`DROP INDEX IF EXISTS "IDX_session_expire"`));
-      await db.execute(sql.raw(`DROP TABLE IF EXISTS session CASCADE`));
-      console.log("Dropped session table and index (will be recreated on app start)");
+      await db.execute(sql.raw(`DROP TABLE IF EXISTS sessions CASCADE`));
+      console.log("Dropped sessions table and index (will be recreated on app start)");
     } catch (e) {
       console.log("Session cleanup note:", (e as Error).message);
     }
@@ -63,6 +63,8 @@ async function seed() {
           invoices: { view: true, add: true, edit: true, delete: true, approve: true },
           expenses: { view: true, add: true, edit: true, delete: true, approve: true },
           paymentSources: { view: true, add: true, edit: true, delete: true, approve: true },
+          services: { view: true, add: true, edit: true, delete: true, approve: true },
+          projects: { view: true, add: true, edit: true, delete: true, approve: true },
           employees: { view: true, add: true, edit: true, delete: true, approve: true },
           users: { view: true, add: true, edit: true, delete: true, approve: true },
           roles: { view: true, add: true, edit: true, delete: true, approve: true },
@@ -81,6 +83,8 @@ async function seed() {
           invoices: { view: true, add: true, edit: true, delete: false, approve: true },
           expenses: { view: true, add: true, edit: true, delete: false, approve: true },
           paymentSources: { view: true, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: true, edit: true, delete: false, approve: false },
+          projects: { view: true, add: true, edit: true, delete: false, approve: true },
           employees: { view: true, add: false, edit: true, delete: false, approve: false },
           users: { view: true, add: false, edit: false, delete: false, approve: false },
           roles: { view: true, add: false, edit: false, delete: false, approve: false },
@@ -99,6 +103,8 @@ async function seed() {
           invoices: { view: true, add: true, edit: true, delete: false, approve: true },
           expenses: { view: true, add: true, edit: true, delete: false, approve: true },
           paymentSources: { view: true, add: true, edit: true, delete: false, approve: true },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: false, edit: false, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -117,6 +123,8 @@ async function seed() {
           invoices: { view: true, add: false, edit: false, delete: false, approve: false },
           expenses: { view: true, add: true, edit: true, delete: false, approve: false },
           paymentSources: { view: false, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: true, edit: true, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -135,6 +143,8 @@ async function seed() {
           invoices: { view: true, add: false, edit: false, delete: false, approve: false },
           expenses: { view: true, add: true, edit: true, delete: false, approve: false },
           paymentSources: { view: false, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: false, edit: true, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -227,7 +237,7 @@ async function seed() {
 
     console.log("\n=== Seed Complete ===");
     console.log("\nLogin credentials:");
-    console.log("  Email: admin@company.com");
+    console.log("  Username: admin");
     console.log("  Password: admin123");
     console.log("");
     

@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientCombobox } from "@/components/ui/client-combobox";
 import { Plus } from "lucide-react";
+import type { Client } from "@shared/schema";
 
 const invoiceFormSchema = z.object({
   clientId: z.string().min(1, "Please select a client"),
@@ -44,7 +45,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
   const queryClient = useQueryClient();
 
   // Fetch clients for dropdown
-  const { data: clients = [] } = useQuery<Array<{ id: string; name: string }>>({
+  const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
 

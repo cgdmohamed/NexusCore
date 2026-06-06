@@ -234,6 +234,9 @@ export default function ExpenseDetail() {
   }
 
   const categoryInfo = getCategoryInfo(expense.categoryId);
+  const paymentSourceInfo = expense.paymentSourceId
+    ? getPaymentSourceInfo(expense.paymentSourceId)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -324,13 +327,13 @@ export default function ExpenseDetail() {
                     </div>
                   )}
 
-                  {getPaymentSourceInfo(expense.paymentSourceId) && (
+                  {paymentSourceInfo && (
                     <div className="flex items-center gap-3">
                       <Wallet className="h-5 w-5 text-gray-400" />
                       <div>
                         <div className="font-medium">Payment Source</div>
                         <div className="text-sm text-gray-500">
-                          {getPaymentSourceInfo(expense.paymentSourceId)?.name}
+                          {paymentSourceInfo.name}
                         </div>
                       </div>
                     </div>

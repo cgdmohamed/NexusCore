@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { db } from "./db";
-import { requireAuth } from "./auth";
+import { requirePermission } from "./auth";
 import { clientCredentials, insertClientCredentialSchema } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -40,7 +40,7 @@ const updateCredentialSchema = z.object({
 
 export function registerCredentialRoutes(app: Express) {
   // GET /api/clients/:id/credentials - list credentials for a client
-  app.get("/api/clients/:id/credentials", requireAuth, async (req: AuthRequest, res: Response) => {
+  app.get("/api/clients/:id/credentials", requirePermission("crm", "view"), async (req: any, res: Response) => {
     try {
       const { id } = req.params;
       const canManage = isAdminOrManager(req.user);
@@ -73,7 +73,7 @@ export function registerCredentialRoutes(app: Express) {
   });
 
   // GET /api/clients/:clientId/credentials/:credId/password - reveal password (admin/manager only)
-  app.get("/api/clients/:clientId/credentials/:credId/password", requireAuth, async (req: AuthRequest, res: Response) => {
+  app.get("/api/clients/:clientId/credentials/:credId/password", requirePermission("crm", "view"), async (req: any, res: Response) => {
     try {
       if (!isAdminOrManager(req.user)) {
         return res.status(403).json({ message: "Only admins and managers can reveal passwords" });
@@ -97,7 +97,7 @@ export function registerCredentialRoutes(app: Express) {
   });
 
   // POST /api/clients/:id/credentials - create credential (admin/manager only)
-  app.post("/api/clients/:id/credentials", requireAuth, async (req: AuthRequest, res: Response) => {
+  app.post("/api/clients/:id/credentials", requirePermission("crm", "add"), async (req: any, res: Response) => {
     try {
       if (!isAdminOrManager(req.user)) {
         return res.status(403).json({ message: "Only admins and managers can add credentials" });
@@ -141,7 +141,7 @@ export function registerCredentialRoutes(app: Express) {
   });
 
   // PATCH /api/clients/:clientId/credentials/:credId - update credential (admin/manager only)
-  app.patch("/api/clients/:clientId/credentials/:credId", requireAuth, async (req: AuthRequest, res: Response) => {
+  app.patch("/api/clients/:clientId/credentials/:credId", requirePermission("crm", "edit"), async (req: any, res: Response) => {
     try {
       if (!isAdminOrManager(req.user)) {
         return res.status(403).json({ message: "Only admins and managers can edit credentials" });
@@ -198,7 +198,7 @@ export function registerCredentialRoutes(app: Express) {
   });
 
   // DELETE /api/clients/:clientId/credentials/:credId - delete credential (admin/manager only)
-  app.delete("/api/clients/:clientId/credentials/:credId", requireAuth, async (req: AuthRequest, res: Response) => {
+  app.delete("/api/clients/:clientId/credentials/:credId", requirePermission("crm", "delete"), async (req: any, res: Response) => {
     try {
       if (!isAdminOrManager(req.user)) {
         return res.status(403).json({ message: "Only admins and managers can delete credentials" });

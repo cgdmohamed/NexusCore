@@ -93,8 +93,8 @@ export default function Quotations() {
           bValue = b.validUntil ? new Date(b.validUntil) : new Date(0);
           break;
         default: // createdAt
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
+          aValue = new Date(a.createdAt ?? 0);
+          bValue = new Date(b.createdAt ?? 0);
       }
 
       if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
@@ -434,9 +434,9 @@ export default function Quotations() {
                         </TableCell>
                         <TableCell className="text-sm text-gray-600">
                           <div>
-                            <div>{format(new Date(quotation.createdAt), 'MMM dd, yyyy')}</div>
+                            <div>{format(new Date(quotation.createdAt ?? new Date()), 'MMM dd, yyyy')}</div>
                             <div className="text-xs text-gray-400">
-                              {formatDistanceToNow(new Date(quotation.createdAt), { addSuffix: true })}
+                              {formatDistanceToNow(new Date(quotation.createdAt ?? new Date()), { addSuffix: true })}
                             </div>
                           </div>
                         </TableCell>
@@ -515,7 +515,7 @@ export default function Quotations() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Created:</span>
-                          <span className="text-sm">{formatDistanceToNow(new Date(quotation.createdAt), { addSuffix: true })}</span>
+                          <span className="text-sm">{formatDistanceToNow(new Date(quotation.createdAt ?? new Date()), { addSuffix: true })}</span>
                         </div>
                       </div>
                       <div className="flex space-x-2 mt-4">

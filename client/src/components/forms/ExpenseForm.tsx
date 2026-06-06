@@ -141,9 +141,11 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
       console.log("Expense payload being sent:", payload);
 
       if (expense) {
-        return await apiRequest("PUT", `/api/expenses/${expense.id}`, payload);
+        const response = await apiRequest("PUT", `/api/expenses/${expense.id}`, payload);
+        return response.json();
       } else {
-        return await apiRequest("POST", "/api/expenses", payload);
+        const response = await apiRequest("POST", "/api/expenses", payload);
+        return response.json();
       }
     },
     onSuccess: (data) => {

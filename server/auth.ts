@@ -39,6 +39,14 @@ async function comparePasswords(supplied: string, stored: string) {
   return await bcrypt.compare(supplied, stored);
 }
 
+function mustChangePasswordBlocked(req: any) {
+  if (!req.user?.mustChangePassword) return false;
+  if (req.method === "GET" && req.path === "/api/user") return false;
+  if (req.path === "/api/logout") return false;
+  if (req.path === `/api/users/${req.user.id}/change-password`) return false;
+  return true;
+}
+
 export function setupAuth(app: Express) {
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
@@ -83,6 +91,10 @@ export function setupAuth(app: Express) {
         const user = await storage.getUserByUsername(username);
         if (!user || !user.passwordHash) {
           return done(null, false, { message: 'Invalid username or password' });
+        }
+
+        if (!user.isActive) {
+          return done(null, false, { message: 'Account is disabled' });
         }
         
         const isValid = await comparePasswords(password, user.passwordHash);
@@ -134,6 +146,10 @@ export function setupAuth(app: Express) {
   // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
+      if (process.env.ALLOW_PUBLIC_REGISTRATION !== "true") {
+        return res.status(403).json({ message: "Public registration is disabled" });
+      }
+
       const { username, password, email, firstName, lastName } = req.body;
       
       // Validation
@@ -517,6 +533,19 @@ export function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
   }
+
+  if (req.user?.isActive === false) {
+    req.logout?.(() => {});
+    return res.status(403).json({ message: "Account is disabled" });
+  }
+
+  if (mustChangePasswordBlocked(req)) {
+    return res.status(403).json({
+      message: "Password change required",
+      code: "MUST_CHANGE_PASSWORD",
+    });
+  }
+
   next();
 }
 
@@ -524,6 +553,18 @@ export function requireAuth(req: any, res: any, next: any) {
 export function requireAdmin(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentication required" });
+  }
+
+  if (req.user?.isActive === false) {
+    req.logout?.(() => {});
+    return res.status(403).json({ message: "Account is disabled" });
+  }
+
+  if (mustChangePasswordBlocked(req)) {
+    return res.status(403).json({
+      message: "Password change required",
+      code: "MUST_CHANGE_PASSWORD",
+    });
   }
   
   // Check if user has Admin role
@@ -540,6 +581,18 @@ export function requirePermission(module: string, action: 'view' | 'add' | 'edit
   return (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (req.user?.isActive === false) {
+      req.logout?.(() => {});
+      return res.status(403).json({ message: "Account is disabled" });
+    }
+
+    if (mustChangePasswordBlocked(req)) {
+      return res.status(403).json({
+        message: "Password change required",
+        code: "MUST_CHANGE_PASSWORD",
+      });
     }
     
     const permissions = req.user.permissions;

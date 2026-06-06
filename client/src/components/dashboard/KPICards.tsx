@@ -10,22 +10,22 @@ export function KPICards() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading } = useQuery<any>({
     queryKey: ["/api/dashboard/kpis"],
     enabled: isAuthenticated,
   });
 
-  const { data: taskStats } = useQuery({
+  const { data: taskStats } = useQuery<any>({
     queryKey: ["/api/tasks/stats"],
     enabled: isAuthenticated,
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     enabled: isAuthenticated,
   });
 
-  const { data: invoices = [] } = useQuery({
+  const { data: invoices = [] } = useQuery<any[]>({
     queryKey: ["/api/invoices"],
     enabled: isAuthenticated,
   });

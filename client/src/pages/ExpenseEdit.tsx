@@ -72,11 +72,6 @@ export default function ExpenseEdit() {
       <Header 
         title="Edit Expense"
         subtitle={`Editing: ${expense.title}`}
-        breadcrumbs={[
-          { label: "Expenses", href: "/expenses" },
-          { label: expense.title, href: `/expenses/${id}` },
-          { label: "Edit" }
-        ]}
       />
 
       <Card>

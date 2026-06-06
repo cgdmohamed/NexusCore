@@ -18,7 +18,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, like, sql, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { requireAuth, requireAdmin } from "./auth";
+import { requireAuth, requireAdmin, requirePermission } from "./auth";
 
 // Helper function to log audit actions
 async function logAudit(
@@ -50,7 +50,7 @@ export function registerUserManagementRoutes(app: Express) {
   // ========== ROLES MANAGEMENT ==========
   
   // Get all roles with user counts
-  app.get("/api/roles", requireAuth, async (req, res) => {
+  app.get("/api/roles", requirePermission("roles", "view"), async (req, res) => {
     try {
       const rolesList = await db
         .select()
@@ -82,7 +82,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get users assigned to a specific role
-  app.get("/api/roles/:id/users", requireAuth, async (req, res) => {
+  app.get("/api/roles/:id/users", requirePermission("roles", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       const assignedUsers = await db
@@ -120,7 +120,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get role by ID
-  app.get("/api/roles/:id", requireAuth, async (req, res) => {
+  app.get("/api/roles/:id", requirePermission("roles", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       const [role] = await db
@@ -233,28 +233,31 @@ export function registerUserManagementRoutes(app: Express) {
   // ========== EMPLOYEES MANAGEMENT ==========
   
   // Get all employees
-  app.get("/api/employees", requireAuth, async (req, res) => {
+  app.get("/api/employees", requirePermission("employees", "view"), async (req, res) => {
     try {
       const { search, department, status } = req.query;
       
-      // First get all employees
-      let baseQuery = db.select().from(employees);
+      const conditions = [];
       
-      if (search) {
-        baseQuery = baseQuery.where(
+      if (typeof search === "string" && search.trim()) {
+        conditions.push(
           sql`LOWER(${employees.firstName} || ' ' || ${employees.lastName}) LIKE LOWER(${'%' + search + '%'})`
         );
       }
       
       if (department) {
-        baseQuery = baseQuery.where(eq(employees.department, department as any));
+        conditions.push(eq(employees.department, department as any));
       }
       
       if (status) {
-        baseQuery = baseQuery.where(eq(employees.status, status as any));
+        conditions.push(eq(employees.status, status as any));
       }
       
-      const employeesList = await baseQuery.orderBy(desc(employees.createdAt));
+      const employeesList = await db
+        .select()
+        .from(employees)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(employees.createdAt));
       
       // Get all user accounts to check which employees have linked users
       const allUsers = await db.select({ employeeId: users.employeeId }).from(users).where(sql`${users.employeeId} IS NOT NULL`);
@@ -274,7 +277,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get employee by ID
-  app.get("/api/employees/:id", requireAuth, async (req, res) => {
+  app.get("/api/employees/:id", requirePermission("employees", "view"), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -441,6 +444,11 @@ export function registerUserManagementRoutes(app: Express) {
   app.get("/api/users/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const requester = (req as any).user;
+      if (requester?.id !== id && requester?.roleName !== "Admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
       const user = await db
         .select({
           id: users.id,
@@ -656,30 +664,41 @@ export function registerUserManagementRoutes(app: Express) {
           oldValues: auditLogs.oldValues,
           newValues: auditLogs.newValues,
           createdAt: auditLogs.createdAt,
-          user: {
-            id: users.id,
-            email: users.email,
-            employee: {
-              firstName: employees.firstName,
-              lastName: employees.lastName,
-            },
-          },
+          userId: users.id,
+          userEmail: users.email,
+          userFirstName: employees.firstName,
+          userLastName: employees.lastName,
         })
         .from(auditLogs)
         .leftJoin(users, eq(auditLogs.userId, users.id))
         .leftJoin(employees, eq(users.employeeId, employees.id));
       
-      if (entityType) {
-        query = query.where(eq(auditLogs.entityType, entityType as string));
-      }
+      const filters = [];
+      if (entityType) filters.push(eq(auditLogs.entityType, entityType as string));
+      if (entityId) filters.push(eq(auditLogs.entityId, entityId as string));
       
-      if (entityId) {
-        query = query.where(eq(auditLogs.entityId, entityId as string));
-      }
-      
-      const logs = await query
+      const rows = await query
+        .where(filters.length > 0 ? and(...filters) : undefined)
         .orderBy(desc(auditLogs.createdAt))
         .limit(parseInt(limit as string));
+
+      const logs = rows.map((row) => ({
+        id: row.id,
+        action: row.action,
+        entityType: row.entityType,
+        entityId: row.entityId,
+        oldValues: row.oldValues,
+        newValues: row.newValues,
+        createdAt: row.createdAt,
+        user: {
+          id: row.userId,
+          email: row.userEmail,
+          employee: {
+            firstName: row.userFirstName,
+            lastName: row.userLastName,
+          },
+        },
+      }));
       
       res.json(logs);
     } catch (error) {
@@ -689,7 +708,7 @@ export function registerUserManagementRoutes(app: Express) {
   });
 
   // Get user management statistics
-  app.get("/api/user-management/stats", requireAuth, async (req, res) => {
+  app.get("/api/user-management/stats", requirePermission("users", "view"), async (req, res) => {
     try {
       const [
         totalEmployees,
@@ -730,8 +749,24 @@ export function registerUserManagementRoutes(app: Express) {
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      // For this demo, we'll skip password validation
-      // In production, you'd verify the current password and hash the new one
+      if (id !== userId) {
+        return res.status(403).json({ message: "You can only change your own password" });
+      }
+
+      if (!currentPassword || !newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "Current password and a new password of at least 8 characters are required" });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
       await db

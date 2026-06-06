@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { requireAuth } from "./auth";
+import { requireAuth, requirePermission } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
 import multer from "multer";
@@ -68,7 +68,7 @@ const MAX_NUMBER_RETRIES = 5;
 
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
-  app.patch('/api/clients/:id/status', requireAuth, async (req, res) => {
+  app.patch('/api/clients/:id/status', requirePermission("crm", "edit"), async (req, res) => {
     try {
       const [updatedClient] = await db.update(clients)
         .set({ status: req.body.status, updatedAt: new Date() })
@@ -81,7 +81,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/tasks/:id/status', requireAuth, async (req, res) => {
+  app.patch('/api/tasks/:id/status', requirePermission("tasks", "edit"), async (req, res) => {
     try {
       const updateData: any = { 
         status: req.body.status, 
@@ -103,7 +103,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/expenses/:id/status', requireAuth, async (req: any, res) => {
+  app.patch('/api/expenses/:id/status', requirePermission("expenses", "edit"), async (req: any, res) => {
     try {
       const newStatus = req.body.status;
 
@@ -138,7 +138,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/quotations/:id/status', requireAuth, async (req: any, res) => {
+  app.patch('/api/quotations/:id/status', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
       const newStatus = req.body.status;
 
@@ -205,7 +205,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Quotation history endpoint
-  app.get('/api/quotations/:id/history', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations/:id/history', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const history = await db.select().from(quotationHistory)
         .where(eq(quotationHistory.quotationId, req.params.id))
@@ -217,7 +217,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/invoices/:id/status', requireAuth, async (req: any, res) => {
+  app.patch('/api/invoices/:id/status', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const updateData: any = { 
         status: req.body.status, 
@@ -253,7 +253,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoice history endpoint
-  app.get('/api/invoices/:id/history', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices/:id/history', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const history = await db.select().from(invoiceHistory)
         .where(eq(invoiceHistory.invoiceId, req.params.id))
@@ -266,7 +266,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Cancel invoice - blocks further payments, excluded from revenue
-  app.post('/api/invoices/:id/cancel', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/cancel', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
@@ -311,7 +311,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoice QR code - generate or upload
-  app.post('/api/invoices/:id/qr-code', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/qr-code', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
@@ -368,7 +368,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoice QR code - delete
-  app.delete('/api/invoices/:id/qr-code', requireAuth, async (req: any, res) => {
+  app.delete('/api/invoices/:id/qr-code', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       await db.update(invoices)
@@ -391,7 +391,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Sidebar counters endpoint
-  app.get('/api/sidebar/counters', requireAuth, async (req, res) => {
+  app.get('/api/sidebar/counters', requirePermission("dashboard", "view"), async (req, res) => {
     try {
       const [clientsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(clients);
       const [quotationsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(quotations);
@@ -417,7 +417,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Dashboard KPIs - real database data
-  app.get('/api/dashboard/kpis', requireAuth, async (req, res) => {
+  app.get('/api/dashboard/kpis', requirePermission("dashboard", "view"), async (req, res) => {
     try {
       // Total Revenue from invoices (exclude cancelled)
       const [revenueResult] = await db.select({ 
@@ -547,7 +547,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Clients - using real database
-  app.get('/api/clients', requireAuth, async (req: any, res) => {
+  app.get('/api/clients', requirePermission("crm", "view"), async (req: any, res) => {
     try {
       const clientsData = await db.select().from(clients);
       res.json(clientsData);
@@ -557,7 +557,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/clients', requireAuth, async (req: any, res) => {
+  app.post('/api/clients', requirePermission("crm", "add"), async (req: any, res) => {
     try {
       // Get the actual user ID from the session or use the first available user
       const userId = req.user?.id;
@@ -604,7 +604,7 @@ export function setupDatabaseRoutes(app: Express) {
   // Expenses routes are handled by expense-routes.ts
 
   // Quotations - using real database
-  app.get('/api/quotations', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const quotationsData = await db.select().from(quotations);
       res.json(quotationsData);
@@ -614,7 +614,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/quotations', requireAuth, async (req: any, res) => {
+  app.post('/api/quotations', requirePermission("quotations", "add"), async (req: any, res) => {
     try {
       // Get the actual user ID from the session or use the first available user
       const userId = req.user?.id;
@@ -632,7 +632,7 @@ export function setupDatabaseRoutes(app: Express) {
             clientId: req.body.clientId,
             title: req.body.title,
             description: req.body.description,
-            amount: 0,
+            amount: "0",
             status: 'draft',
             validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
             notes: req.body.notes || null,
@@ -688,7 +688,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoices - using real database
-  app.get('/api/invoices', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const invoicesData = await db.select().from(invoices);
       res.json(invoicesData);
@@ -698,7 +698,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/invoices', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices', requirePermission("invoices", "add"), async (req: any, res) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Authentication required" });
@@ -765,7 +765,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Get specific invoice with details
-  app.get('/api/invoices/:id', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices/:id', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
       if (!invoice) {
@@ -779,7 +779,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Update invoice
-  app.patch('/api/invoices/:id', requireAuth, async (req: any, res) => {
+  app.patch('/api/invoices/:id', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       // Get current invoice to calculate new total if tax/discount changed
       const [currentInvoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
@@ -835,7 +835,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete invoice with all items and payments (only draft invoices)
-  app.delete('/api/invoices/:id', requireAuth, async (req: any, res) => {
+  app.delete('/api/invoices/:id', requirePermission("invoices", "delete"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       
@@ -877,7 +877,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoice Items CRUD
-  app.get('/api/invoices/:id/items', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices/:id/items', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, req.params.id));
       res.json(items);
@@ -887,7 +887,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/invoices/:id/items', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/items', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const itemData = {
         invoiceId: req.params.id,
@@ -940,7 +940,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/invoices/:invoiceId/items/:itemId', requireAuth, async (req: any, res) => {
+  app.patch('/api/invoices/:invoiceId/items/:itemId', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const itemData = {
         name: req.body.name,
@@ -994,7 +994,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.delete('/api/invoices/:invoiceId/items/:itemId', requireAuth, async (req: any, res) => {
+  app.delete('/api/invoices/:invoiceId/items/:itemId', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       // Fetch item name before deleting for history
       const [deletedItem] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
@@ -1041,7 +1041,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Payment Records CRUD
-  app.get('/api/invoices/:id/payments', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices/:id/payments', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const paymentRecords = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
       res.json(paymentRecords);
@@ -1051,7 +1051,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/invoices/:id/payments', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/payments', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const paymentAmount = parseFloat(req.body.amount);
       const isAdminApproved = req.body.adminApproved || false;
@@ -1239,7 +1239,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Process invoice refund
-  app.post('/api/invoices/:id/refund', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/refund', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const { refundAmount, refundMethod, refundReference, notes } = req.body;
       const refundAmountNum = parseFloat(refundAmount);
@@ -1324,7 +1324,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Process credit refund (convert credit balance to cash/bank transfer)
-  app.post('/api/clients/:clientId/credit/refund', requireAuth, async (req: any, res) => {
+  app.post('/api/clients/:clientId/credit/refund', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const { refundAmount, refundMethod, refundReference, notes } = req.body;
       const refundAmountNum = parseFloat(refundAmount);
@@ -1385,7 +1385,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Get client credit balance and history
-  app.get('/api/clients/:id/credit', requireAuth, async (req: any, res) => {
+  app.get('/api/clients/:id/credit', requirePermission("crm", "view"), async (req: any, res) => {
     try {
       const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
       if (!client) {
@@ -1407,7 +1407,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Apply client credit to invoice
-  app.post('/api/invoices/:invoiceId/apply-credit', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:invoiceId/apply-credit', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const { clientId, creditAmount } = req.body;
       const creditAmountNum = parseFloat(creditAmount);
@@ -1531,7 +1531,7 @@ export function setupDatabaseRoutes(app: Express) {
   // Employee creation endpoint removed - now handled by user-management-routes.ts with real database data
 
   // Enhanced Client Profile Routes
-  app.get('/api/clients/:id', requireAuth, async (req: any, res) => {
+  app.get('/api/clients/:id', requirePermission("crm", "view"), async (req: any, res) => {
     try {
       const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
       if (!client) {
@@ -1544,7 +1544,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/clients/:id', requireAuth, async (req: any, res) => {
+  app.patch('/api/clients/:id', requirePermission("crm", "edit"), async (req: any, res) => {
     try {
       const { name, email, phone, address, city, country, status, totalValue, creditBalance } = req.body;
       const updateData: Record<string, any> = { updatedAt: new Date() };
@@ -1574,7 +1574,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Recalculate invoice totals and fix status (for fixing existing invoices after discount bug)
-  app.post('/api/invoices/:id/recalculate', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/recalculate', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       
@@ -1654,7 +1654,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Recalculate client value based on paid invoices
-  app.post('/api/clients/:id/recalculate-value', requireAuth, async (req: any, res) => {
+  app.post('/api/clients/:id/recalculate-value', requirePermission("crm", "edit"), async (req: any, res) => {
     try {
       const clientId = req.params.id;
       
@@ -1690,7 +1690,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete client with cascade (quotations, invoices, payments, notes, credit history)
-  app.delete('/api/clients/:id', requireAuth, async (req: any, res) => {
+  app.delete('/api/clients/:id', requirePermission("crm", "delete"), async (req: any, res) => {
     try {
       const clientId = req.params.id;
       
@@ -1753,7 +1753,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Client Related Data Routes
-  app.get('/api/clients/:id/quotations', requireAuth, async (req: any, res) => {
+  app.get('/api/clients/:id/quotations', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const clientQuotations = await db.select().from(quotations).where(eq(quotations.clientId, req.params.id));
       res.json(clientQuotations);
@@ -1763,7 +1763,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.get('/api/clients/:id/invoices', requireAuth, async (req: any, res) => {
+  app.get('/api/clients/:id/invoices', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, req.params.id));
       res.json(clientInvoices);
@@ -1773,7 +1773,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.get('/api/clients/:id/notes', requireAuth, async (req: any, res) => {
+  app.get('/api/clients/:id/notes', requirePermission("crm", "view"), async (req: any, res) => {
     try {
       const clientNotesList = await db.select().from(clientNotes).where(eq(clientNotes.clientId, req.params.id));
       res.json(clientNotesList);
@@ -1783,7 +1783,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/clients/:id/notes', requireAuth, async (req: any, res) => {
+  app.post('/api/clients/:id/notes', requirePermission("crm", "edit"), async (req: any, res) => {
     try {
       const noteData = {
         clientId: req.params.id,
@@ -1801,7 +1801,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Services Management Routes
-  app.get('/api/services', requireAuth, async (req: any, res) => {
+  app.get('/api/services', requirePermission("services", "view"), async (req: any, res) => {
     try {
       const servicesList = await db.select().from(services).where(eq(services.isActive, true));
       res.json(servicesList);
@@ -1812,7 +1812,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Initialize Default Services
-  app.post('/api/services/initialize', requireAuth, async (req: any, res) => {
+  app.post('/api/services/initialize', requirePermission("services", "add"), async (req: any, res) => {
     try {
       const existingServices = await db.select().from(services);
       if (existingServices.length === 0) {
@@ -1839,7 +1839,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Quotation Items Management
-  app.get('/api/quotations/:id/items', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations/:id/items', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const items = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
       res.json(items);
@@ -1849,7 +1849,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.post('/api/quotations/:id/items', requireAuth, async (req: any, res) => {
+  app.post('/api/quotations/:id/items', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
       // Lock items when quotation is accepted or invoiced
       const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
@@ -1903,7 +1903,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Enhanced Quotation Management Routes
-  app.get('/api/quotations/:id', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations/:id', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
       if (!quotation) {
@@ -1916,7 +1916,7 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  app.patch('/api/quotations/:id', requireAuth, async (req: any, res) => {
+  app.patch('/api/quotations/:id', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
       const updateData = { ...req.body, updatedAt: new Date() };
 
@@ -2001,7 +2001,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete quotation with all items
-  app.delete('/api/quotations/:id', requireAuth, async (req: any, res) => {
+  app.delete('/api/quotations/:id', requirePermission("quotations", "delete"), async (req: any, res) => {
     try {
       const quotationId = req.params.id;
       
@@ -2025,7 +2025,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Convert quotation to invoice
-  app.post('/api/quotations/:id/convert-to-invoice', requireAuth, async (req: any, res) => {
+  app.post('/api/quotations/:id/convert-to-invoice', requirePermission("quotations", "approve"), async (req: any, res) => {
     try {
       // Get quotation details
       const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
@@ -2147,7 +2147,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Export quotation as PDF
-  app.get('/api/quotations/:id/export-pdf', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations/:id/export-pdf', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
       if (!quotation) {
@@ -2179,6 +2179,12 @@ export function setupDatabaseRoutes(app: Express) {
         invoiced: 'background:#ede9fe;color:#7c3aed',
       };
       const statusStyle = statusBadgeStyles[quotation.status] || 'background:#f3f4f6;color:#374151';
+
+      const formatExportItemAmount = (item: typeof items[number], amount: string | null): string => (
+        isIncludedPrintItem(item.unitPrice, item.totalPrice, item.discount)
+          ? "included"
+          : parseFloat(amount || "0").toFixed(2)
+      );
 
       const htmlContent = `<!DOCTYPE html>
 <html>
@@ -2253,7 +2259,7 @@ export function setupDatabaseRoutes(app: Express) {
       <div class="doc-type">QUOTATION</div>
       <table class="doc-meta-table">
         <tr><td>Quotation No.</td><td>${quotation.quotationNumber}</td></tr>
-        <tr><td>Date</td><td>${new Date(quotation.createdAt).toLocaleDateString()}</td></tr>
+        <tr><td>Date</td><td>${quotation.createdAt ? new Date(quotation.createdAt).toLocaleDateString() : 'N/A'}</td></tr>
         <tr><td>Valid Until</td><td>${quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : 'N/A'}</td></tr>
         ${quotation.title ? `<tr><td>Subject</td><td>${quotation.title}</td></tr>` : ''}
       </table>
@@ -2285,12 +2291,12 @@ export function setupDatabaseRoutes(app: Express) {
       ${items.map(item => `
       <tr>
         <td>
-          <div class="item-name">${item.description || item.name || ''}</div>
+          <div class="item-name">${item.description || ''}</div>
         </td>
         <td class="right">${item.quantity}</td>
-        <td class="right">${parseFloat(item.unitPrice || '0').toFixed(2)}</td>
+        <td class="right">${formatExportItemAmount(item, item.unitPrice)}</td>
         <td class="right">${parseFloat(item.discount || '0').toFixed(1)}%</td>
-        <td class="right">${parseFloat(item.totalPrice || '0').toFixed(2)}</td>
+        <td class="right">${formatExportItemAmount(item, item.totalPrice)}</td>
       </tr>`).join('')}
     </tbody>
   </table>
@@ -2339,7 +2345,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Update quotation item
-  app.patch('/api/quotations/:id/items/:itemId', requireAuth, async (req: any, res) => {
+  app.patch('/api/quotations/:id/items/:itemId', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
       // Lock items when quotation is accepted or invoiced
       const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
@@ -2397,7 +2403,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete quotation item
-  app.delete('/api/quotations/:id/items/:itemId', requireAuth, async (req: any, res) => {
+  app.delete('/api/quotations/:id/items/:itemId', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
       // Lock items when quotation is accepted or invoiced
       const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
@@ -2444,7 +2450,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Invoice file attachments upload
-  app.post('/api/invoices/:id/attachments', requireAuth, uploadInvoiceFile.single('file'), async (req: any, res) => {
+  app.post('/api/invoices/:id/attachments', requirePermission("invoices", "edit"), uploadInvoiceFile.single('file'), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       const file = req.file;
@@ -2486,7 +2492,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete invoice attachment
-  app.delete('/api/invoices/:id/attachments', requireAuth, async (req: any, res) => {
+  app.delete('/api/invoices/:id/attachments', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       const { attachmentPath } = req.body;
@@ -2535,8 +2541,14 @@ export function setupDatabaseRoutes(app: Express) {
     return Math.round((egpValue / exchangeRate) * 100) / 100;
   }
 
+  function isIncludedPrintItem(unitPrice: string | null, totalPrice: string | null, discount?: string | null): boolean {
+    return parseFloat(unitPrice || "0") === 0
+      && parseFloat(totalPrice || "0") === 0
+      && parseFloat(discount || "0") === 0;
+  }
+
   // POST /api/quotations/:id/print — create print record & return printUrl
-  app.post('/api/quotations/:id/print', requireAuth, async (req: any, res) => {
+  app.post('/api/quotations/:id/print', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const quotationId = req.params.id;
       const { displayCurrency, exchangeRate: rateStr } = req.body;
@@ -2574,6 +2586,7 @@ export function setupDatabaseRoutes(app: Express) {
         discount: item.discount || "0",
         egpUnitPrice: item.unitPrice,
         egpTotalPrice: item.totalPrice,
+        isIncluded: isIncludedPrintItem(item.unitPrice, item.totalPrice, item.discount),
         displayUnitPrice: convertAmount(parseFloat(item.unitPrice), exchangeRate).toFixed(2),
         displayTotalPrice: convertAmount(parseFloat(item.totalPrice), exchangeRate).toFixed(2),
       }));
@@ -2640,7 +2653,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // GET /api/quotation-print-records/:id — fetch single print record
-  app.get('/api/quotation-print-records/:id', requireAuth, async (req: any, res) => {
+  app.get('/api/quotation-print-records/:id', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const [record] = await db.select().from(quotationPrintRecords).where(eq(quotationPrintRecords.id, req.params.id));
       if (!record) return res.status(404).json({ message: "Print record not found" });
@@ -2652,7 +2665,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // GET /api/quotations/:id/print-records — list print records for a quotation
-  app.get('/api/quotations/:id/print-records', requireAuth, async (req: any, res) => {
+  app.get('/api/quotations/:id/print-records', requirePermission("quotations", "view"), async (req: any, res) => {
     try {
       const records = await db.select({
         id: quotationPrintRecords.id,
@@ -2676,7 +2689,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // POST /api/invoices/:id/print — create print record & return printUrl
-  app.post('/api/invoices/:id/print', requireAuth, async (req: any, res) => {
+  app.post('/api/invoices/:id/print', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const invoiceId = req.params.id;
       const { displayCurrency, exchangeRate: rateStr } = req.body;
@@ -2712,8 +2725,10 @@ export function setupDatabaseRoutes(app: Express) {
         name: item.name,
         description: item.description,
         quantity: item.quantity,
+        discount: "0",
         egpUnitPrice: item.unitPrice,
         egpTotalPrice: item.totalPrice,
+        isIncluded: isIncludedPrintItem(item.unitPrice, item.totalPrice),
         displayUnitPrice: convertAmount(parseFloat(item.unitPrice), exchangeRate).toFixed(2),
         displayTotalPrice: convertAmount(parseFloat(item.totalPrice), exchangeRate).toFixed(2),
       }));
@@ -2788,7 +2803,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // GET /api/invoice-print-records/:id — fetch single print record
-  app.get('/api/invoice-print-records/:id', requireAuth, async (req: any, res) => {
+  app.get('/api/invoice-print-records/:id', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const [record] = await db.select().from(invoicePrintRecords).where(eq(invoicePrintRecords.id, req.params.id));
       if (!record) return res.status(404).json({ message: "Print record not found" });
@@ -2800,7 +2815,7 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // GET /api/invoices/:id/print-records — list print records for an invoice
-  app.get('/api/invoices/:id/print-records', requireAuth, async (req: any, res) => {
+  app.get('/api/invoices/:id/print-records', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
       const records = await db.select({
         id: invoicePrintRecords.id,

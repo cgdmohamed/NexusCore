@@ -121,8 +121,8 @@ export default function PaymentSources() {
       let bValue: any = b[sortBy as keyof PaymentSource];
       
       if (sortBy === "currentBalance") {
-        aValue = parseFloat(a.currentBalance);
-        bValue = parseFloat(b.currentBalance);
+        aValue = parseFloat(a.currentBalance || "0");
+        bValue = parseFloat(b.currentBalance || "0");
       }
       
       if (typeof aValue === "string") {
@@ -417,16 +417,16 @@ export default function PaymentSources() {
                       {getAccountTypeBadge(source.accountType)}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {formatCurrency(source.currentBalance)}
+                      {formatCurrency(source.currentBalance || "0")}
                     </TableCell>
                     <TableCell>{source.currency}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getStatusColor(source.isActive)}>
+                      <Badge variant="outline" className={getStatusColor(source.isActive === true)}>
                         {source.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-500">
-                      {formatDistanceToNow(new Date(source.createdAt), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(source.createdAt ?? new Date()), { addSuffix: true })}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -532,7 +532,7 @@ export default function PaymentSources() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     {getAccountTypeBadge(source.accountType)}
-                    <Badge variant="outline" className={getStatusColor(source.isActive)}>
+                    <Badge variant="outline" className={getStatusColor(source.isActive === true)}>
                       {source.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
@@ -541,7 +541,7 @@ export default function PaymentSources() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Current Balance:</span>
                       <span className="font-mono font-semibold text-lg">
-                        {formatCurrency(source.currentBalance)}
+                        {formatCurrency(source.currentBalance || "0")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -551,7 +551,7 @@ export default function PaymentSources() {
                   </div>
                   
                   <div className="text-xs text-gray-500 pt-2 border-t">
-                    Created {formatDistanceToNow(new Date(source.createdAt), { addSuffix: true })}
+                    Created {formatDistanceToNow(new Date(source.createdAt ?? new Date()), { addSuffix: true })}
                   </div>
                 </CardContent>
               </Card>

@@ -22,6 +22,8 @@ export async function seedUserData() {
           invoices: { view: true, add: true, edit: true, delete: true, approve: true },
           expenses: { view: true, add: true, edit: true, delete: true, approve: true },
           paymentSources: { view: true, add: true, edit: true, delete: true, approve: true },
+          services: { view: true, add: true, edit: true, delete: true, approve: true },
+          projects: { view: true, add: true, edit: true, delete: true, approve: true },
           employees: { view: true, add: true, edit: true, delete: true, approve: true },
           users: { view: true, add: true, edit: true, delete: true, approve: true },
           roles: { view: true, add: true, edit: true, delete: true, approve: true },
@@ -40,6 +42,8 @@ export async function seedUserData() {
           invoices: { view: true, add: true, edit: true, delete: false, approve: true },
           expenses: { view: true, add: true, edit: true, delete: false, approve: true },
           paymentSources: { view: true, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: true, edit: true, delete: false, approve: false },
+          projects: { view: true, add: true, edit: true, delete: false, approve: true },
           employees: { view: true, add: false, edit: true, delete: false, approve: false },
           users: { view: true, add: false, edit: false, delete: false, approve: false },
           roles: { view: true, add: false, edit: false, delete: false, approve: false },
@@ -58,6 +62,8 @@ export async function seedUserData() {
           invoices: { view: true, add: true, edit: true, delete: false, approve: true },
           expenses: { view: true, add: true, edit: true, delete: false, approve: true },
           paymentSources: { view: true, add: true, edit: true, delete: false, approve: true },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: false, edit: false, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -76,6 +82,8 @@ export async function seedUserData() {
           invoices: { view: true, add: false, edit: false, delete: false, approve: false },
           expenses: { view: true, add: true, edit: true, delete: false, approve: false },
           paymentSources: { view: false, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: true, edit: true, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -94,6 +102,8 @@ export async function seedUserData() {
           invoices: { view: false, add: false, edit: false, delete: false, approve: false },
           expenses: { view: true, add: true, edit: true, delete: false, approve: true },
           paymentSources: { view: false, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: true, edit: true, delete: false, approve: false },
           employees: { view: true, add: true, edit: true, delete: false, approve: true },
           users: { view: true, add: true, edit: true, delete: false, approve: false },
           roles: { view: true, add: false, edit: false, delete: false, approve: false },
@@ -112,6 +122,8 @@ export async function seedUserData() {
           invoices: { view: true, add: false, edit: false, delete: false, approve: false },
           expenses: { view: true, add: true, edit: true, delete: false, approve: false },
           paymentSources: { view: false, add: false, edit: false, delete: false, approve: false },
+          services: { view: true, add: false, edit: false, delete: false, approve: false },
+          projects: { view: true, add: false, edit: true, delete: false, approve: false },
           employees: { view: true, add: false, edit: false, delete: false, approve: false },
           users: { view: false, add: false, edit: false, delete: false, approve: false },
           roles: { view: false, add: false, edit: false, delete: false, approve: false },
@@ -143,7 +155,7 @@ export async function seedUserData() {
         department: "operations" as const,
         hiringDate: new Date("2024-01-01"),
         status: "active" as const,
-        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
+        profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100",
       },
       {
         firstName: "System",
@@ -194,6 +206,7 @@ export async function seedUserData() {
 
     const defaultUsers = [
       {
+        username: "test",
         email: "test@company.com",
         passwordHash: defaultPassword,
         employeeId: testEmployee.id,
@@ -202,6 +215,7 @@ export async function seedUserData() {
         mustChangePassword: false, // Don't force password change for test user
       },
       {
+        username: "admin",
         email: "admin@company.com",
         passwordHash: defaultPassword,
         employeeId: adminEmployee.id,
@@ -210,6 +224,7 @@ export async function seedUserData() {
         mustChangePassword: true,
       },
       {
+        username: "john.manager",
         email: "john.manager@company.com",
         passwordHash: defaultPassword,
         employeeId: managerEmployee.id,
@@ -218,6 +233,7 @@ export async function seedUserData() {
         mustChangePassword: true,
       },
       {
+        username: "sarah.finance",
         email: "sarah.finance@company.com",
         passwordHash: defaultPassword,
         employeeId: financeEmployee.id,
@@ -232,9 +248,9 @@ export async function seedUserData() {
 
     console.log("User management seed data created successfully!");
     console.log("Default credentials:");
-    console.log("- admin@company.com / admin123 (Admin)");
-    console.log("- john.manager@company.com / admin123 (Manager)");
-    console.log("- sarah.finance@company.com / admin123 (Finance)");
+    console.log("- admin / admin123 (Admin)");
+    console.log("- john.manager / admin123 (Manager)");
+    console.log("- sarah.finance / admin123 (Finance)");
     console.log("Note: All users must change password on first login");
 
   } catch (error) {

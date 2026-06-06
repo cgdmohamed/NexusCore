@@ -203,7 +203,7 @@ export default function QuotationDetail() {
       const service = services.find(s => s.id === serviceId);
       if (service) {
         setCustomDescription(service.description || "");
-        setUnitPrice(service.defaultPrice);
+        setUnitPrice(service.defaultPrice || "0");
       }
     } else {
       setCustomDescription("");
@@ -698,7 +698,7 @@ export default function QuotationDetail() {
                         <SelectItem value="custom">Custom Item</SelectItem>
                         {services.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
-                            {service.name} - {formatCurrency(service.defaultPrice)}
+                            {service.name} - {formatCurrency(service.defaultPrice || "0")}
                           </SelectItem>
                         ))}
                       </SelectContent>

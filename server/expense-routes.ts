@@ -15,7 +15,7 @@ import {
   type InsertExpensePayment,
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
-import { requireAuth, requirePermission } from "./auth";
+import { requirePermission } from "./auth";
 import { notificationService } from "./notification-service";
 
 // Helper function to handle payment source transactions
@@ -67,7 +67,7 @@ async function handlePaymentSourceTransaction(
 
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
-  app.get("/api/expense-categories", requireAuth, async (req, res) => {
+  app.get("/api/expense-categories", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const categories = await db
         .select()
@@ -83,7 +83,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Create expense category
-  app.post("/api/expense-categories", requireAuth, async (req, res) => {
+  app.post("/api/expense-categories", requirePermission("expenses", "add"), async (req, res) => {
     try {
       const categoryData: InsertExpenseCategory = req.body;
       
@@ -100,7 +100,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense statistics (must be before parameterized routes)
-  app.get("/api/expenses/stats", requireAuth, async (req, res) => {
+  app.get("/api/expenses/stats", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const { period = "month" } = req.query;
       
@@ -184,7 +184,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get all expenses with filters
-  app.get("/api/expenses", requireAuth, async (req, res) => {
+  app.get("/api/expenses", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const {
         type,
@@ -240,12 +240,10 @@ export function registerExpenseRoutes(app: Express) {
         );
       }
 
-      let query = baseQuery;
-      if (conditions.length > 0) {
-        query = baseQuery.where(and(...conditions));
-      }
-
-      const results = await query.orderBy(desc(expenses.createdAt));
+      const results = await (conditions.length > 0
+        ? baseQuery.where(and(...conditions))
+        : baseQuery
+      ).orderBy(desc(expenses.createdAt));
 
       // Transform results to include category info
       const expensesWithCategories = results.map(result => ({
@@ -261,7 +259,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense by ID
-  app.get("/api/expenses/:id", requireAuth, async (req, res) => {
+  app.get("/api/expenses/:id", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -291,7 +289,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Create expense
-  app.post("/api/expenses", requireAuth, async (req, res) => {
+  app.post("/api/expenses", requirePermission("expenses", "add"), async (req, res) => {
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -364,7 +362,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Update expense
-  app.put("/api/expenses/:id", requireAuth, async (req, res) => {
+  app.put("/api/expenses/:id", requirePermission("expenses", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
       const userId = (req as any).user?.id;
@@ -566,7 +564,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Get expense payments history
-  app.get("/api/expenses/:id/payments", requireAuth, async (req, res) => {
+  app.get("/api/expenses/:id/payments", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -584,7 +582,7 @@ export function registerExpenseRoutes(app: Express) {
   });
 
   // Delete expense
-  app.delete("/api/expenses/:id", requireAuth, async (req, res) => {
+  app.delete("/api/expenses/:id", requirePermission("expenses", "delete"), async (req, res) => {
     try {
       const { id } = req.params;
 
