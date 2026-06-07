@@ -40,6 +40,35 @@ export type UserWithPermissions = User & {
   };
 };
 
+type ModulePermissions = { view: boolean; add: boolean; edit: boolean; delete: boolean; approve: boolean };
+type PermissionsMap = Record<string, ModulePermissions>;
+
+const EMPTY_PERMISSIONS: ModulePermissions = {
+  view: false,
+  add: false,
+  edit: false,
+  delete: false,
+  approve: false,
+};
+
+function normalizeRolePermissions(permissions: unknown): PermissionsMap | undefined {
+  if (!permissions || typeof permissions !== "object") return undefined;
+
+  const normalized = { ...(permissions as PermissionsMap) };
+
+  // Backfill modules introduced after older roles were created.
+  // Keep existing explicit settings if the role already has them.
+  if (!normalized.services && normalized.quotations) {
+    normalized.services = { ...EMPTY_PERMISSIONS, ...normalized.quotations };
+  }
+
+  if (!normalized.projects && normalized.tasks) {
+    normalized.projects = { ...EMPTY_PERMISSIONS, ...normalized.tasks };
+  }
+
+  return normalized;
+}
+
 export interface IStorage {
   // User operations for username/password authentication
   getUser(id: string): Promise<User | undefined>;
@@ -131,7 +160,7 @@ export class DatabaseStorage implements IStorage {
     if (user.roleId) {
       const [role] = await db.select().from(roles).where(eq(roles.id, user.roleId));
       if (role) {
-        result.permissions = role.permissions as UserWithPermissions['permissions'];
+        result.permissions = normalizeRolePermissions(role.permissions);
         result.roleName = role.name;
       }
     }

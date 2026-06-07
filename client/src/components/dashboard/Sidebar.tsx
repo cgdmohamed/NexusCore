@@ -112,7 +112,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         : undefined,
       badgeColor: "bg-yellow-500",
     },
-    { name: "nav.projects", href: "/projects", icon: FolderKanban, module: "tasks" },
+    { name: "nav.projects", href: "/projects", icon: FolderKanban, module: "projects" },
     {
       name: "nav.messages",
       href: "/messages",
@@ -121,7 +121,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       badge: unreadMsgCount > 0 ? unreadMsgCount.toString() : undefined,
       badgeColor: "bg-green-500",
     },
-    { name: "nav.services", href: "/services", icon: Briefcase, module: "quotations" },
+    { name: "nav.services", href: "/services", icon: Briefcase, module: "services" },
     { name: "nav.team_roles", href: "/team-roles", icon: UserCog, module: "employees", adminOnly: true },
     { name: "nav.reports_kpis", href: "/reports-kpis", icon: TrendingUp, module: "analytics" },
     { name: "nav.settings", href: "/settings", icon: Settings, module: "employees", adminOnly: true },
