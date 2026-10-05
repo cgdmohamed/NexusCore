@@ -13,6 +13,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Integration test files share one database and each rebuilds its schema.
+    fileParallelism: false,
     include: ["tests/**/*.test.ts"],
     env: {
       DATABASE_URL: "postgresql://test:test@localhost:5432/test",

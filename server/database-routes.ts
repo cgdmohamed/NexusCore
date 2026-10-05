@@ -2040,6 +2040,11 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Quotation not found" });
       }
 
+      // A quotation can only be converted once; converting again would bill the client twice
+      if (quotation.status === 'invoiced' || quotation.invoiceId) {
+        return res.status(409).json({ message: "This quotation has already been converted to an invoice." });
+      }
+
       // Fetch quotation items (needed both for financial aggregates and item copying)
       const qItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 

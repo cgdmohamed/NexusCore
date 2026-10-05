@@ -89,3 +89,31 @@ export const pay = (api: any, invoiceId: string, amount: number, extra: object =
     paymentMethod: "cash",
     ...extra,
   });
+
+export async function createQuotation(
+  api: (m: string, p: string, b?: unknown) => Promise<any>,
+  clientId: string,
+  title = "Test quotation",
+) {
+  const r = await api("POST", "/api/quotations", { clientId, title });
+  if (r.status !== 201) throw new Error(`quotation create failed: ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body;
+}
+
+export const addItem = (
+  api: any,
+  quotationId: string,
+  quantity: number,
+  unitPrice: number,
+  opts: { discountPercent?: number; description?: string } = {},
+) => {
+  const gross = quantity * unitPrice;
+  const total = gross - (gross * (opts.discountPercent ?? 0)) / 100;
+  return api("POST", `/api/quotations/${quotationId}/items`, {
+    description: opts.description ?? "Service",
+    quantity: String(quantity),
+    unitPrice: String(unitPrice),
+    totalPrice: total.toFixed(2),
+    discount: String(opts.discountPercent ?? 0),
+  });
+};
