@@ -90,8 +90,12 @@ ALTER TABLE "expenses" ALTER COLUMN "attachment_type" DROP NOT NULL;--> statemen
 ALTER TABLE "payment_source_transactions" ALTER COLUMN "amount" SET DATA TYPE numeric(12, 2) USING "amount"::numeric(12, 2);--> statement-breakpoint
 ALTER TABLE "payment_source_transactions" ALTER COLUMN "balance_before" SET DATA TYPE numeric(12, 2) USING "balance_before"::numeric(12, 2);--> statement-breakpoint
 ALTER TABLE "payment_source_transactions" ALTER COLUMN "balance_after" SET DATA TYPE numeric(12, 2) USING "balance_after"::numeric(12, 2);--> statement-breakpoint
+ALTER TABLE "payment_sources" ALTER COLUMN "initial_balance" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "payment_sources" ALTER COLUMN "initial_balance" SET DATA TYPE numeric(12, 2) USING "initial_balance"::numeric(12, 2);--> statement-breakpoint
+ALTER TABLE "payment_sources" ALTER COLUMN "initial_balance" SET DEFAULT 0;--> statement-breakpoint
+ALTER TABLE "payment_sources" ALTER COLUMN "current_balance" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "payment_sources" ALTER COLUMN "current_balance" SET DATA TYPE numeric(12, 2) USING "current_balance"::numeric(12, 2);--> statement-breakpoint
+ALTER TABLE "payment_sources" ALTER COLUMN "current_balance" SET DEFAULT 0;--> statement-breakpoint
 ALTER TABLE "expenses" ADD COLUMN "rejection_reason" text;--> statement-breakpoint
 ALTER TABLE "expenses" ADD COLUMN "rejected_by" varchar;--> statement-breakpoint
 ALTER TABLE "expenses" ADD COLUMN "rejected_at" timestamp;--> statement-breakpoint

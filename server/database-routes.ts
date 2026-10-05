@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { db } from "./db";
+import { db, pgError } from "./db";
 import { requireAuth, requirePermission } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
@@ -64,7 +64,12 @@ async function generateInvoiceNumber(): Promise<string> {
   return `${prefix}${String(nextSeq).padStart(4, '0')}`;
 }
 
-const MAX_NUMBER_RETRIES = 5;
+const MAX_NUMBER_RETRIES = 10;
+
+// Numbers are allocated with read-max-then-insert, so concurrent requests collide on the unique
+// constraint. A randomized pause before retrying lets the competing inserts settle.
+const numberRetryDelay = (attempt: number) =>
+  new Promise((resolve) => setTimeout(resolve, Math.random() * 25 * (attempt + 1)));
 
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
@@ -625,6 +630,7 @@ export function setupDatabaseRoutes(app: Express) {
       let newQuotation: any;
       let lastError: any;
       for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        if (attempt > 0) await numberRetryDelay(attempt);
         const quotationNumber = await generateQuotationNumber();
         try {
           [newQuotation] = await db.insert(quotations).values({
@@ -641,7 +647,7 @@ export function setupDatabaseRoutes(app: Express) {
           }).returning();
           break;
         } catch (insertError: any) {
-          if (insertError?.code === '23505' && insertError?.constraint?.includes('quotation_number')) {
+          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('quotation_number')) {
             lastError = insertError;
             continue;
           }
@@ -727,12 +733,13 @@ export function setupDatabaseRoutes(app: Express) {
       let newInvoice: any;
       let lastError: any;
       for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        if (attempt > 0) await numberRetryDelay(attempt);
         const invoiceNumber = await generateInvoiceNumber();
         try {
           [newInvoice] = await db.insert(invoices).values({ ...baseInvoiceData, invoiceNumber }).returning();
           break;
         } catch (insertError: any) {
-          if (insertError?.code === '23505' && insertError?.constraint?.includes('invoice_number')) {
+          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('invoice_number')) {
             lastError = insertError;
             continue;
           }
@@ -2081,12 +2088,13 @@ export function setupDatabaseRoutes(app: Express) {
       let newInvoice: any;
       let lastConvertError: any;
       for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
+        if (attempt > 0) await numberRetryDelay(attempt);
         const invoiceNumber = await generateInvoiceNumber();
         try {
           [newInvoice] = await db.insert(invoices).values({ ...baseConvertData, invoiceNumber }).returning();
           break;
         } catch (insertError: any) {
-          if (insertError?.code === '23505' && insertError?.constraint?.includes('invoice_number')) {
+          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('invoice_number')) {
             lastConvertError = insertError;
             continue;
           }

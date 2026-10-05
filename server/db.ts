@@ -14,3 +14,11 @@ export const pool = new Pool({
 });
 
 export const db = drizzle(pool, { schema });
+
+/**
+ * drizzle-orm >= 0.44 wraps driver errors in DrizzleQueryError; the original pg error
+ * (with `code` / `constraint`) lives in `cause`. Use this to inspect SQLSTATE codes.
+ */
+export function pgError(error: any): any {
+  return error?.cause?.code ? error.cause : error;
+}

@@ -20,3 +20,8 @@ Note: on an existing database the money columns may still be `varchar` — check
 ## Changing the schema
 Edit `shared/schema.ts`, run `npx drizzle-kit generate`, review the SQL, commit it.
 Prefer `migrate` over `push` in production.
+
+## Verifying migrations
+`npm run test:integration` (needs `TEST_DATABASE_URL`, see `tests/integration/`) applies all
+migrations to an empty database before running the tests, so a migration that does not apply
+cleanly fails CI.

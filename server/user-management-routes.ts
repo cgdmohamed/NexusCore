@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { db } from "./db";
+import { db, pgError } from "./db";
 import { 
   users, 
   employees, 
@@ -526,12 +526,13 @@ export function registerUserManagementRoutes(app: Express) {
       res.status(201).json(userResponse);
     } catch (error: any) {
       console.error("Error creating user:", error);
-      if (error.code === '23505') {
+      const pgErr = pgError(error);
+      if (pgErr.code === '23505') {
         // Unique constraint violation
-        if (error.constraint?.includes('username')) {
+        if (pgErr.constraint?.includes('username')) {
           return res.status(400).json({ message: "Username already exists" });
         }
-        if (error.constraint?.includes('email')) {
+        if (pgErr.constraint?.includes('email')) {
           return res.status(400).json({ message: "Email already exists" });
         }
       }
@@ -609,11 +610,12 @@ export function registerUserManagementRoutes(app: Express) {
       res.json(updatedUserSafe);
     } catch (error: any) {
       console.error("Error updating user:", error);
-      if (error.code === '23505') {
-        if (error.constraint?.includes('username')) {
+      const pgErr = pgError(error);
+      if (pgErr.code === '23505') {
+        if (pgErr.constraint?.includes('username')) {
           return res.status(400).json({ message: "Username already exists" });
         }
-        if (error.constraint?.includes('email')) {
+        if (pgErr.constraint?.includes('email')) {
           return res.status(400).json({ message: "Email already exists" });
         }
       }
