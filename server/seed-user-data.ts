@@ -3,6 +3,11 @@ import { roles, employees, users } from "@shared/schema";
 import bcrypt from "bcrypt";
 
 export async function seedUserData() {
+  // Default accounts share a well-known password; never create them in production
+  // unless explicitly requested for a first-time bootstrap.
+  if (process.env.NODE_ENV === "production" && process.env.SEED_DEFAULT_DATA !== "true") {
+    return;
+  }
   try {
     // Check if data already exists
     const existingRoles = await db.select().from(roles).limit(1);

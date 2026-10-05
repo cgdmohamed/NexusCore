@@ -47,6 +47,43 @@ function mustChangePasswordBlocked(req: any) {
   return true;
 }
 
+// In-memory login throttle (per client IP + username). With multiple processes
+// (e.g. PM2 cluster) each process keeps its own counters.
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function loginKey(req: any) {
+  return `${req.ip}|${String(req.body?.username ?? "").toLowerCase()}`;
+}
+
+function isLoginBlocked(key: string) {
+  const entry = loginAttempts.get(key);
+  if (!entry) return 0;
+  if (entry.resetAt <= Date.now()) {
+    loginAttempts.delete(key);
+    return 0;
+  }
+  return entry.count >= LOGIN_MAX_ATTEMPTS ? entry.resetAt - Date.now() : 0;
+}
+
+function recordLoginFailure(key: string) {
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (!entry || entry.resetAt <= now) {
+    loginAttempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+  } else {
+    entry.count++;
+  }
+}
+
+setInterval(() => {
+  const now = Date.now();
+  loginAttempts.forEach((v, k) => {
+    if (v.resetAt <= now) loginAttempts.delete(k);
+  });
+}, LOGIN_WINDOW_MS).unref();
+
 export function setupAuth(app: Express) {
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
@@ -201,12 +238,20 @@ export function setupAuth(app: Express) {
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
+    const key = loginKey(req);
+    const retryAfterMs = isLoginBlocked(key);
+    if (retryAfterMs > 0) {
+      res.setHeader("Retry-After", Math.ceil(retryAfterMs / 1000));
+      return res.status(429).json({ message: "Too many login attempts. Please try again later." });
+    }
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
+        recordLoginFailure(key);
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
       
+      loginAttempts.delete(key);
       req.login(user, (err) => {
         if (err) return next(err);
         // Generate CSRF token in the same session and return it with the user.

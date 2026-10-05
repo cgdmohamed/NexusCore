@@ -2839,9 +2839,13 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Serve uploaded files
-  app.use('/uploads', (req, res, next) => {
-    const filePath = path.join(process.cwd(), 'uploads', req.path);
-    if (fs.existsSync(filePath)) {
+  app.use('/uploads', requireAuth, (req, res, next) => {
+    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+    const filePath = path.resolve(uploadsRoot, '.' + path.sep + decodeURIComponent(req.path));
+    if (!filePath.startsWith(uploadsRoot + path.sep)) {
+      return res.status(400).json({ message: "Invalid path" });
+    }
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       res.sendFile(filePath);
     } else {
       res.status(404).json({ message: "File not found" });
