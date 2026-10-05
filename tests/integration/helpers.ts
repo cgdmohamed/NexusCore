@@ -15,6 +15,8 @@ export async function startApp() {
   const { db, pool } = await import("../../server/db");
   const { users } = await import("../../shared/schema");
   const { setupDatabaseRoutes } = await import("../../server/database-routes");
+  const { registerExpenseRoutes } = await import("../../server/expense-routes");
+  const { registerPaymentSourceRoutes } = await import("../../server/payment-source-routes");
 
   // Build the schema from the committed migrations (also verifies they apply to an empty DB).
   await pool.query("DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; CREATE SCHEMA public;");
@@ -34,6 +36,8 @@ export async function startApp() {
     next();
   });
   setupDatabaseRoutes(app as any);
+  registerExpenseRoutes(app as any);
+  registerPaymentSourceRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
@@ -117,3 +121,31 @@ export const addItem = (
     discount: String(opts.discountPercent ?? 0),
   });
 };
+
+type Api = (m: string, p: string, b?: unknown) => Promise<any>;
+
+export async function createPaymentSource(api: Api, initialBalance = "1000", name = "Main bank") {
+  const r = await api("POST", "/api/payment-sources", { name, accountType: "bank", currency: "EGP", initialBalance });
+  if (r.status !== 201) throw new Error(`payment source create failed: ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body;
+}
+
+export async function createCategory(api: Api, name = `Category ${Math.random().toString(36).slice(2, 8)}`) {
+  const r = await api("POST", "/api/expense-categories", { name });
+  if (r.status !== 201) throw new Error(`category create failed: ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body;
+}
+
+export async function createExpense(api: Api, categoryId: string, overrides: Record<string, unknown> = {}) {
+  const r = await api("POST", "/api/expenses", {
+    title: "Office rent",
+    amount: "200.00",
+    categoryId,
+    type: "fixed",
+    expenseDate: new Date().toISOString(),
+    paymentMethod: "bank_transfer",
+    ...overrides,
+  });
+  if (r.status !== 201) throw new Error(`expense create failed: ${r.status} ${JSON.stringify(r.body)}`);
+  return r.body;
+}

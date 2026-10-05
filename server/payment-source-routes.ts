@@ -13,6 +13,7 @@ import {
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { ZodError } from "zod";
 
 export function registerPaymentSourceRoutes(app: Express) {
   // Get all payment sources
@@ -153,6 +154,9 @@ export function registerPaymentSourceRoutes(app: Express) {
 
       res.status(201).json(newSource);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Invalid payment source data", errors: error.errors });
+      }
       console.error("Error creating payment source:", error);
       res.status(500).json({ message: "Failed to create payment source" });
     }
@@ -179,6 +183,9 @@ export function registerPaymentSourceRoutes(app: Express) {
 
       res.json(updatedSource);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Invalid payment source data", errors: error.errors });
+      }
       console.error("Error updating payment source:", error);
       res.status(500).json({ message: "Failed to update payment source" });
     }
@@ -211,6 +218,10 @@ export function registerPaymentSourceRoutes(app: Express) {
 
       const balanceBefore = source.currentBalance ?? "0";
       const adjustmentAmount = parseFloat(amount);
+      if (!Number.isFinite(adjustmentAmount)) {
+        // NaN would be stored as a NaN numeric and corrupt the balance
+        return res.status(400).json({ message: "Amount must be a valid number" });
+      }
 
       // Update balance using DB arithmetic to preserve decimal precision
       const [updatedSource] = await db

@@ -65,6 +65,21 @@ async function handlePaymentSourceTransaction(
   });
 }
 
+const EXPENSE_DATE_FIELDS = ["startDate", "dueDate", "nextDueDate", "paidDate"] as const;
+
+// JSON bodies carry dates as strings; the timestamp columns need Date objects.
+function withParsedDates<T extends Record<string, any>>(body: T): T {
+  const out: Record<string, any> = { ...body };
+  for (const field of EXPENSE_DATE_FIELDS) {
+    if (typeof out[field] === "string" && out[field]) out[field] = new Date(out[field]);
+    else if (out[field] === "") out[field] = null;
+  }
+  return out as T;
+}
+
+// Fields a client must never set directly through the generic create/update endpoints.
+const EXPENSE_PROTECTED_FIELDS = ["id", "createdBy", "createdAt", "rejectionReason", "rejectedBy", "rejectedAt", "paidDate"];
+
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
   app.get("/api/expense-categories", requirePermission("expenses", "view"), async (req, res) => {
@@ -300,7 +315,7 @@ export function registerExpenseRoutes(app: Express) {
       
       // Convert date strings to Date objects
       const expenseData: InsertExpense = {
-        ...req.body,
+        ...withParsedDates(req.body),
         expenseDate: new Date(req.body.expenseDate),
         createdBy: userId,
         createdAt: new Date(),
@@ -372,18 +387,22 @@ export function registerExpenseRoutes(app: Express) {
       
       console.log("Received expense update payload:", JSON.stringify(req.body, null, 2));
       
-      // Convert date fields to Date objects for updates
-      const updates = { 
-        ...req.body, 
+      const [existing] = await db.select().from(expenses).where(eq(expenses.id, id));
+      if (!existing) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+
+      // Convert date fields to Date objects and drop fields that must not be set directly
+      const updates: Record<string, any> = {
+        ...withParsedDates(req.body),
         expenseDate: req.body.expenseDate ? new Date(req.body.expenseDate) : undefined,
-        updatedAt: new Date() 
+        updatedAt: new Date(),
       };
-      
-      console.log("Final update data for DB (dates converted):", {
-        ...updates,
-        expenseDate: updates.expenseDate?.toISOString(),
-        updatedAt: updates.updatedAt?.toISOString(),
-      });
+      for (const field of EXPENSE_PROTECTED_FIELDS) delete updates[field];
+
+      // Moving an expense to "paid" through an edit must charge its payment source, exactly like /pay
+      const becomesPaid = updates.status === "paid" && existing.status !== "paid";
+      if (becomesPaid) updates.paidDate = new Date();
 
       const [expense] = await db
         .update(expenses)
@@ -391,8 +410,8 @@ export function registerExpenseRoutes(app: Express) {
         .where(eq(expenses.id, id))
         .returning();
 
-      if (!expense) {
-        return res.status(404).json({ message: "Expense not found" });
+      if (becomesPaid && expense.paymentSourceId) {
+        await handlePaymentSourceTransaction(expense.paymentSourceId, expense.amount, expense.id, expense.title, userId);
       }
 
       res.json(expense);
@@ -426,6 +445,13 @@ export function registerExpenseRoutes(app: Express) {
 
       if (!existingExpense) {
         return res.status(404).json({ message: "Expense not found" });
+      }
+
+      // Paying twice would charge the payment source twice
+      if (["paid", "rejected", "cancelled"].includes(existingExpense.status)) {
+        return res.status(409).json({
+          message: `Cannot pay an expense with status "${existingExpense.status}".`,
+        });
       }
 
       // Update expense status
