@@ -2,7 +2,7 @@
 # Multi-stage build for optimized production image
 
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -33,14 +33,14 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder --chown=companyos:nodejs /app/dist ./dist
 COPY --from=builder --chown=companyos:nodejs /app/shared ./shared
 
 # Create necessary directories
-RUN mkdir -p logs && chown companyos:nodejs logs
+RUN mkdir -p logs uploads && chown companyos:nodejs logs uploads
 
 # Set environment variables
 ENV NODE_ENV=production

@@ -1,7 +1,7 @@
 # CompanyOS Development Docker Image
 # Optimized for development with hot reload
 
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Install development tools
 RUN apk add --no-cache git

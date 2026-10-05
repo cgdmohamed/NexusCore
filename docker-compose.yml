@@ -16,8 +16,17 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - DATABASE_URL=postgresql://companyos_user:${DB_PASSWORD}@postgres:5432/companyos
-      - SESSION_SECRET=${SESSION_SECRET}
+      - DATABASE_URL=postgresql://companyos_user:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/companyos
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET is required}
+      - VAULT_ENCRYPTION_KEY=${VAULT_ENCRYPTION_KEY:?VAULT_ENCRYPTION_KEY is required (openssl rand -hex 32)}
+      - APP_URL=${APP_URL:-http://localhost:5000}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5000}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-}
       - COMPANY_NAME=${COMPANY_NAME:-CompanyOS}
       - COMPANY_TAGLINE=${COMPANY_TAGLINE:-Enterprise Management Platform}
     depends_on:
@@ -27,6 +36,7 @@ services:
       - companyos-network
     volumes:
       - app-logs:/app/logs
+      - app-uploads:/app/uploads
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.companyos.rule=Host(`${DOMAIN:-localhost}`)"
@@ -40,7 +50,7 @@ services:
     environment:
       - POSTGRES_DB=companyos
       - POSTGRES_USER=companyos_user
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     ports:
       - "${DB_PORT:-5433}:5432"
@@ -73,6 +83,9 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    # Not used by the application yet; start only with: --profile with-redis
+    profiles:
+      - with-redis
 
   # Nginx Reverse Proxy (Optional)
   nginx:
@@ -100,6 +113,8 @@ volumes:
   redis-data:
     driver: local
   app-logs:
+    driver: local
+  app-uploads:
     driver: local
   nginx-logs:
     driver: local
