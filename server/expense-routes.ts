@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { eq, desc, and, gte, lte, ilike, or, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, ilike, or, sql, inArray } from "drizzle-orm";
 import { db } from "./db";
 import { 
   expenses, 
@@ -80,6 +80,22 @@ function withParsedDates<T extends Record<string, any>>(body: T): T {
 // Fields a client must never set directly through the generic create/update endpoints.
 const EXPENSE_PROTECTED_FIELDS = ["id", "createdBy", "createdAt", "rejectionReason", "rejectedBy", "rejectedAt", "paidDate"];
 
+// Query-string helpers: a parameter may be repeated (?status=a&status=b), which Express parses to an array.
+function queryValues(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : [value];
+  return list.filter((v): v is string => typeof v === "string" && v !== "");
+}
+
+function queryDate(value: unknown): Date | null | undefined {
+  if (value === undefined || value === "") return undefined;
+  if (typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Escape LIKE wildcards so user text is matched literally
+const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
+
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
   app.get("/api/expense-categories", requirePermission("expenses", "view"), async (req, res) => {
@@ -118,6 +134,9 @@ export function registerExpenseRoutes(app: Express) {
   app.get("/api/expenses/stats", requirePermission("expenses", "view"), async (req, res) => {
     try {
       const { period = "month" } = req.query;
+      if (!["week", "month", "quarter", "year"].includes(period as string)) {
+        return res.status(400).json({ message: "Invalid period. Use week, month, quarter or year." });
+      }
       
       // Calculate date range based on period
       const now = new Date();
@@ -222,37 +241,28 @@ export function registerExpenseRoutes(app: Express) {
       // Apply filters
       const conditions = [];
 
-      if (type) {
-        conditions.push(eq(expenses.type, type as string));
-      }
+      const equalsAny = (column: any, value: unknown) => {
+        const values = queryValues(value);
+        if (values.length === 1) conditions.push(eq(column, values[0]));
+        else if (values.length > 1) conditions.push(inArray(column, values));
+      };
+      equalsAny(expenses.type, type);
+      equalsAny(expenses.categoryId, categoryId);
+      equalsAny(expenses.status, status);
+      equalsAny(expenses.relatedClientId, clientId);
 
-      if (categoryId) {
-        conditions.push(eq(expenses.categoryId, categoryId as string));
+      const from = queryDate(startDate);
+      const to = queryDate(endDate);
+      if (from === null || to === null) {
+        return res.status(400).json({ message: "startDate and endDate must be valid dates" });
       }
+      if (from) conditions.push(gte(expenses.expenseDate, from));
+      if (to) conditions.push(lte(expenses.expenseDate, to));
 
-      if (status) {
-        conditions.push(eq(expenses.status, status as string));
-      }
-
-      if (clientId) {
-        conditions.push(eq(expenses.relatedClientId, clientId as string));
-      }
-
-      if (startDate) {
-        conditions.push(gte(expenses.expenseDate, new Date(startDate as string)));
-      }
-
-      if (endDate) {
-        conditions.push(lte(expenses.expenseDate, new Date(endDate as string)));
-      }
-
-      if (search) {
-        conditions.push(
-          or(
-            ilike(expenses.title, `%${search}%`),
-            ilike(expenses.description, `%${search}%`)
-          )
-        );
+      const [searchText] = queryValues(search);
+      if (searchText) {
+        const pattern = `%${escapeLike(searchText)}%`;
+        conditions.push(or(ilike(expenses.title, pattern), ilike(expenses.description, pattern)));
       }
 
       const results = await (conditions.length > 0
