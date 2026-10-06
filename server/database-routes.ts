@@ -72,6 +72,46 @@ const MAX_NUMBER_RETRIES = 10;
 const numberRetryDelay = (attempt: number) =>
   new Promise((resolve) => setTimeout(resolve, Math.random() * 25 * (attempt + 1)));
 
+// Status an invoice should have once its total changes, given what was already paid.
+// Only invoices that currently have payments (paid / partially_paid) are re-evaluated.
+function statusAfterTotalChange(invoice: { status: string; paidAmount: string | null; paidDate: Date | null }, newTotal: number) {
+  const paid = parseFloat(invoice.paidAmount || "0");
+  if (paid > 0 && (invoice.status === "paid" || invoice.status === "partially_paid")) {
+    return newTotal <= paid
+      ? { status: "paid", paidDate: invoice.paidDate ?? new Date() }
+      : { status: "partially_paid", paidDate: null };
+  }
+  return { status: invoice.status, paidDate: invoice.paidDate };
+}
+
+type InvoiceGuard =
+  | { ok: true; invoice: typeof invoices.$inferSelect }
+  | { ok: false; status: number; message: string };
+
+// Checks that an invoice may have its line items changed by `subtotalDelta`:
+// it must exist, must not be cancelled, and its new total must not drop below what was already paid.
+async function guardInvoiceItemChange(invoiceId: string, subtotalDelta: number): Promise<InvoiceGuard> {
+  const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+  if (!invoice) return { ok: false, status: 404, message: "Invoice not found" };
+  if (invoice.status === "cancelled") {
+    return { ok: false, status: 409, message: "Items of a cancelled invoice cannot be changed." };
+  }
+  const [row] = await db
+    .select({ subtotal: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)` })
+    .from(invoiceItems)
+    .where(eq(invoiceItems.invoiceId, invoiceId));
+  const projected =
+    parseFloat(row?.subtotal || "0") + subtotalDelta + parseFloat(invoice.taxAmount || "0") - parseFloat(invoice.discountAmount || "0");
+  if (projected < parseFloat(invoice.paidAmount || "0") - 0.005) {
+    return {
+      ok: false,
+      status: 400,
+      message: "This change would reduce the invoice total below the amount already paid. Refund the difference first.",
+    };
+  }
+  return { ok: true, invoice };
+}
+
 export function setupDatabaseRoutes(app: Express) {
   // Status update endpoints for all entities
   app.patch('/api/clients/:id/status', requirePermission("crm", "edit"), async (req, res) => {
@@ -805,19 +845,58 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(404).json({ message: "Invoice not found" });
       }
 
-      // Strip paidAmount — must not be settable directly; it is derived from the payments table
-      const { paidAmount: _stripped, ...bodyWithoutPaid } = req.body;
-      const updateData = { ...bodyWithoutPaid, updatedAt: new Date() };
-      
-      // Recalculate amount if tax or discount changed
-      if (req.body.taxAmount !== undefined || req.body.discountAmount !== undefined || 
-          req.body.taxRate !== undefined || req.body.discountRate !== undefined) {
-        const subtotal = parseFloat(currentInvoice.subtotal || '0');
-        const taxAmount = parseFloat(req.body.taxAmount ?? currentInvoice.taxAmount ?? '0');
-        const discountAmount = parseFloat(req.body.discountAmount ?? currentInvoice.discountAmount ?? '0');
-        updateData.amount = (subtotal + taxAmount - discountAmount).toFixed(2);
+      // Only these fields may be edited here. Status, numbers, amounts paid, client and ownership are
+      // changed through their dedicated endpoints (payments, cancel, items, ...) and never directly.
+      const body = req.body ?? {};
+      const updateData: Record<string, any> = { updatedAt: new Date() };
+      const changed: string[] = [];
+
+      if (typeof body.title === "string" && body.title.trim()) { updateData.title = body.title; changed.push("title"); }
+      for (const field of ["description", "notes", "paymentTerms"] as const) {
+        if (body[field] === null || typeof body[field] === "string") { updateData[field] = body[field] || null; changed.push(field); }
       }
-      
+      if (body.dueDate !== undefined) {
+        const due = body.dueDate === null || body.dueDate === "" ? null : parseDateValue(body.dueDate);
+        if (due === null && body.dueDate !== null && body.dueDate !== "") {
+          return res.status(400).json({ message: "dueDate must be a valid date." });
+        }
+        updateData.dueDate = due;
+        changed.push("dueDate");
+      }
+
+      const moneyFields = ["taxAmount", "discountAmount"].filter((f) => body[f] !== undefined);
+      const rateFields = ["taxRate", "discountRate"].filter((f) => body[f] !== undefined);
+      const invalid = moneyFields.filter((f) => parseMoney(body[f], { allowZero: true }) === null)
+        .concat(rateFields.filter((f) => parsePercent(body[f]) === null));
+      if (invalid.length > 0) {
+        return res.status(400).json({
+          message: `Invalid value for: ${invalid.join(", ")}. Amounts must be non-negative numbers and rates between 0 and 100.`,
+        });
+      }
+
+      if (moneyFields.length > 0 || rateFields.length > 0) {
+        if (currentInvoice.status === "cancelled") {
+          return res.status(409).json({ message: "The financial details of a cancelled invoice cannot be changed." });
+        }
+        for (const f of [...moneyFields, ...rateFields]) {
+          updateData[f] = parseFloat(body[f]).toFixed(2);
+          changed.push(f);
+        }
+
+        // The total is always derived: subtotal + tax - discount
+        const subtotal = parseFloat(currentInvoice.subtotal || '0');
+        const taxAmount = parseFloat(updateData.taxAmount ?? currentInvoice.taxAmount ?? '0');
+        const discountAmount = parseFloat(updateData.discountAmount ?? currentInvoice.discountAmount ?? '0');
+        const newTotal = subtotal + taxAmount - discountAmount;
+        if (newTotal < parseFloat(currentInvoice.paidAmount || '0') - 0.005) {
+          return res.status(400).json({
+            message: "This change would reduce the invoice total below the amount already paid. Refund the difference first.",
+          });
+        }
+        updateData.amount = newTotal.toFixed(2);
+        Object.assign(updateData, statusAfterTotalChange(currentInvoice, newTotal));
+      }
+
       const [updatedInvoice] = await db.update(invoices)
         .set(updateData)
         .where(eq(invoices.id, req.params.id))
@@ -826,7 +905,7 @@ export function setupDatabaseRoutes(app: Express) {
       // Record edit history — summarise changed fields
       try {
         const actor = req.user?.email || req.user?.username || 'System';
-        const changedFields = Object.keys(req.body).filter(k => k !== 'updatedAt');
+        const changedFields = changed;
         if (changedFields.length > 0) {
           const fieldLabels: Record<string, string> = {
             title: 'title', dueDate: 'due date', notes: 'notes',
@@ -913,6 +992,9 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(400).json({ message: "Quantity must be positive and unit price must be a non-negative number." });
       }
 
+      const guard = await guardInvoiceItemChange(req.params.id, quantity * unitPrice);
+      if (!guard.ok) return res.status(guard.status).json({ message: guard.message });
+
       const itemData = {
         invoiceId: req.params.id,
         serviceId: req.body.serviceId || null,
@@ -941,6 +1023,7 @@ export function setupDatabaseRoutes(app: Express) {
         .set({ 
           subtotal: subtotal.toFixed(2),
           amount: newTotal.toFixed(2),
+          ...(invoice ? statusAfterTotalChange(invoice, newTotal) : {}),
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.id));
@@ -972,6 +1055,13 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(400).json({ message: "Quantity must be positive and unit price must be a non-negative number." });
       }
 
+      const [existingItem] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
+      const guard = await guardInvoiceItemChange(
+        req.params.invoiceId,
+        quantity * unitPrice - parseFloat(existingItem?.totalPrice || '0'),
+      );
+      if (!guard.ok) return res.status(guard.status).json({ message: guard.message });
+
       const itemData = {
         name: req.body.name,
         description: req.body.description || null,
@@ -1001,6 +1091,7 @@ export function setupDatabaseRoutes(app: Express) {
         .set({ 
           subtotal: subtotal2.toFixed(2),
           amount: newTotal.toFixed(2),
+          ...(invoice ? statusAfterTotalChange(invoice, newTotal) : {}),
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));
@@ -1029,6 +1120,9 @@ export function setupDatabaseRoutes(app: Express) {
       // Fetch item name before deleting for history
       const [deletedItem] = await db.select().from(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
 
+      const guard = await guardInvoiceItemChange(req.params.invoiceId, -parseFloat(deletedItem?.totalPrice || '0'));
+      if (!guard.ok) return res.status(guard.status).json({ message: guard.message });
+
       await db.delete(invoiceItems).where(eq(invoiceItems.id, req.params.itemId));
       
       // Recalculate invoice totals using DB SUM
@@ -1047,6 +1141,7 @@ export function setupDatabaseRoutes(app: Express) {
         .set({ 
           subtotal: subtotal3.toFixed(2),
           amount: newTotal.toFixed(2),
+          ...(invoice ? statusAfterTotalChange(invoice, newTotal) : {}),
           updatedAt: new Date()
         })
         .where(eq(invoices.id, req.params.invoiceId));
@@ -1449,12 +1544,22 @@ export function setupDatabaseRoutes(app: Express) {
   // Apply client credit to invoice
   app.post('/api/invoices/:invoiceId/apply-credit', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
-      const { clientId, creditAmount } = req.body;
+      const { creditAmount } = req.body;
       const creditAmountNum = parseMoney(creditAmount);
       if (creditAmountNum === null) {
         return res.status(400).json({ message: "Credit amount must be a positive number." });
       }
-      
+
+      // Credit always comes from the invoice's own client
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      if (!isAbsent(req.body.clientId) && req.body.clientId !== invoice.clientId) {
+        return res.status(400).json({ message: "Credit can only be applied to invoices of the same client." });
+      }
+      const clientId = invoice.clientId;
+
       // Validate client and credit balance
       const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
       if (!client) {
@@ -1468,12 +1573,6 @@ export function setupDatabaseRoutes(app: Express) {
           availableCredit: currentCreditBalance,
           requestedCredit: creditAmountNum
         });
-      }
-      
-      // Get invoice information
-      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.invoiceId));
-      if (!invoice) {
-        return res.status(404).json({ message: "Invoice not found" });
       }
       
       const [creditPaidSumResult] = await db.select({
@@ -1589,7 +1688,12 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/clients/:id', requirePermission("crm", "edit"), async (req: any, res) => {
     try {
-      const { name, email, phone, address, city, country, status, totalValue, creditBalance } = req.body;
+      // creditBalance is deliberately not editable here: it only changes through payments, credit
+      // application and credit refunds, which keep the credit history.
+      const { name, email, phone, address, city, country, status, totalValue } = req.body;
+      if (totalValue !== undefined && parseMoney(totalValue, { allowZero: true }) === null) {
+        return res.status(400).json({ message: "totalValue must be a non-negative number." });
+      }
       const updateData: Record<string, any> = { updatedAt: new Date() };
       if (name !== undefined) updateData.name = name;
       if (email !== undefined) updateData.email = email;
@@ -1599,7 +1703,6 @@ export function setupDatabaseRoutes(app: Express) {
       if (country !== undefined) updateData.country = country;
       if (status !== undefined) updateData.status = status;
       if (totalValue !== undefined) updateData.totalValue = parseFloat(totalValue).toFixed(2);
-      if (creditBalance !== undefined) updateData.creditBalance = parseFloat(creditBalance).toFixed(2);
 
       const [updatedClient] = await db.update(clients)
         .set(updateData)
@@ -1972,14 +2075,29 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/quotations/:id', requirePermission("quotations", "edit"), async (req: any, res) => {
     try {
-      const updateData = { ...req.body, updatedAt: new Date() };
+      const [currentQuotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
+      if (!currentQuotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Only these fields may be edited here. Number, client, invoice link and ownership are never
+      // client-controlled, and the amount is always derived from the items.
+      const body = req.body ?? {};
+      const updateData: Record<string, any> = { updatedAt: new Date() };
+      if (typeof body.title === "string" && body.title.trim()) updateData.title = body.title;
+      for (const field of ["description", "notes", "terms"] as const) {
+        if (body[field] === null || typeof body[field] === "string") updateData[field] = body[field] || null;
+      }
+      if (body.validUntil !== undefined) {
+        const valid = body.validUntil === null || body.validUntil === "" ? null : parseDateValue(body.validUntil);
+        if (valid === null && body.validUntil !== null && body.validUntil !== "") {
+          return res.status(400).json({ message: "validUntil must be a valid date." });
+        }
+        updateData.validUntil = valid;
+      }
 
       // If a status change is requested, enforce the transition matrix
-      if (req.body.status) {
-        const [currentQuotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
-        if (!currentQuotation) {
-          return res.status(404).json({ message: "Quotation not found" });
-        }
+      if (body.status) {
         const allowedTransitions: Record<string, string[]> = {
           draft:    ['sent', 'accepted', 'rejected', 'expired'],
           sent:     ['draft', 'accepted', 'rejected', 'expired'],
@@ -1989,17 +2107,16 @@ export function setupDatabaseRoutes(app: Express) {
           invoiced: [],
         };
         const current = currentQuotation.status;
-        const next = req.body.status;
+        const next = body.status;
         const allowed = allowedTransitions[current] ?? [];
         if (!allowed.includes(next)) {
           return res.status(400).json({
             message: `Cannot transition quotation from "${current}" to "${next}".`,
           });
         }
-      }
+        updateData.status = next;
 
-      // If updating status without an explicit amount, recalculate from items using DB-level SUM
-      if (req.body.status && !req.body.amount) {
+        // Recalculate totals from the items using DB-level SUM
         const [patchTotals] = await db.select({
           subtotalAgg: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
           totalAgg: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
@@ -2023,14 +2140,14 @@ export function setupDatabaseRoutes(app: Express) {
       try {
         const actor = req.user?.email || req.user?.username || 'System';
         // Log status change separately for clear audit trail
-        if (req.body.status) {
+        if (updateData.status) {
           await db.insert(quotationHistory).values({
             quotationId: req.params.id,
-            event: `Status changed to "${req.body.status}"`,
+            event: `Status changed to "${updateData.status}"`,
             actor,
           });
         }
-        const changedFields = Object.keys(req.body).filter(k => !['updatedAt', 'status', 'amount'].includes(k));
+        const changedFields = Object.keys(updateData).filter(k => ['title', 'description', 'notes', 'terms', 'validUntil'].includes(k));
         if (changedFields.length > 0) {
           const fieldLabels: Record<string, string> = {
             title: 'title', validUntil: 'valid until', notes: 'notes',
