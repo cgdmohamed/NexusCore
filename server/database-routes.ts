@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { db, pgError } from "./db";
+import { parseMoney, parsePercent, parseDateValue, isAbsent } from "./validation";
 import { requireAuth, requirePermission } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
@@ -710,6 +711,16 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      const money = (field: string) => (isAbsent(req.body[field]) ? undefined : parseMoney(req.body[field], { allowZero: true }));
+      const percent = (field: string) => (isAbsent(req.body[field]) ? undefined : parsePercent(req.body[field]));
+      const invalidFields = ["amount", "subtotal", "taxAmount", "discountAmount"].filter((f) => money(f) === null)
+        .concat(["taxRate", "discountRate"].filter((f) => percent(f) === null));
+      if (invalidFields.length > 0) {
+        return res.status(400).json({
+          message: `Invalid value for: ${invalidFields.join(", ")}. Amounts must be non-negative numbers and rates between 0 and 100.`,
+        });
+      }
+
       const baseInvoiceData = {
         clientId: req.body.clientId,
         quotationId: req.body.quotationId || null,
@@ -896,6 +907,12 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/invoices/:id/items', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
+      const quantity = parseMoney(req.body.quantity);
+      const unitPrice = parseMoney(req.body.unitPrice, { allowZero: true });
+      if (quantity === null || unitPrice === null || parseMoney(quantity * unitPrice, { allowZero: true }) === null) {
+        return res.status(400).json({ message: "Quantity must be positive and unit price must be a non-negative number." });
+      }
+
       const itemData = {
         invoiceId: req.params.id,
         serviceId: req.body.serviceId || null,
@@ -903,7 +920,7 @@ export function setupDatabaseRoutes(app: Express) {
         description: req.body.description || null,
         quantity: req.body.quantity,
         unitPrice: req.body.unitPrice,
-        totalPrice: (parseFloat(req.body.quantity) * parseFloat(req.body.unitPrice)).toFixed(2),
+        totalPrice: (quantity * unitPrice).toFixed(2),
       };
 
       const [newItem] = await db.insert(invoiceItems).values(itemData).returning();
@@ -949,12 +966,18 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.patch('/api/invoices/:invoiceId/items/:itemId', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
+      const quantity = parseMoney(req.body.quantity);
+      const unitPrice = parseMoney(req.body.unitPrice, { allowZero: true });
+      if (quantity === null || unitPrice === null || parseMoney(quantity * unitPrice, { allowZero: true }) === null) {
+        return res.status(400).json({ message: "Quantity must be positive and unit price must be a non-negative number." });
+      }
+
       const itemData = {
         name: req.body.name,
         description: req.body.description || null,
         quantity: req.body.quantity,
         unitPrice: req.body.unitPrice,
-        totalPrice: (parseFloat(req.body.quantity) * parseFloat(req.body.unitPrice)).toFixed(2),
+        totalPrice: (quantity * unitPrice).toFixed(2),
       };
 
       const [updatedItem] = await db.update(invoiceItems)
@@ -1060,7 +1083,17 @@ export function setupDatabaseRoutes(app: Express) {
 
   app.post('/api/invoices/:id/payments', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
-      const paymentAmount = parseFloat(req.body.amount);
+      const paymentAmount = parseMoney(req.body.amount);
+      if (paymentAmount === null) {
+        return res.status(400).json({ message: "Payment amount must be a positive number." });
+      }
+      const paymentDate = parseDateValue(req.body.paymentDate);
+      if (!paymentDate) {
+        return res.status(400).json({ message: "A valid payment date is required." });
+      }
+      if (typeof req.body.paymentMethod !== "string" || !req.body.paymentMethod.trim()) {
+        return res.status(400).json({ message: "Payment method is required." });
+      }
       const isAdminApproved = req.body.adminApproved || false;
       
       // Get current invoice and payment information
@@ -1106,7 +1139,7 @@ export function setupDatabaseRoutes(app: Express) {
         overpaymentAmount: overpaymentAmount.toFixed(2),
         isOverpayment,
         adminApproved: isOverpayment && isAdminApproved,
-        paymentDate: new Date(req.body.paymentDate),
+        paymentDate,
         paymentMethod: req.body.paymentMethod,
         bankTransferNumber: req.body.bankTransferNumber || null,
         attachmentUrl: req.body.attachmentUrl || null,
@@ -1417,7 +1450,10 @@ export function setupDatabaseRoutes(app: Express) {
   app.post('/api/invoices/:invoiceId/apply-credit', requirePermission("invoices", "approve"), async (req: any, res) => {
     try {
       const { clientId, creditAmount } = req.body;
-      const creditAmountNum = parseFloat(creditAmount);
+      const creditAmountNum = parseMoney(creditAmount);
+      if (creditAmountNum === null) {
+        return res.status(400).json({ message: "Credit amount must be a positive number." });
+      }
       
       // Validate client and credit balance
       const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
@@ -1862,6 +1898,17 @@ export function setupDatabaseRoutes(app: Express) {
       const [parentQuotation] = await db.select({ status: quotations.status }).from(quotations).where(eq(quotations.id, req.params.id));
       if (parentQuotation && (parentQuotation.status === 'accepted' || parentQuotation.status === 'invoiced')) {
         return res.status(409).json({ message: `Cannot add items to a quotation with status "${parentQuotation.status}".` });
+      }
+
+      if (
+        parseMoney(req.body.quantity) === null ||
+        parseMoney(req.body.unitPrice, { allowZero: true }) === null ||
+        parseMoney(req.body.totalPrice, { allowZero: true }) === null ||
+        (!isAbsent(req.body.discount) && parsePercent(req.body.discount) === null)
+      ) {
+        return res.status(400).json({
+          message: "Quantity must be positive, prices non-negative numbers, and discount between 0 and 100.",
+        });
       }
 
       const itemData = {
@@ -2366,9 +2413,14 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(409).json({ message: `Cannot edit items on a quotation with status "${parentQuotation.status}".` });
       }
 
-      const qty = parseFloat(req.body.quantity) || 0;
-      const price = parseFloat(req.body.unitPrice) || 0;
-      const disc = parseFloat(req.body.discount) || 0;
+      const qty = parseMoney(req.body.quantity);
+      const price = parseMoney(req.body.unitPrice, { allowZero: true });
+      if (qty === null || price === null || (!isAbsent(req.body.discount) && parsePercent(req.body.discount) === null)) {
+        return res.status(400).json({
+          message: "Quantity must be positive, unit price a non-negative number, and discount between 0 and 100.",
+        });
+      }
+      const disc = isAbsent(req.body.discount) ? 0 : parsePercent(req.body.discount)!;
       const subtotal = qty * price;
       const totalPrice = (subtotal - (subtotal * disc / 100)).toFixed(2);
 
