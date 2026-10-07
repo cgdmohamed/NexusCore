@@ -1,4 +1,7 @@
 import express from "express";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import type { Server } from "http";
 import type { AddressInfo } from "net";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
@@ -11,6 +14,9 @@ export const fullPermissions = new Proxy({}, { get: () => ALL }) as Record<strin
 export async function startApp() {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
   process.env.SESSION_SECRET ||= "test";
+  // Uploaded files go to a throw-away directory instead of the project's ./uploads
+  const uploadsDir = fs.mkdtempSync(path.join(os.tmpdir(), "nexus-uploads-"));
+  process.env.UPLOADS_DIR = uploadsDir;
 
   const { db, pool } = await import("../../server/db");
   const { users } = await import("../../shared/schema");
@@ -27,17 +33,28 @@ export async function startApp() {
     .values({ username: "tester", email: "tester@example.com", passwordHash: "x" })
     .returning();
 
+  const { registerTaskManagementRoutes } = await import("../../server/task-management-routes");
+  const { registerServicesRoutes } = await import("../../server/services-routes");
+  const { registerUserManagementRoutes } = await import("../../server/user-management-routes");
+  const { registerMessagingRoutes } = await import("../../server/messaging-routes");
+
   const app = express();
   app.use(express.json());
   // Stand-in for passport: every request is an authenticated user with all permissions.
+  // Tests can switch the acting user with `actAs({ id })` and restore it with `actAs(null)`.
+  let acting: Record<string, unknown> | null = null;
   app.use((req: any, _res, next) => {
-    req.user = { id: user.id, email: user.email, isActive: true, roleName: "Admin", permissions: fullPermissions };
+    req.user = { id: user.id, email: user.email, isActive: true, roleName: "Admin", permissions: fullPermissions, ...(acting ?? {}) };
     req.isAuthenticated = () => true;
     next();
   });
   setupDatabaseRoutes(app as any);
   registerExpenseRoutes(app as any);
   registerPaymentSourceRoutes(app as any);
+  registerTaskManagementRoutes(app as any);
+  registerServicesRoutes(app as any);
+  registerUserManagementRoutes(app as any);
+  registerMessagingRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
@@ -60,12 +77,39 @@ export async function startApp() {
     return { status: res.status, body: json };
   }
 
+  async function upload(path: string, file: { name: string; type: string; data: Uint8Array | string } | null, field = "file") {
+    const form = new FormData();
+    if (file) form.append(field, new Blob([file.data as BlobPart], { type: file.type }), file.name);
+    const res = await fetch(base + path, { method: "POST", body: form });
+    const text = await res.text();
+    let json: any;
+    try {
+      json = text ? JSON.parse(text) : undefined;
+    } catch {
+      json = text;
+    }
+    return { status: res.status, body: json };
+  }
+
+  async function raw(path: string) {
+    const res = await fetch(base + path);
+    return { status: res.status, type: res.headers.get("content-type"), body: Buffer.from(await res.arrayBuffer()) };
+  }
+
   return {
     api,
+    upload,
+    raw,
     db,
+    uploadsDir,
+    currentUserId: user.id as string,
+    actAs: (u: Record<string, unknown> | null) => {
+      acting = u;
+    },
     async close() {
       await new Promise((r) => server.close(r));
       await pool.end();
+      fs.rmSync(uploadsDir, { recursive: true, force: true });
     },
   };
 }

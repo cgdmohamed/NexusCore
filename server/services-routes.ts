@@ -33,6 +33,17 @@ export function registerServicesRoutes(app: Express) {
     }
   });
 
+  // Get service categories
+  app.get("/api/services/categories", requirePermission("services", "view"), async (req, res) => {
+    try {
+      const categories = await storage.getServiceCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching service categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
   // Get service by ID
   app.get("/api/services/:id", requirePermission("services", "view"), async (req, res) => {
     try {
@@ -98,17 +109,6 @@ export function registerServicesRoutes(app: Express) {
     } catch (error) {
       console.error("Error deleting service:", error);
       res.status(500).json({ error: "Failed to delete service" });
-    }
-  });
-
-  // Get service categories
-  app.get("/api/services/categories", requirePermission("services", "view"), async (req, res) => {
-    try {
-      const categories = await storage.getServiceCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching service categories:", error);
-      res.status(500).json({ error: "Failed to fetch categories" });
     }
   });
 

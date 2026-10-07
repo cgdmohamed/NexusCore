@@ -16,6 +16,7 @@ import {
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
 import { requirePermission } from "./auth";
+import { attachmentKind, attachmentUpload, isStoredUploadPath } from "./uploads";
 import { notificationService } from "./notification-service";
 
 // Helper function to handle payment source transactions
@@ -96,6 +97,10 @@ function queryDate(value: unknown): Date | null | undefined {
 // Escape LIKE wildcards so user text is matched literally
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
 
+// An attachment URL is optional, but when present it must point at a stored upload
+// (never an external URL or a javascript: link that the UI would render as a link).
+const isAttachmentUrlOk = (value: unknown) => value === undefined || value === null || value === "" || isStoredUploadPath(value);
+
 export function registerExpenseRoutes(app: Express) {
   // Get all expense categories
   app.get("/api/expense-categories", requirePermission("expenses", "view"), async (req, res) => {
@@ -128,6 +133,18 @@ export function registerExpenseRoutes(app: Express) {
       console.error("Error creating expense category:", error);
       res.status(500).json({ message: "Failed to create expense category" });
     }
+  });
+
+  // Upload a receipt / invoice file; the returned URL is then sent as `attachmentUrl` when saving the expense
+  app.post("/api/expenses/attachments", requirePermission("expenses", "add"), attachmentUpload("expenses"), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded." });
+    }
+    res.status(201).json({
+      url: `/uploads/expenses/${req.file.filename}`,
+      type: attachmentKind(req.file.mimetype),
+      size: req.file.size,
+    });
   });
 
   // Get expense statistics (must be before parameterized routes)
@@ -321,8 +338,10 @@ export function registerExpenseRoutes(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      console.log("Received expense payload:", JSON.stringify(req.body, null, 2));
-      
+      if (!isAttachmentUrlOk(req.body.attachmentUrl)) {
+        return res.status(400).json({ message: "attachmentUrl must be a file uploaded through the attachments endpoint." });
+      }
+
       // Convert date strings to Date objects
       const expenseData: InsertExpense = {
         ...withParsedDates(req.body),
@@ -395,11 +414,14 @@ export function registerExpenseRoutes(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      console.log("Received expense update payload:", JSON.stringify(req.body, null, 2));
-      
       const [existing] = await db.select().from(expenses).where(eq(expenses.id, id));
       if (!existing) {
         return res.status(404).json({ message: "Expense not found" });
+      }
+
+      // An unchanged legacy value (saved before uploads were real) is left alone
+      if (req.body.attachmentUrl !== existing.attachmentUrl && !isAttachmentUrlOk(req.body.attachmentUrl)) {
+        return res.status(400).json({ message: "attachmentUrl must be a file uploaded through the attachments endpoint." });
       }
 
       // Convert date fields to Date objects and drop fields that must not be set directly
@@ -446,6 +468,10 @@ export function registerExpenseRoutes(app: Express) {
         attachmentUrl, 
         notes 
       } = req.body;
+
+      if (!isAttachmentUrlOk(attachmentUrl)) {
+        return res.status(400).json({ message: "attachmentUrl must be a file uploaded through the attachments endpoint." });
+      }
 
       // Get the expense first to check payment source
       const [existingExpense] = await db

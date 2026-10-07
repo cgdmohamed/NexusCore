@@ -83,3 +83,5 @@ temp/
 # Backup files
 *.backup
 *.bak
+# Uploaded files
+uploads/

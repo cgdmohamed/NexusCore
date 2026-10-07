@@ -45,7 +45,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, getCsrfToken, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 
 const expenseFormSchema = z.object({
@@ -110,16 +110,25 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
     mutationFn: async (data: ExpenseFormData) => {
       // Receipt/attachment is optional
 
-      // Determine attachment type based on file
+      // Upload the selected file first; the server returns the stored URL and the attachment type
+      let attachmentUrl: string | null = expense?.attachmentUrl || null;
       let attachmentType = expense?.attachmentType || 'receipt';
       if (selectedFile) {
-        if (selectedFile.type.startsWith('image/')) {
-          attachmentType = 'receipt';
-        } else if (selectedFile.type === 'application/pdf') {
-          attachmentType = 'invoice';
-        } else {
-          attachmentType = 'other';
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const uploadResponse = await fetch('/api/expenses/attachments', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers: { 'x-csrf-token': await getCsrfToken() },
+        });
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to upload attachment');
         }
+        const uploaded = await uploadResponse.json();
+        attachmentUrl = uploaded.url;
+        attachmentType = uploaded.type;
       }
 
       const payload = {
@@ -133,7 +142,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
         paymentMethod: data.paymentMethod,
         status: data.status,
         isRecurring: data.isRecurring,
-        attachmentUrl: selectedFile ? `/uploads/${selectedFile.name}` : expense?.attachmentUrl || null,
+        attachmentUrl,
         attachmentType,
         relatedClientId: data.projectId === "none" ? null : data.projectId,
       };

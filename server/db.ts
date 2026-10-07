@@ -22,3 +22,18 @@ export const db = drizzle(pool, { schema });
 export function pgError(error: any): any {
   return error?.cause?.code ? error.cause : error;
 }
+
+/**
+ * Maps database errors caused by bad client input (missing required column, reference to a record
+ * that does not exist) to a message for a 400 response; `null` for anything else.
+ */
+export function badRequestFromDbError(error: any): string | null {
+  switch (pgError(error)?.code) {
+    case "23502":
+      return "A required field is missing.";
+    case "23503":
+      return "A referenced record does not exist.";
+    default:
+      return null;
+  }
+}

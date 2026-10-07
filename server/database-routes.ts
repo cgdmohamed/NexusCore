@@ -1,5 +1,6 @@
 import type { Express } from "express";
-import { db, pgError } from "./db";
+import { db, pgError, badRequestFromDbError } from "./db";
+import { uploadsRoot, resolveUploadPath } from "./uploads";
 import { parseMoney, parsePercent, parseDateValue, isAbsent } from "./validation";
 import { requireAuth, requirePermission } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
@@ -13,7 +14,7 @@ import QRCode from "qrcode";
 // Configure multer for invoice file uploads
 const invoiceStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), "uploads", "invoices");
+    const uploadDir = path.join(uploadsRoot(), "invoices");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -216,9 +217,8 @@ export function setupDatabaseRoutes(app: Express) {
         .set({ status: newStatus, updatedAt: new Date() })
         .where(eq(quotations.id, req.params.id))
         .returning();
-      res.json(updatedQuotation);
 
-      // Record history
+      // Record history before responding so the change is visible as soon as the client has its answer
       try {
         const actor = req.user?.email || req.user?.username || 'System';
         await db.insert(quotationHistory).values({
@@ -229,6 +229,8 @@ export function setupDatabaseRoutes(app: Express) {
       } catch (historyError) {
         console.error('Error recording quotation history:', historyError);
       }
+
+      res.json(updatedQuotation);
 
       // Trigger notification when quotation is accepted
       if (newStatus === 'accepted' && updatedQuotation) {
@@ -611,8 +613,12 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      if (typeof req.body.name !== "string" || !req.body.name.trim()) {
+        return res.status(400).json({ message: "Client name is required." });
+      }
+
       const clientData = {
-        name: req.body.name,
+        name: req.body.name.trim(),
         email: req.body.email,
         phone: req.body.phone,
         city: req.body.city,
@@ -640,6 +646,8 @@ export function setupDatabaseRoutes(app: Express) {
 
       res.status(201).json(newClient);
     } catch (error) {
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       console.error("Error creating client:", error);
       res.status(500).json({ message: "Failed to create client" });
     }
@@ -666,6 +674,17 @@ export function setupDatabaseRoutes(app: Express) {
       const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ message: "Authentication required" });
+      }
+
+      if (typeof req.body.title !== "string" || !req.body.title.trim()) {
+        return res.status(400).json({ message: "Quotation title is required." });
+      }
+      if (typeof req.body.clientId !== "string" || !req.body.clientId) {
+        return res.status(400).json({ message: "clientId is required." });
+      }
+      const [quotationClient] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, req.body.clientId));
+      if (!quotationClient) {
+        return res.status(400).json({ message: "Client not found." });
       }
 
       let newQuotation: any;
@@ -729,6 +748,8 @@ export function setupDatabaseRoutes(app: Express) {
 
       res.status(201).json(newQuotation);
     } catch (error) {
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       console.error("Error creating quotation:", error);
       res.status(500).json({ message: "Failed to create quotation" });
     }
@@ -749,6 +770,14 @@ export function setupDatabaseRoutes(app: Express) {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Authentication required" });
+      }
+
+      if (typeof req.body.clientId !== "string" || !req.body.clientId) {
+        return res.status(400).json({ message: "clientId is required." });
+      }
+      const [invoiceClient] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, req.body.clientId));
+      if (!invoiceClient) {
+        return res.status(400).json({ message: "Client not found." });
       }
 
       const money = (field: string) => (isAbsent(req.body[field]) ? undefined : parseMoney(req.body[field], { allowZero: true }));
@@ -817,6 +846,8 @@ export function setupDatabaseRoutes(app: Express) {
 
       res.status(201).json(newInvoice);
     } catch (error) {
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       console.error("Error creating invoice:", error);
       res.status(500).json({ message: "Failed to create invoice" });
     }
@@ -2691,6 +2722,9 @@ export function setupDatabaseRoutes(app: Express) {
 
       // Remove from attachments array
       const existingAttachments = invoice.attachments || [];
+      if (!existingAttachments.includes(attachmentPath)) {
+        return res.status(404).json({ message: "Attachment not found on this invoice" });
+      }
       const newAttachments = existingAttachments.filter(a => a !== attachmentPath);
 
       // Update invoice
@@ -2700,8 +2734,8 @@ export function setupDatabaseRoutes(app: Express) {
         .returning();
 
       // Delete the file from disk
-      const fullPath = path.join(process.cwd(), attachmentPath);
-      if (fs.existsSync(fullPath)) {
+      const fullPath = resolveUploadPath(attachmentPath);
+      if (fullPath && fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
       }
 
@@ -3022,9 +3056,9 @@ export function setupDatabaseRoutes(app: Express) {
 
   // Serve uploaded files
   app.use('/uploads', requireAuth, (req, res, next) => {
-    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
-    const filePath = path.resolve(uploadsRoot, '.' + path.sep + decodeURIComponent(req.path));
-    if (!filePath.startsWith(uploadsRoot + path.sep)) {
+    const root = uploadsRoot();
+    const filePath = path.resolve(root, '.' + path.sep + decodeURIComponent(req.path));
+    if (!filePath.startsWith(root + path.sep)) {
       return res.status(400).json({ message: "Invalid path" });
     }
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

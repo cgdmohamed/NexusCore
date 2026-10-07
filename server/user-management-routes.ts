@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { db, pgError } from "./db";
+import { db, pgError, badRequestFromDbError } from "./db";
 import { 
   users, 
   employees, 
@@ -43,6 +43,42 @@ async function logAudit(
   } catch (error) {
     console.error("Failed to log audit:", error);
   }
+}
+
+// Role names are how the rest of the app recognises administrators (see requireAdmin).
+const ADMIN_ROLE_NAME = "Admin";
+
+// Number of active users holding the Admin role, optionally ignoring one user.
+async function countActiveAdmins(excludeUserId?: string): Promise<number> {
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .innerJoin(roles, eq(users.roleId, roles.id))
+    .where(and(eq(roles.name, ADMIN_ROLE_NAME), eq(users.isActive, true)));
+  return rows.filter((r) => r.id !== excludeUserId).length;
+}
+
+async function isActiveAdmin(user: { id: string; roleId: string | null; isActive: boolean }): Promise<boolean> {
+  if (!user.isActive || !user.roleId) return false;
+  const [role] = await db.select({ name: roles.name }).from(roles).where(eq(roles.id, user.roleId));
+  return role?.name === ADMIN_ROLE_NAME;
+}
+
+// True when removing `user` as an active admin would leave the system without one.
+async function isLastActiveAdmin(user: { id: string; roleId: string | null; isActive: boolean }): Promise<boolean> {
+  return (await isActiveAdmin(user)) && (await countActiveAdmins(user.id)) === 0;
+}
+
+async function roleExists(id: unknown): Promise<boolean> {
+  if (typeof id !== "string" || !id) return false;
+  const [row] = await db.select({ id: roles.id }).from(roles).where(eq(roles.id, id));
+  return !!row;
+}
+
+async function employeeExists(id: unknown): Promise<boolean> {
+  if (typeof id !== "string" || !id) return false;
+  const [row] = await db.select({ id: employees.id }).from(employees).where(eq(employees.id, id));
+  return !!row;
 }
 
 export function registerUserManagementRoutes(app: Express) {
@@ -382,13 +418,28 @@ export function registerUserManagementRoutes(app: Express) {
       // Check if employee has an associated user account
       const [userAccount] = await db.select().from(users).where(eq(users.employeeId, id));
       if (userAccount) {
-        // Delete the user account first
-        await db.delete(users).where(eq(users.employeeId, id));
+        if (userAccount.id === userId) {
+          return res.status(400).json({ message: "You cannot delete the employee record of your own account." });
+        }
+        if (await isLastActiveAdmin(userAccount)) {
+          return res.status(409).json({ message: "This is the last active administrator and cannot be deleted." });
+        }
       }
 
-      // Delete the employee
-      await db.delete(employees).where(eq(employees.id, id));
-      
+      try {
+        await db.transaction(async (tx) => {
+          if (userAccount) await tx.delete(users).where(eq(users.employeeId, id));
+          await tx.delete(employees).where(eq(employees.id, id));
+        });
+      } catch (deleteError) {
+        if (pgError(deleteError)?.code === "23503") {
+          return res.status(409).json({
+            message: "This employee's account has related records (clients, invoices, tasks...). Deactivate the user instead of deleting.",
+          });
+        }
+        throw deleteError;
+      }
+
       await logAudit(userId, 'delete', 'employee', id, employee, null);
       
       res.json({ success: true, message: "Employee deleted successfully" });
@@ -498,9 +549,20 @@ export function registerUserManagementRoutes(app: Express) {
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
+      if (typeof userData.username !== "string" || !userData.username.trim() || typeof userData.email !== "string" || !userData.email.trim()) {
+        return res.status(400).json({ message: "Username and email are required" });
+      }
+
       // Password is required for new users
       if (!password || password.length < 8) {
         return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      if (userData.roleId && !(await roleExists(userData.roleId))) {
+        return res.status(400).json({ message: "Role not found" });
+      }
+      if (userData.employeeId && !(await employeeExists(userData.employeeId))) {
+        return res.status(400).json({ message: "Employee not found" });
       }
       
       // Hash the password
@@ -526,6 +588,8 @@ export function registerUserManagementRoutes(app: Express) {
       res.status(201).json(userResponse);
     } catch (error: any) {
       console.error("Error creating user:", error);
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       const pgErr = pgError(error);
       if (pgErr.code === '23505') {
         // Unique constraint violation
@@ -553,6 +617,24 @@ export function registerUserManagementRoutes(app: Express) {
       
       if (!existingUser) {
         return res.status(404).json({ message: "User not found" });
+      }
+
+      if (userData.roleId && userData.roleId !== existingUser.roleId && !(await roleExists(userData.roleId))) {
+        return res.status(400).json({ message: "Role not found" });
+      }
+      if (userData.employeeId && userData.employeeId !== existingUser.employeeId && !(await employeeExists(userData.employeeId))) {
+        return res.status(400).json({ message: "Employee not found" });
+      }
+
+      // The system must always keep one active administrator, and nobody locks themselves out
+      const nextActive = userData.isActive ?? existingUser.isActive;
+      const nextRoleId = userData.roleId === undefined ? existingUser.roleId : userData.roleId;
+      if (id === authUserId && existingUser.isActive && nextActive === false) {
+        return res.status(400).json({ message: "You cannot deactivate your own account." });
+      }
+      const staysActiveAdmin = await isActiveAdmin({ id, roleId: nextRoleId ?? null, isActive: nextActive });
+      if (!staysActiveAdmin && (await isLastActiveAdmin(existingUser))) {
+        return res.status(409).json({ message: "This is the last active administrator. Another active administrator is required first." });
       }
       
       // Build update data
@@ -610,6 +692,8 @@ export function registerUserManagementRoutes(app: Express) {
       res.json(updatedUserSafe);
     } catch (error: any) {
       console.error("Error updating user:", error);
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       const pgErr = pgError(error);
       if (pgErr.code === '23505') {
         if (pgErr.constraint?.includes('username')) {
@@ -630,6 +714,17 @@ export function registerUserManagementRoutes(app: Express) {
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
+      const [target] = await db.select().from(users).where(eq(users.id, id));
+      if (!target) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (id === userId) {
+        return res.status(400).json({ message: "You cannot deactivate your own account." });
+      }
+      if (await isLastActiveAdmin(target)) {
+        return res.status(409).json({ message: "This is the last active administrator and cannot be deactivated." });
+      }
+
       const [updatedUser] = await db
         .update(users)
         .set({

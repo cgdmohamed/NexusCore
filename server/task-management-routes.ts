@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { db } from "./db";
+import { db, badRequestFromDbError } from "./db";
 import { 
   tasks, 
   taskComments, 
@@ -208,6 +208,83 @@ export function registerTaskManagementRoutes(app: Express) {
     }
   });
 
+  // Get task performance metrics
+  app.get("/api/tasks/performance", requirePermission("tasks", "view"), async (req, res) => {
+    try {
+      const { assignedTo, startDate, endDate } = req.query;
+
+      let conditions = [];
+      
+      if (assignedTo) {
+        conditions.push(eq(tasks.assignedTo, assignedTo as string));
+      }
+
+      if (startDate) {
+        conditions.push(gte(tasks.createdAt, new Date(startDate as string)));
+      }
+
+      if (endDate) {
+        conditions.push(lte(tasks.createdAt, new Date(endDate as string)));
+      }
+
+      // Get completion metrics
+      const completionMetrics = await db
+        .select({
+          total: count(),
+          completed: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
+          onTime: sql<number>`SUM(CASE WHEN status = 'completed' AND completed_date <= due_date THEN 1 ELSE 0 END)`,
+          overdue: sql<number>`SUM(CASE WHEN due_date < NOW() AND status != 'completed' THEN 1 ELSE 0 END)`,
+        })
+        .from(tasks)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+      // Get average completion time
+      const avgCompletionTime = await db
+        .select({
+          avgDays: sql<number>`AVG(EXTRACT(DAY FROM completed_date - created_at))`
+        })
+        .from(tasks)
+        .where(
+          conditions.length > 0 
+            ? and(...conditions, eq(tasks.status, 'completed'))
+            : eq(tasks.status, 'completed')
+        );
+
+      // Get priority distribution
+      const priorityDistribution = await db
+        .select({
+          priority: tasks.priority,
+          count: count(),
+          completedCount: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
+        })
+        .from(tasks)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .groupBy(tasks.priority);
+
+      const metrics = completionMetrics[0];
+      const completionRate = metrics.total > 0 ? (metrics.completed / metrics.total) * 100 : 0;
+      const onTimeRate = metrics.completed > 0 ? (metrics.onTime / metrics.completed) * 100 : 0;
+
+      res.json({
+        totalTasks: metrics.total,
+        completedTasks: metrics.completed,
+        overdueTasks: metrics.overdue,
+        completionRate: Math.round(completionRate * 100) / 100,
+        onTimeCompletionRate: Math.round(onTimeRate * 100) / 100,
+        averageCompletionDays: Math.round((avgCompletionTime[0]?.avgDays || 0) * 100) / 100,
+        priorityDistribution: priorityDistribution.map(p => ({
+          priority: p.priority,
+          total: p.count,
+          completed: p.completedCount,
+          completionRate: p.count > 0 ? Math.round((p.completedCount / p.count) * 10000) / 100 : 0,
+        })),
+      });
+    } catch (error) {
+      console.error("Error fetching task performance:", error);
+      res.status(500).json({ message: "Failed to fetch task performance metrics" });
+    }
+  });
+
   // Get single task with full details
   app.get("/api/tasks/:id", requirePermission("tasks", "view"), async (req, res) => {
     try {
@@ -356,6 +433,8 @@ export function registerTaskManagementRoutes(app: Express) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       res.status(500).json({ message: "Failed to create task" });
     }
   });
@@ -437,6 +516,8 @@ export function registerTaskManagementRoutes(app: Express) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: badRequest });
       res.status(500).json({ message: "Failed to update task" });
     }
   });
@@ -560,83 +641,6 @@ export function registerTaskManagementRoutes(app: Express) {
     } catch (error) {
       console.error("Error removing task dependency:", error);
       res.status(500).json({ message: "Failed to remove task dependency" });
-    }
-  });
-
-  // Get task performance metrics
-  app.get("/api/tasks/performance", requirePermission("tasks", "view"), async (req, res) => {
-    try {
-      const { assignedTo, startDate, endDate } = req.query;
-
-      let conditions = [];
-      
-      if (assignedTo) {
-        conditions.push(eq(tasks.assignedTo, assignedTo as string));
-      }
-
-      if (startDate) {
-        conditions.push(gte(tasks.createdAt, new Date(startDate as string)));
-      }
-
-      if (endDate) {
-        conditions.push(lte(tasks.createdAt, new Date(endDate as string)));
-      }
-
-      // Get completion metrics
-      const completionMetrics = await db
-        .select({
-          total: count(),
-          completed: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
-          onTime: sql<number>`SUM(CASE WHEN status = 'completed' AND completed_date <= due_date THEN 1 ELSE 0 END)`,
-          overdue: sql<number>`SUM(CASE WHEN due_date < NOW() AND status != 'completed' THEN 1 ELSE 0 END)`,
-        })
-        .from(tasks)
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-      // Get average completion time
-      const avgCompletionTime = await db
-        .select({
-          avgDays: sql<number>`AVG(EXTRACT(DAY FROM completed_date - created_at))`
-        })
-        .from(tasks)
-        .where(
-          conditions.length > 0 
-            ? and(...conditions, eq(tasks.status, 'completed'))
-            : eq(tasks.status, 'completed')
-        );
-
-      // Get priority distribution
-      const priorityDistribution = await db
-        .select({
-          priority: tasks.priority,
-          count: count(),
-          completedCount: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
-        })
-        .from(tasks)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .groupBy(tasks.priority);
-
-      const metrics = completionMetrics[0];
-      const completionRate = metrics.total > 0 ? (metrics.completed / metrics.total) * 100 : 0;
-      const onTimeRate = metrics.completed > 0 ? (metrics.onTime / metrics.completed) * 100 : 0;
-
-      res.json({
-        totalTasks: metrics.total,
-        completedTasks: metrics.completed,
-        overdueTasks: metrics.overdue,
-        completionRate: Math.round(completionRate * 100) / 100,
-        onTimeCompletionRate: Math.round(onTimeRate * 100) / 100,
-        averageCompletionDays: Math.round((avgCompletionTime[0]?.avgDays || 0) * 100) / 100,
-        priorityDistribution: priorityDistribution.map(p => ({
-          priority: p.priority,
-          total: p.count,
-          completed: p.completedCount,
-          completionRate: p.count > 0 ? Math.round((p.completedCount / p.count) * 10000) / 100 : 0,
-        })),
-      });
-    } catch (error) {
-      console.error("Error fetching task performance:", error);
-      res.status(500).json({ message: "Failed to fetch task performance metrics" });
     }
   });
 }

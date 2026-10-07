@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { db } from "./db";
+import { db, badRequestFromDbError } from "./db";
 import { conversations, conversationParticipants, messages, users } from "@shared/schema";
 import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { requireAuth } from "./auth";
@@ -159,6 +159,10 @@ export function registerMessagingRoutes(app: Express) {
       if (!participantId) return res.status(400).json({ message: "participantId is required" });
       if (participantId === userId) return res.status(400).json({ message: "Cannot start a conversation with yourself" });
 
+      // Check first so a failed insert cannot leave an empty conversation behind
+      const [participant] = await db.select({ id: users.id }).from(users).where(eq(users.id, participantId));
+      if (!participant) return res.status(400).json({ message: "Participant not found." });
+
       // Find existing conversation between these two users
       const myConvs = await db
         .select({ conversationId: conversationParticipants.conversationId })
@@ -195,6 +199,8 @@ export function registerMessagingRoutes(app: Express) {
       res.status(201).json({ id: newConv.id, isExisting: false });
     } catch (error) {
       console.error("Error creating conversation:", error);
+      const badRequest = badRequestFromDbError(error);
+      if (badRequest) return res.status(400).json({ message: "Participant not found." });
       res.status(500).json({ message: "Failed to create conversation" });
     }
   });
