@@ -22,6 +22,8 @@ import { requireAuth, requireAdmin, requirePermission } from "./auth";
 import { logAudit } from "./audit";
 import { validatePassword } from "./password-policy";
 import { invalidateUserSessions } from "./sessions";
+import { storeProfileImage, removeProfileImageFile, ProfileImageError } from "./profile-images";
+import { ZodError } from "zod";
 
 // Role names are how the rest of the app recognises administrators (see requireAdmin).
 const ADMIN_ROLE_NAME = "Admin";
@@ -350,6 +352,9 @@ export function registerUserManagementRoutes(app: Express) {
       const validatedData = insertEmployeeSchema.parse(dataToValidate);
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const profileImage = storeProfileImage(validatedData.profileImage);
+      if (profileImage !== undefined) validatedData.profileImage = profileImage;
       
       const [newEmployee] = await db
         .insert(employees)
@@ -359,10 +364,12 @@ export function registerUserManagementRoutes(app: Express) {
         })
         .returning();
       
-      await logAudit(req, 'create', 'employee', newEmployee.id, null, newEmployee);
+      await logAudit(req, 'create', 'employee', newEmployee.id, null, (({ profileImage: _p, ...rest }: any) => rest)(newEmployee));
       
       res.status(201).json(newEmployee);
     } catch (error) {
+      if (error instanceof ProfileImageError) return res.status(400).json({ message: error.message });
+      if (error instanceof ZodError) return res.status(400).json({ message: "Invalid employee data", errors: error.errors });
       console.error("Error creating employee:", error);
       res.status(500).json({ message: "Failed to create employee" });
     }
@@ -384,6 +391,12 @@ export function registerUserManagementRoutes(app: Express) {
       
       // Get old values for audit
       const [oldEmployee] = await db.select().from(employees).where(eq(employees.id, id));
+      if (!oldEmployee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      const profileImage = storeProfileImage(validatedData.profileImage, oldEmployee.profileImage);
+      if (profileImage !== undefined) validatedData.profileImage = profileImage;
       
       const [updatedEmployee] = await db
         .update(employees)
@@ -398,10 +411,18 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "Employee not found" });
       }
       
-      await logAudit(req, 'update', 'employee', id, oldEmployee, updatedEmployee);
+      if (profileImage !== undefined && oldEmployee.profileImage !== updatedEmployee.profileImage) {
+        removeProfileImageFile(oldEmployee.profileImage);
+      }
+
+      // Audit entries never carry picture data
+      const withoutImage = ({ profileImage: _a, ...rest }: any) => rest;
+      await logAudit(req, 'update', 'employee', id, withoutImage(oldEmployee), withoutImage(updatedEmployee));
       
       res.json(updatedEmployee);
     } catch (error) {
+      if (error instanceof ProfileImageError) return res.status(400).json({ message: error.message });
+      if (error instanceof ZodError) return res.status(400).json({ message: "Invalid employee data", errors: error.errors });
       console.error("Error updating employee:", error);
       res.status(500).json({ message: "Failed to update employee" });
     }
@@ -632,6 +653,15 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(400).json({ message: "Employee not found" });
       }
 
+      // Profile picture: validated and stored as a file before anything else changes
+      let storedProfileImage: string | null | undefined;
+      let previousProfileImage: string | null | undefined;
+      if (existingUser.employeeId && profileImageUrl !== undefined) {
+        const [emp] = await db.select({ profileImage: employees.profileImage }).from(employees).where(eq(employees.id, existingUser.employeeId));
+        previousProfileImage = emp?.profileImage;
+        storedProfileImage = storeProfileImage(profileImageUrl, previousProfileImage);
+      }
+
       // The system must always keep one active administrator, and nobody locks themselves out
       const nextActive = userData.isActive ?? existingUser.isActive;
       const nextRoleId = userData.roleId === undefined ? existingUser.roleId : userData.roleId;
@@ -680,6 +710,7 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "User not found" });
       }
       
+      // (computed before any change so an invalid picture cannot leave a partial update)
       // Update employee information if employee exists and employee data is provided
       if (existingUser.employeeId && (firstName || lastName || phone || jobTitle || department || profileImageUrl !== undefined)) {
         await db
@@ -690,10 +721,11 @@ export function registerUserManagementRoutes(app: Express) {
             ...(phone && { phone }),
             ...(jobTitle && { jobTitle }),
             ...(department && { department }),
-            ...(profileImageUrl !== undefined && { profileImage: profileImageUrl }),
+            ...(storedProfileImage !== undefined && { profileImage: storedProfileImage }),
             updatedAt: new Date(),
           })
           .where(eq(employees.id, existingUser.employeeId));
+        if (storedProfileImage !== undefined && previousProfileImage !== storedProfileImage) removeProfileImageFile(previousProfileImage);
       }
       
       // A new password or a deactivation ends the user's existing logins
@@ -706,6 +738,7 @@ export function registerUserManagementRoutes(app: Express) {
       
       res.json(updatedUserSafe);
     } catch (error: any) {
+      if (error instanceof ProfileImageError) return res.status(400).json({ message: error.message });
       console.error("Error updating user:", error);
       const badRequest = badRequestFromDbError(error);
       if (badRequest) return res.status(400).json({ message: badRequest });

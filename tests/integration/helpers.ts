@@ -39,10 +39,11 @@ export async function startApp() {
   const { registerMessagingRoutes } = await import("../../server/messaging-routes");
   const { registerSettingsRoutes } = await import("../../server/settings-routes");
   const { registerCredentialRoutes } = await import("../../server/credential-routes");
+  const { registerNotificationRoutes } = await import("../../server/notification-routes");
 
   const app = express();
   app.set("trust proxy", 1); // same as production, so req.ip honours X-Forwarded-For
-  app.use(express.json());
+  app.use(express.json({ limit: "10mb" })); // same as production
   // Stand-in for passport: every request is an authenticated user with all permissions.
   // Tests can switch the acting user with `actAs({ id })` and restore it with `actAs(null)`.
   let acting: Record<string, unknown> | null = null;
@@ -60,6 +61,7 @@ export async function startApp() {
   registerMessagingRoutes(app as any);
   registerSettingsRoutes(app as any);
   registerCredentialRoutes(app as any);
+  registerNotificationRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));

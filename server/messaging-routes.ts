@@ -6,6 +6,8 @@ import { requireAuth } from "./auth";
 import { notificationService } from "./notification-service";
 import { scheduleMessageEmail, cancelMessageEmail, cancelAllMessageEmails } from "./messaging-email";
 
+const MAX_MESSAGE_LENGTH = 5000;
+
 export function registerMessagingRoutes(app: Express) {
   // GET /api/messaging/users — lightweight user list for messaging (all authenticated users)
   app.get("/api/messaging/users", requireAuth, async (req: any, res) => {
@@ -265,7 +267,10 @@ export function registerMessagingRoutes(app: Express) {
       const convId = req.params.id;
       const { content } = req.body;
       if (!userId) return res.status(401).json({ message: "Not authenticated" });
-      if (!content?.trim()) return res.status(400).json({ message: "Message content is required" });
+      if (typeof content !== "string" || !content.trim()) return res.status(400).json({ message: "Message content is required" });
+      if (content.length > MAX_MESSAGE_LENGTH) {
+        return res.status(400).json({ message: `Message is too long (maximum ${MAX_MESSAGE_LENGTH} characters).` });
+      }
 
       // Verify participation
       const [participation] = await db

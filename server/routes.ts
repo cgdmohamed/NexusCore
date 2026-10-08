@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
-import { notificationService } from "./notification-service";
+import { registerNotificationRoutes } from "./notification-routes";
 import { setupDatabaseRoutes } from "./database-routes";
 import { registerExpenseRoutes } from "./expense-routes";
 import { registerPaymentSourceRoutes } from "./payment-source-routes";
@@ -116,54 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notification endpoints
-  app.get('/api/notifications', requireAuth, async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
-
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-      const unreadOnly = req.query.unreadOnly === 'true';
-
-      const result = await notificationService.getUserNotifications(userId, page, limit, unreadOnly);
-      res.json({
-        success: true,
-        data: result.notifications,
-        pagination: { page, limit, total: result.total, totalPages: Math.ceil(result.total / limit) },
-        unreadCount: result.unreadCount
-      });
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
-    }
-  });
-
-  app.get('/api/notifications/unread-count', requireAuth, async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
-
-      const unreadCount = await notificationService.getUnreadCount(userId);
-      res.json({ success: true, data: { unreadCount } });
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-      res.status(500).json({ success: false, error: 'Failed to fetch unread count' });
-    }
-  });
-
-  app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
-
-      await notificationService.markAsRead(req.params.id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      res.status(500).json({ success: false, error: 'Failed to mark notification as read' });
-    }
-  });
+  // Notification endpoints (list, unread count, mark read, preferences, admin tools)
+  registerNotificationRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -14,10 +14,20 @@ import QRCode from "qrcode";
 // Invoice attachments: JPEG/PNG/GIF/PDF up to 10MB, extension from the content type, signature verified
 const uploadInvoiceFile = { single: (_field: string) => attachmentUpload("invoices", 10 * 1024 * 1024) };
 
-async function generateQuotationNumber(): Promise<string> {
+// Either the shared connection pool or an open transaction
+type DbExecutor = Pick<typeof db, "execute" | "select" | "insert" | "update" | "delete">;
+
+// Document numbers are "read the highest, add one". To make that safe when several requests arrive
+// together, number allocation and the insert run in one transaction holding a database-wide lock
+// per document type (released automatically at commit/rollback). Requests simply queue for a moment.
+async function lockNumbering(tx: DbExecutor, kind: "invoice_number" | "quotation_number") {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${"nexus:" + kind}))`);
+}
+
+async function generateQuotationNumber(executor: DbExecutor = db): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `QUO-${year}-`;
-  const result = await db.execute(
+  const result = await executor.execute(
     sql`SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(quotation_number, ${prefix}, ''), '') AS INTEGER)), 0) AS max_seq
         FROM quotations
         WHERE quotation_number LIKE ${prefix + '%'}`
@@ -27,10 +37,10 @@ async function generateQuotationNumber(): Promise<string> {
   return `${prefix}${String(nextSeq).padStart(4, '0')}`;
 }
 
-async function generateInvoiceNumber(): Promise<string> {
+async function generateInvoiceNumber(executor: DbExecutor = db): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `INV-${year}-`;
-  const result = await db.execute(
+  const result = await executor.execute(
     sql`SELECT COALESCE(MAX(CAST(NULLIF(REGEXP_REPLACE(invoice_number, ${prefix}, ''), '') AS INTEGER)), 0) AS max_seq
         FROM invoices
         WHERE invoice_number LIKE ${prefix + '%'}`
@@ -40,12 +50,6 @@ async function generateInvoiceNumber(): Promise<string> {
   return `${prefix}${String(nextSeq).padStart(4, '0')}`;
 }
 
-const MAX_NUMBER_RETRIES = 10;
-
-// Numbers are allocated with read-max-then-insert, so concurrent requests collide on the unique
-// constraint. A randomized pause before retrying lets the competing inserts settle.
-const numberRetryDelay = (attempt: number) =>
-  new Promise((resolve) => setTimeout(resolve, Math.random() * 25 * (attempt + 1)));
 
 // Status an invoice should have once its total changes, given what was already paid.
 // Only invoices that currently have payments (paid / partially_paid) are re-evaluated.
@@ -669,38 +673,23 @@ export function setupDatabaseRoutes(app: Express) {
         return res.status(409).json({ message: "This client is archived. Restore it before creating new quotations." });
       }
 
-      let newQuotation: any;
-      let lastError: any;
-      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
-        if (attempt > 0) await numberRetryDelay(attempt);
-        const quotationNumber = await generateQuotationNumber();
-        try {
-          [newQuotation] = await db.insert(quotations).values({
-            quotationNumber,
-            clientId: req.body.clientId,
-            title: req.body.title,
-            description: req.body.description,
-            amount: "0",
-            status: 'draft',
-            validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
-            notes: req.body.notes || null,
-            terms: req.body.terms || null,
-            createdBy: userId,
-          }).returning();
-          break;
-        } catch (insertError: any) {
-          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('quotation_number')) {
-            lastError = insertError;
-            continue;
-          }
-          throw insertError;
-        }
-      }
-
-      if (!newQuotation) {
-        console.error("Failed to generate unique quotation number after retries:", lastError);
-        return res.status(500).json({ message: "Failed to generate a unique quotation number. Please try again." });
-      }
+      const newQuotation = await db.transaction(async (tx) => {
+        await lockNumbering(tx, "quotation_number");
+        const quotationNumber = await generateQuotationNumber(tx);
+        const [created] = await tx.insert(quotations).values({
+          quotationNumber,
+          clientId: req.body.clientId,
+          title: req.body.title,
+          description: req.body.description,
+          amount: "0",
+          status: 'draft',
+          validUntil: req.body.validUntil ? new Date(req.body.validUntil) : null,
+          notes: req.body.notes || null,
+          terms: req.body.terms || null,
+          createdBy: userId,
+        }).returning();
+        return created;
+      });
 
       // Log activity for quotation creation
       try {
@@ -795,27 +784,12 @@ export function setupDatabaseRoutes(app: Express) {
         createdBy: req.user.id,
       };
 
-      let newInvoice: any;
-      let lastError: any;
-      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
-        if (attempt > 0) await numberRetryDelay(attempt);
-        const invoiceNumber = await generateInvoiceNumber();
-        try {
-          [newInvoice] = await db.insert(invoices).values({ ...baseInvoiceData, invoiceNumber }).returning();
-          break;
-        } catch (insertError: any) {
-          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('invoice_number')) {
-            lastError = insertError;
-            continue;
-          }
-          throw insertError;
-        }
-      }
-
-      if (!newInvoice) {
-        console.error("Failed to generate unique invoice number after retries:", lastError);
-        return res.status(500).json({ message: "Failed to generate a unique invoice number. Please try again." });
-      }
+      const newInvoice = await db.transaction(async (tx) => {
+        await lockNumbering(tx, "invoice_number");
+        const invoiceNumber = await generateInvoiceNumber(tx);
+        const [created] = await tx.insert(invoices).values({ ...baseInvoiceData, invoiceNumber }).returning();
+        return created;
+      });
 
       // Record creation history
       try {
@@ -2183,130 +2157,116 @@ export function setupDatabaseRoutes(app: Express) {
   // Convert quotation to invoice
   app.post('/api/quotations/:id/convert-to-invoice', requirePermission("quotations", "approve"), async (req: any, res) => {
     try {
-      // Get quotation details
-      const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
-      if (!quotation) {
-        return res.status(404).json({ message: "Quotation not found" });
-      }
-
-      const [convertClient] = await db.select({ status: clients.status }).from(clients).where(eq(clients.id, quotation.clientId));
-      if (convertClient?.status === "archived") {
-        return res.status(409).json({ message: "This client is archived. Restore it before converting its quotations." });
-      }
-
-      // A quotation can only be converted once; converting again would bill the client twice
-      if (quotation.status === 'invoiced' || quotation.invoiceId) {
-        return res.status(409).json({ message: "This quotation has already been converted to an invoice." });
-      }
-
-      // Fetch quotation items (needed both for financial aggregates and item copying)
-      const qItems = await db.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-
-      // Calculate financial summary using DB-level aggregates to avoid float drift
-      const [conversionFinancials] = await db.select({
-        subtotal: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
-        totalAfterDiscounts: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
-      }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
-
-      const subtotal = parseFloat(conversionFinancials?.subtotal || '0');
-      const totalAfterItemDiscounts = parseFloat(conversionFinancials?.totalAfterDiscounts || '0');
-      // Item-level discount = gross subtotal minus discounted line totals
-      const itemDiscountAmount = subtotal - totalAfterItemDiscounts;
-      // Carry over stored quotation-level tax/discount fields
-      const quotationTaxAmount = parseFloat(quotation.taxAmount || '0');
-      const quotationDiscountAmount = parseFloat(quotation.discountAmount || '0');
-      // Use stored quotation discount if set (covers quotation-level discount); else use item-level discount
-      const effectiveDiscountAmount = quotationDiscountAmount > 0 ? quotationDiscountAmount : itemDiscountAmount;
-      const effectiveDiscountRate = parseFloat(quotation.discountRate || '0') > 0
-        ? quotation.discountRate!
-        : (subtotal > 0 ? ((effectiveDiscountAmount / subtotal) * 100).toFixed(2) : '0.00');
-      const effectiveTaxAmount = quotationTaxAmount;
-      const effectiveTaxRate = quotation.taxRate ?? '0.00';
-      // Single coherent formula: total = subtotal - discount + tax
-      const finalAmount = subtotal - effectiveDiscountAmount + effectiveTaxAmount;
-
-      // Create invoice record carrying over all financial data from the quotation
-      const baseConvertData = {
-        clientId: quotation.clientId,
-        quotationId: quotation.id,
-        title: quotation.title,
-        description: quotation.description,
-        notes: quotation.notes,
-        subtotal: subtotal.toFixed(2),
-        discountAmount: effectiveDiscountAmount.toFixed(2),
-        discountRate: effectiveDiscountRate,
-        taxRate: effectiveTaxRate,
-        taxAmount: effectiveTaxAmount.toFixed(2),
-        amount: finalAmount.toFixed(2),
-        paidAmount: '0.00',
-        status: 'pending',
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        createdBy: req.user?.id,
-      };
-
-      let newInvoice: any;
-      let lastConvertError: any;
-      for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
-        if (attempt > 0) await numberRetryDelay(attempt);
-        const invoiceNumber = await generateInvoiceNumber();
-        try {
-          [newInvoice] = await db.insert(invoices).values({ ...baseConvertData, invoiceNumber }).returning();
-          break;
-        } catch (insertError: any) {
-          if (pgError(insertError)?.code === '23505' && pgError(insertError)?.constraint?.includes('invoice_number')) {
-            lastConvertError = insertError;
-            continue;
-          }
-          throw insertError;
+      type ConvertOutcome = { error: { status: number; message: string } } | { invoice: any; items: any[] };
+      const outcome: ConvertOutcome = await db.transaction(async (tx): Promise<ConvertOutcome> => {
+        // Get quotation details
+        // Lock the row: simultaneous conversions queue here and only the first one succeeds
+        const [quotation] = await tx.select().from(quotations).where(eq(quotations.id, req.params.id)).for("update");
+        if (!quotation) {
+          return { error: { status: 404, message: "Quotation not found" } };
         }
-      }
 
-      if (!newInvoice) {
-        console.error("Failed to generate unique invoice number during conversion after retries:", lastConvertError);
-        return res.status(500).json({ message: "Failed to generate a unique invoice number. Please try again." });
-      }
+        const [convertClient] = await tx.select({ status: clients.status }).from(clients).where(eq(clients.id, quotation.clientId));
+        if (convertClient?.status === "archived") {
+          return { error: { status: 409, message: "This client is archived. Restore it before converting its quotations." } };
+        }
 
-      const invoiceNumber = newInvoice.invoiceNumber;
+        // A quotation can only be converted once; converting again would bill the client twice
+        if (quotation.status === 'invoiced' || quotation.invoiceId) {
+          return { error: { status: 409, message: "This quotation has already been converted to an invoice." } };
+        }
 
-      // Copy quotation items into invoice items
-      if (qItems.length > 0) {
-        const invoiceItemsData = qItems.map((item) => ({
-          invoiceId: newInvoice.id,
-          serviceId: item.serviceId ?? undefined,
-          name: item.description,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-        }));
-        await db.insert(invoiceItems).values(invoiceItemsData);
-      }
+        // Fetch quotation items (needed both for financial aggregates and item copying)
+        const qItems = await tx.select().from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 
-      // Update quotation status to invoiced and store the resulting invoiceId
-      await db.update(quotations)
-        .set({ status: 'invoiced', invoiceId: newInvoice.id, updatedAt: new Date() })
-        .where(eq(quotations.id, req.params.id));
+        // Calculate financial summary using DB-level aggregates to avoid float drift
+        const [conversionFinancials] = await tx.select({
+          subtotal: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+          totalAfterDiscounts: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
+        }).from(quotationItems).where(eq(quotationItems.quotationId, req.params.id));
 
-      // Record history for both the quotation (status change) and the new invoice (creation)
-      try {
+        const subtotal = parseFloat(conversionFinancials?.subtotal || '0');
+        const totalAfterItemDiscounts = parseFloat(conversionFinancials?.totalAfterDiscounts || '0');
+        // Item-level discount = gross subtotal minus discounted line totals
+        const itemDiscountAmount = subtotal - totalAfterItemDiscounts;
+        // Carry over stored quotation-level tax/discount fields
+        const quotationTaxAmount = parseFloat(quotation.taxAmount || '0');
+        const quotationDiscountAmount = parseFloat(quotation.discountAmount || '0');
+        // Use stored quotation discount if set (covers quotation-level discount); else use item-level discount
+        const effectiveDiscountAmount = quotationDiscountAmount > 0 ? quotationDiscountAmount : itemDiscountAmount;
+        const effectiveDiscountRate = parseFloat(quotation.discountRate || '0') > 0
+          ? quotation.discountRate!
+          : (subtotal > 0 ? ((effectiveDiscountAmount / subtotal) * 100).toFixed(2) : '0.00');
+        const effectiveTaxAmount = quotationTaxAmount;
+        const effectiveTaxRate = quotation.taxRate ?? '0.00';
+        // Single coherent formula: total = subtotal - discount + tax
+        const finalAmount = subtotal - effectiveDiscountAmount + effectiveTaxAmount;
+
+        // Create invoice record carrying over all financial data from the quotation
+        const baseConvertData = {
+          clientId: quotation.clientId,
+          quotationId: quotation.id,
+          title: quotation.title,
+          description: quotation.description,
+          notes: quotation.notes,
+          subtotal: subtotal.toFixed(2),
+          discountAmount: effectiveDiscountAmount.toFixed(2),
+          discountRate: effectiveDiscountRate,
+          taxRate: effectiveTaxRate,
+          taxAmount: effectiveTaxAmount.toFixed(2),
+          amount: finalAmount.toFixed(2),
+          paidAmount: '0.00',
+          status: 'pending',
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          createdBy: req.user?.id,
+        };
+
+        await lockNumbering(tx, "invoice_number");
+        const [newInvoice] = await tx.insert(invoices).values({ ...baseConvertData, invoiceNumber: await generateInvoiceNumber(tx) }).returning();
+
+        const invoiceNumber = newInvoice.invoiceNumber;
+
+        // Copy quotation items into invoice items
+        if (qItems.length > 0) {
+          const invoiceItemsData = qItems.map((item) => ({
+            invoiceId: newInvoice.id,
+            serviceId: item.serviceId ?? undefined,
+            name: item.description,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+          }));
+          await tx.insert(invoiceItems).values(invoiceItemsData);
+        }
+
+        // Update quotation status to invoiced and store the resulting invoiceId
+        await tx.update(quotations)
+          .set({ status: 'invoiced', invoiceId: newInvoice.id, updatedAt: new Date() })
+          .where(eq(quotations.id, req.params.id));
+
+        // Record history for both the quotation (status change) and the new invoice (creation)
         const actor = req.user?.email || req.user?.username || 'System';
-        await db.insert(quotationHistory).values({
+        await tx.insert(quotationHistory).values({
           quotationId: req.params.id,
           event: `Status changed to "invoiced" — converted to invoice ${invoiceNumber}`,
           actor,
         });
-        await db.insert(invoiceHistory).values({
+        await tx.insert(invoiceHistory).values({
           invoiceId: newInvoice.id,
           event: `Invoice ${invoiceNumber} created from quotation ${quotation.quotationNumber}`,
           actor,
         });
-      } catch (historyError) {
-        console.error("Error recording history for convert-to-invoice:", historyError);
-      }
 
-      // Return the invoice with its items for immediate display
-      const createdItems = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, newInvoice.id));
-      res.status(201).json({ invoice: newInvoice, items: createdItems, message: "Quotation converted to invoice successfully" });
+        const createdItems = await tx.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, newInvoice.id));
+        return { invoice: newInvoice, items: createdItems };
+
+      });
+
+      if ("error" in outcome) {
+        return res.status(outcome.error.status).json({ message: outcome.error.message });
+      }
+      res.status(201).json({ invoice: outcome.invoice, items: outcome.items, message: "Quotation converted to invoice successfully" });
     } catch (error) {
       console.error("Error converting quotation to invoice:", error);
       res.status(500).json({ message: "Failed to convert quotation to invoice" });

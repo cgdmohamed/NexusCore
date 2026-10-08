@@ -8,7 +8,7 @@ import {
   users,
   employees
 } from "@shared/schema";
-import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, count, sql, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { notificationService } from "./notification-service";
 import { requirePermission } from "./auth";
@@ -35,85 +35,55 @@ export function registerTaskManagementRoutes(app: Express) {
   // Get all tasks with advanced filtering
   app.get("/api/tasks", requirePermission("tasks", "view"), async (req, res) => {
     try {
-      const {
-        status,
-        priority,
-        assignedTo,
-        createdBy,
-        search,
-        sortOrder = 'desc',
-        limit = '50',
-        offset = '0',
-        myTasks // Special filter for current user's tasks
-      } = req.query;
+      const { status, priority, assignedTo, createdBy, search, sortOrder, myTasks } = req.query;
 
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
-      
-      // Query tasks with assignee user info
-      const allTasks = await db.select().from(tasks);
-      
-      // Get all users for assignee lookup
-      const allUsers = await db.select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        username: users.username,
-      }).from(users);
-      
-      // Create a map for quick user lookup
-      const userMap = new Map(allUsers.map(u => [u.id, u]));
 
-      // Filter tasks based on search criteria
-      let filteredTasks = allTasks;
+      // Pagination: default 50 rows, at most 200, never negative
+      const requestedLimit = parseInt(req.query.limit as string, 10);
+      const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 200) : 50;
+      const requestedOffset = parseInt(req.query.offset as string, 10);
+      const offset = Number.isFinite(requestedOffset) && requestedOffset > 0 ? requestedOffset : 0;
 
-      const searchTerm = typeof search === "string" ? search.toLowerCase() : "";
-      if (searchTerm) {
-        filteredTasks = filteredTasks.filter(task => 
-          task.title.toLowerCase().includes(searchTerm) ||
-          (task.description && task.description.toLowerCase().includes(searchTerm))
-        );
+      // Filters are applied by the database, so only the requested page is ever loaded
+      const conditions = [];
+      if (typeof status === "string" && status) conditions.push(eq(tasks.status, status));
+      if (typeof priority === "string" && priority) conditions.push(eq(tasks.priority, priority));
+      if (typeof assignedTo === "string" && assignedTo) conditions.push(eq(tasks.assignedTo, assignedTo));
+      if (typeof createdBy === "string" && createdBy) conditions.push(eq(tasks.createdBy, createdBy));
+      if (myTasks === "true") conditions.push(eq(tasks.assignedTo, userId));
+      if (typeof search === "string" && search.trim()) {
+        // LIKE wildcards in the user's text are matched literally
+        const pattern = `%${search.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+        conditions.push(or(ilike(tasks.title, pattern), ilike(tasks.description, pattern)));
       }
 
-      if (typeof status === "string") {
-        filteredTasks = filteredTasks.filter(task => task.status === status);
-      }
+      const direction = sortOrder === "asc" ? asc : desc;
+      const rows = await db
+        .select({
+          task: tasks,
+          assigneeFirstName: users.firstName,
+          assigneeLastName: users.lastName,
+          assigneeUsername: users.username,
+        })
+        .from(tasks)
+        .leftJoin(users, eq(tasks.assignedTo, users.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(direction(tasks.createdAt), direction(tasks.id))
+        .limit(limit)
+        .offset(offset);
 
-      if (typeof priority === "string") {
-        filteredTasks = filteredTasks.filter(task => task.priority === priority);
-      }
-
-      if (myTasks === 'true') {
-        filteredTasks = filteredTasks.filter(task => task.assignedTo === userId);
-      }
-
-      // Sort tasks
-      filteredTasks.sort((a, b) => {
-        if (sortOrder === 'desc') {
-          return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
-        }
-        return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
-      });
-
-      // Apply pagination
-      const start = parseInt(offset as string);
-      const end = start + parseInt(limit as string);
-      const paginatedTasks = filteredTasks.slice(start, end);
-
-      // Enrich tasks with assignee names
-      const tasksWithAssigneeNames = paginatedTasks.map(task => {
-        const assignee = task.assignedTo ? userMap.get(task.assignedTo) : null;
-        return {
+      res.json(
+        rows.map(({ task, assigneeFirstName, assigneeLastName, assigneeUsername }) => ({
           ...task,
-          assigneeName: assignee 
-            ? (assignee.firstName && assignee.lastName 
-                ? `${assignee.firstName} ${assignee.lastName}` 
-                : assignee.username || task.assignedTo)
+          assigneeName: task.assignedTo
+            ? assigneeFirstName && assigneeLastName
+              ? `${assigneeFirstName} ${assigneeLastName}`
+              : assigneeUsername || task.assignedTo
             : null,
-        };
-      });
-
-      res.json(tasksWithAssigneeNames);
+        })),
+      );
     } catch (error) {
       console.error("Error fetching tasks:", error);
       res.status(500).json({ message: "Failed to fetch tasks" });

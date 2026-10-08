@@ -1,11 +1,14 @@
-import { Router } from "express";
+import { Router, type Express } from "express";
 import { notificationService } from "./notification-service";
 import { db } from "./db";
-import { notificationSettings, users } from "@shared/schema";
+import { notificationSettings, users, notificationTypeEnum } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "./auth";
 
 const router = Router();
+
+const isNotificationType = (value: unknown): boolean =>
+  typeof value === "string" && (notificationTypeEnum.enumValues as readonly string[]).includes(value);
 
 router.use(requireAuth);
 
@@ -146,6 +149,9 @@ router.put("/settings", async (req: any, res) => {
     if (!notificationType) {
       return res.status(400).json({ success: false, message: "notificationType is required" });
     }
+    if (!isNotificationType(notificationType)) {
+      return res.status(400).json({ success: false, message: "Unknown notification type" });
+    }
 
     const existingSetting = await db
       .select()
@@ -207,9 +213,13 @@ router.put("/settings/bulk", async (req: any, res) => {
       return res.status(400).json({ success: false, message: "preferences array is required" });
     }
 
+    // Validate everything first so a bad entry cannot leave the update half-applied
+    if (preferences.some((pref: any) => !isNotificationType(pref?.notificationType))) {
+      return res.status(400).json({ success: false, message: "Every preference needs a known notificationType" });
+    }
+
     for (const pref of preferences) {
       const { notificationType, inAppEnabled, emailEnabled } = pref;
-      if (!notificationType) continue;
 
       const [existing] = await db
         .select()
@@ -336,3 +346,8 @@ router.post("/system", requireAdmin, async (req: any, res) => {
 });
 
 export default router;
+
+/** Mounts the notification endpoints under /api/notifications. */
+export function registerNotificationRoutes(app: Express) {
+  app.use("/api/notifications", router);
+}
