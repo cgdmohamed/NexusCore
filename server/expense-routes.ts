@@ -19,6 +19,7 @@ import { requirePermission } from "./auth";
 import { logAudit } from "./audit";
 import { attachmentKind, attachmentUpload, isStoredUploadPath } from "./uploads";
 import { notificationService } from "./notification-service";
+import { logger } from "./logger";
 
 // Helper function to handle payment source transactions
 async function handlePaymentSourceTransaction(
@@ -352,7 +353,7 @@ export function registerExpenseRoutes(app: Express) {
         updatedAt: new Date(),
       };
 
-      console.log("Final expense data for DB (dates converted):", {
+      logger.info("Final expense data for DB (dates converted):", {
         ...expenseData,
         expenseDate: expenseData.expenseDate?.toISOString(),
         createdAt: expenseData.createdAt?.toISOString(),

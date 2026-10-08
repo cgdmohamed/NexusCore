@@ -256,6 +256,26 @@ describe.skipIf(!TEST_DATABASE_URL)("improvements D1-D8 (integration)", () => {
       expect((await api("PUT", `/api/users/${user.id}`, { profileImageUrl: dataUri("text/html", Buffer.from("x")) })).status).toBe(400);
     });
 
+    it("the opt-in migration script converts existing base64 pictures, and only when asked", async () => {
+      const emp = (await newEmployee()).body;
+      const { employees } = await import("../../shared/schema");
+      const { eq } = await import("drizzle-orm");
+      const legacy = dataUri("image/png", PNG);
+      await ctx.db.update(employees).set({ profileImage: legacy }).where(eq(employees.id, emp.id));
+      const { migrateProfileImages } = await import("../../scripts/migrate-profile-images");
+
+      const dry = await migrateProfileImages(false, () => {});
+      expect(dry.found).toBeGreaterThanOrEqual(1);
+      expect(dry.converted).toBe(0);
+      expect((await api("GET", `/api/employees/${emp.id}`)).body.profileImage).toBe(legacy);
+
+      const applied = await migrateProfileImages(true, () => {});
+      expect(applied.converted).toBe(applied.found);
+      const after = (await api("GET", `/api/employees/${emp.id}`)).body.profileImage;
+      expect(after).toMatch(/^\/uploads\/profiles\/.+\.png$/);
+      expect((await migrateProfileImages(true, () => {})).found).toBe(0); // idempotent
+    });
+
     it("an invalid employee payload is a 400, not a 500", async () => {
       expect((await newEmployee({ email: undefined, firstName: undefined })).status).toBe(400);
     });

@@ -1,4 +1,5 @@
 #!/bin/bash
+# LEGACY: uploads server/prod.cjs, which `npm run build` / `npm start` no longer use. Kept for older servers.
 
 # Creative Code Nexus - VPS Deployment Script
 # This script uploads the updated server/prod.cjs to your VPS production server

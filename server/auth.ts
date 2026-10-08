@@ -13,6 +13,7 @@ import { eq, and, gt, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import { validatePassword } from "./password-policy";
 import { invalidateUserSessions } from "./sessions";
+import { logger } from "./logger";
 
 declare global {
   namespace Express {
@@ -86,6 +87,11 @@ setInterval(() => {
   });
 }, LOGIN_WINDOW_MS).unref();
 
+function cookieSameSite(): "none" | "lax" | "strict" {
+  const value = (process.env.SESSION_COOKIE_SAMESITE || "none").toLowerCase();
+  return value === "lax" || value === "strict" ? value : "none";
+}
+
 export function setupAuth(app: Express) {
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
@@ -106,15 +112,15 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     rolling: true, // Reset session TTL on every active request
     cookie: {
-      // SameSite=None + Secure=true is required so the session cookie is sent
-      // with cross-site POST requests when the app runs inside Replit's preview
-      // iframe (top-level origin replit.com ≠ app origin repl.co).
-      // SameSite=Lax blocks cross-site POST requests, causing new sessions to be
-      // created for every mutation, which breaks CSRF token validation.
-      secure: true,
+      // Defaults keep the original behaviour (Secure + SameSite=None) because the app was first run
+      // inside Replit's preview iframe, where a cross-site cookie is required.
+      // For a normal deployment on your own domain set SESSION_COOKIE_SAMESITE=lax (or strict),
+      // which also gives CSRF protection a second layer. SESSION_COOKIE_SECURE=false is only for
+      // plain-HTTP local development.
+      secure: process.env.SESSION_COOKIE_SECURE !== "false",
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'none' as const,
+      sameSite: cookieSameSite(),
     }
   };
 
@@ -410,7 +416,7 @@ export function setupAuth(app: Express) {
           `,
           text: `Password Reset Request\n\nHello ${user.firstName || user.username},\n\nWe received a request to reset your password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
         });
-        console.log(`Password reset email sent to ${user.email}`);
+        logger.info(`Password reset email sent to ${user.email}`);
       } catch (emailError) {
         console.error('Failed to send password reset email:', emailError);
         // Still return success to prevent email enumeration
@@ -483,7 +489,7 @@ export function setupAuth(app: Express) {
       // Whoever knew the old password (or held a stolen session) must sign in again
       await invalidateUserSessions(resetRecord.userId);
 
-      console.log(`Password reset completed for user ID: ${resetRecord.userId}`);
+      logger.info(`Password reset completed for user ID: ${resetRecord.userId}`);
 
       res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
     } catch (error) {
@@ -536,7 +542,7 @@ export function setupAuth(app: Express) {
           console.error("Error saving session for CSRF token:", err);
           return res.status(500).json({ message: "Failed to generate CSRF token" });
         }
-        console.log(`CSRF token generated for session ${req.sessionID?.substring(0, 8)}...`);
+        logger.info(`CSRF token generated for session ${req.sessionID?.substring(0, 8)}...`);
         res.json({ csrfToken: token });
       });
     } catch (error) {

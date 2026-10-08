@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
+import { logger } from "./logger";
 
 const smtpPort = parseInt(process.env.SMTP_PORT || "587");
 const smtpTransporter = nodemailer.createTransport({
@@ -29,7 +30,7 @@ if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     if (error) {
       console.error('[SMTP] Connection verification failed:', error.message);
     } else {
-      console.log('[SMTP] Connection verified successfully — ready to send emails');
+      logger.info('[SMTP] Connection verified successfully — ready to send emails');
     }
   });
 } else {
@@ -298,7 +299,7 @@ class NotificationService {
 
     // Check if SMTP is configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log("📧 SMTP not configured. Email would be sent:", {
+      logger.info("📧 SMTP not configured. Email would be sent:", {
         to: payload.to,
         subject: payload.subject,
         body: payload.bodyText
@@ -316,7 +317,7 @@ class NotificationService {
       };
 
       const info = await smtpTransporter.sendMail(mailOptions);
-      console.log("📧 Email sent successfully:", info.messageId);
+      logger.info("📧 Email sent successfully:", info.messageId);
     } catch (error) {
       console.error("📧 Failed to send email:", error);
       throw error;
@@ -345,7 +346,7 @@ class NotificationService {
       });
     } catch (error) {
       // For now, just log to console if notification_logs table doesn't exist
-      console.log(`📝 Notification log: ${action} ${channel} for ${notificationId} - ${success ? 'success' : 'failed'}`);
+      logger.info(`📝 Notification log: ${action} ${channel} for ${notificationId} - ${success ? 'success' : 'failed'}`);
     }
   }
 
@@ -462,7 +463,7 @@ class NotificationService {
       
       return Number((result.rows[0] as any)?.count || 0);
     } catch (error) {
-      console.log('⚠️ Notifications table not found - returning 0 count');
+      logger.info('⚠️ Notifications table not found - returning 0 count');
       return 0;
     }
   }

@@ -1,3 +1,4 @@
+// LEGACY: not used by `npm run build` / `npm start` (the app runs from dist/index.js). Kept for older servers.
 // Simple production server without ESM complications
 require('dotenv/config');
 const express = require('express');

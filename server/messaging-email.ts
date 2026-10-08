@@ -15,6 +15,7 @@ import nodemailer from "nodemailer";
 import { db } from "./db";
 import { users, conversationParticipants, notificationSettings } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "./logger";
 
 const EMAIL_DELAY_MS = 3 * 60 * 1000; // 3 minutes
 
@@ -126,7 +127,7 @@ async function sendDeferredEmail(
         )
       );
     if (msgEmailPref && msgEmailPref.emailEnabled === false) {
-      console.log("[Messaging Email] Email disabled by user preference, skipping for", recipient.email);
+      logger.info("[Messaging Email] Email disabled by user preference, skipping for", recipient.email);
       return;
     }
 
@@ -141,7 +142,7 @@ async function sendDeferredEmail(
     const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
 
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log("[Messaging Email] SMTP not configured, skipping email to", recipient.email);
+      logger.info("[Messaging Email] SMTP not configured, skipping email to", recipient.email);
       return;
     }
 
@@ -226,7 +227,7 @@ async function sendDeferredEmail(
       html: bodyHtml,
     });
 
-    console.log(`[Messaging Email] Sent summary email to ${recipient.email} (${messages.length} message(s))`);
+    logger.info(`[Messaging Email] Sent summary email to ${recipient.email} (${messages.length} message(s))`);
   } catch (err) {
     console.error("[Messaging Email] Failed to send deferred email:", err);
   }

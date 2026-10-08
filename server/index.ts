@@ -21,8 +21,8 @@ async function setupProductionMiddleware() {
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrcElem: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          scriptSrcElem: ["'self'"],
           connectSrc: ["'self'", "wss:", "https:"],
         },
       },
@@ -44,37 +44,27 @@ async function setupProductionMiddleware() {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Paths whose response bodies must never appear in logs (contain sensitive credential data)
-const SENSITIVE_PATHS = [/^\/api\/clients\/[^/]+\/credentials/];
-
+// Request log: method, path, status and duration only. Response bodies are never logged (they can
+// hold personal or financial data); failed requests also log the error message the client received.
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  const isSensitive = SENSITIVE_PATHS.some((re) => re.test(path));
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let errorMessage: string | undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
-    if (!isSensitive) {
-      capturedJsonResponse = bodyJson;
+    if (res.statusCode >= 400 && bodyJson && typeof bodyJson.message === "string") {
+      errorMessage = bodyJson.message;
     }
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
   res.on("finish", () => {
+    if (!path.startsWith("/api")) return;
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
+    let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (errorMessage) logLine += ` :: ${errorMessage.slice(0, 120)}`;
+    log(logLine);
   });
 
   next();

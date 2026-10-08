@@ -4,6 +4,7 @@ import { projects, tasks, users, clients, insertProjectSchema } from "@shared/sc
 import { eq, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requirePermission } from "./auth";
+import { logger } from "./logger";
 
 interface ProjectMemberInfo {
   userId: string;
@@ -50,7 +51,7 @@ async function runProjectMigrations(): Promise<void> {
         UNIQUE(project_id, user_id)
       );
     `);
-    console.log("✅ Project migrations completed");
+    logger.info("✅ Project migrations completed");
   } catch (err) {
     console.error("⚠️ Project migrations failed (non-fatal):", err);
   }

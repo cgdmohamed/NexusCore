@@ -14,42 +14,51 @@ npm install
 npm run dev
 ```
 
-### Production Setup with PM2
+### Production (PM2)
 
-1. **Install PM2 Globally:**
+The app is built to `dist/` and started from `dist/index.js` (`npm run build`, `npm start`).
+
 ```bash
 npm install -g pm2
+npm ci && npm run build
+pm2 start dist/index.js --name nexus-app      # first time
+pm2 save && pm2 startup                        # restart on reboot
 ```
 
-2. **Start Application with PM2:**
+Updating an existing server:
+
 ```bash
-pm2 start npm --name "companyos" -- run dev
+cd ~/htdocs/nexus.creativecode.com.eg
+git pull && npm run build && pm2 restart nexus-app
 ```
 
-3. **Save PM2 Configuration:**
+Take a `pg_dump` and a copy of `uploads/` first. Run `npm ci` only when `package.json` changed and
+you have tested the new dependency versions (see `docs/REVIEW_NOTES.md`).
+
+### Configuration
+
+Copy `.env.example` to `.env`. Required: `DATABASE_URL`, `SESSION_SECRET`, `VAULT_ENCRYPTION_KEY`.
+Optional: `UPLOADS_DIR`, `LOG_LEVEL`, `SESSION_COOKIE_SAMESITE`, `SEED_DEFAULT_DATA`, SMTP settings.
+
+### Tests
+
 ```bash
-pm2 save
-pm2 startup
+npm test                                   # unit tests (no database needed)
+TEST_DATABASE_URL=postgresql://... npm test   # + integration tests (WARNING: drops the public schema of that DB)
 ```
 
-4. **Monitor Application:**
-```bash
-pm2 monit           # Real-time monitoring
-pm2 logs companyos  # View logs
-pm2 status          # Check status
-```
+### Database
 
-5. **Restart/Stop Application:**
-```bash
-pm2 restart companyos
-pm2 stop companyos
-pm2 delete companyos
-```
+The schema is created with `npm run db:push`; migrations live in `drizzle/` (see `drizzle/README.md`).
+Data export is available to administrators in Settings; real backups need `pg_dump` plus a copy of `uploads/`.
+To move old base64 profile pictures out of the database: `npm run images:migrate` (dry run) then `-- --apply`.
 
-6. **Auto-restart on Crash:**
-PM2 automatically restarts the application on crashes and on server reboot after running `pm2 startup`.
+### Legacy files
 
-**Default Login:** admin / admin123
+`server/prod.cjs`, `server/simple-prod.js` and `deploy-to-server.sh` belong to an older deployment style and are
+**not** used by `npm run build` / `npm start`. They are kept only so existing servers that still run them keep working.
+
+**Default Login (development only):** admin / admin123 — change it immediately; it is not created in production unless `SEED_DEFAULT_DATA=true`.
 
 ## 🏢 Core Modules
 

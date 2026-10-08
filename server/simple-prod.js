@@ -1,3 +1,4 @@
+// LEGACY: not used by `npm run build` / `npm start` (the app runs from dist/index.js). Kept for older servers.
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
