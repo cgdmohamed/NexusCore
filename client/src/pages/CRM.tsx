@@ -26,7 +26,9 @@ import {
   Calendar,
   Building,
   Globe,
-  Trash2
+  Trash2,
+  Archive,
+  RotateCcw
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
@@ -87,7 +89,7 @@ export default function CRM() {
   // All authenticated users can delete (remove role restriction)
   const isAdmin = !!user;
 
-  // Delete client mutation with cascade delete
+  // Clients are archived, never deleted: all invoices, payments and history stay on record
   const deleteClientMutation = useMutation({
     mutationFn: async (clientId: string) => {
       const response = await apiRequest("DELETE", `/api/clients/${clientId}`);
@@ -113,6 +115,20 @@ export default function CRM() {
     },
   });
 
+  const restoreClientMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      const response = await apiRequest("POST", `/api/clients/${clientId}/restore`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Client restored", description: "The client is active again." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Restore failed", description: error.message || "Failed to restore client", variant: "destructive" });
+    },
+  });
+
   // Enhanced filtering and sorting
   const filteredAndSortedClients = useMemo(() => {
     let filtered = clientList.filter(client => {
@@ -121,7 +137,7 @@ export default function CRM() {
                            client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            client.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            client.country?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+      const matchesStatus = statusFilter === "all" ? client.status !== "archived" : client.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
@@ -176,14 +192,15 @@ export default function CRM() {
 
   // Statistics calculations
   const stats = useMemo(() => {
-    const totalValue = clientList.reduce((sum, c) => sum + parseFloat(c.totalValue || "0"), 0);
-    const avgValue = clientList.length > 0 ? totalValue / clientList.length : 0;
+    const liveClients = clientList.filter(c => c.status !== 'archived');
+    const totalValue = liveClients.reduce((sum, c) => sum + parseFloat(c.totalValue || "0"), 0);
+    const avgValue = liveClients.length > 0 ? totalValue / liveClients.length : 0;
     
     return {
-      total: clientList.length,
-      active: clientList.filter(c => c.status === 'active').length,
-      inactive: clientList.filter(c => c.status === 'inactive').length,
-      lead: clientList.filter(c => c.status === 'lead').length,
+      total: liveClients.length,
+      active: liveClients.filter(c => c.status === 'active').length,
+      inactive: liveClients.filter(c => c.status === 'inactive').length,
+      lead: liveClients.filter(c => c.status === 'lead').length,
       totalValue,
       avgValue,
       totalQuotations: quotations.length,
@@ -359,6 +376,7 @@ export default function CRM() {
                     <SelectItem value="prospect">Prospect</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="lost">Lost</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -520,42 +538,40 @@ export default function CRM() {
                                   View
                                 </Button>
                               </Link>
-                              {isAdmin && (
+                              {isAdmin && (client.status === 'archived' ? (
+                                <Button variant="outline" size="sm" onClick={() => restoreClientMutation.mutate(client.id)} disabled={restoreClientMutation.isPending}>
+                                  <RotateCcw className="w-3 h-3 mr-1" />
+                                  Restore
+                                </Button>
+                              ) : (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                      <Trash2 className="w-3 h-3 mr-1" />
-                                      Delete
+                                      <Archive className="w-3 h-3 mr-1" />
+                                      Archive
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Client - Permanent Action</AlertDialogTitle>
+                                      <AlertDialogTitle>Archive Client</AlertDialogTitle>
                                       <AlertDialogDescription className="space-y-2">
-                                        <p>You are about to permanently delete <strong>{client.name}</strong> and ALL related data including:</p>
-                                        <ul className="list-disc list-inside space-y-1 text-sm">
-                                          <li>All quotations and quotation items</li>
-                                          <li>All invoices and invoice items</li>
-                                          <li>All payment records</li>
-                                          <li>All client notes and activity history</li>
-                                          <li>All credit balance history</li>
-                                        </ul>
-                                        <p className="font-medium text-red-600">This action cannot be undone.</p>
-                                      </AlertDialogDescription>
+                                    <p><strong>{client.name}</strong> will be archived and hidden from the active client list.</p>
+                                    <p className="text-sm">Nothing is deleted: invoices, payments, quotations, notes and credit history stay on record, and you can restore the client at any time. New invoices and quotations cannot be created for an archived client.</p>
+                                  </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction
                                         onClick={() => deleteClientMutation.mutate(client.id)}
                                         disabled={deleteClientMutation.isPending}
-                                        className="bg-red-600 hover:bg-red-700"
+                                        className="bg-amber-600 hover:bg-amber-700"
                                       >
-                                        {deleteClientMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                                        {deleteClientMutation.isPending ? "Archiving..." : "Archive Client"}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
-                              )}
+                              ))}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -653,26 +669,24 @@ export default function CRM() {
                               View Profile
                             </Button>
                           </Link>
-                          {isAdmin && (
-                            <AlertDialog>
+                          {isAdmin && (client.status === 'archived' ? (
+                                <Button variant="outline" size="sm" onClick={() => restoreClientMutation.mutate(client.id)} disabled={restoreClientMutation.isPending}>
+                                  <RotateCcw className="w-3 h-3 mr-1" />
+                                  Restore
+                                </Button>
+                              ) : (
+                                <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                  <Trash2 className="w-3 h-3" />
+                                  <Archive className="w-3 h-3" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Client - Permanent Action</AlertDialogTitle>
+                                  <AlertDialogTitle>Archive Client</AlertDialogTitle>
                                   <AlertDialogDescription className="space-y-2">
-                                    <p>You are about to permanently delete <strong>{client.name}</strong> and ALL related data including:</p>
-                                    <ul className="list-disc list-inside space-y-1 text-sm">
-                                      <li>All quotations and quotation items</li>
-                                      <li>All invoices and invoice items</li>
-                                      <li>All payment records</li>
-                                      <li>All client notes and activity history</li>
-                                      <li>All credit balance history</li>
-                                    </ul>
-                                    <p className="font-medium text-red-600">This action cannot be undone.</p>
+                                    <p><strong>{client.name}</strong> will be archived and hidden from the active client list.</p>
+                                    <p className="text-sm">Nothing is deleted: invoices, payments, quotations, notes and credit history stay on record, and you can restore the client at any time. New invoices and quotations cannot be created for an archived client.</p>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -682,12 +696,12 @@ export default function CRM() {
                                     disabled={deleteClientMutation.isPending}
                                     className="bg-red-600 hover:bg-red-700"
                                   >
-                                    {deleteClientMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                                    {deleteClientMutation.isPending ? "Archiving..." : "Archive Client"}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          )}
+                              ))}
                         </div>
                       </CardContent>
                     </Card>

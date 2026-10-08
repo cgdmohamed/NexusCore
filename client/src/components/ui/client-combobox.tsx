@@ -55,7 +55,7 @@ export function ClientCombobox({
           <CommandList>
             <CommandEmpty>No clients found.</CommandEmpty>
             <CommandGroup>
-              {clients.map((client) => (
+              {clients.filter((client) => client.status !== "archived").map((client) => (
                 <CommandItem
                   key={client.id}
                   value={client.name}

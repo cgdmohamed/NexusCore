@@ -417,7 +417,7 @@ export function setupDatabaseRoutes(app: Express) {
   // Sidebar counters endpoint
   app.get('/api/sidebar/counters', requirePermission("dashboard", "view"), async (req, res) => {
     try {
-      const [clientsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(clients);
+      const [clientsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(clients).where(ne(clients.status, "archived"));
       const [quotationsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(quotations);
       const [invoicesResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(invoices);
       const [expensesResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(expenses);
@@ -573,7 +573,10 @@ export function setupDatabaseRoutes(app: Express) {
   // Clients - using real database
   app.get('/api/clients', requirePermission("crm", "view"), async (req: any, res) => {
     try {
-      const clientsData = await db.select().from(clients);
+      // Archived clients stay in the list (invoices still need their names); pickers can hide them
+      const clientsData = req.query.excludeArchived === "true"
+        ? await db.select().from(clients).where(ne(clients.status, "archived"))
+        : await db.select().from(clients);
       res.json(clientsData);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -658,9 +661,12 @@ export function setupDatabaseRoutes(app: Express) {
       if (typeof req.body.clientId !== "string" || !req.body.clientId) {
         return res.status(400).json({ message: "clientId is required." });
       }
-      const [quotationClient] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, req.body.clientId));
+      const [quotationClient] = await db.select({ id: clients.id, status: clients.status }).from(clients).where(eq(clients.id, req.body.clientId));
       if (!quotationClient) {
         return res.status(400).json({ message: "Client not found." });
+      }
+      if (quotationClient.status === "archived") {
+        return res.status(409).json({ message: "This client is archived. Restore it before creating new quotations." });
       }
 
       let newQuotation: any;
@@ -751,9 +757,12 @@ export function setupDatabaseRoutes(app: Express) {
       if (typeof req.body.clientId !== "string" || !req.body.clientId) {
         return res.status(400).json({ message: "clientId is required." });
       }
-      const [invoiceClient] = await db.select({ id: clients.id }).from(clients).where(eq(clients.id, req.body.clientId));
+      const [invoiceClient] = await db.select({ id: clients.id, status: clients.status }).from(clients).where(eq(clients.id, req.body.clientId));
       if (!invoiceClient) {
         return res.status(400).json({ message: "Client not found." });
+      }
+      if (invoiceClient.status === "archived") {
+        return res.status(409).json({ message: "This client is archived. Restore it before creating new invoices." });
       }
 
       const money = (field: string) => (isAbsent(req.body[field]) ? undefined : parseMoney(req.body[field], { allowZero: true }));
@@ -939,44 +948,19 @@ export function setupDatabaseRoutes(app: Express) {
   });
 
   // Delete invoice with all items and payments (only draft invoices)
+  // Invoices are never deleted (they are financial records). Use /cancel to void one.
   app.delete('/api/invoices/:id', requirePermission("invoices", "delete"), async (req: any, res) => {
     try {
-      const invoiceId = req.params.id;
-      
-      // Check if invoice exists
-      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+      const [invoice] = await db.select({ id: invoices.id }).from(invoices).where(eq(invoices.id, req.params.id));
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
       }
-
-      // Only allow deletion of draft invoices
-      if (invoice.status !== 'draft') {
-        return res.status(400).json({ 
-          message: "Only draft invoices can be deleted. Please cancel the invoice instead." 
-        });
-      }
-
-      // Block deletion if payments have been recorded against this invoice
-      const [paymentRecord] = await db.select({ id: payments.id })
-        .from(payments)
-        .where(eq(payments.invoiceId, invoiceId))
-        .limit(1);
-      if (paymentRecord) {
-        return res.status(400).json({ 
-          message: "Cannot delete an invoice with recorded payments. Please cancel it instead." 
-        });
-      }
-
-      // Delete invoice items
-      await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
-
-      // Delete the invoice
-      await db.delete(invoices).where(eq(invoices.id, invoiceId));
-
-      res.json({ success: true, message: "Invoice deleted successfully" });
+      res.status(409).json({
+        message: "Invoices cannot be deleted. Cancel the invoice instead; it stays on record.",
+      });
     } catch (error) {
-      console.error("Error deleting invoice:", error);
-      res.status(500).json({ message: "Failed to delete invoice" });
+      console.error("Error handling invoice delete:", error);
+      res.status(500).json({ message: "Failed to process request" });
     }
   });
 
@@ -1855,68 +1839,47 @@ export function setupDatabaseRoutes(app: Express) {
     }
   });
 
-  // Delete client with cascade (quotations, invoices, payments, notes, credit history)
+  // Clients are never deleted: removing one archives it. Invoices, payments, quotations, notes,
+  // credit history and credentials all stay, so financial records remain complete.
   app.delete('/api/clients/:id', requirePermission("crm", "delete"), async (req: any, res) => {
     try {
-      const clientId = req.params.id;
-      
-      // Check if client exists
-      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
       }
 
-      // Get all invoices for this client to delete their payments
-      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, clientId));
-      const invoiceIds = clientInvoices.map(inv => inv.id);
-
-      // Delete in order of dependencies (cascade delete)
-      // 1. Delete payments for all client invoices
-      if (invoiceIds.length > 0) {
-        for (const invoiceId of invoiceIds) {
-          await db.delete(payments).where(eq(payments.invoiceId, invoiceId));
-        }
+      if (client.status !== "archived") {
+        await db.update(clients).set({ status: "archived", updatedAt: new Date() }).where(eq(clients.id, client.id));
+        await logAudit(req, "archive", "client", client.id, { status: client.status }, { status: "archived" });
       }
 
-      // 2. Delete invoice items
-      if (invoiceIds.length > 0) {
-        for (const invoiceId of invoiceIds) {
-          await db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
-        }
-      }
-
-      // 3. Delete invoices
-      await db.delete(invoices).where(eq(invoices.clientId, clientId));
-
-      // 4. Get all quotations for this client
-      const clientQuotations = await db.select().from(quotations).where(eq(quotations.clientId, clientId));
-      const quotationIds = clientQuotations.map(q => q.id);
-
-      // 5. Delete quotation items
-      if (quotationIds.length > 0) {
-        for (const quotationId of quotationIds) {
-          await db.delete(quotationItems).where(eq(quotationItems.quotationId, quotationId));
-        }
-      }
-
-      // 6. Delete quotations
-      await db.delete(quotations).where(eq(quotations.clientId, clientId));
-
-      // 7. Delete client notes
-      await db.delete(clientNotes).where(eq(clientNotes.clientId, clientId));
-
-      // 8. Delete client credit history
-      await db.delete(clientCreditHistory).where(eq(clientCreditHistory.clientId, clientId));
-
-      // 9. Finally delete the client
-      await db.delete(clients).where(eq(clients.id, clientId));
-
-      await logAudit(req, "delete", "client", clientId, { name: client.name, invoices: invoiceIds.length, quotations: quotationIds.length }, null);
-
-      res.json({ success: true, message: "Client and all related data deleted successfully" });
+      res.json({
+        success: true,
+        archived: true,
+        message: "Client archived. Its invoices, payments, quotations and history are kept.",
+      });
     } catch (error) {
-      console.error("Error deleting client:", error);
-      res.status(500).json({ message: "Failed to delete client" });
+      console.error("Error archiving client:", error);
+      res.status(500).json({ message: "Failed to archive client" });
+    }
+  });
+
+  app.post('/api/clients/:id/restore', requirePermission("crm", "edit"), async (req: any, res) => {
+    try {
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      if (client.status === "archived") {
+        await db.update(clients).set({ status: "active", updatedAt: new Date() }).where(eq(clients.id, client.id));
+        await logAudit(req, "restore", "client", client.id, { status: "archived" }, { status: "active" });
+      }
+
+      res.json({ success: true, restored: client.status === "archived" });
+    } catch (error) {
+      console.error("Error restoring client:", error);
+      res.status(500).json({ message: "Failed to restore client" });
     }
   });
 
@@ -2224,6 +2187,11 @@ export function setupDatabaseRoutes(app: Express) {
       const [quotation] = await db.select().from(quotations).where(eq(quotations.id, req.params.id));
       if (!quotation) {
         return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      const [convertClient] = await db.select({ status: clients.status }).from(clients).where(eq(clients.id, quotation.clientId));
+      if (convertClient?.status === "archived") {
+        return res.status(409).json({ message: "This client is archived. Restore it before converting its quotations." });
       }
 
       // A quotation can only be converted once; converting again would bill the client twice

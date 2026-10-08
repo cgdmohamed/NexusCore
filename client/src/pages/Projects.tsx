@@ -313,7 +313,7 @@ export default function Projects() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="none">{t("projects.no_client")}</SelectItem>
-                            {clients.map((client: any) => (
+                            {clients.filter((client: any) => client.status !== "archived").map((client: any) => (
                               <SelectItem key={client.id} value={client.id}>
                                 {client.name}
                               </SelectItem>

@@ -83,7 +83,6 @@ export interface IStorage {
   getClient(id: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
-  deleteClient(id: string): Promise<void>;
   
   // Quotation operations
   getQuotations(userId: string): Promise<Quotation[]>;
@@ -97,7 +96,6 @@ export interface IStorage {
   getInvoice(id: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice>;
-  deleteInvoice(id: string): Promise<void>;
   
   // Expense operations
   getExpenses(userId: string): Promise<Expense[]>;
@@ -270,9 +268,6 @@ export class DatabaseStorage implements IStorage {
     return updatedClient;
   }
 
-  async deleteClient(id: string): Promise<void> {
-    await db.delete(clients).where(eq(clients.id, id));
-  }
 
   // Quotation operations
   async getQuotations(userId: string): Promise<Quotation[]> {
@@ -342,9 +337,6 @@ export class DatabaseStorage implements IStorage {
     return updatedInvoice;
   }
 
-  async deleteInvoice(id: string): Promise<void> {
-    await db.delete(invoices).where(eq(invoices.id, id));
-  }
 
   // Expense operations
   async getExpenses(userId: string): Promise<Expense[]> {

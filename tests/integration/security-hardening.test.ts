@@ -302,7 +302,7 @@ describe.skipIf(!TEST_DATABASE_URL)("security hardening C1-C5 (integration)", ()
       expect((await api("GET", "/api/audit-logs?limit=3")).body).toHaveLength(3);
     });
 
-    it("covers payments, refunds, cancellations, credit use and client deletion", async () => {
+    it("covers payments, refunds, cancellations, credit use and client archiving", async () => {
       const client = await createClient(api, "Audited");
       const inv = await createInvoice(api, client.id, "100");
       await pay(api, inv.id, 150, { adminApproved: true });
@@ -322,7 +322,7 @@ describe.skipIf(!TEST_DATABASE_URL)("security hardening C1-C5 (integration)", ()
 
       const gone = await createClient(api, "ToDelete");
       expect((await api("DELETE", `/api/clients/${gone.id}`)).status).toBe(200);
-      expect(await actionsFor(gone.id)).toContain("delete");
+      expect(await actionsFor(gone.id)).toContain("archive");
     });
 
     it("covers expense payment and rejection", async () => {

@@ -698,6 +698,7 @@ export default function ClientProfile() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="prospect">Prospect</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

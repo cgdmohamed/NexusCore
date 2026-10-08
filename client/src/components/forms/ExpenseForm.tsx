@@ -472,7 +472,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="none">No Project</SelectItem>
-                    {Array.isArray(clients) && clients.map((client: any) => (
+                    {Array.isArray(clients) && clients.filter((client: any) => client.status !== "archived").map((client: any) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}
                       </SelectItem>
