@@ -10,6 +10,7 @@ import {
   conversations, conversationParticipants, messages,
 } from "@shared/schema";
 import { count } from "drizzle-orm";
+import { logAudit } from "./audit";
 
 export function registerSettingsRoutes(app: Express) {
 
@@ -72,99 +73,75 @@ export function registerSettingsRoutes(app: Express) {
     }
   });
 
+  // Data export (JSON). This is NOT a restorable database backup — use pg_dump for that.
+  // Private messages are excluded unless explicitly requested, and every download is audited.
   app.get("/api/settings/backup", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const [
-        rolesData, employeesData, usersData, employeeKpisData,
-        clientsData, quotationsData, quotationItemsData,
-        invoicesData, invoiceItemsData, paymentsData, clientCreditHistoryData,
-        tasksData, projectsData, taskCommentsData, taskDependenciesData,
-        taskActivityLogData, activitiesData, paymentSourcesData,
-        paymentSourceTransactionsData, servicesData, clientNotesData,
-        expenseCategoriesData, expensesData, expensePaymentsData,
-        notificationsData, notificationSettingsData, emailTemplatesData,
-        conversationsData, conversationParticipantsData, messagesData,
-      ] = await Promise.all([
-        db.select().from(roles),
-        db.select().from(employees),
-        db.select({ id: users.id, username: users.username, email: users.email, firstName: users.firstName, lastName: users.lastName, role: users.role, department: users.department, isActive: users.isActive, createdAt: users.createdAt }).from(users),
-        db.select().from(employeeKpis),
-        db.select().from(clients),
-        db.select().from(quotations),
-        db.select().from(quotationItems),
-        db.select().from(invoices),
-        db.select().from(invoiceItems),
-        db.select().from(payments),
-        db.select().from(clientCreditHistory),
-        db.select().from(tasks),
-        db.select().from(projects),
-        db.select().from(taskComments),
-        db.select().from(taskDependencies),
-        db.select().from(taskActivityLog),
-        db.select().from(activities),
-        db.select().from(paymentSources),
-        db.select().from(paymentSourceTransactions),
-        db.select().from(services),
-        db.select().from(clientNotes),
-        db.select().from(expenseCategories),
-        db.select().from(expenses),
-        db.select().from(expensePayments),
-        db.select().from(notifications),
-        db.select().from(notificationSettings),
-        db.select().from(emailTemplates),
-        db.select().from(conversations),
-        db.select().from(conversationParticipants),
-        db.select().from(messages),
-      ]);
+      const includeMessages = req.query.includeMessages === "true";
 
-      const backup = {
-        meta: {
-          exportedAt: new Date().toISOString(),
-          exportedBy: (req.user as any)?.email || "unknown",
-          appVersion: process.env.npm_package_version || "1.0.0",
-          company: process.env.COMPANY_NAME || "Creative Code Nexus",
-          note: "Sensitive fields (passwords, sessions, reset tokens) are excluded from this export.",
-        },
-        tables: {
-          roles: rolesData,
-          employees: employeesData,
-          users: usersData,
-          employeeKpis: employeeKpisData,
-          clients: clientsData,
-          quotations: quotationsData,
-          quotationItems: quotationItemsData,
-          invoices: invoicesData,
-          invoiceItems: invoiceItemsData,
-          payments: paymentsData,
-          clientCreditHistory: clientCreditHistoryData,
-          tasks: tasksData,
-          projects: projectsData,
-          taskComments: taskCommentsData,
-          taskDependencies: taskDependenciesData,
-          taskActivityLog: taskActivityLogData,
-          activities: activitiesData,
-          paymentSources: paymentSourcesData,
-          paymentSourceTransactions: paymentSourceTransactionsData,
-          services: servicesData,
-          clientNotes: clientNotesData,
-          expenseCategories: expenseCategoriesData,
-          expenses: expensesData,
-          expensePayments: expensePaymentsData,
-          notifications: notificationsData,
-          notificationSettings: notificationSettingsData,
-          emailTemplates: emailTemplatesData,
-          conversations: conversationsData,
-          conversationParticipants: conversationParticipantsData,
-          messages: messagesData,
-        },
+      const tables: Record<string, () => Promise<unknown[]>> = {
+        roles: () => db.select().from(roles),
+        employees: () => db.select().from(employees),
+        users: () => db.select({ id: users.id, username: users.username, email: users.email, firstName: users.firstName, lastName: users.lastName, role: users.role, department: users.department, isActive: users.isActive, createdAt: users.createdAt }).from(users),
+        employeeKpis: () => db.select().from(employeeKpis),
+        clients: () => db.select().from(clients),
+        quotations: () => db.select().from(quotations),
+        quotationItems: () => db.select().from(quotationItems),
+        invoices: () => db.select().from(invoices),
+        invoiceItems: () => db.select().from(invoiceItems),
+        payments: () => db.select().from(payments),
+        clientCreditHistory: () => db.select().from(clientCreditHistory),
+        tasks: () => db.select().from(tasks),
+        projects: () => db.select().from(projects),
+        taskComments: () => db.select().from(taskComments),
+        taskDependencies: () => db.select().from(taskDependencies),
+        taskActivityLog: () => db.select().from(taskActivityLog),
+        activities: () => db.select().from(activities),
+        paymentSources: () => db.select().from(paymentSources),
+        paymentSourceTransactions: () => db.select().from(paymentSourceTransactions),
+        services: () => db.select().from(services),
+        clientNotes: () => db.select().from(clientNotes),
+        expenseCategories: () => db.select().from(expenseCategories),
+        expenses: () => db.select().from(expenses),
+        expensePayments: () => db.select().from(expensePayments),
+        notifications: () => db.select().from(notifications),
+        notificationSettings: () => db.select().from(notificationSettings),
+        emailTemplates: () => db.select().from(emailTemplates),
+      };
+      const privateTables: Record<string, () => Promise<unknown[]>> = {
+        conversations: () => db.select().from(conversations),
+        conversationParticipants: () => db.select().from(conversationParticipants),
+        messages: () => db.select().from(messages),
+      };
+      const included = includeMessages ? { ...tables, ...privateTables } : tables;
+      const excludedTables = [...(includeMessages ? [] : Object.keys(privateTables)), "client_credentials", "audit_logs", "sessions", "password_reset_tokens", "uploads (files)"];
+
+      await logAudit(req, "backup_download", "system", null, null, { includeMessages, tables: Object.keys(included).length });
+
+      const meta = {
+        exportedAt: new Date().toISOString(),
+        exportedBy: (req.user as any)?.email || "unknown",
+        appVersion: process.env.npm_package_version || "1.0.0",
+        company: process.env.COMPANY_NAME || "Creative Code Nexus",
+        note: "Data export only, not a restorable backup. Sensitive fields (passwords, sessions, reset tokens, vault credentials) and uploaded files are excluded. Use pg_dump for real backups.",
+        excludedTables,
       };
 
       const filename = `backup-${new Date().toISOString().split("T")[0]}.json`;
       res.setHeader("Content-Type", "application/json");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.send(JSON.stringify(backup, null, 2));
+
+      // Stream one table at a time so the whole database is never held in memory at once
+      res.write(`{"meta":${JSON.stringify(meta)},"tables":{`);
+      let first = true;
+      for (const [name, load] of Object.entries(included)) {
+        res.write(`${first ? "" : ","}${JSON.stringify(name)}:${JSON.stringify(await load())}`);
+        first = false;
+      }
+      res.end("}}");
     } catch (error) {
       console.error("Database backup failed:", error);
+      if (res.headersSent) return res.destroy();
       res.status(500).json({ success: false, message: "Failed to generate database backup" });
     }
   });

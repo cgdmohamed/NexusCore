@@ -33,7 +33,7 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
   };
   const createUser = async (extra: Record<string, unknown> = {}) => {
     const n = next();
-    const r = await api("POST", "/api/users", { username: `user${n}`, email: `user${n}@example.com`, password: "password123", ...extra });
+    const r = await api("POST", "/api/users", { username: `user${n}`, email: `user${n}@example.com`, password: "S3cure-pass-xyz", ...extra });
     if (r.status !== 201) throw new Error(`user create failed: ${r.status} ${JSON.stringify(r.body)}`);
     return r.body;
   };
@@ -130,10 +130,10 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
 
     it("POST /api/users rejects unknown roles and employees and missing fields", async () => {
       const n = next();
-      const base = { username: `bad${n}`, email: `bad${n}@example.com`, password: "password123" };
+      const base = { username: `bad${n}`, email: `bad${n}@example.com`, password: "S3cure-pass-xyz" };
       expect((await api("POST", "/api/users", { ...base, roleId: MISSING })).status).toBe(400);
       expect((await api("POST", "/api/users", { ...base, employeeId: MISSING })).status).toBe(400);
-      expect((await api("POST", "/api/users", { password: "password123" })).status).toBe(400);
+      expect((await api("POST", "/api/users", { password: "S3cure-pass-xyz" })).status).toBe(400);
     });
 
     it("POST /api/tasks rejects an unknown assignee or project", async () => {
@@ -209,7 +209,7 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
   });
 
   describe("B5 - expense attachments", () => {
-    const png = { name: "receipt.png", type: "image/png", data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]) };
+    const png = { name: "receipt.png", type: "image/png", data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]) };
     const expenseBody = async (extra: object = {}) => ({
       title: "With file",
       amount: "10.00",
@@ -239,7 +239,7 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
     });
 
     it("derives the extension from the content type, never from the supplied file name", async () => {
-      const r = await ctx.upload("/api/expenses/attachments", { name: "evil.html", type: "image/png", data: "<script>alert(1)</script>" });
+      const r = await ctx.upload("/api/expenses/attachments", { name: "evil.html", type: "image/png", data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 60, 115]) });
       expect(r.status).toBe(201);
       expect(r.body.url).toMatch(/\.png$/);
       expect(r.body.url).not.toMatch(/html/);

@@ -5,6 +5,7 @@ import { clientCredentials, insertClientCredentialSchema } from "@shared/schema"
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { encryptSecret, decryptSecret } from "./crypto-utils";
+import { logAudit } from "./audit";
 import type { User } from "@shared/schema";
 
 interface AuthRequest extends Request {
@@ -14,10 +15,11 @@ interface AuthRequest extends Request {
   };
 }
 
+// Vault management is decided by the assigned role only. The legacy `users.role` text column is
+// deliberately ignored: it is free text and not kept in sync with roles.
 function isAdminOrManager(user: AuthRequest["user"]): boolean {
-  const role = user?.role?.toLowerCase();
-  const roleName = user?.roleName?.toLowerCase();
-  return role === "admin" || role === "manager" || roleName === "admin" || roleName === "manager";
+  const roleName = user?.roleName?.trim().toLowerCase();
+  return roleName === "admin" || roleName === "manager";
 }
 
 function safeDecrypt(encrypted: string | null): string {
@@ -89,6 +91,7 @@ export function registerCredentialRoutes(app: Express) {
       }
 
       const password = safeDecrypt(row.encryptedPassword);
+      await logAudit(req, "reveal_password", "client_credential", row.id, null, { clientId: row.clientId, label: row.label });
       res.json({ password });
     } catch (error) {
       console.error("Error revealing password:", error);

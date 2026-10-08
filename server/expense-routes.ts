@@ -16,6 +16,7 @@ import {
   type InsertPaymentSourceTransaction
 } from "@shared/schema";
 import { requirePermission } from "./auth";
+import { logAudit } from "./audit";
 import { attachmentKind, attachmentUpload, isStoredUploadPath } from "./uploads";
 import { notificationService } from "./notification-service";
 
@@ -553,6 +554,8 @@ export function registerExpenseRoutes(app: Express) {
           .where(eq(expenses.id, id));
       }
 
+      await logAudit(req, "pay", "expense", id, null, { amount: payment.amount, paymentSourceId: expense.paymentSourceId });
+
       res.json({ expense, payment });
     } catch (error) {
       console.error("Error processing expense payment:", error);
@@ -597,6 +600,8 @@ export function registerExpenseRoutes(app: Express) {
         })
         .where(eq(expenses.id, id))
         .returning();
+
+      await logAudit(req, "reject", "expense", id, { status: existingExpense.status }, { status: "rejected", reason: rejectionReason });
 
       res.json(expense);
 
@@ -660,6 +665,8 @@ export function registerExpenseRoutes(app: Express) {
       if (!expense) {
         return res.status(404).json({ message: "Expense not found" });
       }
+
+      await logAudit(req, "delete", "expense", id, { title: expense.title, amount: expense.amount, status: expense.status }, null);
 
       res.json({ message: "Expense deleted successfully" });
     } catch (error) {

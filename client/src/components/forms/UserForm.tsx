@@ -31,12 +31,12 @@ const createFormSchema = (isEditing: boolean) => z.object({
   path: ["password"],
 }).refine((data) => {
   // Only validate password length if a password is provided
-  if (data.password && data.password.length > 0 && data.password.length < 8) {
+  if (data.password && data.password.length > 0 && (data.password.length < 8 || !/[A-Za-z]|[^\x00-\x7F]/.test(data.password) || !/\d/.test(data.password))) {
     return false;
   }
   return true;
 }, {
-  message: "Password must be at least 8 characters",
+  message: "Password must be at least 8 characters and contain a letter and a digit",
   path: ["password"],
 }).refine((data) => {
   // Only check password match if a password is provided

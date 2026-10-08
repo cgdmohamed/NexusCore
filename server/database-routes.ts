@@ -1,44 +1,18 @@
 import type { Express } from "express";
 import { db, pgError, badRequestFromDbError } from "./db";
-import { uploadsRoot, resolveUploadPath } from "./uploads";
+import { uploadsRoot, resolveUploadPath, attachmentUpload, setUploadHeaders } from "./uploads";
+import { logAudit } from "./audit";
 import { parseMoney, parsePercent, parseDateValue, isAbsent } from "./validation";
 import { requireAuth, requirePermission } from "./auth";
 import { clients, tasks, expenses, quotations, invoices, invoiceItems, payments, clientCreditHistory, users, quotationItems, services, clientNotes, employees, activities, quotationHistory, invoiceHistory, taskActivityLog, quotationPrintRecords, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, count, ne, desc, sum } from "drizzle-orm";
-import multer from "multer";
 import { notificationService } from "./notification-service";
 import path from "path";
 import fs from "fs";
 import QRCode from "qrcode";
 
-// Configure multer for invoice file uploads
-const invoiceStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(uploadsRoot(), "invoices");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `invoice-${uniqueSuffix}${ext}`);
-  },
-});
-
-const uploadInvoiceFile = multer({
-  storage: invoiceStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "application/pdf"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type. Only JPEG, PNG, GIF, and PDF files are allowed."));
-    }
-  },
-});
+// Invoice attachments: JPEG/PNG/GIF/PDF up to 10MB, extension from the content type, signature verified
+const uploadInvoiceFile = { single: (_field: string) => attachmentUpload("invoices", 10 * 1024 * 1024) };
 
 async function generateQuotationNumber(): Promise<string> {
   const year = new Date().getFullYear();
@@ -350,6 +324,8 @@ export function setupDatabaseRoutes(app: Express) {
       } catch (historyError) {
         console.error('Error recording invoice history:', historyError);
       }
+
+      await logAudit(req, "cancel", "invoice", invoiceId, { status: invoice.status }, { status: "cancelled" });
 
       res.json(updated);
     } catch (error) {
@@ -1360,6 +1336,13 @@ export function setupDatabaseRoutes(app: Express) {
         }
       }
 
+      await logAudit(req, "payment", "invoice", invoice.id, null, {
+        amount: paymentAmount,
+        method: req.body.paymentMethod,
+        paymentId: newPayment.id,
+        overpayment: isOverpayment ? overpaymentAmount : 0,
+      });
+
       // Auto-update client totalValue based on all paid invoice amounts
       try {
         const [clientTotalSumResult] = await db.select({
@@ -1475,6 +1458,8 @@ export function setupDatabaseRoutes(app: Express) {
         console.error("Error recording invoice history:", historyError);
       }
 
+      await logAudit(req, "refund", "invoice", req.params.id, { paidAmount }, { refundAmount: refundAmountNum, newPaidAmount, newStatus });
+
       res.json({ 
         success: true, 
         refundAmount: refundAmountNum,
@@ -1535,6 +1520,8 @@ export function setupDatabaseRoutes(app: Express) {
         newBalance: newCreditBalance.toFixed(2),
         createdBy: req.user?.id,
       });
+
+      await logAudit(req, "credit_refund", "client", req.params.clientId, { creditBalance: availableCredit }, { refundAmount: refundAmountNum, newCreditBalance });
 
       res.json({ 
         success: true, 
@@ -1688,6 +1675,8 @@ export function setupDatabaseRoutes(app: Express) {
         console.error("Error recording invoice history:", historyError);
       }
       
+      await logAudit(req, "apply_credit", "invoice", req.params.invoiceId, null, { clientId, creditUsed: actualCreditUsed, remainingCredit: newCreditBalance });
+
       res.json({
         payment: newPayment,
         creditUsed: actualCreditUsed,
@@ -1921,6 +1910,8 @@ export function setupDatabaseRoutes(app: Express) {
 
       // 9. Finally delete the client
       await db.delete(clients).where(eq(clients.id, clientId));
+
+      await logAudit(req, "delete", "client", clientId, { name: client.name, invoices: invoiceIds.length, quotations: quotationIds.length }, null);
 
       res.json({ success: true, message: "Client and all related data deleted successfully" });
     } catch (error) {
@@ -3062,6 +3053,7 @@ export function setupDatabaseRoutes(app: Express) {
       return res.status(400).json({ message: "Invalid path" });
     }
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      setUploadHeaders(res, filePath);
       res.sendFile(filePath);
     } else {
       res.status(404).json({ message: "File not found" });

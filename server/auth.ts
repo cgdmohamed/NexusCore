@@ -11,6 +11,8 @@ import { pool, db } from "./db";
 import { User as SelectUser, users, passwordResetTokens, passwordResetRateLimits } from "@shared/schema";
 import { eq, and, gt, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
+import { validatePassword } from "./password-policy";
+import { invalidateUserSessions } from "./sessions";
 
 declare global {
   namespace Express {
@@ -194,8 +196,9 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username, password, and email are required" });
       }
       
-      if (password.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      const passwordProblem = validatePassword(password, [username, email]);
+      if (passwordProblem) {
+        return res.status(400).json({ message: passwordProblem });
       }
       
       // Check if user already exists
@@ -431,10 +434,6 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Token and new password are required" });
       }
 
-      if (newPassword.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters long" });
-      }
-
       // Hash the token to compare with stored hash
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
       const now = new Date();
@@ -457,6 +456,12 @@ export function setupAuth(app: Express) {
         });
       }
 
+      const [resetUser] = await db.select().from(users).where(eq(users.id, resetRecord.userId));
+      const passwordProblem = validatePassword(newPassword, [resetUser?.username, resetUser?.email]);
+      if (passwordProblem) {
+        return res.status(400).json({ message: passwordProblem });
+      }
+
       // Update user's password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       
@@ -474,6 +479,9 @@ export function setupAuth(app: Express) {
         .update(passwordResetTokens)
         .set({ used: true })
         .where(eq(passwordResetTokens.id, resetRecord.id));
+
+      // Whoever knew the old password (or held a stolen session) must sign in again
+      await invalidateUserSessions(resetRecord.userId);
 
       console.log(`Password reset completed for user ID: ${resetRecord.userId}`);
 

@@ -37,8 +37,11 @@ export async function startApp() {
   const { registerServicesRoutes } = await import("../../server/services-routes");
   const { registerUserManagementRoutes } = await import("../../server/user-management-routes");
   const { registerMessagingRoutes } = await import("../../server/messaging-routes");
+  const { registerSettingsRoutes } = await import("../../server/settings-routes");
+  const { registerCredentialRoutes } = await import("../../server/credential-routes");
 
   const app = express();
+  app.set("trust proxy", 1); // same as production, so req.ip honours X-Forwarded-For
   app.use(express.json());
   // Stand-in for passport: every request is an authenticated user with all permissions.
   // Tests can switch the acting user with `actAs({ id })` and restore it with `actAs(null)`.
@@ -55,16 +58,18 @@ export async function startApp() {
   registerServicesRoutes(app as any);
   registerUserManagementRoutes(app as any);
   registerMessagingRoutes(app as any);
+  registerSettingsRoutes(app as any);
+  registerCredentialRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
   });
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
-  async function api(method: string, path: string, body?: unknown) {
+  async function api(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
     const res = await fetch(base + path, {
       method,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await res.text();
@@ -93,7 +98,7 @@ export async function startApp() {
 
   async function raw(path: string) {
     const res = await fetch(base + path);
-    return { status: res.status, type: res.headers.get("content-type"), body: Buffer.from(await res.arrayBuffer()) };
+    return { status: res.status, type: res.headers.get("content-type"), headers: res.headers, body: Buffer.from(await res.arrayBuffer()) };
   }
 
   return {
@@ -166,7 +171,7 @@ export const addItem = (
   });
 };
 
-type Api = (m: string, p: string, b?: unknown) => Promise<any>;
+type Api = (m: string, p: string, b?: unknown, h?: Record<string, string>) => Promise<any>;
 
 export async function createPaymentSource(api: Api, initialBalance = "1000", name = "Main bank") {
   const r = await api("POST", "/api/payment-sources", { name, accountType: "bank", currency: "EGP", initialBalance });

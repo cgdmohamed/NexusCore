@@ -27,6 +27,44 @@ const ALLOWED_TYPES: Record<string, { ext: string; kind: "receipt" | "invoice" }
   "application/pdf": { ext: ".pdf", kind: "invoice" },
 };
 
+// First bytes a genuine file of each type starts with.
+const SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xff, 0xd8, 0xff]],
+  "image/png": [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  "image/gif": [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]],
+  "application/pdf": [[0x25, 0x50, 0x44, 0x46]],
+};
+
+/** True when the file on disk really starts like the type it was declared to be. */
+export function matchesDeclaredType(filePath: string, mimetype: string): boolean {
+  const signatures = SIGNATURES[mimetype];
+  if (!signatures) return false;
+  let fd: number | undefined;
+  try {
+    fd = fs.openSync(filePath, "r");
+    const head = Buffer.alloc(8);
+    const read = fs.readSync(fd, head, 0, 8, 0);
+    return signatures.some((sig) => read >= sig.length && sig.every((byte, i) => head[i] === byte));
+  } catch {
+    return false;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+/** Extensions that browsers may render inline; everything else is delivered as a download. */
+const INLINE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".pdf"]);
+
+/** Headers that stop an uploaded file from running as a page, whatever its name says. */
+export function setUploadHeaders(res: Response, filePath: string) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+  if (!INLINE_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Disposition", "attachment");
+  }
+}
+
 export const attachmentKind = (mimetype: string) => ALLOWED_TYPES[mimetype]?.kind ?? "other";
 
 /** Single-file upload middleware (field "file") storing into uploads/<subdir>; failures become 400 responses. */
@@ -51,6 +89,10 @@ export function attachmentUpload(subdir: string, maxBytes = 5 * 1024 * 1024) {
 
   return (req: Request, res: Response, next: NextFunction) => {
     upload(req, res, (err: unknown) => {
+      if (!err && req.file && !matchesDeclaredType(req.file.path, req.file.mimetype)) {
+        fs.rmSync(req.file.path, { force: true });
+        return res.status(400).json({ message: "The file content does not match its declared type." });
+      }
       if (!err) return next();
       const message =
         err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"

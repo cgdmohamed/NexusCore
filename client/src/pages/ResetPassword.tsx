@@ -38,8 +38,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (newPassword.length < 8 || !/[A-Za-z]|[^\x00-\x7F]/.test(newPassword) || !/\d/.test(newPassword)) {
+      setError("Password must be at least 8 characters and contain a letter and a digit");
       return;
     }
 

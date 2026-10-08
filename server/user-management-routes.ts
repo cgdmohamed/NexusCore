@@ -19,34 +19,18 @@ import {
 import { eq, desc, and, like, sql, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, requireAdmin, requirePermission } from "./auth";
-
-// Helper function to log audit actions
-async function logAudit(
-  userId: string, 
-  action: string, 
-  entityType: string, 
-  entityId: string, 
-  oldValues?: any, 
-  newValues?: any
-) {
-  try {
-    await db.insert(auditLogs).values({
-      userId,
-      action,
-      entityType,
-      entityId,
-      oldValues: oldValues || null,
-      newValues: newValues || null,
-      ipAddress: "127.0.0.1", // In real app, get from request
-      userAgent: "Development",
-    });
-  } catch (error) {
-    console.error("Failed to log audit:", error);
-  }
-}
+import { logAudit } from "./audit";
+import { validatePassword } from "./password-policy";
+import { invalidateUserSessions } from "./sessions";
 
 // Role names are how the rest of the app recognises administrators (see requireAdmin).
 const ADMIN_ROLE_NAME = "Admin";
+const isAdminRoleName = (name: unknown) => typeof name === "string" && name.trim().toLowerCase() === ADMIN_ROLE_NAME.toLowerCase();
+
+async function adminRoleExists(): Promise<boolean> {
+  const rows = await db.select({ name: roles.name }).from(roles);
+  return rows.some((r) => isAdminRoleName(r.name));
+}
 
 // Number of active users holding the Admin role, optionally ignoring one user.
 async function countActiveAdmins(excludeUserId?: string): Promise<number> {
@@ -181,6 +165,11 @@ export function registerUserManagementRoutes(app: Express) {
       const validatedData = insertRoleSchema.parse(req.body);
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      // "Admin" is how administrators are recognised, so there can only ever be one such role
+      if (isAdminRoleName(validatedData.name) && (await adminRoleExists())) {
+        return res.status(409).json({ message: "An Admin role already exists." });
+      }
       
       const [newRole] = await db
         .insert(roles)
@@ -190,7 +179,7 @@ export function registerUserManagementRoutes(app: Express) {
         })
         .returning();
       
-      await logAudit(userId, 'create', 'role', newRole.id, null, newRole);
+      await logAudit(req, 'create', 'role', newRole.id, null, newRole);
       
       res.status(201).json(newRole);
     } catch (error) {
@@ -209,6 +198,17 @@ export function registerUserManagementRoutes(app: Express) {
       
       // Get old values for audit
       const [oldRole] = await db.select().from(roles).where(eq(roles.id, id));
+      if (!oldRole) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      // The Admin role keeps its name, and no other role may take it
+      if (isAdminRoleName(oldRole.name) && validatedData.name !== oldRole.name) {
+        return res.status(400).json({ message: "The Admin role cannot be renamed." });
+      }
+      if (!isAdminRoleName(oldRole.name) && isAdminRoleName(validatedData.name)) {
+        return res.status(409).json({ message: "The name Admin is reserved for the administrator role." });
+      }
       
       const [updatedRole] = await db
         .update(roles)
@@ -223,7 +223,7 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "Role not found" });
       }
       
-      await logAudit(userId, 'update', 'role', id, oldRole, updatedRole);
+      await logAudit(req, 'update', 'role', id, oldRole, updatedRole);
       
       res.json(updatedRole);
     } catch (error) {
@@ -239,6 +239,11 @@ export function registerUserManagementRoutes(app: Express) {
       const userId = (req as any).user?.id;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
       
+      const [roleToDelete] = await db.select().from(roles).where(eq(roles.id, id));
+      if (roleToDelete && isAdminRoleName(roleToDelete.name)) {
+        return res.status(400).json({ message: "The Admin role cannot be deleted." });
+      }
+
       // Check if role is in use
       const [roleInUse] = await db.select().from(users).where(eq(users.roleId, id));
       if (roleInUse) {
@@ -257,7 +262,7 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "Role not found" });
       }
       
-      await logAudit(userId, 'delete', 'role', id, oldRole, null);
+      await logAudit(req, 'delete', 'role', id, oldRole, null);
       
       res.json({ message: "Role deleted successfully" });
     } catch (error) {
@@ -354,7 +359,7 @@ export function registerUserManagementRoutes(app: Express) {
         })
         .returning();
       
-      await logAudit(userId, 'create', 'employee', newEmployee.id, null, newEmployee);
+      await logAudit(req, 'create', 'employee', newEmployee.id, null, newEmployee);
       
       res.status(201).json(newEmployee);
     } catch (error) {
@@ -393,7 +398,7 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "Employee not found" });
       }
       
-      await logAudit(userId, 'update', 'employee', id, oldEmployee, updatedEmployee);
+      await logAudit(req, 'update', 'employee', id, oldEmployee, updatedEmployee);
       
       res.json(updatedEmployee);
     } catch (error) {
@@ -440,7 +445,7 @@ export function registerUserManagementRoutes(app: Express) {
         throw deleteError;
       }
 
-      await logAudit(userId, 'delete', 'employee', id, employee, null);
+      await logAudit(req, 'delete', 'employee', id, employee, null);
       
       res.json({ success: true, message: "Employee deleted successfully" });
     } catch (error) {
@@ -554,8 +559,9 @@ export function registerUserManagementRoutes(app: Express) {
       }
 
       // Password is required for new users
-      if (!password || password.length < 8) {
-        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      const passwordProblem = validatePassword(password, [userData.username, userData.email]);
+      if (passwordProblem) {
+        return res.status(400).json({ message: passwordProblem });
       }
 
       if (userData.roleId && !(await roleExists(userData.roleId))) {
@@ -581,7 +587,7 @@ export function registerUserManagementRoutes(app: Express) {
         })
         .returning();
       
-      await logAudit(userId, 'create', 'user', newUser.id, null, { ...newUser, passwordHash: '[REDACTED]' });
+      await logAudit(req, 'create', 'user', newUser.id, null, { ...newUser, passwordHash: '[REDACTED]' });
       
       // Return user data without password hash
       const { passwordHash: _, ...userResponse } = newUser;
@@ -653,7 +659,11 @@ export function registerUserManagementRoutes(app: Express) {
       }
       
       // Hash new password if provided
-      if (password && password.length >= 8) {
+      if (password !== undefined && password !== null && password !== "") {
+        const passwordProblem = validatePassword(password, [userData.username ?? existingUser.username, userData.email ?? existingUser.email]);
+        if (passwordProblem) {
+          return res.status(400).json({ message: passwordProblem });
+        }
         updateData.passwordHash = await bcrypt.hash(password, 10);
       }
       
@@ -686,8 +696,13 @@ export function registerUserManagementRoutes(app: Express) {
           .where(eq(employees.id, existingUser.employeeId));
       }
       
+      // A new password or a deactivation ends the user's existing logins
+      if (updateData.passwordHash || updatedUser.isActive === false) {
+        await invalidateUserSessions(id, id === authUserId ? (req as any).sessionID : null);
+      }
+
       const { passwordHash: newHash, ...updatedUserSafe } = updatedUser;
-      await logAudit(authUserId, 'update', 'user', id, oldUserSafe, updatedUserSafe);
+      await logAudit(req, 'update', 'user', id, oldUserSafe, updatedUserSafe);
       
       res.json(updatedUserSafe);
     } catch (error: any) {
@@ -738,7 +753,8 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      await logAudit(userId, 'deactivate', 'user', id, null, { isActive: false });
+      await invalidateUserSessions(id);
+      await logAudit(req, 'deactivate', 'user', id, null, { isActive: false });
       
       res.json({ message: "User deactivated successfully" });
     } catch (error) {
@@ -750,7 +766,9 @@ export function registerUserManagementRoutes(app: Express) {
   // Get audit logs
   app.get("/api/audit-logs", requireAdmin, async (req, res) => {
     try {
-      const { entityType, entityId, limit = 50 } = req.query;
+      const { entityType, entityId, limit } = req.query;
+      const requested = parseInt(limit as string, 10);
+      const pageSize = Number.isFinite(requested) && requested > 0 ? Math.min(requested, 200) : 50;
       
       let query = db
         .select({
@@ -777,7 +795,7 @@ export function registerUserManagementRoutes(app: Express) {
       const rows = await query
         .where(filters.length > 0 ? and(...filters) : undefined)
         .orderBy(desc(auditLogs.createdAt))
-        .limit(parseInt(limit as string));
+        .limit(pageSize);
 
       const logs = rows.map((row) => ({
         id: row.id,
@@ -850,13 +868,18 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(403).json({ message: "You can only change your own password" });
       }
 
-      if (!currentPassword || !newPassword || newPassword.length < 8) {
-        return res.status(400).json({ message: "Current password and a new password of at least 8 characters are required" });
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and a new password are required" });
       }
 
       const [user] = await db.select().from(users).where(eq(users.id, id));
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+
+      const passwordProblem = validatePassword(newPassword, [user.username, user.email]);
+      if (passwordProblem) {
+        return res.status(400).json({ message: passwordProblem });
       }
 
       const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -875,7 +898,9 @@ export function registerUserManagementRoutes(app: Express) {
         })
         .where(eq(users.id, id));
 
-      await logAudit(userId, 'password_change', 'user', id, null, { passwordChanged: true });
+      // Other devices must sign in again; this one stays signed in
+      await invalidateUserSessions(id, (req as any).sessionID);
+      await logAudit(req, 'password_change', 'user', id, null, { passwordChanged: true });
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
