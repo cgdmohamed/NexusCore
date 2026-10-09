@@ -3,6 +3,7 @@ import { db } from "./db";
 import { projects, tasks, users, clients, expenses, insertProjectSchema } from "@shared/schema";
 import { eq, count, sql, and, isNull, ne, inArray } from "drizzle-orm";
 import { projectHealth, startOfDay } from "./project-health";
+import { buildBurndown } from "./burndown";
 import { z } from "zod";
 import { requirePermission } from "./auth";
 import { logger } from "./logger";
@@ -186,6 +187,33 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create project" });
+    }
+  });
+
+  // The open project whose deadline is nearest: upcoming first, otherwise the one that slipped most recently.
+  // Registered before /api/projects/:id so "burndown" is not read as an id.
+  app.get("/api/projects/burndown/nearest", requirePermission("projects", "view"), async (_req, res) => {
+    try {
+      const open = await db.select().from(projects)
+        .where(and(eq(projects.status, "active"), isNull(projects.completedAt), sql`${projects.dueDate} IS NOT NULL`));
+      const today = startOfDay(new Date());
+      const upcoming = open.filter((p) => p.dueDate! >= today).sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
+      const late = open.filter((p) => p.dueDate! < today).sort((a, b) => b.dueDate!.getTime() - a.dueDate!.getTime());
+
+      for (const project of [...upcoming, ...late]) {
+        const projectTasks = await db.select({ createdAt: tasks.createdAt, completedDate: tasks.completedDate, status: tasks.status })
+          .from(tasks).where(eq(tasks.projectId, project.id));
+        const burndown = buildBurndown({
+          tasks: projectTasks,
+          startDate: project.startDate ?? project.createdAt ?? new Date(),
+          dueDate: project.dueDate!,
+        });
+        if (burndown) return res.json({ project: { id: project.id, name: project.name }, burndown });
+      }
+      res.json({ project: null, burndown: null });
+    } catch (error) {
+      logger.error("Error building project burndown:", error);
+      res.status(500).json({ message: "Failed to build burndown" });
     }
   });
 

@@ -128,3 +128,72 @@ export function HBars({ rows, ariaLabel }: { rows: Array<{ label: string; value:
     </ul>
   );
 }
+
+export interface BurndownDatum { label: string; ideal: number; remaining: number | null }
+
+// Open tasks left each day (solid) against the straight line to the due date (dashed).
+// The last real reading carries a direct label; tapping a day reads its exact values.
+export function Burndown({ data, todayIndex, idealLabel, actualLabel, ariaLabel, describe }: {
+  data: BurndownDatum[];
+  todayIndex: number;
+  idealLabel: string;
+  actualLabel: string;
+  ariaLabel: string;
+  describe: (d: BurndownDatum) => string;
+}) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const PAD_X = 14;
+  const max = Math.max(1, ...data.map((d) => Math.max(d.ideal, d.remaining ?? 0)));
+  const plotH = H - PAD_TOP - PAD_BOTTOM;
+  const plotW = W - PAD_X * 2;
+  const x = (i: number) => PAD_X + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
+  const y = (v: number) => PAD_TOP + plotH - (v / max) * plotH;
+  const baseline = PAD_TOP + plotH;
+  const idealPath = data.map((d, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(d.ideal).toFixed(1)}`).join(" ");
+  const actual = data.map((d, i) => ({ d, i })).filter(({ d }) => d.remaining !== null);
+  const actualPath = actual.map(({ d, i }, k) => `${k === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(d.remaining!).toFixed(1)}`).join(" ");
+  const last = actual[actual.length - 1];
+  const selected = picked !== null ? data[picked] : null;
+  const labelEvery = Math.max(1, Math.ceil(data.length / 5));
+
+  return (
+    <div dir="ltr">
+      <div className="mb-1 flex min-h-5 items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="tabular-nums">{selected ? describe(selected) : " "}</span>
+        <span className="flex shrink-0 items-center gap-3">
+          <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t-2 border-primary" aria-hidden />{actualLabel}</span>
+          <span className="flex items-center gap-1.5"><span className="inline-block h-0 w-4 border-t-2 border-dashed border-muted-foreground" aria-hidden />{idealLabel}</span>
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={ariaLabel}>
+        <line x1="0" x2={W} y1={baseline} y2={baseline} className="stroke-border" strokeWidth="1" />
+        <path d={idealPath} fill="none" className="stroke-muted-foreground" strokeWidth="1.5" strokeDasharray="4 4" strokeLinecap="round" />
+        {actualPath && <path d={actualPath} fill="none" className="stroke-primary" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+        {todayIndex >= 0 && todayIndex < data.length && (
+          <line x1={x(todayIndex)} x2={x(todayIndex)} y1={PAD_TOP - 4} y2={baseline} className="stroke-border" strokeWidth="1" />
+        )}
+        {picked !== null && data[picked].remaining !== null && (
+          <circle cx={x(picked)} cy={y(data[picked].remaining!)} r="4" className="fill-primary" />
+        )}
+        {last && (
+          <g>
+            <circle cx={x(last.i)} cy={y(last.d.remaining!)} r="3.5" className="fill-primary" />
+            <text x={Math.min(W - 6, x(last.i))} y={y(last.d.remaining!) - 8} textAnchor="middle" className="fill-foreground text-[10px] font-semibold tabular-nums">{last.d.remaining}</text>
+          </g>
+        )}
+        {data.map((d, i) => (
+          <g key={i}>
+            <rect x={x(i) - plotW / data.length / 2} y={0} width={plotW / data.length} height={H} fill="transparent" onClick={() => setPicked(picked === i ? null : i)} className="cursor-pointer" />
+            {(i === data.length - 1 || (i % labelEvery === 0 && data.length - 1 - i >= labelEvery)) && (
+              <text x={x(i)} y={H - 5} textAnchor={i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"} className="fill-muted-foreground text-[10px]">{d.label}</text>
+            )}
+          </g>
+        ))}
+      </svg>
+      <table className="sr-only">
+        <caption>{ariaLabel}</caption>
+        <tbody>{data.map((d, i) => <tr key={i}><th scope="row">{d.label}</th><td>{describe(d)}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+}

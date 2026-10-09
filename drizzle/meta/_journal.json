@@ -29,6 +29,13 @@
       "when": 1791583473350,
       "tag": "0003_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791669873350,
+      "tag": "0004_daily_digest",
+      "breakpoints": true
     }
   ]
 }

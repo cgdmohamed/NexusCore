@@ -906,7 +906,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "payment_received", "payment_failed", "payment_refunded",
   "user_added", "user_updated", "user_deactivated",
   "system_maintenance", "system_backup", "system_alert",
-  "direct_message"
+  "direct_message", "daily_digest"
 ]);
 
 export const notificationStatusEnum = pgEnum("notification_status", ["unread", "read", "archived"]);

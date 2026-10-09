@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/currency";
 import type { ProjectRow } from "@/components/projects/ProjectCard";
 import { Chips, ListState, Segmented } from "./ui";
 import { useList } from "./hooks";
-import { ColumnChart, HBars, Sparkline, StackedBar } from "./charts";
+import { Burndown, ColumnChart, HBars, Sparkline, StackedBar } from "./charts";
 import { TaskSheet, useTaskUpdate } from "./TaskSheet";
 import { dueInfo, durationLabel, greetingFor, receivablesSnapshot } from "./overview-logic";
 import type { MobileTask } from "./logic";
@@ -67,6 +67,7 @@ export default function OverviewScreen() {
   const insightsQ = useList<Insights>(`/api/tasks/insights?scope=${scope}&days=${days}`, tasksAllowed);
   const projectsQ = useList<ProjectRow[]>("/api/projects", canView("projects"));
   const invoicesQ = useList<any[]>("/api/invoices", canView("invoices"));
+  const burndownQ = useList<BurndownResponse>("/api/projects/burndown/nearest", canView("projects"));
   const data = insightsQ.data;
   const projects = projectsQ.data ?? [];
 
@@ -250,6 +251,10 @@ export default function OverviewScreen() {
         </>
       )}
 
+      {burndownQ.data?.burndown && burndownQ.data.project && (
+        <BurndownCard project={burndownQ.data.project} burndown={burndownQ.data.burndown} />
+      )}
+
       {canView("projects") && projectsQ.data && (
         <Card title={t("m.ov.projects_title")} action={<Link href="/m/projects" className="text-xs font-medium text-primary">{t("m.ov.view_all")}</Link>}>
           {attention.length === 0 ? (
@@ -287,5 +292,49 @@ export default function OverviewScreen() {
 
       <TaskSheet task={sheetTask} projects={projects} onClose={() => setSelectedId(null)} />
     </div>
+  );
+}
+
+interface BurndownResponse {
+  project: { id: string; name: string } | null;
+  burndown: {
+    total: number; remaining: number; daysLeft: number; behindBy: number; today: string;
+    points: { date: string; ideal: number; remaining: number | null }[];
+  } | null;
+}
+
+function BurndownCard({ project, burndown }: { project: { id: string; name: string }; burndown: NonNullable<BurndownResponse["burndown"]> }) {
+  const { t, language } = useTranslation();
+  const dayLabel = (iso: string) =>
+    new Date(`${iso}T12:00:00Z`).toLocaleDateString(language === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const data = burndown.points.map((p) => ({ label: dayLabel(p.date), ideal: Math.round(p.ideal * 10) / 10, remaining: p.remaining }));
+  const describe = (d: { label: string; ideal: number; remaining: number | null }) =>
+    `${d.label}: ` + (d.remaining === null
+      ? t("m.ov.burn_point_plan", { ideal: String(d.ideal) })
+      : t("m.ov.burn_point", { remaining: String(d.remaining), ideal: String(d.ideal) }));
+
+  const timing = burndown.daysLeft > 0 ? t("m.ov.burn_days", { n: String(burndown.daysLeft) })
+    : burndown.daysLeft === 0 ? t("m.ov.burn_due_today")
+    : t("m.ov.burn_late_days", { n: String(-burndown.daysLeft) });
+  const pace = Math.abs(burndown.behindBy) < 0.5 ? { text: t("m.ov.burn_on_track"), tone: "text-success" }
+    : burndown.behindBy > 0 ? { text: t("m.ov.burn_behind", { n: String(Math.round(burndown.behindBy)) }), tone: "text-danger" }
+    : { text: t("m.ov.burn_ahead", { n: String(Math.round(-burndown.behindBy)) }), tone: "text-success" };
+
+  return (
+    <Card title={t("m.ov.burn_title")} action={<Link href="/m/projects" className="max-w-[10rem] truncate text-xs font-medium text-primary">{project.name}</Link>}>
+      <p className="mb-2 text-sm">
+        <span className="font-semibold tabular-nums">{t("m.ov.burn_left", { n: String(burndown.remaining), total: String(burndown.total) })}</span>
+        <span className="text-muted-foreground"> · {timing}</span>
+        <span className={cn("block text-xs font-medium", pace.tone)}>{pace.text}</span>
+      </p>
+      <Burndown
+        data={data}
+        todayIndex={burndown.points.findIndex((p) => p.date === burndown.today)}
+        idealLabel={t("m.ov.burn_ideal")}
+        actualLabel={t("m.ov.burn_actual")}
+        ariaLabel={t("m.ov.burn_aria")}
+        describe={describe}
+      />
+    </Card>
   );
 }
