@@ -18,7 +18,7 @@ self.addEventListener("activate", (event) => {
 const OFFLINE_PAGE = `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nexus</title><body style="font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#f6f7f9;color:#111827;text-align:center">
 <div style="padding:24px"><h1 style="font-size:20px;margin:0 0 8px">لا يوجد اتصال بالإنترنت</h1><p style="margin:0 0 4px;color:#6b7280">No internet connection</p>
-<p style="margin:12px 0 20px;color:#6b7280">افتح التطبيق مرة تانية لما يرجع الاتصال</p>
+<p style="margin:12px 0 20px;color:#6b7280">يرجى إعادة فتح التطبيق عند عودة الاتصال</p>
 <button onclick="location.reload()" style="height:44px;padding:0 24px;border:0;border-radius:10px;background:#2554d4;color:#fff;font-size:16px">إعادة المحاولة / Retry</button></div></body></html>`;
 
 self.addEventListener("fetch", (event) => {
