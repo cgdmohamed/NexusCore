@@ -1,5 +1,5 @@
 import { Switch, Route } from "wouter";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -43,6 +43,8 @@ import QuotationPrint from "@/pages/QuotationPrint";
 import InvoicePrint from "@/pages/InvoicePrint";
 import ClientStatementPrint from "@/pages/ClientStatementPrint";
 
+const MobileApp = lazy(() => import("@/mobile/MobileApp"));
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -76,6 +78,13 @@ function Router() {
       <Route path="/quotations/print/:printRecordId" component={QuotationPrint} />
       <Route path="/invoices/print/:printRecordId" component={InvoicePrint} />
       <Route path="/clients/:id/statement/print" component={ClientStatementPrint} />
+
+      {/* Phone app: its own shell, loaded only when opened */}
+      <Route path="/m/*?">
+        <Suspense fallback={<div className="flex h-[100dvh] items-center justify-center bg-background"><div className="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
+          <MobileApp />
+        </Suspense>
+      </Route>
 
       {/* Main app layout */}
       <Route>
