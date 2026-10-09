@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { CheckSquare, FolderKanban, Users, Bell, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
+import { CheckSquare, FolderKanban, Users, MessageSquare, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,15 +14,19 @@ import TasksScreen from "./TasksScreen";
 import ProjectsScreen from "./ProjectsScreen";
 import ClientsScreen from "./ClientsScreen";
 import AlertsScreen from "./AlertsScreen";
+import { MessagesScreen } from "./MessagesScreen";
+import { PushSettings } from "@/components/notifications/PushSettings";
+import { Segmented } from "./ui";
+import { useQuery } from "@tanstack/react-query";
 
-type Tab = "tasks" | "projects" | "clients" | "alerts";
+type Tab = "tasks" | "projects" | "clients" | "inbox";
 
 // Adding a screen later means one entry here plus its component
 const TABS: { key: Tab; icon: typeof CheckSquare; label: string; module: string | null }[] = [
   { key: "tasks", icon: CheckSquare, label: "m.tab_tasks", module: "tasks" },
   { key: "projects", icon: FolderKanban, label: "m.tab_projects", module: "projects" },
   { key: "clients", icon: Users, label: "m.tab_clients", module: "crm" },
-  { key: "alerts", icon: Bell, label: "m.tab_alerts", module: null },
+  { key: "inbox", icon: MessageSquare, label: "m.tab_inbox", module: null },
 ];
 
 export default function MobileApp() {
@@ -30,6 +34,7 @@ export default function MobileApp() {
   const { user, logoutMutation } = useAuth();
   const { canView, canAdd } = usePermissions();
   const { unreadCount } = useNotifications(1, 1);
+  const messagesUnread = useQuery<{ unreadCount: number }>({ queryKey: ["/api/messages/unread-count"], refetchInterval: 15_000, staleTime: 10_000, refetchOnWindowFocus: true }).data?.unreadCount ?? 0;
   const online = useOnline();
   const install = useInstall();
   const [location, navigate] = useLocation();
@@ -37,8 +42,12 @@ export default function MobileApp() {
   const [request, setRequest] = useState<AddRequest>({});
 
   const tabs = TABS.filter((tab) => tab.module === null || canView(tab.module));
-  const segment = location.split("/")[2] as Tab | undefined;
-  const active: Tab = tabs.find((x) => x.key === segment)?.key ?? tabs[0]?.key ?? "alerts";
+  const parts = location.split("/");
+  const segment = parts[2];
+  // Messages and alerts share the Inbox tab
+  const area: string | undefined = segment === "messages" || segment === "alerts" ? "inbox" : segment;
+  const active: Tab = tabs.find((x) => x.key === area)?.key ?? tabs[0]?.key ?? "inbox";
+  const inThread = segment === "messages" && !!parts[3];
   const canAddAny = canAdd("tasks") || canAdd("projects") || canAdd("crm");
 
   const openAdd = (r: AddRequest = {}) => {
@@ -51,11 +60,11 @@ export default function MobileApp() {
   const slot = "flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium";
 
   const tabButton = (tab: (typeof TABS)[number]) => (
-    <Link key={tab.key} href={`/m/${tab.key}`} aria-current={active === tab.key ? "page" : undefined} className={cn(slot, active === tab.key ? "text-primary" : "text-muted-foreground")}>
+    <Link key={tab.key} href={tab.key === "inbox" ? "/m/messages" : `/m/${tab.key}`} aria-current={active === tab.key ? "page" : undefined} className={cn(slot, active === tab.key ? "text-primary" : "text-muted-foreground")}>
       <span className="relative">
         <tab.icon className="h-5 w-5" strokeWidth={active === tab.key ? 2.25 : 1.75} />
-        {tab.key === "alerts" && unreadCount > 0 && (
-          <span className="absolute -end-2 -top-1.5 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] leading-4 text-white tabular-nums">{unreadCount > 9 ? "9+" : unreadCount}</span>
+        {tab.key === "inbox" && unreadCount + messagesUnread > 0 && (
+          <span className="absolute -end-2 -top-1.5 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] leading-4 text-white tabular-nums">{unreadCount + messagesUnread > 9 ? "9+" : unreadCount + messagesUnread}</span>
         )}
       </span>
       {t(tab.label)}
@@ -99,16 +108,33 @@ export default function MobileApp() {
 
       {!online && <OfflineBanner />}
 
-      <main className="flex-1 overflow-y-auto overscroll-contain">
+      <main className={cn("flex-1 overscroll-contain", inThread ? "overflow-hidden" : "overflow-y-auto")}>
         {active === "tasks" && <TasksScreen />}
         {active === "projects" && <ProjectsScreen onAdd={openAdd} />}
         {active === "clients" && <ClientsScreen onAdd={openAdd} />}
-        {active === "alerts" && <AlertsScreen />}
+        {active === "inbox" && (
+          <div className={inThread ? "h-full" : undefined}>
+            {!inThread && (
+              <div className="space-y-3 px-4 pt-4">
+                <PushSettings platform="mobile" variant="banner" />
+                <Segmented
+                  value={segment === "alerts" ? "alerts" : "messages"}
+                  onChange={(v) => navigate(`/m/${v}`)}
+                  options={[
+                    { value: "messages", label: `${t("m.messages")}${messagesUnread > 0 ? ` (${messagesUnread})` : ""}` },
+                    { value: "alerts", label: `${t("m.tab_alerts")}${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+                  ]}
+                />
+              </div>
+            )}
+            {segment === "alerts" ? <AlertsScreen /> : <MessagesScreen conversationId={parts[3]} />}
+          </div>
+        )}
       </main>
 
       <nav className="flex items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)]" aria-label="Main">
         {tabs.slice(0, half).map(tabButton)}
-        {canAddAny && (
+        {canAddAny && !inThread && (
           <div className="flex flex-1 justify-center">
             <button onClick={() => openAdd()} aria-label={t("m.add")} className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95">
               <Plus className="h-6 w-6" />

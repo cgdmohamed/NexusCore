@@ -12,6 +12,7 @@ import {
 import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import { logger } from "./logger";
+import { pushToUser } from "./push-service";
 
 const smtpPort = parseInt(process.env.SMTP_PORT || "587");
 const smtpTransporter = nodemailer.createTransport({
@@ -113,6 +114,15 @@ class NotificationService {
         await this.sendEmailNotification(notification);
       }
     }
+
+    // Phones and browsers with push enabled hear about it straight away. This never delays or fails the notification.
+    pushToUser(payload.userId, {
+      type: String(payload.type),
+      title: notification.title,
+      message: notification.message,
+      entityUrl: notification.entityUrl,
+      notificationId: notification.id,
+    }).catch((error) => logger.warn(`Push delivery failed: ${error instanceof Error ? error.message : error}`));
 
     return notification;
   }
@@ -356,7 +366,7 @@ class NotificationService {
   async markAsRead(notificationId: string, userId: string): Promise<void> {
     await db.execute(sql`
       UPDATE notifications 
-      SET status = 'read', updated_at = ${new Date().toISOString()}
+      SET status = 'read', read_at = COALESCE(read_at, now()), updated_at = ${new Date().toISOString()}
       WHERE id = ${notificationId} AND user_id = ${userId}
     `);
 
@@ -376,11 +386,12 @@ class NotificationService {
   /**
    * Mark all notifications as read for a user
    */
-  async markAllAsRead(userId: string): Promise<void> {
+  async markAllAsRead(userId: string, type?: string): Promise<void> {
     await db.execute(sql`
       UPDATE notifications 
-      SET status = 'read', updated_at = ${new Date().toISOString()}
+      SET status = 'read', read_at = COALESCE(read_at, now()), updated_at = ${new Date().toISOString()}
       WHERE user_id = ${userId} AND status = 'unread'
+      ${type ? sql`AND type = ${type}` : sql``}
     `);
   }
 
@@ -409,18 +420,14 @@ class NotificationService {
     unreadOnly: boolean = false
   ): Promise<{ notifications: Notification[], total: number, unreadCount: number }> {
     const offset = (page - 1) * limit;
-    
-    const whereClause = unreadOnly 
-      ? sql`user_id = ${userId} AND status = 'unread'`
-      : sql`user_id = ${userId}`;
 
-    // Get notifications using raw SQL for consistency
-    const notificationsQuery = unreadOnly 
-      ? sql`SELECT * FROM notifications WHERE user_id = ${userId} AND status = 'unread' ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
-      : sql`SELECT * FROM notifications WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-    
-    const notificationsResult = await db.execute(notificationsQuery);
-    const userNotifications = notificationsResult.rows as Notification[];
+    // Rows come back with camelCase fields (createdAt, entityUrl, ...) like every other API,
+    // plus isRead, which the screens use to tell new notifications from old ones
+    const where = unreadOnly
+      ? and(eq(notifications.userId, userId), eq(notifications.status, "unread"))
+      : eq(notifications.userId, userId);
+    const rows = await db.select().from(notifications).where(where).orderBy(desc(notifications.createdAt)).limit(limit).offset(offset);
+    const userNotifications = rows.map((n) => ({ ...n, isRead: n.status !== "unread" })) as unknown as Notification[];
 
     // Get total count
     const totalResult = await db.execute(sql`

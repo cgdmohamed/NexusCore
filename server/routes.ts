@@ -11,6 +11,7 @@ import { registerKpiRoutes } from "./kpi-routes";
 import { registerAnalyticsRoutes } from "./analytics-routes";
 import { registerTaskManagementRoutes } from "./task-management-routes";
 import { registerProjectRoutes } from "./project-routes";
+import { registerPushRoutes } from "./push-routes";
 import { registerServicesRoutes } from "./services-routes";
 import { registerMessagingRoutes } from "./messaging-routes";
 import { registerSettingsRoutes } from "./settings-routes";
@@ -98,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await registerProjectRoutes(app);
   registerServicesRoutes(app);
   registerMessagingRoutes(app);
+  await registerPushRoutes(app);
   registerSettingsRoutes(app);
   registerCredentialRoutes(app);
 

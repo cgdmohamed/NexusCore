@@ -41,6 +41,7 @@ export async function startApp() {
   const { registerCredentialRoutes } = await import("../../server/credential-routes");
   const { registerNotificationRoutes } = await import("../../server/notification-routes");
   const { registerProjectRoutes } = await import("../../server/project-routes");
+  const { registerPushRoutes } = await import("../../server/push-routes");
 
   const app = express();
   app.set("trust proxy", 1); // same as production, so req.ip honours X-Forwarded-For
@@ -64,6 +65,7 @@ export async function startApp() {
   registerCredentialRoutes(app as any);
   registerNotificationRoutes(app as any);
   await registerProjectRoutes(app as any);
+  await registerPushRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));

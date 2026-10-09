@@ -957,6 +957,19 @@ export const notificationSettings = pgTable("notification_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Browser/phone push subscriptions (one row per device)
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  platform: varchar("platform").notNull().default("desktop"), // desktop | mobile (the /m app)
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
 // Email templates for different notification types
 export const emailTemplates = pgTable("email_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

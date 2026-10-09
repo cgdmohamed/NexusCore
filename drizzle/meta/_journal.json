@@ -22,6 +22,13 @@
       "when": 1791550862680,
       "tag": "0002_project_completed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791583473350,
+      "tag": "0003_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }

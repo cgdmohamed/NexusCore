@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/i18n";
+import { PushSettings } from "@/components/notifications/PushSettings";
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -126,6 +127,8 @@ export default function Notifications() {
           </Button>
         )}
       </div>
+
+      <PushSettings platform="desktop" />
 
       {/* Filters and Search */}
       <Card>

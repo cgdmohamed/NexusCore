@@ -3,6 +3,7 @@
 //    "no connection" page instead of the browser's error
 //  - never touches /api: data always comes from the server
 const CACHE = "nexus-shell-v1";
+const ICON = "/icons/icon-192.png";
 const STATIC = /^\/(assets|fonts|icons)\//;
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -61,4 +62,43 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
+});
+
+// ---- Push notifications ---------------------------------------------------------------------
+// The server sends { title, body, url, tag }. Every push must end in a visible notification.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Creative Code Nexus";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: ICON,
+      badge: ICON,
+      tag: data.tag,
+      data: { url: data.url || "/notifications" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/notifications";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
+      // Reuse an open window of the app: focus it and let the app move to the right screen
+      for (const win of windows) {
+        if (new URL(win.url).origin === self.location.origin && "focus" in win) {
+          await win.focus();
+          win.postMessage({ type: "navigate", url });
+          return;
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
 });

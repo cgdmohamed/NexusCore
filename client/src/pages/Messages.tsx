@@ -260,7 +260,7 @@ export default function Messages() {
                         )}
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+                        <p dir="auto" className="text-xs text-muted-foreground truncate max-w-[160px]">
                           {conv.lastMessage
                             ? conv.lastMessage.senderId === currentUser?.id
                               ? `${t("messages.you")}: ${conv.lastMessage.content}`
@@ -339,7 +339,7 @@ export default function Messages() {
                                 : "bg-muted text-foreground rounded-es-sm"
                             }`}
                           >
-                            {msg.content}
+                            <span dir="auto" className="block">{msg.content}</span>
                           </div>
                           <span className="text-xs text-muted-foreground/70 mt-1 px-1">
                             {isOwn ? t("messages.you") : msg.senderName}

@@ -363,7 +363,7 @@ export function registerMessagingRoutes(app: Express) {
 
       // Also mark all unread direct_message notifications as read so the bell clears
       try {
-        await notificationService.markAllAsRead(userId);
+        await notificationService.markAllAsRead(userId, "direct_message");
       } catch (notifErr) {
         console.error("[Messaging] Failed to clear DM notifications:", notifErr);
       }
