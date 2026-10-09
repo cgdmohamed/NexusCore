@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DollarSign, Users, TrendingUp, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/currency";
+import { completionRate, openTasks } from "@/lib/task-stats";
 import { isInvoiceOverdue, receivableTotals } from "@/lib/invoice-status";
 
 export function KPICards() {
@@ -82,14 +83,14 @@ export function KPICards() {
     },
     {
       title: t("dash.kpi.tasks"),
-      value: taskData?.totalTasks?.toString() || '0',
+      value: openTasks(taskData).toString(),
       note: t("dash.kpi.tasks_note", { n: String(pendingTasks) }),
       icon: CheckSquare,
       alert: false,
     },
     {
       title: t("dash.kpi.performance"),
-      value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
+      value: `${completionRate(taskData)}%`,
       note: t("dash.kpi.performance_note", { n: String(overdueTasks) }),
       icon: TrendingUp,
       alert: overdueTasks > 0,

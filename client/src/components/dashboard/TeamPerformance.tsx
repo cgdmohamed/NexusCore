@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
+import { activeTeamSize, completionRate, openTasks } from "@/lib/task-stats";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Users, CheckSquare } from "lucide-react";
@@ -28,17 +29,17 @@ export function TeamPerformance() {
   const teamMetrics = [
     {
       title: t("dash.team_size"),
-      value: employeeData.length.toString(),
+      value: activeTeamSize(employeeData).toString(),
       icon: Users,
     },
     {
       title: t("dash.kpi.tasks"),
-      value: taskData?.totalTasks?.toString() || '0',
+      value: openTasks(taskData).toString(),
       icon: CheckSquare,
     },
     {
       title: t("dash.completion_rate"),
-      value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
+      value: `${completionRate(taskData)}%`,
       icon: TrendingUp,
     }
   ];

@@ -6,12 +6,14 @@ import {
   taskDependencies, 
   taskActivityLog,
   users,
-  employees
+  employees,
+  projects
 } from "@shared/schema";
 import { eq, desc, asc, and, gte, lte, count, sql, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { notificationService } from "./notification-service";
 import { requirePermission } from "./auth";
+import { APP_TIMEZONE, changePct, dayKey, fillSeries, lastDays, rankTopTasks, sum } from "./task-insights";
 
 // Task creation schema - simplified for existing database
 const createTaskSchema = z.object({
@@ -132,8 +134,8 @@ export function registerTaskManagementRoutes(app: Express) {
         .from(tasks)
         .where(
           baseConditions.length > 0 
-            ? and(...baseConditions, sql`${tasks.dueDate} < NOW() AND ${tasks.status} != 'completed'`)
-            : sql`${tasks.dueDate} < NOW() AND ${tasks.status} != 'completed'`
+            ? and(...baseConditions, sql`${tasks.dueDate} < NOW() AND ${tasks.status} IN ('pending','in_progress')`)
+            : sql`${tasks.dueDate} < NOW() AND ${tasks.status} IN ('pending','in_progress')`
         );
 
       // Get completed this month
@@ -179,6 +181,126 @@ export function registerTaskManagementRoutes(app: Express) {
   });
 
   // Get task performance metrics
+  // Numbers and series for the overview screens: workload, throughput, on-time rate and the tasks that matter most
+  app.get("/api/tasks/insights", requirePermission("tasks", "view"), async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const scope = req.query.scope === "team" ? "team" : "me";
+      const requestedDays = parseInt(req.query.days as string, 10);
+      const days = Number.isFinite(requestedDays) ? Math.min(30, Math.max(7, requestedDays)) : 14;
+      const tz = APP_TIMEZONE;
+      const now = new Date();
+      const today = dayKey(now, tz);
+
+      // Midnight of today in the company's zone, as the UTC timestamp the columns store
+      const startOfToday = sql`((${today}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC'`;
+      const periodStart = sql`(${startOfToday}) - make_interval(days => ${days - 1})`;
+      const previousStart = sql`(${startOfToday}) - make_interval(days => ${days * 2 - 1})`;
+      const mine = scope === "me" ? sql`AND t.assigned_to = ${userId}` : sql``;
+      const localDay = sql`to_char((t.completed_date AT TIME ZONE 'UTC') AT TIME ZONE ${tz}, 'YYYY-MM-DD')`;
+
+      const rows = async <R,>(query: ReturnType<typeof sql>) => (await db.execute(query)).rows as unknown as R[];
+
+      const [open, late, dueTodayRow, completedByDay, createdRow, onTimeRow, speedRow] = await Promise.all([
+        rows<{ status: string; priority: string; n: number }>(sql`
+          SELECT t.status, t.priority, COUNT(*)::int AS n FROM tasks t
+          WHERE t.status IN ('pending','in_progress') ${mine} GROUP BY t.status, t.priority`),
+        rows<{ n: number }>(sql`
+          SELECT COUNT(*)::int AS n FROM tasks t
+          WHERE t.status IN ('pending','in_progress') AND t.due_date < ${startOfToday} ${mine}`),
+        rows<{ n: number }>(sql`
+          SELECT COUNT(*)::int AS n FROM tasks t
+          WHERE t.status IN ('pending','in_progress') AND t.due_date >= ${startOfToday}
+            AND t.due_date < (${startOfToday}) + interval '1 day' ${mine}`),
+        rows<{ day: string; n: number }>(sql`
+          SELECT ${localDay} AS day, COUNT(*)::int AS n FROM tasks t
+          WHERE t.status = 'completed' AND t.completed_date >= ${previousStart} ${mine} GROUP BY 1`),
+        rows<{ n: number }>(sql`
+          SELECT COUNT(*)::int AS n FROM tasks t
+          WHERE t.status <> 'cancelled' AND t.created_at >= ${periodStart} ${mine}`),
+        rows<{ total: number; on_time: number }>(sql`
+          SELECT COUNT(*)::int AS total,
+                 COUNT(*) FILTER (WHERE t.completed_date <= t.due_date + interval '1 day')::int AS on_time
+          FROM tasks t
+          WHERE t.status = 'completed' AND t.due_date IS NOT NULL AND t.completed_date >= ${periodStart} ${mine}`),
+        rows<{ hours: number | null }>(sql`
+          SELECT AVG(EXTRACT(EPOCH FROM (t.completed_date - t.created_at)) / 3600)::float AS hours FROM tasks t
+          WHERE t.status = 'completed' AND t.completed_date >= ${periodStart}
+            AND t.completed_date >= t.created_at ${mine}`),
+      ]);
+
+      const dayList = lastDays(days * 2, now, tz);
+      const series = fillSeries(dayList, completedByDay);
+      const previousSeries = series.slice(0, days);
+      const currentSeries = series.slice(days);
+      const completed = sum(currentSeries);
+      const previousCompleted = sum(previousSeries);
+
+      const openCandidates = await db
+        .select({ task: tasks, assigneeFirst: users.firstName, assigneeLast: users.lastName, assigneeUsername: users.username, projectName: projects.name })
+        .from(tasks)
+        .leftJoin(users, eq(tasks.assignedTo, users.id))
+        .leftJoin(projects, eq(tasks.projectId, projects.id))
+        .where(and(sql`${tasks.status} IN ('pending','in_progress')`, scope === "me" ? eq(tasks.assignedTo, userId) : undefined))
+        .orderBy(sql`${tasks.dueDate} ASC NULLS LAST`)
+        .limit(500);
+      const nameOf = (r: { assigneeFirst: string | null; assigneeLast: string | null; assigneeUsername: string | null }) =>
+        [r.assigneeFirst, r.assigneeLast].filter(Boolean).join(" ") || r.assigneeUsername || null;
+      const top = rankTopTasks(
+        openCandidates.map((r) => ({ ...r.task, assigneeName: nameOf(r), projectName: r.projectName })),
+        5, now, tz,
+      );
+
+      const workload = scope === "team"
+        ? await rows<{ name: string | null; n: number }>(sql`
+            SELECT COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.username) AS name, COUNT(*)::int AS n
+            FROM tasks t JOIN users u ON u.id = t.assigned_to
+            WHERE t.status IN ('pending','in_progress') GROUP BY 1 ORDER BY n DESC LIMIT 6`)
+        : [];
+
+      const count = (status: string) => open.filter((r) => r.status === status).reduce((a, r) => a + Number(r.n), 0);
+      const byPriority = (p: string) => open.filter((r) => r.priority === p).reduce((a, r) => a + Number(r.n), 0);
+      const onTime = onTimeRow[0] ?? { total: 0, on_time: 0 };
+
+      res.json({
+        scope,
+        days,
+        timezone: tz,
+        generatedAt: now.toISOString(),
+        totals: {
+          open: count("pending") + count("in_progress"),
+          pending: count("pending"),
+          inProgress: count("in_progress"),
+          overdue: Number(late[0]?.n ?? 0),
+          dueToday: Number(dueTodayRow[0]?.n ?? 0),
+          completed,
+          previousCompleted,
+          created: Number(createdRow[0]?.n ?? 0),
+        },
+        priorities: { high: byPriority("high"), medium: byPriority("medium"), low: byPriority("low") },
+        daily: dayList.slice(days).map((day, i) => ({ date: day, completed: currentSeries[i] })),
+        productivity: {
+          perDay: Math.round((completed / days) * 10) / 10,
+          previousPerDay: Math.round((previousCompleted / days) * 10) / 10,
+          changePct: changePct(completed, previousCompleted),
+          onTimeRate: onTime.total > 0 ? Math.round((onTime.on_time / onTime.total) * 100) : null,
+          onTimeSample: onTime.total,
+          avgCompletionHours: speedRow[0]?.hours != null ? Math.round(speedRow[0].hours * 10) / 10 : null,
+        },
+        topTasks: top.map((t) => ({
+          id: t.id, title: t.title, priority: t.priority, status: t.status, dueDate: t.dueDate, projectId: t.projectId,
+          projectName: t.projectName, assigneeName: t.assigneeName, assignedTo: t.assignedTo, score: t.score,
+        })),
+        workload,
+      });
+    } catch (error) {
+      console.error("Error building task insights:", error);
+      res.status(500).json({ message: "Failed to build task insights" });
+    }
+  });
+
   app.get("/api/tasks/performance", requirePermission("tasks", "view"), async (req, res) => {
     try {
       const { assignedTo, startDate, endDate } = req.query;

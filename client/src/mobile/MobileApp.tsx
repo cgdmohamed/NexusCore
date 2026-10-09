@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
+import { LayoutDashboard, CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { userAvatarSrc, userInitials } from "@/lib/user-avatar";
 import { useInstall, useOnline } from "./hooks";
 import { QuickAdd, type AddRequest } from "./QuickAdd";
+import OverviewScreen from "./OverviewScreen";
 import TasksScreen from "./TasksScreen";
 import ProjectsScreen from "./ProjectsScreen";
 import ClientsScreen from "./ClientsScreen";
@@ -21,10 +22,11 @@ import { PushSettings } from "@/components/notifications/PushSettings";
 import { Segmented } from "./ui";
 import { useQuery } from "@tanstack/react-query";
 
-type Tab = "tasks" | "projects" | "clients" | "inbox";
+type Tab = "overview" | "tasks" | "projects" | "clients" | "inbox";
 
 // Adding a screen later means one entry here plus its component
 const TABS: { key: Tab; icon: typeof CheckSquare; label: string; module: string | null }[] = [
+  { key: "overview", icon: LayoutDashboard, label: "m.tab_overview", module: null },
   { key: "tasks", icon: CheckSquare, label: "m.tab_tasks", module: "tasks" },
   { key: "projects", icon: FolderKanban, label: "m.tab_projects", module: "projects" },
   { key: "clients", icon: Users, label: "m.tab_clients", module: "crm" },
@@ -47,7 +49,7 @@ export default function MobileApp() {
   const parts = location.split("/");
   const segment = parts[2];
   // Messages and alerts share the Inbox tab
-  const area: string | undefined = segment === "messages" || segment === "alerts" ? "inbox" : segment;
+  const area: string | undefined = segment === "messages" || segment === "alerts" ? "inbox" : segment || "overview";
   const active: Tab = tabs.find((x) => x.key === area)?.key ?? tabs[0]?.key ?? "inbox";
   const inThread = segment === "messages" && !!parts[3];
   const canAddAny = canAdd("tasks") || canAdd("projects") || canAdd("crm");
@@ -57,11 +59,10 @@ export default function MobileApp() {
     setAddOpen(true);
   };
 
-  const half = Math.ceil(tabs.length / 2);
   const slot = "flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium";
 
   const tabButton = (tab: (typeof TABS)[number]) => (
-    <Link key={tab.key} href={tab.key === "inbox" ? "/m/messages" : `/m/${tab.key}`} aria-current={active === tab.key ? "page" : undefined} className={cn(slot, active === tab.key ? "text-primary" : "text-muted-foreground")}>
+    <Link key={tab.key} href={tab.key === "inbox" ? "/m/messages" : tab.key === "overview" ? "/m" : `/m/${tab.key}`} aria-current={active === tab.key ? "page" : undefined} className={cn(slot, active === tab.key ? "text-primary" : "text-muted-foreground")}>
       <span className="relative">
         <tab.icon className="h-5 w-5" strokeWidth={active === tab.key ? 2.25 : 1.75} />
         {tab.key === "inbox" && unreadCount + messagesUnread > 0 && (
@@ -128,6 +129,7 @@ export default function MobileApp() {
       {!online && <OfflineBanner />}
 
       <main className={cn("flex-1 overscroll-contain", inThread ? "overflow-hidden" : "overflow-y-auto")}>
+        {active === "overview" && <OverviewScreen />}
         {active === "tasks" && <TasksScreen />}
         {active === "projects" && <ProjectsScreen onAdd={openAdd} />}
         {active === "clients" && <ClientsScreen onAdd={openAdd} />}
@@ -151,16 +153,14 @@ export default function MobileApp() {
         )}
       </main>
 
+      {canAddAny && !inThread && (
+        <button onClick={() => openAdd()} aria-label={t("m.add")} className="fixed end-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95">
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
       <nav className="flex items-center border-t border-border bg-card pb-[env(safe-area-inset-bottom)]" aria-label="Main">
-        {tabs.slice(0, half).map(tabButton)}
-        {canAddAny && !inThread && (
-          <div className="flex flex-1 justify-center">
-            <button onClick={() => openAdd()} aria-label={t("m.add")} className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95">
-              <Plus className="h-6 w-6" />
-            </button>
-          </div>
-        )}
-        {tabs.slice(half).map(tabButton)}
+        {tabs.map(tabButton)}
       </nav>
 
       <QuickAdd open={addOpen} onOpenChange={setAddOpen} request={request} />
