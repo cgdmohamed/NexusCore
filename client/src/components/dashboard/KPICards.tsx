@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DollarSign, Users, TrendingUp, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/currency";
+import { isInvoiceOverdue, receivableTotals } from "@/lib/invoice-status";
 
 export function KPICards() {
   const { t } = useTranslation();
@@ -40,15 +41,8 @@ export function KPICards() {
       return sum + parseFloat(inv.paidAmount || 0);
     }, 0),
     activeClients: clients.filter((client: any) => client.status === 'active').length,
-    pendingRevenue: invoices.reduce((sum: number, inv: any) => {
-      if (inv.status === 'cancelled') return sum;
-      const remaining = parseFloat(inv.amount || 0) - parseFloat(inv.paidAmount || 0);
-      return sum + (remaining > 0 ? remaining : 0);
-    }, 0),
-    overdueInvoices: invoices.filter((inv: any) => 
-      inv.status !== 'cancelled' &&
-      (inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid'))
-    ).length
+    pendingRevenue: receivableTotals(invoices as any[]).outstanding,
+    overdueInvoices: invoices.filter((inv: any) => isInvoiceOverdue(inv)).length,
   };
 
   if (isLoading) {

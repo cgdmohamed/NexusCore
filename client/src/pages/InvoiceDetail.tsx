@@ -17,6 +17,8 @@ import {
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
+import { isInvoiceOverdue } from "@/lib/invoice-status";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useParams, Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -106,6 +108,7 @@ const VAT_RATE = 15;
 
 export default function InvoiceDetail() {
   const { t } = useTranslation();
+  const { canEdit } = usePermissions();
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -450,6 +453,23 @@ export default function InvoiceDetail() {
         variant: "destructive",
       });
     }
+  });
+
+  // Issuing (draft -> sent) and taking an unpaid invoice back to draft
+  const statusMutation = useMutation({
+    mutationFn: async (status: "sent" | "draft") => {
+      await apiRequest("PATCH", `/api/invoices/${id}/status`, { status });
+      return status;
+    },
+    onSuccess: (status) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      toast({ title: t(status === "sent" ? "inv.issued_toast" : "inv.returned_toast") });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("inv.status_failed"), description: error.message, variant: "destructive" });
+    },
   });
 
   const uploadAttachmentMutation = useMutation({
@@ -837,7 +857,7 @@ export default function InvoiceDetail() {
     });
   };
 
-  const isOverdue = invoice.status !== 'paid' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
+  const isOverdue = isInvoiceOverdue(invoice);
 
   return (
     <div>
@@ -846,6 +866,12 @@ export default function InvoiceDetail() {
         subtitle={`${client?.name || 'Unknown Client'} • ${invoice.status}`}
       />
       
+      {invoice.status === "draft" && (
+        <div className="mx-3 mt-4 rounded-lg border border-warning/20 bg-warning-soft px-4 py-3 text-sm text-warning md:mx-6">
+          {t("inv.draft_notice")}
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="px-3 pt-4 pb-4 md:px-6">
         <div className="flex flex-wrap gap-2">
@@ -863,10 +889,17 @@ export default function InvoiceDetail() {
             <Printer className="w-4 h-4 me-2" />
             Download / Print
           </Button>
-          <Button>
-            <Send className="w-4 h-4 me-2" />
-            Send Invoice
-          </Button>
+          {invoice.status === "draft" && canEdit("invoices") && (
+            <Button onClick={() => statusMutation.mutate("sent")} disabled={statusMutation.isPending} data-testid="button-issue-invoice">
+              <Send className="w-4 h-4 me-2 rtl:-scale-x-100" />
+              {t("inv.issue")}
+            </Button>
+          )}
+          {invoice.status === "sent" && canEdit("invoices") && parseFloat(String(invoice.paidAmount || 0)) === 0 && (
+            <Button variant="outline" onClick={() => statusMutation.mutate("draft")} disabled={statusMutation.isPending}>
+              {t("inv.return_draft")}
+            </Button>
+          )}
           
           {/* Recalculate button - to fix existing invoices with wrong totals/status */}
           <Button 

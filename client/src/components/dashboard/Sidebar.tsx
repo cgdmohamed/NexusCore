@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
+import { isInvoiceOverdue } from "@/lib/invoice-status";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import {
@@ -90,7 +91,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     enabled: !!user,
   });
   const unreadMsgCount = unreadMsgData?.unreadCount || 0;
-  const overdueCount = invoices.filter((inv: any) => inv.status === "overdue").length;
+  const overdueCount = invoices.filter((inv: any) => isInvoiceOverdue(inv)).length;
   const pendingTasks = taskStats?.statusBreakdown?.pending || 0;
 
   // Badges only appear where something needs attention (overdue invoices, open tasks, unread messages)

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
+import { isInvoiceOverdue } from "@/lib/invoice-status";
 import { useQuery } from "@tanstack/react-query";
 import { PlusCircle, UserPlus, Receipt, CheckSquare } from "lucide-react";
 import { Link } from "wouter";
@@ -31,9 +32,7 @@ export function QuickActions() {
   
   const pendingTasks = taskData?.statusBreakdown?.pending || 0;
   const activeClients = clientsData.filter((client: any) => client.status === 'active').length;
-  const overdueInvoices = invoicesData.filter((inv: any) => 
-    inv.status === 'overdue' || (new Date(inv.dueDate) < new Date() && inv.status !== 'paid')
-  ).length;
+  const overdueInvoices = invoicesData.filter((inv: any) => isInvoiceOverdue(inv)).length;
 
   const actions = [
     {

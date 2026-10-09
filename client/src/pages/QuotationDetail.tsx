@@ -730,7 +730,7 @@ export default function QuotationDetail() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="unitPrice">Unit Price ($)</Label>
+                      <Label htmlFor="unitPrice">Unit Price (EGP)</Label>
                       <Input
                         id="unitPrice"
                         type="number"

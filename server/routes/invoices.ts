@@ -4,6 +4,7 @@ import { resolveUploadPath } from "../uploads";
 import { logAudit } from "../audit";
 import { parseMoney, parsePercent, parseDateValue, isAbsent } from "../validation";
 import { requirePermission } from "../auth";
+import { checkManualStatusChange } from "../invoice-status";
 import { clients, invoices, invoiceItems, payments, users, invoiceHistory, invoicePrintRecords } from "@shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 
@@ -14,30 +15,33 @@ import { lockNumbering, generateInvoiceNumber, statusAfterTotalChange, guardInvo
 // Invoices: lifecycle, items, attachments, QR codes, print records
 export function registerInvoicesRoutes(app: Express) {
 
+  // Issuing an invoice (draft -> sent) or taking it back to draft. Payment, refund and cancellation
+  // statuses are produced by their own actions, so they are refused here.
   app.patch('/api/invoices/:id/status', requirePermission("invoices", "edit"), async (req: any, res) => {
     try {
-      const updateData: any = { 
-        status: req.body.status, 
-        updatedAt: new Date() 
-      };
-      
-      if (req.body.status === 'paid') {
-        updateData.paidDate = new Date();
-        updateData.paidAmount = updateData.amount;
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      const [paymentRow] = await db.select({ n: sql<number>`count(*)::int` }).from(payments).where(eq(payments.invoiceId, invoice.id));
+
+      const check = checkManualStatusChange({ current: invoice, target: req.body?.status, paymentCount: paymentRow?.n ?? 0 });
+      if (!check.ok) {
+        return res.status(check.httpStatus).json({ message: check.message });
       }
 
       const [updatedInvoice] = await db.update(invoices)
-        .set(updateData)
-        .where(eq(invoices.id, req.params.id))
+        .set({ status: check.status, updatedAt: new Date() })
+        .where(eq(invoices.id, invoice.id))
         .returning();
+      await logAudit(req, "status", "invoice", invoice.id, { status: invoice.status }, { status: check.status });
       res.json(updatedInvoice);
 
-      // Record history
       try {
         const actor = req.user?.email || req.user?.username || 'System';
         await db.insert(invoiceHistory).values({
-          invoiceId: req.params.id,
-          event: `Status changed to ${req.body.status}`,
+          invoiceId: invoice.id,
+          event: check.status === "sent" ? "Invoice issued" : "Invoice returned to draft",
           actor,
         });
       } catch (historyError) {

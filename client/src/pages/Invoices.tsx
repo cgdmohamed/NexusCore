@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
+import { isInvoiceOverdue, receivableTotals } from "@/lib/invoice-status";
 import {
   Table,
   TableBody,
@@ -67,7 +68,7 @@ export default function Invoices() {
       const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            invoice.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            client?.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || (statusFilter === "overdue" ? isInvoiceOverdue(invoice) : invoice.status === statusFilter);
       return matchesSearch && matchesStatus;
     });
 
@@ -118,14 +119,8 @@ export default function Invoices() {
 
   // Statistics calculations
   const stats = useMemo(() => {
-    const totalAmount = invoiceList.reduce((sum, inv) => sum + parseFloat(inv.amount || "0"), 0);
-    const totalPaid = invoiceList.reduce((sum, inv) => sum + parseFloat(inv.paidAmount || "0"), 0);
-    const outstanding = totalAmount - totalPaid;
-    
-    const now = new Date();
-    const overdue = invoiceList.filter(inv => 
-      inv.status !== 'paid' && inv.dueDate && new Date(inv.dueDate) < now
-    ).length;
+    const { billed: totalAmount, paid: totalPaid, outstanding } = receivableTotals(invoiceList);
+    const overdue = invoiceList.filter((inv) => isInvoiceOverdue(inv)).length;
     
     return {
       total: invoiceList.length,
@@ -182,10 +177,7 @@ export default function Invoices() {
     }
   };
 
-  const isOverdue = (invoice: Invoice) => {
-    if (invoice.status === 'paid' || invoice.status === 'cancelled' || !invoice.dueDate) return false;
-    return new Date(invoice.dueDate) < new Date();
-  };
+  const isOverdue = (invoice: Invoice) => isInvoiceOverdue(invoice);
 
   return (
     <div>

@@ -130,7 +130,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount ($) *</FormLabel>
+                  <FormLabel>Amount (EGP) *</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" placeholder="0.00" {...field} />
                   </FormControl>

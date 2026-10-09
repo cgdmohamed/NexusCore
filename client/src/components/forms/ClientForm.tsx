@@ -209,7 +209,7 @@ export function ClientForm({ trigger }: ClientFormProps) {
               name="totalValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Value ($)</FormLabel>
+                  <FormLabel>Total Value (EGP)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0" {...field} />
                   </FormControl>

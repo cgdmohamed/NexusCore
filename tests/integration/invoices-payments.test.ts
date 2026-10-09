@@ -51,6 +51,44 @@ describe.skipIf(!TEST_DATABASE_URL)("invoices & payments (integration)", () => {
     });
   });
 
+  describe("manual status changes", () => {
+    it("issues a draft and records it in the history", async () => {
+      const client = await createClient(api, "Issue");
+      const inv = await createInvoice(api, client.id, "300");
+      const r = await api("PATCH", `/api/invoices/${inv.id}/status`, { status: "sent" });
+      expect(r.status).toBe(200);
+      expect(r.body.status).toBe("sent");
+      const history = (await api("GET", `/api/invoices/${inv.id}/history`)).body;
+      expect(history.some((h: any) => h.event === "Invoice issued")).toBe(true);
+    });
+
+    it("cannot mark an invoice paid without a payment, or set derived statuses", async () => {
+      const client = await createClient(api, "NoShortcut");
+      const inv = await createInvoice(api, client.id, "300");
+      for (const status of ["paid", "partially_paid", "refunded", "overdue", "bogus"]) {
+        expect((await api("PATCH", `/api/invoices/${inv.id}/status`, { status })).status).toBe(400);
+      }
+      expect((await api("GET", `/api/invoices/${inv.id}`)).body.status).toBe("draft");
+      expect((await api("PATCH", `/api/invoices/${inv.id}/status`, { status: "cancelled" })).status).toBe(400);
+    });
+
+    it("cannot reopen a cancelled invoice or move one that has payments", async () => {
+      const client = await createClient(api, "Locked");
+      const cancelled = await createInvoice(api, client.id, "100");
+      expect((await api("POST", `/api/invoices/${cancelled.id}/cancel`)).status).toBe(200);
+      expect((await api("PATCH", `/api/invoices/${cancelled.id}/status`, { status: "sent" })).status).toBe(409);
+
+      const paid = await createInvoice(api, client.id, "100");
+      await pay(api, paid.id, 40);
+      expect((await api("PATCH", `/api/invoices/${paid.id}/status`, { status: "draft" })).status).toBe(409);
+      expect((await api("GET", `/api/invoices/${paid.id}`)).body.status).toBe("partially_paid");
+    });
+
+    it("returns 404 for an unknown invoice", async () => {
+      expect((await api("PATCH", "/api/invoices/00000000-0000-0000-0000-000000000000/status", { status: "sent" })).status).toBe(404);
+    });
+  });
+
   describe("payments", () => {
     it("partial payment -> partially_paid, full payment -> paid", async () => {
       const client = await createClient(api, "Partial");
