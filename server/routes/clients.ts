@@ -4,8 +4,9 @@ import { db, badRequestFromDbError } from "../db";
 import { logAudit } from "../audit";
 import { parseMoney } from "../validation";
 import { requirePermission } from "../auth";
-import { clients, quotations, invoices, clientCreditHistory, clientNotes, activities } from "@shared/schema";
-import { eq, sql, ne } from "drizzle-orm";
+import { clients, quotations, invoices, payments, clientCreditHistory, clientNotes, activities } from "@shared/schema";
+import { eq, sql, ne, and, inArray } from "drizzle-orm";
+import { buildStatement } from "../statement";
 
 // Clients: profile, status, archive/restore, notes, credit balance
 export function registerClientsRoutes(app: Express) {
@@ -104,6 +105,61 @@ export function registerClientsRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching client credit:", error);
       res.status(500).json({ message: "Failed to fetch client credit" });
+    }
+  });
+
+  // Account statement: invoices, payments and refunds as one dated ledger with a running balance
+  app.get('/api/clients/:id/statement', requirePermission("crm", "view"), requirePermission("invoices", "view"), async (req: any, res) => {
+    try {
+      const day = /^\d{4}-\d{2}-\d{2}$/;
+      const parseDay = (v: unknown, endOfDay: boolean) => {
+        if (v === undefined || v === "") return null;
+        if (typeof v !== "string" || !day.test(v)) return undefined;
+        const d = new Date(`${v}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`);
+        return Number.isNaN(d.getTime()) ? undefined : d;
+      };
+      const from = parseDay(req.query.from, false);
+      const to = parseDay(req.query.to, true);
+      if (from === undefined || to === undefined) {
+        return res.status(400).json({ message: "Dates must use the format YYYY-MM-DD." });
+      }
+      if (from && to && from > to) {
+        return res.status(400).json({ message: "The start date must not be after the end date." });
+      }
+
+      const [client] = await db.select().from(clients).where(eq(clients.id, req.params.id));
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      const clientInvoices = await db.select().from(invoices).where(eq(invoices.clientId, client.id));
+      const invoiceIds = clientInvoices.map((i) => i.id);
+      const clientPayments = invoiceIds.length
+        ? await db.select().from(payments).where(inArray(payments.invoiceId, invoiceIds))
+        : [];
+      const creditRefunds = await db.select().from(clientCreditHistory)
+        .where(and(eq(clientCreditHistory.clientId, client.id), eq(clientCreditHistory.type, "credit_refunded")));
+
+      const statement = buildStatement({ invoices: clientInvoices, payments: clientPayments, creditRefunds, creditBalance: client.creditBalance, from, to });
+
+      res.json({
+        client: { id: client.id, name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, country: client.country, status: client.status },
+        company: {
+          name: process.env.COMPANY_NAME || "Creative Code Nexus",
+          email: process.env.COMPANY_EMAIL || "",
+          phone: process.env.COMPANY_PHONE || "",
+          address: process.env.COMPANY_ADDRESS || "",
+          vatNumber: process.env.COMPANY_VAT_NUMBER || "",
+          regNumber: process.env.COMPANY_REGISTRATION_NUMBER || "",
+        },
+        currency: "EGP",
+        period: { from: from ? from.toISOString().slice(0, 10) : null, to: to ? to.toISOString().slice(0, 10) : null },
+        generatedAt: new Date().toISOString(),
+        ...statement,
+      });
+    } catch (error) {
+      console.error("Error building client statement:", error);
+      res.status(500).json({ message: "Failed to build client statement" });
     }
   });
 

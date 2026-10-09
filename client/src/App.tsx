@@ -41,6 +41,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import QuotationPrint from "@/pages/QuotationPrint";
 import InvoicePrint from "@/pages/InvoicePrint";
+import ClientStatementPrint from "@/pages/ClientStatementPrint";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -74,6 +75,7 @@ function Router() {
       {/* Print pages — no sidebar, no navbar */}
       <Route path="/quotations/print/:printRecordId" component={QuotationPrint} />
       <Route path="/invoices/print/:printRecordId" component={InvoicePrint} />
+      <Route path="/clients/:id/statement/print" component={ClientStatementPrint} />
 
       {/* Main app layout */}
       <Route>

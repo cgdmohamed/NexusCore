@@ -20,10 +20,11 @@ import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ClientStatement } from "@/components/clients/ClientStatement";
+import { useTranslation } from "@/lib/i18n";
 import type { Client, Quotation, Invoice, ClientNote } from "@shared/schema";
 
 type CredentialType = "social" | "website" | "server" | "email" | "other";
@@ -451,7 +452,7 @@ export default function ClientProfile() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { isAdmin, roleName } = usePermissions();
+  const { isAdmin, roleName, canView } = usePermissions();
   const [isEditingClient, setIsEditingClient] = useState(false);
   const [editStatus, setEditStatus] = useState<string>("");
   const [newNote, setNewNote] = useState("");
@@ -826,6 +827,7 @@ export default function ClientProfile() {
           <TabsTrigger value="quotations" className="shrink-0 whitespace-nowrap">Quotations</TabsTrigger>
           <TabsTrigger value="invoices" className="shrink-0 whitespace-nowrap">Invoices</TabsTrigger>
           <TabsTrigger value="credit" className="shrink-0 whitespace-nowrap">Credit History</TabsTrigger>
+          {canView("invoices") && <TabsTrigger value="statement" data-testid="tab-statement" className="shrink-0 whitespace-nowrap">{t("stmt.tab")}</TabsTrigger>}
           <TabsTrigger value="projects" className="shrink-0 whitespace-nowrap">Projects</TabsTrigger>
           <TabsTrigger value="credentials" data-testid="tab-credentials" className="shrink-0 whitespace-nowrap flex items-center gap-1">
             <KeyRound className="w-3.5 h-3.5" />
@@ -977,6 +979,12 @@ export default function ClientProfile() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {canView("invoices") && (
+          <TabsContent value="statement">
+            <ClientStatement clientId={id as string} />
+          </TabsContent>
+        )}
 
         <TabsContent value="credit">
           <Card>
