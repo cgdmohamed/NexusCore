@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { CheckSquare, FolderKanban, Users, MessageSquare, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
+import { CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useNotifications } from "@/hooks/useNotifications";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { OfflineBanner } from "./ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { userAvatarSrc, userInitials } from "@/lib/user-avatar";
 import { useInstall, useOnline } from "./hooks";
 import { QuickAdd, type AddRequest } from "./QuickAdd";
 import TasksScreen from "./TasksScreen";
@@ -55,7 +57,6 @@ export default function MobileApp() {
     setAddOpen(true);
   };
 
-  const initials = (user?.firstName && user?.lastName ? `${user.firstName[0]}${user.lastName[0]}` : (user?.username ?? "U").slice(0, 2)).toUpperCase();
   const half = Math.ceil(tabs.length / 2);
   const slot = "flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium";
 
@@ -75,10 +76,27 @@ export default function MobileApp() {
     <div className="flex h-[100dvh] flex-col bg-background">
       <header className="flex items-center justify-between border-b border-border bg-card px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <h1 className="text-lg font-semibold">{t(TABS.find((x) => x.key === active)!.label)}</h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button aria-label={t("m.menu")} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">{initials}</button>
-          </DropdownMenuTrigger>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/m/alerts"
+            aria-label={`${t("m.tab_alerts")}${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+            aria-current={segment === "alerts" ? "page" : undefined}
+            className={cn("relative flex h-11 w-11 items-center justify-center rounded-full", segment === "alerts" ? "bg-accent text-primary" : "text-muted-foreground")}
+          >
+            <Bell className="h-5 w-5" strokeWidth={1.75} />
+            {unreadCount > 0 && (
+              <span className="absolute end-1 top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] leading-4 text-white tabular-nums">{unreadCount > 9 ? "9+" : unreadCount}</span>
+            )}
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button aria-label={t("m.menu")} className="flex h-11 w-11 items-center justify-center rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={userAvatarSrc(user as any)} alt="" />
+                  <AvatarFallback className="bg-primary text-sm font-medium text-primary-foreground">{userInitials(user as any)}</AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel className="truncate">{user?.email ?? user?.username}</DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -103,7 +121,8 @@ export default function MobileApp() {
               {t("m.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       </header>
 
       {!online && <OfflineBanner />}

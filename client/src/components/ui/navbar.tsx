@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfig } from "@/lib/config";
+import { userAvatarSrc } from "@/lib/user-avatar";
 import { useQuery } from "@tanstack/react-query";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { 
@@ -271,7 +272,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               <Button variant="ghost" className="h-9 gap-2 px-2">
                 <Avatar className="h-6 w-6 shrink-0">
                   <AvatarImage
-                    src={currentUser?.profileImageUrl || (currentUser && 'employee' in currentUser && currentUser.employee ? (currentUser.employee as any).profileImage : undefined)}
+                    src={userAvatarSrc(currentUser as any)}
                     alt={getUserDisplayName()}
                   />
                   <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
