@@ -9,10 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Activity } from "@shared/schema";
 
 const activityIcons = {
-  invoice_paid: { icon: Check, bg: "bg-green-100", color: "text-secondary" },
+  invoice_paid: { icon: Check, bg: "bg-success-soft", color: "text-success" },
   client_added: { icon: UserPlus, bg: "bg-blue-100", color: "text-primary" },
   quotation_sent: { icon: FileText, bg: "bg-yellow-100", color: "text-yellow-600" },
-  expense_approval: { icon: AlertCircle, bg: "bg-red-100", color: "text-accent" },
+  expense_approval: { icon: AlertCircle, bg: "bg-danger-soft", color: "text-danger" },
 };
 
 export function RecentActivities() {
@@ -30,7 +30,7 @@ export function RecentActivities() {
   if (isLoading) {
     return (
       <Card className="lg:col-span-2">
-        <CardHeader className="border-b border-gray-200">
+        <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-8 w-16" />
@@ -56,7 +56,7 @@ export function RecentActivities() {
 
   return (
     <Card className="lg:col-span-2">
-      <CardHeader className="border-b border-gray-200">
+      <CardHeader className="border-b border-border">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-text">Recent Activities</h3>
           <Button variant="link" size="sm">
@@ -68,8 +68,8 @@ export function RecentActivities() {
         <div className="space-y-4">
           {activityList.length === 0 ? (
             <div className="text-center py-8">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <AlertCircle className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertCircle className="w-6 h-6 text-muted-foreground/70" />
               </div>
               <p className="text-neutral text-sm">No recent activities</p>
               <p className="text-neutral text-xs mt-1">Activities will appear here as users interact with the system</p>
@@ -80,7 +80,7 @@ export function RecentActivities() {
               const Icon = activityType.icon;
               
               return (
-                <div key={activity.id} className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <div key={activity.id} className="flex items-start space-x-4 p-3 hover:bg-muted/60 rounded-lg transition-colors">
                   <div className={`w-8 h-8 ${activityType.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`${activityType.color} text-sm w-4 h-4`} />
                   </div>

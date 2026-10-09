@@ -164,7 +164,7 @@ export default function Login() {
                 </div>
               </div>
               
-              <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl lg:text-5xl font-bold text-foreground dark:text-white mb-4">
                 {config.companyName}
               </h1>
               

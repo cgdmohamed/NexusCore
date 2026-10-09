@@ -189,7 +189,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="text-lg font-semibold">Permissions</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Configure what this role can access and perform in each module
             </p>
           </div>
@@ -202,7 +202,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               className="text-green-700 border-green-300 hover:bg-green-50"
               data-testid="button-grant-all"
             >
-              <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
+              <CheckSquare className="h-3.5 w-3.5 me-1.5" />
               Grant All
             </Button>
             <Button
@@ -213,7 +213,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               className="text-red-700 border-red-300 hover:bg-red-50"
               data-testid="button-revoke-all"
             >
-              <XSquare className="h-3.5 w-3.5 mr-1.5" />
+              <XSquare className="h-3.5 w-3.5 me-1.5" />
               Revoke All
             </Button>
           </div>
@@ -226,7 +226,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <CardTitle className="text-base">{module.label}</CardTitle>
-                    <p className="text-sm text-gray-600">{module.description}</p>
+                    <p className="text-sm text-muted-foreground">{module.description}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button

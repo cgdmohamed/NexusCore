@@ -217,14 +217,14 @@ export default function Messages() {
 
       <div className="flex flex-1 overflow-hidden p-2 sm:p-4 md:p-6 gap-4">
         {/* Left panel — conversation list */}
-        <div className={`w-full sm:w-80 flex-shrink-0 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden ${selectedConvId ? "hidden sm:flex" : "flex"}`}>
-          <div className="px-4 py-3 border-b border-gray-100">
-            <span className="font-semibold text-gray-800 text-sm">{t("nav.messages")}</span>
+        <div className={`w-full sm:w-80 flex-shrink-0 flex flex-col border border-border rounded-xl bg-card overflow-hidden ${selectedConvId ? "hidden sm:flex" : "flex"}`}>
+          <div className="px-4 py-3 border-b border-border">
+            <span className="font-semibold text-foreground text-sm">{t("nav.messages")}</span>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 px-6 text-center">
+              <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/70 px-6 text-center">
                 <MessageSquare className="w-10 h-10 opacity-30" />
                 <p className="text-sm">{t("messages.no_conversations")}</p>
               </div>
@@ -236,7 +236,7 @@ export default function Messages() {
                 return (
                   <button
                     key={conv.id}
-                    className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 ${
+                    className={`w-full text-start px-4 py-3 flex items-start gap-3 hover:bg-muted/60 transition-colors border-b border-gray-50 ${
                       isActive ? "bg-primary/5 border-s-2 border-s-primary" : ""
                     }`}
                     onClick={() => setSelectedConvId(conv.id)}
@@ -248,11 +248,11 @@ export default function Messages() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-800 truncate">
+                        <span className="font-medium text-sm text-foreground truncate">
                           {name}
                         </span>
                         {conv.lastMessage?.createdAt && (
-                          <span className="text-xs text-gray-400 flex-shrink-0 ms-2">
+                          <span className="text-xs text-muted-foreground/70 flex-shrink-0 ms-2">
                             {formatDistanceToNow(conv.lastMessage.createdAt, {
                               addSuffix: false,
                             })}
@@ -260,7 +260,7 @@ export default function Messages() {
                         )}
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                        <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                           {conv.lastMessage
                             ? conv.lastMessage.senderId === currentUser?.id
                               ? `${t("messages.you")}: ${conv.lastMessage.content}`
@@ -282,18 +282,18 @@ export default function Messages() {
         </div>
 
         {/* Right panel — message thread */}
-        <div className={`flex-1 flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden ${selectedConvId ? "flex" : "hidden sm:flex"}`}>
+        <div className={`flex-1 flex flex-col border border-border rounded-xl bg-card overflow-hidden ${selectedConvId ? "flex" : "hidden sm:flex"}`}>
           {!selectedConvId ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/70">
               <MessageSquare className="w-12 h-12 opacity-30" />
               <p className="text-sm">{t("messages.start_conversation")}</p>
             </div>
           ) : (
             <>
               {/* Thread header */}
-              <div className="px-3 sm:px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+              <div className="px-3 sm:px-5 py-3 border-b border-border flex items-center gap-3">
                 <button
-                  className="sm:hidden p-1 -ml-1 rounded hover:bg-gray-100 text-gray-500"
+                  className="sm:hidden p-1 -ms-1 rounded hover:bg-muted text-muted-foreground"
                   onClick={() => setSelectedConvId(null)}
                   aria-label="Back to conversations"
                 >
@@ -306,7 +306,7 @@ export default function Messages() {
                     {getInitials(selectedConversation?.otherUser?.name || "?")}
                   </AvatarFallback>
                 </Avatar>
-                <span className="font-semibold text-gray-800">
+                <span className="font-semibold text-foreground">
                   {selectedConversation?.otherUser?.name ||
                     selectedConversation?.otherUser?.username ||
                     "Unknown"}
@@ -316,7 +316,7 @@ export default function Messages() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {currentMessages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                  <div className="flex items-center justify-center h-full text-muted-foreground/70 text-sm">
                     {t("messages.type_message")}
                   </div>
                 ) : (
@@ -335,13 +335,13 @@ export default function Messages() {
                           <div
                             className={`px-4 py-2 rounded-2xl text-sm leading-relaxed ${
                               isOwn
-                                ? "bg-primary text-white rounded-br-sm"
-                                : "bg-gray-100 text-gray-800 rounded-bl-sm"
+                                ? "bg-primary text-white rounded-ee-sm"
+                                : "bg-muted text-foreground rounded-es-sm"
                             }`}
                           >
                             {msg.content}
                           </div>
-                          <span className="text-xs text-gray-400 mt-1 px-1">
+                          <span className="text-xs text-muted-foreground/70 mt-1 px-1">
                             {isOwn ? t("messages.you") : msg.senderName}
                             {" · "}
                             {formatDistanceToNow(msg.createdAt, { addSuffix: true })}
@@ -355,7 +355,7 @@ export default function Messages() {
               </div>
 
               {/* Input bar */}
-              <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2">
+              <div className="px-4 py-3 border-t border-border flex items-center gap-2">
                 <Input
                   className="flex-1"
                   placeholder={t("messages.type_message")}

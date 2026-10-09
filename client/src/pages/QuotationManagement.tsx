@@ -60,13 +60,13 @@ export default function QuotationManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-muted text-foreground';
       case 'sent': return 'bg-blue-100 text-blue-800';
       case 'accepted': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       case 'invoiced': return 'bg-purple-100 text-purple-800';
       case 'expired': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -86,8 +86,8 @@ export default function QuotationManagement() {
   return (
     <div className="p-3 md:p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quotation Management</h1>
-        <p className="text-gray-600 mt-1">Manage and review all quotations</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Quotation Management</h1>
+        <p className="text-muted-foreground mt-1">Manage and review all quotations</p>
       </div>
 
       {/* Statistics Overview */}
@@ -99,7 +99,7 @@ export default function QuotationManagement() {
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Quotations</p>
+                <p className="text-sm text-muted-foreground">Total Quotations</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
@@ -113,9 +113,9 @@ export default function QuotationManagement() {
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Accepted</p>
+                <p className="text-sm text-muted-foreground">Accepted</p>
                 <p className="text-2xl font-bold">{stats.accepted}</p>
-                <p className="text-xs text-gray-500">${stats.acceptedValue.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">${stats.acceptedValue.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -128,7 +128,7 @@ export default function QuotationManagement() {
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.sent}</p>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function QuotationManagement() {
                 <DollarSign className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Value</p>
+                <p className="text-sm text-muted-foreground">Total Value</p>
                 <p className="text-2xl font-bold">${stats.totalValue.toFixed(2)}</p>
               </div>
             </div>
@@ -158,30 +158,30 @@ export default function QuotationManagement() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
-              <div className="text-sm text-gray-500">Draft</div>
+              <div className="text-2xl font-bold text-muted-foreground">{stats.draft}</div>
+              <div className="text-sm text-muted-foreground">Draft</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.sent}</div>
-              <div className="text-sm text-gray-500">Sent</div>
+              <div className="text-sm text-muted-foreground">Sent</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
-              <div className="text-sm text-gray-500">Accepted</div>
+              <div className="text-sm text-muted-foreground">Accepted</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-              <div className="text-sm text-gray-500">Rejected</div>
+              <div className="text-sm text-muted-foreground">Rejected</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{stats.invoiced}</div>
-              <div className="text-sm text-gray-500">Invoiced</div>
+              <div className="text-sm text-muted-foreground">Invoiced</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold">
                 {stats.accepted > 0 ? ((stats.accepted / stats.total) * 100).toFixed(1) : 0}%
               </div>
-              <div className="text-sm text-gray-500">Success Rate</div>
+              <div className="text-sm text-muted-foreground">Success Rate</div>
             </div>
           </div>
         </CardContent>
@@ -258,8 +258,8 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No quotations found for this filter.</p>
+          <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+          <p className="text-muted-foreground">No quotations found for this filter.</p>
         </CardContent>
       </Card>
     );
@@ -287,7 +287,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
                 <TableCell>
                   <div>
                     <p className="font-medium">{quotation.quotationNumber}</p>
-                    <p className="text-sm text-gray-600">{quotation.title}</p>
+                    <p className="text-sm text-muted-foreground">{quotation.title}</p>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -313,7 +313,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
                   <div className="flex space-x-2">
                     <Link href={`/quotations/${quotation.id}`}>
                       <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4 mr-2" />
+                        <Eye className="w-4 h-4 me-2" />
                         View
                       </Button>
                     </Link>

@@ -11,6 +11,15 @@ interface Translations {
 const translations: Translations = {
   // Navigation
   'nav.dashboard': { en: 'Dashboard', ar: 'لوحة القيادة' },
+  'nav.group.sales': { en: 'Sales', ar: 'المبيعات' },
+  'nav.group.finance': { en: 'Finance', ar: 'المالية' },
+  'nav.group.work': { en: 'Work', ar: 'العمل' },
+  'nav.group.company': { en: 'Company', ar: 'الشركة' },
+  'nav.menu': { en: 'Menu', ar: 'القائمة' },
+  'nav.collapse': { en: 'Collapse sidebar', ar: 'طي الشريط الجانبي' },
+  'nav.expand': { en: 'Expand sidebar', ar: 'توسيع الشريط الجانبي' },
+  'nav.close_menu': { en: 'Close menu', ar: 'إغلاق القائمة' },
+  'nav.open_menu': { en: 'Open menu', ar: 'فتح القائمة' },
   'nav.clients': { en: 'Clients', ar: 'العملاء' },
   'nav.quotations': { en: 'Quotations', ar: 'عروض الأسعار' },
   'nav.invoices': { en: 'Invoices', ar: 'الفواتير' },

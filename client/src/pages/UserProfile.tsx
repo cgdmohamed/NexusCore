@@ -298,7 +298,7 @@ export default function UserProfile() {
         <Header title="User Not Found" subtitle="The requested user profile could not be found" />
         <div className="p-6">
           <Button onClick={() => setLocation("/team-roles")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 me-2" />
             Back to Team & Roles
           </Button>
         </div>
@@ -316,7 +316,7 @@ export default function UserProfile() {
       <div className="p-3 md:p-6 space-y-6">
         {/* Back Navigation */}
         <Button variant="outline" onClick={() => setLocation("/team-roles")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4 me-2" />
           Back to Team & Roles
         </Button>
 
@@ -355,11 +355,11 @@ export default function UserProfile() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={handleEditProfile}>
-                      <Edit3 className="h-4 w-4 mr-2" />
+                      <Edit3 className="h-4 w-4 me-2" />
                       Edit Profile
                     </Button>
                     <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
-                      <Key className="h-4 w-4 mr-2" />
+                      <Key className="h-4 w-4 me-2" />
                       Change Password
                     </Button>
                   </div>
@@ -372,7 +372,7 @@ export default function UserProfile() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <User className="h-5 w-5 mr-2" />
+                    <User className="h-5 w-5 me-2" />
                     Personal Information
                   </CardTitle>
                 </CardHeader>
@@ -396,7 +396,7 @@ export default function UserProfile() {
                     <div>
                       <p className="text-sm font-medium">Last Login</p>
                       <p className="text-sm text-muted-foreground">
-                        {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
+                        {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('en-GB') : "Never"}
                       </p>
                     </div>
                   </div>
@@ -406,7 +406,7 @@ export default function UserProfile() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Briefcase className="h-5 w-5 mr-2" />
+                    <Briefcase className="h-5 w-5 me-2" />
                     Work Information
                   </CardTitle>
                 </CardHeader>
@@ -483,7 +483,7 @@ export default function UserProfile() {
                                 checked={getGroupEnabled(group)}
                                 onCheckedChange={(val) => handleToggleGroup(group, val)}
                                 disabled={updateNotifPrefsMutation.isPending}
-                                className="ml-4 shrink-0"
+                                className="ms-4 shrink-0"
                               />
                             </div>
                           );
@@ -512,7 +512,7 @@ export default function UserProfile() {
                                 checked={getGroupEnabled(group)}
                                 onCheckedChange={(val) => handleToggleGroup(group, val)}
                                 disabled={updateNotifPrefsMutation.isPending}
-                                className="ml-4 shrink-0"
+                                className="ms-4 shrink-0"
                               />
                             </div>
                           );
@@ -635,7 +635,7 @@ export default function UserProfile() {
                   onClick={handleSaveProfile}
                   disabled={updateProfileMutation.isPending}
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4 me-2" />
                   {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
@@ -685,7 +685,7 @@ export default function UserProfile() {
                   onClick={handleChangePassword}
                   disabled={changePasswordMutation.isPending}
                 >
-                  <Key className="h-4 w-4 mr-2" />
+                  <Key className="h-4 w-4 me-2" />
                   {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
                 </Button>
               </div>

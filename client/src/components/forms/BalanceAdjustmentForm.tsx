@@ -86,19 +86,19 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
 
   return (
     <div className="space-y-6">
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="font-medium text-gray-900 mb-2">{paymentSource.name}</h3>
+      <div className="bg-muted/50 p-4 rounded-lg">
+        <h3 className="font-medium text-foreground mb-2">{paymentSource.name}</h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-600">Current Balance:</span>
-            <span className="font-mono font-semibold ml-2">
+            <span className="text-muted-foreground">Current Balance:</span>
+            <span className="font-mono font-semibold ms-2">
               {formatCurrency(currentBalance)}
             </span>
           </div>
           {watchedAmount && (
             <div>
-              <span className="text-gray-600">New Balance:</span>
-              <span className={`font-mono font-semibold ml-2 ${newBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              <span className="text-muted-foreground">New Balance:</span>
+              <span className={`font-mono font-semibold ms-2 ${newBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {formatCurrency(newBalance)}
               </span>
             </div>
@@ -138,7 +138,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
           {form.formState.errors.amount && (
             <p className="text-sm text-red-600">{form.formState.errors.amount.message}</p>
           )}
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             {watchedType === "income" 
               ? "Positive amount will be added to the balance"
               : "Amount will be deducted from the balance"

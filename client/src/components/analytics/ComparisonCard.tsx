@@ -41,7 +41,7 @@ export function ComparisonCard({
             <div className={cn(
               "flex items-center space-x-1 text-xs px-2 py-1 rounded-full",
               isPositive ? "bg-green-100 text-green-700" :
-              isNeutral ? "bg-gray-100 text-gray-600" :
+              isNeutral ? "bg-muted text-muted-foreground" :
               "bg-red-100 text-red-700"
             )}>
               {isNeutral ? (

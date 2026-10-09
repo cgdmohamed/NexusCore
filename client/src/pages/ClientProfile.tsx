@@ -52,7 +52,7 @@ const CREDENTIAL_TYPE_LABELS: Record<CredentialType, string> = {
 const CREDENTIAL_TYPE_COLORS: Record<CredentialType, string> = {
   social: "bg-pink-100 text-pink-800",
   website: "bg-blue-100 text-blue-800",
-  server: "bg-gray-100 text-gray-800",
+  server: "bg-muted text-foreground",
   email: "bg-yellow-100 text-yellow-800",
   other: "bg-purple-100 text-purple-800",
 };
@@ -153,7 +153,7 @@ function CredentialDialogForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Password{isEditing && <span className="text-xs text-gray-400 ml-1">(leave blank to keep existing)</span>}
+                Password{isEditing && <span className="text-xs text-muted-foreground/70 ms-1">(leave blank to keep existing)</span>}
               </FormLabel>
               <FormControl>
                 <Input type="password" placeholder="password" {...field} data-testid="input-credential-password" />
@@ -288,11 +288,11 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Credential Vault</h3>
-          <p className="text-sm text-gray-500">Stored access credentials for this client. Passwords are encrypted at rest.</p>
+          <p className="text-sm text-muted-foreground">Stored access credentials for this client. Passwords are encrypted at rest.</p>
         </div>
         {canManage && (
           <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-credential">
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 me-2" />
             Add Credential
           </Button>
         )}
@@ -336,7 +336,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
       {isLoading ? (
         <div className="text-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
       ) : credentials.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <KeyRound className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No credentials stored</p>
           {canManage && <p className="text-sm mt-1">Add client logins, API keys, and access details.</p>}
@@ -351,7 +351,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-gray-50 rounded-lg shrink-0 mt-0.5">
+                      <div className="p-2 bg-muted/50 rounded-lg shrink-0 mt-0.5">
                         <CredentialTypeIcon type={cred.type} />
                       </div>
                       <div className="min-w-0 flex-1 space-y-2">
@@ -364,7 +364,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
 
                         {cred.username && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 w-20 shrink-0">Username</span>
+                            <span className="text-xs text-muted-foreground w-20 shrink-0">Username</span>
                             <span className="text-sm font-mono">{cred.username}</span>
                             <Button variant="ghost" size="sm" className="h-6 px-1" onClick={() => copyToClipboard(cred.username!, "Username")} data-testid={`button-copy-username-${cred.id}`}>
                               <Copy className="w-3 h-3" />
@@ -374,7 +374,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
 
                         {cred.hasPassword && canManage && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 w-20 shrink-0">Password</span>
+                            <span className="text-xs text-muted-foreground w-20 shrink-0">Password</span>
                             <span className="text-sm font-mono">{revealed !== undefined ? revealed : "••••••••"}</span>
                             <Button variant="ghost" size="sm" className="h-6 px-1" onClick={() => revealPassword(cred.id)} disabled={loading} data-testid={`button-reveal-password-${cred.id}`}>
                               {loading ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" /> : revealed !== undefined ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -389,7 +389,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
 
                         {cred.url && (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 w-20 shrink-0">URL / Host</span>
+                            <span className="text-xs text-muted-foreground w-20 shrink-0">URL / Host</span>
                             <a href={cred.url.startsWith("http") ? cred.url : `https://${cred.url}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-xs flex items-center gap-1" data-testid={`link-credential-url-${cred.id}`}>
                               {cred.url}
                               <ExternalLink className="w-3 h-3 shrink-0" />
@@ -399,12 +399,12 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
 
                         {cred.notes && (
                           <div className="flex items-start gap-2">
-                            <span className="text-xs text-gray-500 w-20 shrink-0 mt-0.5">Notes</span>
-                            <span className="text-sm text-gray-600">{cred.notes}</span>
+                            <span className="text-xs text-muted-foreground w-20 shrink-0 mt-0.5">Notes</span>
+                            <span className="text-sm text-muted-foreground">{cred.notes}</span>
                           </div>
                         )}
 
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-foreground/70">
                           Last updated {cred.updatedAt ? formatDistanceToNow(new Date(cred.updatedAt), { addSuffix: true }) : "unknown"}
                         </p>
                       </div>
@@ -561,8 +561,8 @@ export default function ClientProfile() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Client Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested client could not be found.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Client Not Found</h2>
+          <p className="text-muted-foreground mb-4">The requested client could not be found.</p>
           <Link href="/clients">
             <Button>Back to Clients</Button>
           </Link>
@@ -577,7 +577,7 @@ export default function ClientProfile() {
       case 'inactive': return 'bg-red-100 text-red-800';
       case 'prospect': return 'bg-blue-100 text-blue-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -596,7 +596,7 @@ export default function ClientProfile() {
       case 'credit_refunded': return <TrendingUp className="w-4 h-4 text-green-600" />;
       case 'credit_used':
       case 'credit_applied': return <TrendingDown className="w-4 h-4 text-red-600" />;
-      default: return <Minus className="w-4 h-4 text-gray-400" />;
+      default: return <Minus className="w-4 h-4 text-muted-foreground/70" />;
     }
   };
 
@@ -606,7 +606,7 @@ export default function ClientProfile() {
       case 'credit_refunded': return 'text-green-700';
       case 'credit_used':
       case 'credit_applied': return 'text-red-700';
-      default: return 'text-gray-700';
+      default: return 'text-foreground';
     }
   };
 
@@ -615,8 +615,8 @@ export default function ClientProfile() {
       case 'active': return 'bg-green-100 text-green-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
       case 'on_hold': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'archived': return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -642,7 +642,7 @@ export default function ClientProfile() {
           }}>
             <DialogTrigger asChild>
               <Button>
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-4 h-4 me-2" />
                 Edit Client
               </Button>
             </DialogTrigger>
@@ -711,7 +711,7 @@ export default function ClientProfile() {
                   step="0.01"
                   defaultValue={client.totalValue || "0"} 
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Current value based on paid invoices. You can edit this manually.
                 </p>
               </div>
@@ -738,7 +738,7 @@ export default function ClientProfile() {
                 <Mail className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Status</p>
+                <p className="text-sm text-muted-foreground">Status</p>
                 <Badge className={getStatusColor(client.status)}>
                   {client.status}
                 </Badge>
@@ -755,8 +755,8 @@ export default function ClientProfile() {
                   <DollarSign className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Value</p>
-                  <p className="text-lg font-bold">EGP {parseFloat(client.totalValue || '0').toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">Total Value</p>
+                  <p className="text-lg font-bold">EGP {parseFloat(client.totalValue || '0').toLocaleString('en-US')}</p>
                 </div>
               </div>
               <Button 
@@ -776,13 +776,13 @@ export default function ClientProfile() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center space-x-3">
-              <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-emerald-100' : 'bg-gray-100'}`}>
-                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-emerald-600' : 'text-gray-400'}`} />
+              <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-emerald-100' : 'bg-muted'}`}>
+                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-emerald-600' : 'text-muted-foreground/70'}`} />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Credit Balance</p>
-                <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
-                  EGP {creditBalance.toLocaleString()}
+                <p className="text-sm text-muted-foreground">Credit Balance</p>
+                <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-foreground'}`}>
+                  EGP {creditBalance.toLocaleString('en-US')}
                 </p>
               </div>
             </div>
@@ -796,7 +796,7 @@ export default function ClientProfile() {
                 <FileText className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Quotations</p>
+                <p className="text-sm text-muted-foreground">Quotations</p>
                 <p className="text-xl font-bold">{quotations.length}</p>
               </div>
             </div>
@@ -810,7 +810,7 @@ export default function ClientProfile() {
                 <Calendar className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Invoices</p>
+                <p className="text-sm text-muted-foreground">Invoices</p>
                 <p className="text-xl font-bold">{invoices.length}</p>
               </div>
             </div>
@@ -842,29 +842,29 @@ export default function ClientProfile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Name</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Name</Label>
                     <p className="text-lg">{client.name}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Email</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                     <p className="text-lg">{client.email || "Not provided"}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
                     <p className="text-lg">{client.phone || "Not provided"}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">City</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
                     <p className="text-lg">{client.city || "Not provided"}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Country</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
                     <p className="text-lg">{client.country || "Not provided"}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-600">Created</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Created</Label>
                     <p className="text-lg">
                       {client.createdAt ? formatDistanceToNow(new Date(client.createdAt), { addSuffix: true }) : "Unknown"}
                     </p>
@@ -882,7 +882,7 @@ export default function ClientProfile() {
             </CardHeader>
             <CardContent>
               {quotations.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No quotations found for this client.</p>
+                <p className="text-muted-foreground text-center py-8">No quotations found for this client.</p>
               ) : (
                 <div className="overflow-x-auto">
                 <Table className="min-w-[520px]">
@@ -901,7 +901,7 @@ export default function ClientProfile() {
                       <TableRow key={quotation.id}>
                         <TableCell className="font-medium">{quotation.quotationNumber}</TableCell>
                         <TableCell>{quotation.title}</TableCell>
-                        <TableCell>EGP {parseFloat(quotation.amount || '0').toLocaleString()}</TableCell>
+                        <TableCell>EGP {parseFloat(quotation.amount || '0').toLocaleString('en-US')}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(quotation.status)}>
                             {quotation.status}
@@ -932,7 +932,7 @@ export default function ClientProfile() {
             </CardHeader>
             <CardContent>
               {invoices.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No invoices found for this client.</p>
+                <p className="text-muted-foreground text-center py-8">No invoices found for this client.</p>
               ) : (
                 <div className="overflow-x-auto">
                 <Table className="min-w-[480px]">
@@ -950,7 +950,7 @@ export default function ClientProfile() {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                        <TableCell>EGP {parseFloat(invoice.amount || '0').toLocaleString()}</TableCell>
+                        <TableCell>EGP {parseFloat(invoice.amount || '0').toLocaleString('en-US')}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(invoice.status)}>
                             {invoice.status}
@@ -982,17 +982,17 @@ export default function ClientProfile() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Credit History</CardTitle>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Current Balance</p>
-                  <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-gray-700'}`}>
-                    EGP {creditBalance.toLocaleString()}
+                <div className="text-end">
+                  <p className="text-sm text-muted-foreground">Current Balance</p>
+                  <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-foreground'}`}>
+                    EGP {creditBalance.toLocaleString('en-US')}
                   </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               {creditHistory.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
+                <div className="text-center py-10 text-muted-foreground">
                   <Wallet className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p>No credit transactions found for this client.</p>
                 </div>
@@ -1021,10 +1021,10 @@ export default function ClientProfile() {
                         <TableCell className="text-sm max-w-xs truncate">{entry.description}</TableCell>
                         <TableCell className={`font-medium ${getCreditTypeColor(entry.type)}`}>
                           {entry.type === 'credit_used' || entry.type === 'credit_applied' ? '-' : '+'}
-                          EGP {parseFloat(entry.amount).toLocaleString()}
+                          EGP {parseFloat(entry.amount).toLocaleString('en-US')}
                         </TableCell>
                         <TableCell className="text-sm">
-                          EGP {parseFloat(entry.newBalance).toLocaleString()}
+                          EGP {parseFloat(entry.newBalance).toLocaleString('en-US')}
                         </TableCell>
                         <TableCell className="text-sm">
                           {entry.relatedInvoiceId ? (
@@ -1033,10 +1033,10 @@ export default function ClientProfile() {
                               #{entry.relatedInvoiceId.slice(0, 8)}
                             </Link>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-foreground/70">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">
+                        <TableCell className="text-sm text-muted-foreground">
                           {entry.createdAt ? format(new Date(entry.createdAt), 'MMM dd, yyyy') : '—'}
                         </TableCell>
                       </TableRow>
@@ -1056,14 +1056,14 @@ export default function ClientProfile() {
             </CardHeader>
             <CardContent>
               {clientProjects.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
+                <div className="text-center py-10 text-muted-foreground">
                   <FolderKanban className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p>No projects linked to this client.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {clientProjects.map((project: any) => (
-                    <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/60 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className="w-3 h-3 rounded-full shrink-0"
@@ -1072,9 +1072,9 @@ export default function ClientProfile() {
                         <div className="min-w-0">
                           <p className="font-medium truncate">{project.name}</p>
                           {project.description && (
-                            <p className="text-sm text-gray-500 truncate">{project.description}</p>
+                            <p className="text-sm text-muted-foreground truncate">{project.description}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/70">
                             {project.taskCounts && (
                               <span>{project.taskCounts.total} tasks</span>
                             )}
@@ -1161,19 +1161,19 @@ export default function ClientProfile() {
               </CardHeader>
               <CardContent>
                 {notes.length === 0 ? (
-                  <p className="text-gray-600 text-center py-8">No notes or activities found for this client.</p>
+                  <p className="text-muted-foreground text-center py-8">No notes or activities found for this client.</p>
                 ) : (
                   <div className="space-y-4">
                     {notes.map((note) => (
-                      <div key={note.id} className="border-l-4 border-blue-200 pl-4 py-2">
+                      <div key={note.id} className="border-s-4 border-blue-200 ps-4 py-2">
                         <div className="flex items-center space-x-2 mb-2">
                           {getNoteTypeIcon(note.type)}
                           <span className="font-medium capitalize">{note.type}</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {note.createdAt ? formatDistanceToNow(new Date(note.createdAt), { addSuffix: true }) : "Unknown"}
                           </span>
                         </div>
-                        <p className="text-gray-700">{note.note}</p>
+                        <p className="text-foreground">{note.note}</p>
                       </div>
                     ))}
                   </div>

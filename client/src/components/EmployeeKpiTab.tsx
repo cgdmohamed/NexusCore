@@ -91,7 +91,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
       case "exceeded": return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
       case "on_track": return <Target className="h-3.5 w-3.5 text-blue-600" />;
       case "below_target": return <AlertCircle className="h-3.5 w-3.5 text-orange-500" />;
-      case "not_evaluated": return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+      case "not_evaluated": return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
       default: return <XCircle className="h-3.5 w-3.5 text-red-500" />;
     }
   };
@@ -101,7 +101,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
       case "exceeded": return "bg-green-100 text-green-800";
       case "on_track": return "bg-blue-100 text-blue-800";
       case "below_target": return "bg-orange-100 text-orange-800";
-      case "not_evaluated": return "bg-gray-100 text-gray-600";
+      case "not_evaluated": return "bg-muted text-muted-foreground";
       default: return "bg-red-100 text-red-800";
     }
   };
@@ -169,7 +169,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
     { label: "Exceeded", value: stats?.exceeded, icon: CheckCircle2, accent: "border-t-green-500", iconColor: "text-green-500" },
     { label: "On Track", value: stats?.onTrack, icon: Target, accent: "border-t-blue-400", iconColor: "text-blue-400" },
     { label: "Below Target", value: stats?.belowTarget, icon: AlertCircle, accent: "border-t-orange-500", iconColor: "text-orange-500" },
-    { label: "Not Evaluated", value: stats?.notEvaluated, icon: Clock, accent: "border-t-gray-400", iconColor: "text-gray-400" },
+    { label: "Not Evaluated", value: stats?.notEvaluated, icon: Clock, accent: "border-t-gray-400", iconColor: "text-muted-foreground/70" },
   ];
 
   return (
@@ -182,7 +182,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
             <Card key={label} className={`border-t-2 ${accent}`}>
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-gray-500 leading-tight">{label}</p>
+                  <p className="text-xs text-muted-foreground leading-tight">{label}</p>
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${iconColor}`} />
                 </div>
                 <p className="text-2xl font-bold text-text">{value ?? 0}</p>
@@ -193,16 +193,16 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
       )}
 
       {/* Filter + Actions Bar */}
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
         <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full md:w-auto">
           {/* Search */}
           <div className="relative flex-1 min-w-0 sm:max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
             <Input
               placeholder="Search KPIs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-9"
+              className="ps-8 h-9"
             />
           </div>
 
@@ -237,11 +237,11 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
         {/* Actions */}
         <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={exportKpis} disabled={filteredKpis.length === 0}>
-            <FileText className="h-3.5 w-3.5 mr-1.5" />
+            <FileText className="h-3.5 w-3.5 me-1.5" />
             Export CSV
           </Button>
           <Button size="sm" onClick={() => { setEditingKpi(null); setShowKpiForm(true); }}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            <Plus className="h-3.5 w-3.5 me-1.5" />
             Add KPI
           </Button>
         </div>
@@ -251,16 +251,16 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
       {filteredKpis.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <TrendingUp className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            <TrendingUp className="h-10 w-10 text-muted-foreground/70 mx-auto mb-3" />
             <h3 className="text-base font-medium mb-1">No KPIs Found</h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               {searchTerm || periodFilter !== "all" || statusFilter !== "all"
                 ? "No KPIs match your current filters."
                 : "Start tracking performance by creating your first KPI."}
             </p>
             {!searchTerm && periodFilter === "all" && statusFilter === "all" && (
               <Button size="sm" onClick={() => setShowKpiForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 Create First KPI
               </Button>
             )}
@@ -275,11 +275,11 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
             return (
               <Card key={kpi.id} className="hover:shadow-md transition-shadow flex flex-col">
                 {/* Card Header */}
-                <div className="p-4 pb-3 border-b border-gray-100">
+                <div className="p-4 pb-3 border-b border-border">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-text text-sm leading-snug truncate">{kpi.title}</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">{kpi.evaluationPeriod}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">{kpi.evaluationPeriod}</p>
                     </div>
                     <Badge className={`${getStatusColor(kpi.status)} text-xs flex items-center gap-1 shrink-0`}>
                       {getStatusIcon(kpi.status)}
@@ -291,49 +291,49 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                 {/* Card Body */}
                 <div className="p-4 pt-3 flex-1 space-y-3">
                   {kpi.description && (
-                    <p className="text-xs text-gray-600 line-clamp-2">{kpi.description}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{kpi.description}</p>
                   )}
 
                   {hasValues ? (
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Progress</span>
                         <span className="font-medium text-text">{Math.round(progress)}%</span>
                       </div>
                       <Progress value={progress} className="h-1.5" />
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>Target: <span className="font-medium text-gray-600">{kpi.targetValue}</span></span>
-                        <span>Actual: <span className="font-medium text-gray-600">{kpi.actualValue}</span></span>
+                      <div className="flex justify-between text-xs text-muted-foreground/70">
+                        <span>Target: <span className="font-medium text-muted-foreground">{kpi.targetValue}</span></span>
+                        <span>Actual: <span className="font-medium text-muted-foreground">{kpi.actualValue}</span></span>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-400 italic">No values set for progress tracking</p>
+                    <p className="text-xs text-muted-foreground/70 italic">No values set for progress tracking</p>
                   )}
 
                   {kpi.notes && (
-                    <p className="text-xs text-gray-500 line-clamp-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2">
                       <span className="font-medium">Note: </span>{kpi.notes}
                     </p>
                   )}
                 </div>
 
                 {/* Card Footer */}
-                <div className="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
+                <div className="px-4 py-2.5 border-t border-border flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground/70">
                     {format(new Date(kpi.createdAt ?? new Date()), 'MMM d, yyyy')}
                   </span>
                   <div className="flex gap-0.5">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-gray-400 hover:text-gray-700"
+                      className="h-7 w-7 p-0 text-muted-foreground/70 hover:text-foreground"
                       onClick={() => handleEditKpi(kpi)}
                     >
                       <Edit className="h-3.5 w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-red-500">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground/70 hover:text-red-500">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </AlertDialogTrigger>

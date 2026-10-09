@@ -66,7 +66,7 @@ export default function ForgotPassword() {
                   </p>
                   <Link href="/auth">
                     <Button variant="outline" className="w-full" data-testid="link-back-to-login">
-                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      <ArrowLeft className="h-4 w-4 me-2" />
                       Back to Login
                     </Button>
                   </Link>
@@ -112,7 +112,7 @@ export default function ForgotPassword() {
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 me-2 animate-spin" />
                           Sending...
                         </>
                       ) : (
@@ -122,7 +122,7 @@ export default function ForgotPassword() {
 
                     <Link href="/auth">
                       <Button variant="ghost" className="w-full" data-testid="link-back-to-login">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        <ArrowLeft className="h-4 w-4 me-2" />
                         Back to Login
                       </Button>
                     </Link>

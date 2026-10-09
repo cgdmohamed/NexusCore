@@ -138,9 +138,9 @@ export default function Expenses() {
       case "overdue":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -149,8 +149,8 @@ export default function Expenses() {
       paid: "bg-green-100 text-green-800 border-green-200",
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
       overdue: "bg-red-100 text-red-800 border-red-200",
-      cancelled: "bg-gray-100 text-gray-800 border-gray-200",
-      draft: "bg-gray-100 text-gray-800 border-gray-200",
+      cancelled: "bg-muted text-foreground border-border",
+      draft: "bg-muted text-foreground border-border",
       submitted: "bg-blue-100 text-blue-800 border-blue-200",
       approved: "bg-green-100 text-green-800 border-green-200",
       rejected: "bg-red-100 text-red-800 border-red-200",
@@ -184,11 +184,11 @@ export default function Expenses() {
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-full"></div>
+                <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-full"></div>
               </CardContent>
             </Card>
           ))}
@@ -212,7 +212,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <Receipt className="h-4 w-4 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Expenses</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
                   <p className="text-2xl font-bold">{stats?.totalExpenses || 0}</p>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Paid</p>
+                  <p className="text-sm font-medium text-muted-foreground">Paid</p>
                   <p className="text-2xl font-bold">{stats?.paidExpenses || 0}</p>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-yellow-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
                   <p className="text-2xl font-bold">{stats?.pendingExpenses || 0}</p>
                 </div>
               </div>
@@ -248,7 +248,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Overdue</p>
+                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-bold">{stats?.overdueExpenses || 0}</p>
                 </div>
               </div>
@@ -260,7 +260,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Amount</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.totalAmount || 0)}</p>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export default function Expenses() {
               <div className="flex items-center space-x-2">
                 <TrendingDown className="h-4 w-4 text-orange-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.pendingAmount || 0)}</p>
                 </div>
               </div>
@@ -290,12 +290,12 @@ export default function Expenses() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   placeholder="Search expenses by title, description, or category..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
+                  className="ps-10 w-full"
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -356,7 +356,7 @@ export default function Expenses() {
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 me-2" />
                       Add Expense
                     </Button>
                   </DialogTrigger>
@@ -380,7 +380,7 @@ export default function Expenses() {
               <TableHeader>
                 <TableRow>
                 <TableHead 
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-muted/60"
                   onClick={() => {
                     if (sortBy === "title") {
                       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -396,7 +396,7 @@ export default function Expenses() {
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-muted/60"
                   onClick={() => {
                     if (sortBy === "amount") {
                       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -414,7 +414,7 @@ export default function Expenses() {
                 <TableHead>Category</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead 
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-muted/60"
                   onClick={() => {
                     if (sortBy === "status") {
                       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -427,7 +427,7 @@ export default function Expenses() {
                   Status
                 </TableHead>
                 <TableHead 
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-muted/60"
                   onClick={() => {
                     if (sortBy === "expenseDate") {
                       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -443,17 +443,17 @@ export default function Expenses() {
                   </div>
                 </TableHead>
                 <TableHead>Payment</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedExpenses.map((expense) => (
-                <TableRow key={expense.id} className="hover:bg-gray-50">
+                <TableRow key={expense.id} className="hover:bg-muted/60">
                   <TableCell>
                     <div>
-                      <div className="font-medium text-gray-900">{expense.title}</div>
+                      <div className="font-medium text-foreground">{expense.title}</div>
                       {expense.description && (
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-muted-foreground mt-1">
                           {expense.description.length > 60
                             ? `${expense.description.substring(0, 60)}...`
                             : expense.description
@@ -463,7 +463,7 @@ export default function Expenses() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-foreground">
                       {formatCurrency(expense.amount)}
                     </div>
                   </TableCell>
@@ -484,16 +484,16 @@ export default function Expenses() {
                     {getStatusBadge(expense.status)}
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-foreground">
                       {format(new Date(expense.expenseDate), "MMM dd, yyyy")}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(expense.expenseDate), { addSuffix: true })}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-gray-400" />
+                      <CreditCard className="h-4 w-4 text-muted-foreground/70" />
                       <span className="text-sm capitalize">
                         {expense.paymentMethod.replace("_", " ")}
                       </span>
@@ -505,7 +505,7 @@ export default function Expenses() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <div className="flex items-center justify-end gap-2">
                       <Link href={`/expenses/${expense.id}`}>
                         <Button variant="ghost" size="sm">
@@ -526,16 +526,16 @@ export default function Expenses() {
             
             {filteredExpenses.length === 0 && (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
-                <p className="text-gray-500 mb-4">
+                <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No expenses found</h3>
+                <p className="text-muted-foreground mb-4">
                   {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
                     ? "Try adjusting your search filters"
                     : "Get started by adding your first expense record"
                   }
                 </p>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Add First Expense
                 </Button>
               </div>
@@ -558,12 +558,12 @@ export default function Expenses() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
+                    <CardTitle className="text-lg font-semibold text-foreground mb-1">
                       {expense.title}
                     </CardTitle>
                     <div className="flex items-center gap-2 mb-2">
                       {getTypeIcon(expense.type)}
-                      <span className="text-sm text-gray-600 capitalize">{expense.type}</span>
+                      <span className="text-sm text-muted-foreground capitalize">{expense.type}</span>
                       {expense.isRecurring && (
                         <Badge variant="outline" className="text-xs">Recurring</Badge>
                       )}
@@ -575,7 +575,7 @@ export default function Expenses() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-foreground">
                       {formatCurrency(expense.amount)}
                     </span>
                     {expense.category && (
@@ -586,12 +586,12 @@ export default function Expenses() {
                   </div>
                   
                   {expense.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
                       {expense.description}
                     </p>
                   )}
                   
-                  <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       {format(new Date(expense.expenseDate), "MMM dd, yyyy")}
@@ -612,13 +612,13 @@ export default function Expenses() {
                   <div className="flex items-center gap-2 pt-2">
                     <Link href={`/expenses/${expense.id}`}>
                       <Button variant="outline" size="sm" className="flex-1">
-                        <Eye className="h-4 w-4 mr-1" />
+                        <Eye className="h-4 w-4 me-1" />
                         View
                       </Button>
                     </Link>
                     <Link href={`/expenses/${expense.id}/edit`}>
                       <Button variant="outline" size="sm" className="flex-1">
-                        <Edit className="h-4 w-4 mr-1" />
+                        <Edit className="h-4 w-4 me-1" />
                         Edit
                       </Button>
                     </Link>
@@ -642,9 +642,9 @@ export default function Expenses() {
           )}
           {filteredExpenses.length === 0 && (
             <div className="col-span-full text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
-              <p className="text-gray-500 mb-4">
+              <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No expenses found</h3>
+              <p className="text-muted-foreground mb-4">
                 {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
                   ? "Try adjusting your search filters"
                   : "Get started by adding your first expense record"
@@ -653,7 +653,7 @@ export default function Expenses() {
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 me-2" />
                     Add First Expense
                   </Button>
                 </DialogTrigger>

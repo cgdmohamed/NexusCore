@@ -32,7 +32,7 @@ export const formatDate = (date: any): string => {
     if (isNaN(dateObj.getTime())) {
       return "N/A";
     }
-    return dateObj.toLocaleDateString();
+    return dateObj.toLocaleDateString('en-GB');
   } catch {
     return "N/A";
   }

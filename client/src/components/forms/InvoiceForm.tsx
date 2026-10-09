@@ -93,7 +93,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
       <DialogTrigger asChild>
         {trigger || (
           <Button>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 me-2" />
             Create Invoice
           </Button>
         )}

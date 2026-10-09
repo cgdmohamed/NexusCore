@@ -185,9 +185,9 @@ export default function Settings() {
                 className="shrink-0 w-full sm:w-auto"
               >
                 {downloading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 me-2" />
                 )}
                 {downloading ? "Preparing..." : "Download Backup"}
               </Button>
@@ -235,7 +235,7 @@ export default function Settings() {
                   </div>
                   <Badge
                     variant={info?.smtp.configured ? "default" : "secondary"}
-                    className="ml-auto shrink-0"
+                    className="ms-auto shrink-0"
                   >
                     {info?.smtp.configured ? "Active" : "Inactive"}
                   </Badge>
@@ -270,7 +270,7 @@ export default function Settings() {
                 {statCards.map(({ label, value, icon: Icon, color }) => (
                   <div key={label} className="flex flex-col items-center justify-center p-3 bg-muted/40 rounded-lg text-center gap-1">
                     <Icon className={`h-5 w-5 ${color}`} />
-                    <p className="text-2xl font-bold leading-none">{value.toLocaleString()}</p>
+                    <p className="text-2xl font-bold leading-none">{value.toLocaleString('en-US')}</p>
                     <p className="text-xs text-muted-foreground">{label}</p>
                   </div>
                 ))}

@@ -76,7 +76,7 @@ const priorityColors = {
 
 // Status colors (outline badge style — matches Quotations/Invoices)
 const statusColors = {
-  pending: "bg-gray-100 text-gray-800 border-gray-200",
+  pending: "bg-muted text-foreground border-border",
   in_progress: "bg-blue-100 text-blue-800 border-blue-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-red-100 text-red-800 border-red-200",
@@ -373,14 +373,14 @@ export default function Tasks() {
               { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-yellow-600" },
               { label: "Pending",       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-orange-600" },
               { label: "High Priority", value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-red-600" },
-              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-gray-600" },
+              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-muted-foreground" },
             ].map(({ label, value, icon: Icon, iconColor }) => (
               <Card key={label}>
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">
                     <Icon className={`h-4 w-4 ${iconColor}`} />
                     <div>
-                      <p className="text-sm font-medium text-gray-600">{label}</p>
+                      <p className="text-sm font-medium text-muted-foreground">{label}</p>
                       <p className="text-2xl font-bold">{value}</p>
                     </div>
                   </div>
@@ -398,12 +398,12 @@ export default function Tasks() {
           <CardContent>
             <div className="flex flex-col gap-3 mb-4">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t('common.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="ps-9"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -457,13 +457,13 @@ export default function Tasks() {
                   className="shrink-0"
                   onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
                 >
-                  <RotateCcw className="h-4 w-4 mr-1.5" />
+                  <RotateCcw className="h-4 w-4 me-1.5" />
                   Clear
                 </Button>
               </div>
             </div>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
                 {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && " matching your filters"}
               </p>
@@ -473,7 +473,7 @@ export default function Tasks() {
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("cards")}
-                    className="rounded-r-none h-8 px-2.5"
+                    className="rounded-e-none h-8 px-2.5"
                   >
                     <Grid3X3 className="h-3.5 w-3.5" />
                   </Button>
@@ -481,14 +481,14 @@ export default function Tasks() {
                     variant={viewMode === "table" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("table")}
-                    className="rounded-l-none h-8 px-2.5"
+                    className="rounded-s-none h-8 px-2.5"
                   >
                     <List className="h-3.5 w-3.5" />
                   </Button>
                 </div>
                 <DataExportButton data={tasks} filename="tasks-export" type="csv" />
                 <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   {t('common.create')} Task
                 </Button>
               </div>
@@ -627,8 +627,8 @@ export default function Tasks() {
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-4">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
@@ -636,16 +636,16 @@ export default function Tasks() {
         ) : tasks.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-              <p className="text-gray-500 mb-4">
+              <Briefcase className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No tasks found</h3>
+              <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== "all" || priorityFilter !== "all"
                   ? "No tasks match your current filters."
                   : "Get started by creating your first task."}
               </p>
               {(!searchTerm && statusFilter === "all" && priorityFilter === "all") && (
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Create Task
                 </Button>
               )}
@@ -684,9 +684,9 @@ export default function Tasks() {
                             </Badge>
                           </div>
                           {task.description && (
-                            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{task.description}</p>
+                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
                           )}
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground/70">
                             {task.assignedTo && (
                               <div className="flex items-center gap-1">
                                 <User className="h-3.5 w-3.5" />
@@ -696,7 +696,7 @@ export default function Tasks() {
                             {task.dueDate && (
                               <div className="flex items-center gap-1">
                                 <CalendarIcon className="h-3.5 w-3.5" />
-                                <span>Due {new Date(task.dueDate).toLocaleDateString()}</span>
+                                <span>Due {new Date(task.dueDate).toLocaleDateString('en-GB')}</span>
                               </div>
                             )}
                           </div>
@@ -708,7 +708,7 @@ export default function Tasks() {
                             className="h-8 w-8 p-0 sm:w-auto sm:px-3"
                             onClick={() => viewTaskDetails(task)}
                           >
-                            <Eye className="h-3.5 w-3.5 sm:mr-1.5" />
+                            <Eye className="h-3.5 w-3.5 sm:me-1.5" />
                             <span className="hidden sm:inline text-xs">View</span>
                           </Button>
                           <DropdownMenu>
@@ -719,16 +719,16 @@ export default function Tasks() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEditDialog(task)}>
-                                <Edit className="h-4 w-4 mr-2" />Edit Task
+                                <Edit className="h-4 w-4 me-2" />Edit Task
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'in_progress')}>
-                                <Clock className="h-4 w-4 mr-2" />Mark In Progress
+                                <Clock className="h-4 w-4 me-2" />Mark In Progress
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'completed')}>
-                                <CheckCircle2 className="h-4 w-4 mr-2" />Mark Complete
+                                <CheckCircle2 className="h-4 w-4 me-2" />Mark Complete
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'cancelled')}>
-                                <AlertCircle className="h-4 w-4 mr-2" />Cancel Task
+                                <AlertCircle className="h-4 w-4 me-2" />Cancel Task
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -758,12 +758,12 @@ export default function Tasks() {
                       <TableHead>Priority</TableHead>
                       <TableHead>Assigned To</TableHead>
                       <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-end">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedTasks.map((task: any) => (
-                      <TableRow key={task.id} className="hover:bg-gray-50">
+                      <TableRow key={task.id} className="hover:bg-muted/60">
                         <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
                           <Badge
@@ -783,9 +783,9 @@ export default function Tasks() {
                         </TableCell>
                         <TableCell>{task.assigneeName || task.assignedTo || "-"}</TableCell>
                         <TableCell>
-                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
+                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB') : "-"}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">
                           <div className="flex items-center justify-end space-x-2">
                             <Button
                               variant="outline"
@@ -802,19 +802,19 @@ export default function Tasks() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => openEditDialog(task)}>
-                                  <Edit className="h-4 w-4 mr-2" />
+                                  <Edit className="h-4 w-4 me-2" />
                                   Edit Task
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'in_progress')}>
-                                  <Clock className="h-4 w-4 mr-2" />
+                                  <Clock className="h-4 w-4 me-2" />
                                   Mark In Progress
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'completed')}>
-                                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                                  <CheckCircle2 className="h-4 w-4 me-2" />
                                   Mark Complete
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'cancelled')}>
-                                  <AlertCircle className="h-4 w-4 mr-2" />
+                                  <AlertCircle className="h-4 w-4 me-2" />
                                   Cancel Task
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -919,7 +919,7 @@ export default function Tasks() {
                 {fullTaskDetail?.dependencies && fullTaskDetail.dependencies.length > 0 ? (
                   <div className="space-y-2 mb-3">
                     {fullTaskDetail.dependencies.map((dep: any) => (
-                      <div key={dep.dependsOnTaskId || dep.id} className="flex items-center justify-between p-2 rounded border bg-gray-50">
+                      <div key={dep.dependsOnTaskId || dep.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
                         <div className="flex items-center gap-2 min-w-0">
                           <Badge className={cn("text-xs", statusColors[(dep.dependentTask?.status || 'pending') as keyof typeof statusColors])}>
                             {(dep.dependentTask?.status || 'pending').replace('_', ' ')}
@@ -1120,7 +1120,7 @@ export default function Tasks() {
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full pl-3 text-left font-normal",
+                              "w-full ps-3 text-start font-normal",
                               !field.value && "text-muted-foreground"
                             )}
                           >
@@ -1129,7 +1129,7 @@ export default function Tasks() {
                             ) : (
                               <span>Pick a date</span>
                             )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            <CalendarIcon className="ms-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>

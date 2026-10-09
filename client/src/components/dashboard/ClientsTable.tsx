@@ -27,7 +27,7 @@ export function ClientsTable() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="border-b border-gray-200">
+        <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <div className="flex space-x-2">
@@ -60,7 +60,7 @@ export function ClientsTable() {
 
   return (
     <Card>
-      <CardHeader className="border-b border-gray-200">
+      <CardHeader className="border-b border-border">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-text">Recent Clients</h3>
           <div className="flex items-center space-x-2">
@@ -80,7 +80,7 @@ export function ClientsTable() {
           </div>
         ) : (
           <Table>
-            <TableHeader className="bg-gray-50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="px-6 py-3 text-xs font-medium text-neutral uppercase tracking-wider">
                   Client
@@ -107,7 +107,7 @@ export function ClientsTable() {
                       variant={client.status === 'active' ? 'default' : 'secondary'}
                       className={
                         client.status === 'active' 
-                          ? 'bg-green-100 text-secondary hover:bg-green-100' 
+                          ? 'bg-success-soft text-success hover:bg-success-soft' 
                           : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
                       }
                     >

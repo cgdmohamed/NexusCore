@@ -673,7 +673,7 @@ export default function InvoiceDetail() {
         <Header title="Loading..." subtitle="Please wait" />
         <div className="p-6 text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading invoice details...</p>
+          <p className="text-muted-foreground">Loading invoice details...</p>
         </div>
       </div>
     );
@@ -684,11 +684,11 @@ export default function InvoiceDetail() {
       <div className="space-y-6">
         <Header title="Invoice Not Found" subtitle="The requested invoice could not be found" />
         <div className="p-6 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Invoice not found</p>
+          <FileText className="w-16 h-16 text-muted-foreground/70 mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">Invoice not found</p>
           <Link href="/invoices">
             <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 me-2" />
               Back to Invoices
             </Button>
           </Link>
@@ -711,12 +711,12 @@ export default function InvoiceDetail() {
       case 'paid': return 'bg-green-100 text-green-800 border-green-200';
       case 'partially_paid': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'sent': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'draft': return 'bg-muted text-foreground border-border';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelled': return 'bg-gray-100 text-gray-600 border-gray-200';
+      case 'cancelled': return 'bg-muted text-muted-foreground border-border';
       case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -770,7 +770,7 @@ export default function InvoiceDetail() {
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) {
       return <Image className="w-5 h-5 text-blue-500" />;
     }
-    return <File className="w-5 h-5 text-gray-500" />;
+    return <File className="w-5 h-5 text-muted-foreground" />;
   };
 
   const getFileName = (filePath: string) => {
@@ -851,7 +851,7 @@ export default function InvoiceDetail() {
         <div className="flex flex-wrap gap-2">
           <Link href="/invoices">
             <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 me-2" />
               Back to Invoices
             </Button>
           </Link>
@@ -860,11 +860,11 @@ export default function InvoiceDetail() {
             onClick={() => setIsPrintDialogOpen(true)}
             data-testid="button-print-invoice"
           >
-            <Printer className="w-4 h-4 mr-2" />
+            <Printer className="w-4 h-4 me-2" />
             Download / Print
           </Button>
           <Button>
-            <Send className="w-4 h-4 mr-2" />
+            <Send className="w-4 h-4 me-2" />
             Send Invoice
           </Button>
           
@@ -875,7 +875,7 @@ export default function InvoiceDetail() {
             disabled={recalculateMutation.isPending}
             data-testid="button-recalculate-invoice"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 me-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
             {recalculateMutation.isPending ? "Recalculating..." : "Recalculate"}
           </Button>
           
@@ -884,7 +884,7 @@ export default function InvoiceDetail() {
             <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50" data-testid="button-cancel-invoice">
-                  <Ban className="w-4 h-4 mr-2" />
+                  <Ban className="w-4 h-4 me-2" />
                   Cancel Invoice
                 </Button>
               </AlertDialogTrigger>
@@ -929,17 +929,17 @@ export default function InvoiceDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <FileText className="w-5 h-5 mr-2" />
+                <FileText className="w-5 h-5 me-2" />
                 Invoice Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm text-gray-600">Invoice Number</Label>
+                <Label className="text-sm text-muted-foreground">Invoice Number</Label>
                 <p className="font-semibold">{invoice.invoiceNumber}</p>
               </div>
               <div>
-                <Label className="text-sm text-gray-600">Status</Label>
+                <Label className="text-sm text-muted-foreground">Status</Label>
                 <Badge variant="outline" className={getStatusColor(invoice.status)}>
                   <div className="flex items-center space-x-1">
                     {getStatusIcon(invoice.status)}
@@ -948,12 +948,12 @@ export default function InvoiceDetail() {
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm text-gray-600">Title</Label>
+                <Label className="text-sm text-muted-foreground">Title</Label>
                 <p>{invoice.title || 'No title'}</p>
               </div>
               {invoice.description && (
                 <div>
-                  <Label className="text-sm text-gray-600">Description</Label>
+                  <Label className="text-sm text-muted-foreground">Description</Label>
                   <p>{invoice.description}</p>
                 </div>
               )}
@@ -963,36 +963,36 @@ export default function InvoiceDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <User className="w-5 h-5 mr-2" />
+                <User className="w-5 h-5 me-2" />
                 Client Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm text-gray-600">Client Name</Label>
+                <Label className="text-sm text-muted-foreground">Client Name</Label>
                 <p className="font-semibold">{client?.name || 'Unknown Client'}</p>
               </div>
               {client?.email && (
                 <div>
-                  <Label className="text-sm text-gray-600">Email</Label>
+                  <Label className="text-sm text-muted-foreground">Email</Label>
                   <p>{client.email}</p>
                 </div>
               )}
               {client?.phone && (
                 <div>
-                  <Label className="text-sm text-gray-600">Phone</Label>
+                  <Label className="text-sm text-muted-foreground">Phone</Label>
                   <p>{client.phone}</p>
                 </div>
               )}
               {client?.address && (
                 <div>
-                  <Label className="text-sm text-gray-600">Address</Label>
+                  <Label className="text-sm text-muted-foreground">Address</Label>
                   <p>{client.address}</p>
                 </div>
               )}
               {clientCredit && parseFloat((clientCredit as any)?.currentBalance || "0") > 0 ? (
                 <div>
-                  <Label className="text-sm text-gray-600">Available Credit</Label>
+                  <Label className="text-sm text-muted-foreground">Available Credit</Label>
                   <p className="font-semibold text-green-600">
                     {formatCurrency((clientCredit as any).currentBalance)}
                   </p>
@@ -1012,29 +1012,29 @@ export default function InvoiceDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
+                <Calendar className="w-5 h-5 me-2" />
                 Dates & Timeline
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm text-gray-600">Invoice Date</Label>
+                <Label className="text-sm text-muted-foreground">Invoice Date</Label>
                 <p>{invoice.invoiceDate ? format(new Date(invoice.invoiceDate), 'MMM dd, yyyy') : 'Not set'}</p>
               </div>
               <div>
-                <Label className="text-sm text-gray-600">Due Date</Label>
+                <Label className="text-sm text-muted-foreground">Due Date</Label>
                 <p className={isOverdue ? 'text-red-600 font-medium' : ''}>
                   {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'Not set'}
                   {isOverdue && ' (Overdue)'}
                 </p>
               </div>
               <div>
-                <Label className="text-sm text-gray-600">Created</Label>
+                <Label className="text-sm text-muted-foreground">Created</Label>
                 <p>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'Unknown'}</p>
               </div>
               {invoice.paidDate && (
                 <div>
-                  <Label className="text-sm text-gray-600">Paid Date</Label>
+                  <Label className="text-sm text-muted-foreground">Paid Date</Label>
                   <p>{format(new Date(invoice.paidDate), 'MMM dd, yyyy')}</p>
                 </div>
               )}
@@ -1046,13 +1046,13 @@ export default function InvoiceDetail() {
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
             <CardTitle className="text-lg flex items-center text-blue-900">
-              <DollarSign className="w-5 h-5 mr-2" />
+              <DollarSign className="w-5 h-5 me-2" />
               Financial Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
             {/* Prominent Invoice Total */}
-            <div className="bg-white p-6 rounded-lg border-2 border-blue-300 shadow-sm mb-6">
+            <div className="bg-card p-6 rounded-lg border-2 border-blue-300 shadow-sm mb-6">
               <div className="text-center">
                 <Label className="text-sm text-blue-700 font-medium">INVOICE TOTAL</Label>
                 <p className="text-5xl font-bold text-blue-900 mt-2">{formatCurrency(totalAmount)}</p>
@@ -1060,16 +1060,16 @@ export default function InvoiceDetail() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-lg border">
-                <Label className="text-sm text-gray-600">Subtotal</Label>
+              <div className="bg-card p-4 rounded-lg border">
+                <Label className="text-sm text-muted-foreground">Subtotal</Label>
                 <p className="text-xl font-bold">{formatCurrency(subtotal)}</p>
               </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <Label className="text-sm text-gray-600">VAT ({parseFloat(invoice.taxRate || "0")}%)</Label>
+              <div className="bg-card p-4 rounded-lg border">
+                <Label className="text-sm text-muted-foreground">VAT ({parseFloat(invoice.taxRate || "0")}%)</Label>
                 <p className="text-xl font-bold text-blue-600">+{formatCurrency(taxAmount)}</p>
               </div>
-              <div className="bg-white p-4 rounded-lg border">
-                <Label className="text-sm text-gray-600">Discount</Label>
+              <div className="bg-card p-4 rounded-lg border">
+                <Label className="text-sm text-muted-foreground">Discount</Label>
                 <p className="text-xl font-bold text-orange-600">-{formatCurrency(discountAmount)}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -1083,18 +1083,18 @@ export default function InvoiceDetail() {
             </div>
             
             {/* Payment Progress */}
-            <div className="mt-6 bg-white p-4 rounded-lg border">
+            <div className="mt-6 bg-card p-4 rounded-lg border">
               <div className="flex justify-between items-center mb-3">
-                <Label className="text-sm text-gray-600 font-medium">Payment Progress</Label>
+                <Label className="text-sm text-muted-foreground font-medium">Payment Progress</Label>
                 <span className="text-lg font-bold text-blue-600">{paymentProgress.toFixed(1)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-4">
+              <div className="w-full bg-muted rounded-full h-4">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between text-sm text-gray-600 mt-2">
+              <div className="flex justify-between text-sm text-muted-foreground mt-2">
                 <span className="font-medium">Paid: {formatCurrency(paidAmount)}</span>
                 <span className="font-medium">Remaining: {formatCurrency(remainingAmount)}</span>
               </div>
@@ -1106,18 +1106,18 @@ export default function InvoiceDetail() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center">
-              <Receipt className="w-5 h-5 mr-2" />
+              <Receipt className="w-5 h-5 me-2" />
               Tax & Discount Settings
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* VAT Toggle */}
-              <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="bg-muted/50 p-4 rounded-lg border">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <Label className="text-base font-medium">Apply VAT ({VAT_RATE}%)</Label>
-                    <p className="text-sm text-gray-500">Add {VAT_RATE}% Value Added Tax to the subtotal</p>
+                    <p className="text-sm text-muted-foreground">Add {VAT_RATE}% Value Added Tax to the subtotal</p>
                   </div>
                   <Switch
                     checked={taxDiscountForm.applyVat}
@@ -1135,11 +1135,11 @@ export default function InvoiceDetail() {
               </div>
 
               {/* Discount Toggle */}
-              <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="bg-muted/50 p-4 rounded-lg border">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <Label className="text-base font-medium">Apply Discount</Label>
-                    <p className="text-sm text-gray-500">Reduce the invoice total with a discount</p>
+                    <p className="text-sm text-muted-foreground">Reduce the invoice total with a discount</p>
                   </div>
                   <Switch
                     checked={taxDiscountForm.applyDiscount}
@@ -1229,7 +1229,7 @@ export default function InvoiceDetail() {
               <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
                 <DialogTrigger asChild>
                   <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 me-2" />
                     Add Item
                   </Button>
                 </DialogTrigger>
@@ -1302,10 +1302,10 @@ export default function InvoiceDetail() {
           <CardContent>
             {invoiceItems.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No items added to this invoice</p>
+                <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No items added to this invoice</p>
                 <Button onClick={() => setIsAddingItem(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 me-2" />
                   Add First Item
                 </Button>
               </div>
@@ -1317,10 +1317,10 @@ export default function InvoiceDetail() {
                     <TableRow>
                       <TableHead>Item</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead className="text-right">Unit Price</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-end">Quantity</TableHead>
+                      <TableHead className="text-end">Unit Price</TableHead>
+                      <TableHead className="text-end">Total</TableHead>
+                      <TableHead className="text-end">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1328,10 +1328,10 @@ export default function InvoiceDetail() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>{item.description || '-'}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(item.totalPrice)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">{item.quantity}</TableCell>
+                        <TableCell className="text-end">{formatCurrency(item.unitPrice)}</TableCell>
+                        <TableCell className="text-end font-medium">{formatCurrency(item.totalPrice)}</TableCell>
+                        <TableCell className="text-end">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="outline"
@@ -1427,8 +1427,8 @@ export default function InvoiceDetail() {
                       />
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
                       Total: <span className="font-bold">{formatCurrency((editItemForm.quantity * editItemForm.unitPrice).toString())}</span>
                     </p>
                   </div>
@@ -1469,7 +1469,7 @@ export default function InvoiceDetail() {
                   <Dialog open={isProcessingRefund} onOpenChange={setIsProcessingRefund}>
                     <DialogTrigger asChild>
                       <Button size="sm" variant="outline">
-                        <RotateCcw className="w-4 h-4 mr-2" />
+                        <RotateCcw className="w-4 h-4 me-2" />
                         Process Refund
                       </Button>
                     </DialogTrigger>
@@ -1500,7 +1500,7 @@ export default function InvoiceDetail() {
                             id="refundMethod"
                             value={refundForm.refundMethod}
                             onChange={(e) => setRefundForm(prev => ({ ...prev, refundMethod: e.target.value }))}
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            className="w-full p-2 border border-input rounded-md"
                           >
                             <option value="">Select refund method</option>
                             <option value="cash">Cash</option>
@@ -1547,7 +1547,7 @@ export default function InvoiceDetail() {
                 <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
                   <DialogTrigger asChild>
                     <Button size="sm" disabled={invoice.status === 'cancelled'}>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-4 h-4 me-2" />
                       Record Payment
                     </Button>
                   </DialogTrigger>
@@ -1583,7 +1583,7 @@ export default function InvoiceDetail() {
                         id="paymentMethod"
                         value={paymentForm.paymentMethod}
                         onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-input rounded-md"
                       >
                         <option value="bank_transfer">Bank Transfer</option>
                         <option value="credit_card">Credit Card</option>
@@ -1669,10 +1669,10 @@ export default function InvoiceDetail() {
           <CardContent>
             {payments.length === 0 ? (
               <div className="text-center py-8">
-                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No payments recorded for this invoice</p>
+                <CreditCard className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No payments recorded for this invoice</p>
                 <Button onClick={() => setIsAddingPayment(true)} disabled={invoice.status === 'cancelled'}>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 me-2" />
                   Record First Payment
                 </Button>
               </div>
@@ -1726,7 +1726,7 @@ export default function InvoiceDetail() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center">
-                <Paperclip className="w-5 h-5 mr-2" />
+                <Paperclip className="w-5 h-5 me-2" />
                 Attachments
               </CardTitle>
               <div>
@@ -1747,12 +1747,12 @@ export default function InvoiceDetail() {
                 >
                   {isUploadingFile || uploadAttachmentMutation.isPending ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className="w-4 h-4 me-2 animate-spin" />
                       Uploading...
                     </>
                   ) : (
                     <>
-                      <Upload className="w-4 h-4 mr-2" />
+                      <Upload className="w-4 h-4 me-2" />
                       Upload File
                     </>
                   )}
@@ -1763,9 +1763,9 @@ export default function InvoiceDetail() {
           <CardContent>
             {(!invoice?.attachments || invoice.attachments.length === 0) ? (
               <div className="text-center py-8">
-                <Paperclip className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No attachments yet</p>
-                <p className="text-sm text-gray-500">
+                <Paperclip className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No attachments yet</p>
+                <p className="text-sm text-muted-foreground">
                   Upload receipts, contracts, or other documents related to this invoice.
                 </p>
               </div>
@@ -1774,7 +1774,7 @@ export default function InvoiceDetail() {
                 {invoice.attachments.map((attachment, index) => (
                   <div 
                     key={index}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/60"
                     data-testid={`attachment-item-${index}`}
                   >
                     <div className="flex items-center space-x-3">
@@ -1818,7 +1818,7 @@ export default function InvoiceDetail() {
           <CardContent>
             {invoice.qrCodeImage ? (
               <div className="flex flex-col items-center gap-4">
-                <div className="border rounded-lg p-3 bg-white inline-block shadow-sm">
+                <div className="border rounded-lg p-3 bg-card inline-block shadow-sm">
                   <img
                     src={invoice.qrCodeImage}
                     alt="Invoice QR Code"
@@ -1826,7 +1826,7 @@ export default function InvoiceDetail() {
                     data-testid="img-qr-code"
                   />
                 </div>
-                <p className="text-sm text-gray-500 text-center print:hidden">
+                <p className="text-sm text-muted-foreground text-center print:hidden">
                   This QR code encodes information about invoice <strong>{invoice.invoiceNumber}</strong> and will appear on printed/exported invoices.
                 </p>
                 <Button
@@ -1837,14 +1837,14 @@ export default function InvoiceDetail() {
                   className="text-red-600 hover:text-red-700 hover:border-red-300 print:hidden"
                   data-testid="button-remove-qr-code"
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4 me-2" />
                   {removeQrCodeMutation.isPending ? "Removing..." : "Remove QR Code"}
                 </Button>
               </div>
             ) : (
               <div className="text-center py-6 print:hidden">
-                <QrCode className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-sm mb-6">
+                <QrCode className="w-14 h-14 text-muted-foreground/70 mx-auto mb-4" />
+                <p className="text-muted-foreground text-sm mb-6">
                   No QR code attached yet. Generate one automatically or upload a custom image.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1853,7 +1853,7 @@ export default function InvoiceDetail() {
                     disabled={generateQrCodeMutation.isPending}
                     data-testid="button-generate-qr-code"
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
+                    <Sparkles className="w-4 h-4 me-2" />
                     {generateQrCodeMutation.isPending ? "Generating..." : "Generate QR Code"}
                   </Button>
                   <div>
@@ -1871,7 +1871,7 @@ export default function InvoiceDetail() {
                       disabled={uploadQrCodeMutation.isPending}
                       data-testid="button-upload-qr-code"
                     >
-                      <Upload className="w-4 h-4 mr-2" />
+                      <Upload className="w-4 h-4 me-2" />
                       {uploadQrCodeMutation.isPending ? "Uploading..." : "Upload Custom QR (SVG/PNG)"}
                     </Button>
                   </div>
@@ -1893,34 +1893,34 @@ export default function InvoiceDetail() {
                 <Printer className="w-5 h-5" />
                 Print History
                 {printRecords.length > 0 && (
-                  <span className="ml-1 text-xs font-normal text-gray-500">({printRecords.length})</span>
+                  <span className="ms-1 text-xs font-normal text-muted-foreground">({printRecords.length})</span>
                 )}
               </span>
-              {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground/70" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/70" />}
             </CardTitle>
           </CardHeader>
           {printHistoryOpen && (
             <CardContent>
               {printRecords.length === 0 ? (
                 <div className="text-center py-8">
-                  <Printer className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No prints yet. Use the Print button to create a print record.</p>
+                  <Printer className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No prints yet. Use the Print button to create a print record.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {printRecords.map((record: any) => {
                     const isStale = invoice.updatedAt && record.printedAt && new Date(invoice.updatedAt) > new Date(record.printedAt);
                     return (
-                      <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                      <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm font-medium">
                             <span>{record.displayCurrency}</span>
                             {record.displayCurrency !== "EGP" && (
-                              <span className="text-gray-500">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
+                              <span className="text-muted-foreground">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
                             )}
-                            <span className="text-gray-700">→ {parseFloat(record.convertedTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-foreground">→ {parseFloat(record.convertedTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               <span title={format(new Date(record.printedAt), 'MMM dd, yyyy HH:mm')}>
@@ -1947,7 +1947,7 @@ export default function InvoiceDetail() {
                           onClick={() => window.open(`/invoices/print/${record.id}`, "_blank")}
                           data-testid={`button-reprint-${record.id}`}
                         >
-                          <ExternalLink className="w-3 h-3 mr-1" />
+                          <ExternalLink className="w-3 h-3 me-1" />
                           Reprint
                         </Button>
                       </div>
@@ -1970,19 +1970,19 @@ export default function InvoiceDetail() {
           <CardContent>
             {invoiceHistoryData.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">No history events yet. Changes to this invoice will appear here.</p>
+                <Clock className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">No history events yet. Changes to this invoice will appear here.</p>
               </div>
             ) : (
               <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+                <div className="absolute start-4 top-0 bottom-0 w-px bg-muted" />
                 <div className="space-y-4">
                   {invoiceHistoryData.map((entry) => (
-                    <div key={entry.id} className="flex gap-4 pl-10 relative">
-                      <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
-                      <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{entry.event}</p>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                    <div key={entry.id} className="flex gap-4 ps-10 relative">
+                      <div className="absolute start-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
+                      <div className="flex-1 bg-muted/50 rounded-lg p-3 border border-border">
+                        <p className="text-sm font-medium text-foreground">{entry.event}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                           {entry.actor && (
                             <span className="flex items-center gap-1">
                               <User className="w-3 h-3" />
@@ -2046,24 +2046,24 @@ export default function InvoiceDetail() {
                 data-testid="input-print-rate"
               />
               {printCurrency === "EGP" && (
-                <p className="text-xs text-gray-500 mt-1">Rate is locked to 1 for EGP.</p>
+                <p className="text-xs text-muted-foreground mt-1">Rate is locked to 1 for EGP.</p>
               )}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 border">
-              <p className="text-sm text-gray-600 mb-1">Live converted total preview</p>
+            <div className="bg-muted/50 rounded-lg p-4 border">
+              <p className="text-sm text-muted-foreground mb-1">Live converted total preview</p>
               {(() => {
                 const rate = printCurrency === "EGP" ? 1 : (parseFloat(printRate) || 0);
                 const converted = rate > 0 ? Math.round((totalAmount / rate) * 100) / 100 : 0;
                 const symbol = printCurrency === "USD" ? "$" : printCurrency === "SAR" ? "ر.س" : "ج.م";
-                const formatted = converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const formatted = converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 return (
                   <>
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="text-xl font-bold text-foreground">
                       {printCurrency === "USD" ? `${symbol}${formatted}` : `${formatted} ${symbol}`}
                     </p>
                     {printCurrency !== "EGP" && (
-                      <p className="text-xs text-gray-400 mt-1">Source total: {formatCurrency(totalAmount)}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Source total: {formatCurrency(totalAmount)}</p>
                     )}
                   </>
                 );
@@ -2077,7 +2077,7 @@ export default function InvoiceDetail() {
                 className="flex-1"
                 data-testid="button-confirm-print"
               >
-                <Printer className="w-4 h-4 mr-2" />
+                <Printer className="w-4 h-4 me-2" />
                 {isPrinting ? "Preparing..." : "Print"}
               </Button>
               <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cancel</Button>
@@ -2135,12 +2135,12 @@ export default function InvoiceDetail() {
                               {formatCurrency(entry.amount)}
                             </span>
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {format(new Date(entry.createdAt), 'MMM dd, yyyy')}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{entry.description}</p>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">{entry.description}</p>
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
                           <span>Previous: {formatCurrency(entry.previousBalance)}</span>
                           <span>New: {formatCurrency(entry.newBalance)}</span>
                         </div>

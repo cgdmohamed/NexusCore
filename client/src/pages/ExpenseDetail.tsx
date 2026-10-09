@@ -140,7 +140,7 @@ export default function ExpenseDetail() {
       paid: "bg-green-100 text-green-800",
       approved: "bg-blue-100 text-blue-800",
       overdue: "bg-red-100 text-red-800",
-      cancelled: "bg-gray-100 text-gray-800",
+      cancelled: "bg-muted text-foreground",
       rejected: "bg-red-100 text-red-800",
     };
 
@@ -192,11 +192,11 @@ export default function ExpenseDetail() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <div className="h-6 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 bg-muted rounded animate-pulse" />
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
               </CardContent>
             </Card>
           </div>
@@ -214,16 +214,16 @@ export default function ExpenseDetail() {
         />
         <Card>
           <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               Expense Not Found
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               The expense you're looking for doesn't exist or has been deleted.
             </p>
             <Link href="/expenses">
               <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4 me-2" />
                 Back to Expenses
               </Button>
             </Link>
@@ -253,7 +253,7 @@ export default function ExpenseDetail() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="min-w-0">
-                  <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
+                  <CardTitle className="text-xl sm:text-2xl font-bold text-foreground break-words">
                     {expense.title}
                   </CardTitle>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -263,11 +263,11 @@ export default function ExpenseDetail() {
                     )}
                   </div>
                 </div>
-                <div className="sm:text-right flex-shrink-0">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                <div className="sm:text-end flex-shrink-0">
+                  <div className="text-2xl sm:text-3xl font-bold text-foreground">
                     {formatCurrency(expense.amount)}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-muted-foreground mt-1">
                     {expense.type.charAt(0).toUpperCase() +
                       expense.type.slice(1)}{" "}
                     Expense
@@ -278,10 +278,10 @@ export default function ExpenseDetail() {
             <CardContent className="space-y-6">
               {expense.description && (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
+                  <h4 className="font-medium text-foreground mb-2">
                     Description
                   </h4>
-                  <p className="text-gray-600">{expense.description}</p>
+                  <p className="text-muted-foreground">{expense.description}</p>
                 </div>
               )}
 
@@ -290,20 +290,20 @@ export default function ExpenseDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <Calendar className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Expense Date</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {format(new Date(expense.expenseDate), "MMMM dd, yyyy")}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
+                    <CreditCard className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Payment Method</div>
-                      <div className="text-sm text-gray-500 capitalize">
+                      <div className="text-sm text-muted-foreground capitalize">
                         {expense.paymentMethod.replace("_", " ")}
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export default function ExpenseDetail() {
 
                   {categoryInfo && (
                     <div className="flex items-center gap-3">
-                      <Tag className="h-5 w-5 text-gray-400" />
+                      <Tag className="h-5 w-5 text-muted-foreground/70" />
                       <div>
                         <div className="font-medium">Category</div>
                         <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ export default function ExpenseDetail() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: categoryInfo?.color || '#gray' }}
                           />
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {categoryInfo?.name || 'Unknown'}
                           </span>
                         </div>
@@ -329,10 +329,10 @@ export default function ExpenseDetail() {
 
                   {paymentSourceInfo && (
                     <div className="flex items-center gap-3">
-                      <Wallet className="h-5 w-5 text-gray-400" />
+                      <Wallet className="h-5 w-5 text-muted-foreground/70" />
                       <div>
                         <div className="font-medium">Payment Source</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {paymentSourceInfo.name}
                         </div>
                       </div>
@@ -342,10 +342,10 @@ export default function ExpenseDetail() {
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-gray-400" />
+                    <User className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Submitted By</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {"System User"}
                       </div>
                     </div>
@@ -353,11 +353,11 @@ export default function ExpenseDetail() {
 
                   {expense.attachmentUrl && (
                     <div className="flex items-center gap-3">
-                      <Receipt className="h-5 w-5 text-gray-400" />
+                      <Receipt className="h-5 w-5 text-muted-foreground/70" />
                       <div>
                         <div className="font-medium">Receipt</div>
                         <Button variant="outline" size="sm" className="mt-1">
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-4 w-4 me-2" />
                           Download
                         </Button>
                       </div>
@@ -366,10 +366,10 @@ export default function ExpenseDetail() {
 
                   {expense.relatedClientId && (
                     <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-gray-400" />
+                      <FileText className="h-5 w-5 text-muted-foreground/70" />
                       <div>
                         <div className="font-medium">Related Client</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           Client #{expense.relatedClientId.slice(0, 8)}
                         </div>
                       </div>
@@ -391,7 +391,7 @@ export default function ExpenseDetail() {
             <CardContent className="space-y-3">
               <Link href={`/expenses/${id}/edit`}>
                 <Button className="w-full" variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 me-2" />
                   Edit Expense
                 </Button>
               </Link>
@@ -403,7 +403,7 @@ export default function ExpenseDetail() {
                   onClick={handleMarkAsPaid}
                   disabled={paymentMutation.isPending}
                 >
-                  <DollarSign className="h-4 w-4 mr-2" />
+                  <DollarSign className="h-4 w-4 me-2" />
                   {paymentMutation.isPending ? "Processing..." : "Mark as Paid"}
                 </Button>
               )}
@@ -415,7 +415,7 @@ export default function ExpenseDetail() {
                   onClick={() => setRejectDialogOpen(true)}
                   data-testid="button-reject-expense"
                 >
-                  <XCircle className="h-4 w-4 mr-2" />
+                  <XCircle className="h-4 w-4 me-2" />
                   Reject Expense
                 </Button>
               )}
@@ -426,13 +426,13 @@ export default function ExpenseDetail() {
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-2" />
                 {deleteMutation.isPending ? "Deleting..." : "Delete Expense"}
               </Button>
 
               <Link href="/expenses">
                 <Button className="w-full" variant="ghost">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="h-4 w-4 me-2" />
                   Back to Expenses
                 </Button>
               </Link>
@@ -447,21 +447,21 @@ export default function ExpenseDetail() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Amount</span>
+                  <span className="text-sm text-muted-foreground">Amount</span>
                   <span className="font-medium">
                     {formatCurrency(expense.amount)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Status</span>
+                  <span className="text-sm text-muted-foreground">Status</span>
                   {getStatusBadge(expense.status)}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Type</span>
+                  <span className="text-sm text-muted-foreground">Type</span>
                   <span className="font-medium capitalize">{expense.type}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Date</span>
+                  <span className="text-sm text-muted-foreground">Date</span>
                   <span className="font-medium">
                     {format(new Date(expense.expenseDate), "MMM dd, yyyy")}
                   </span>
@@ -480,7 +480,7 @@ export default function ExpenseDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-700">{expense.rejectionReason}</p>
+                <p className="text-sm text-foreground">{expense.rejectionReason}</p>
               </CardContent>
             </Card>
           )}
@@ -494,7 +494,7 @@ export default function ExpenseDetail() {
             <DialogTitle>Reject Expense</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Please provide a reason for rejecting this expense. The submitter will be notified.
             </p>
             <div>

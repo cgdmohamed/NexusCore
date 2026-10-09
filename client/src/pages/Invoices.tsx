@@ -145,12 +145,12 @@ export default function Invoices() {
       case 'paid': return 'bg-green-100 text-green-800 border-green-200';
       case 'partially_paid': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'sent': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'draft': return 'bg-muted text-foreground border-border';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelled': return 'bg-gray-100 text-gray-600 border-gray-200';
+      case 'cancelled': return 'bg-muted text-muted-foreground border-border';
       case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -202,7 +202,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <FileText className="h-4 w-4 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Invoices</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Paid</p>
+                  <p className="text-sm font-medium text-muted-foreground">Paid</p>
                   <p className="text-2xl font-bold">{stats.paid}</p>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <CreditCard className="h-4 w-4 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Partial</p>
+                  <p className="text-sm font-medium text-muted-foreground">Partial</p>
                   <p className="text-2xl font-bold">{stats.partiallyPaid}</p>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Overdue</p>
+                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-bold">{stats.overdue}</p>
                 </div>
               </div>
@@ -250,7 +250,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Amount</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-red-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.outstanding)}</p>
                 </div>
               </div>
@@ -293,12 +293,12 @@ export default function Invoices() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   placeholder="Search invoices by number, title, or client..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
+                  className="ps-10 w-full"
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -341,7 +341,7 @@ export default function Invoices() {
 
             {/* Results Info */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Showing {filteredAndSortedInvoices.length} of {invoiceList.length} invoices
               </p>
             </div>
@@ -351,18 +351,18 @@ export default function Invoices() {
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading invoices...</p>
+                <p className="text-muted-foreground">Loading invoices...</p>
               </div>
             ) : filteredAndSortedInvoices.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
+                <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">
                   {invoiceList.length === 0 ? "No invoices found" : "No invoices match your filters"}
                 </p>
                 {invoiceList.length === 0 && (
                   <InvoiceForm trigger={
                     <Button>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-4 h-4 me-2" />
                       Create your first invoice
                     </Button>
                   } />
@@ -373,35 +373,35 @@ export default function Invoices() {
               <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted/50">
                       <TableHead 
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("invoiceNumber")}
                       >
                         Invoice # {sortBy === "invoiceNumber" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("amount")}
                       >
                         Amount {sortBy === "amount" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead>Payment Progress</TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("status")}
                       >
                         Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("dueDate")}
                       >
                         Due Date {sortBy === "dueDate" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("createdAt")}
                       >
                         Created {sortBy === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
@@ -417,7 +417,7 @@ export default function Invoices() {
                       const paymentProgress = amount > 0 ? (paid / amount) * 100 : 0;
                       
                       return (
-                        <TableRow key={invoice.id} className={`hover:bg-gray-50 ${isOverdue(invoice) ? 'bg-red-50' : ''}`}>
+                        <TableRow key={invoice.id} className={`hover:bg-muted/60 ${isOverdue(invoice) ? 'bg-red-50' : ''}`}>
                           <TableCell className="font-medium">
                             <Link href={`/invoices/${invoice.id}`} className="text-blue-600 hover:text-blue-800">
                               {invoice.invoiceNumber}
@@ -425,7 +425,7 @@ export default function Invoices() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
-                              <User className="w-3 h-3 mr-1 text-gray-400" />
+                              <User className="w-3 h-3 me-1 text-muted-foreground/70" />
                               {getClientName(invoice.clientId)}
                             </div>
                           </TableCell>
@@ -438,7 +438,7 @@ export default function Invoices() {
                                 <span>Paid: {formatCurrency(paid)}</span>
                                 <span>Due: {formatCurrency(remaining)}</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-muted rounded-full h-2">
                                 <div 
                                   className="bg-green-600 h-2 rounded-full" 
                                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
@@ -454,20 +454,20 @@ export default function Invoices() {
                               </div>
                             </Badge>
                           </TableCell>
-                          <TableCell className={isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-sm text-gray-600'}>
+                          <TableCell className={isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-sm text-muted-foreground'}>
                             <div>
                               <div>{invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}</div>
                               {invoice.dueDate && (
-                                <div className="text-xs text-gray-400">
+                                <div className="text-xs text-muted-foreground/70">
                                   {formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true })}
                                 </div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-gray-600">
+                          <TableCell className="text-sm text-muted-foreground">
                             <div>
                               <div>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
-                              <div className="text-xs text-gray-400">
+                              <div className="text-xs text-muted-foreground/70">
                                 {invoice.createdAt ? formatDistanceToNow(new Date(invoice.createdAt), { addSuffix: true }) : ''}
                               </div>
                             </div>
@@ -475,7 +475,7 @@ export default function Invoices() {
                           <TableCell>
                             <Link href={`/invoices/${invoice.id}`}>
                               <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 mr-1" />
+                                <Eye className="w-3 h-3 me-1" />
                                 View
                               </Button>
                             </Link>
@@ -513,8 +513,8 @@ export default function Invoices() {
                             <Link href={`/invoices/${invoice.id}`} className="text-blue-600 hover:text-blue-800">
                               <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
                             </Link>
-                            <div className="flex items-center text-sm text-gray-600 mt-1">
-                              <User className="w-3 h-3 mr-1" />
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <User className="w-3 h-3 me-1" />
                               {getClientName(invoice.clientId)}
                             </div>
                           </div>
@@ -531,7 +531,7 @@ export default function Invoices() {
                           {/* Amount and Payment Progress */}
                           <div>
                             <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm text-gray-600">Amount</span>
+                              <span className="text-sm text-muted-foreground">Amount</span>
                               <span className="text-lg font-bold">{formatCurrency(amount)}</span>
                             </div>
                             <div className="space-y-1">
@@ -539,7 +539,7 @@ export default function Invoices() {
                                 <span className="text-green-600">Paid: {formatCurrency(paid)}</span>
                                 <span className="text-red-600">Due: {formatCurrency(remaining)}</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-muted rounded-full h-2">
                                 <div 
                                   className="bg-green-600 h-2 rounded-full" 
                                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
@@ -549,13 +549,13 @@ export default function Invoices() {
                           </div>
 
                           {/* Due Date */}
-                          <div className="pt-2 border-t border-gray-100">
-                            <div className={`flex items-center text-xs ${isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                              <Calendar className="w-3 h-3 mr-1" />
+                          <div className="pt-2 border-t border-border">
+                            <div className={`flex items-center text-xs ${isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                              <Calendar className="w-3 h-3 me-1" />
                               Due: {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}
                             </div>
                             {invoice.dueDate && (
-                              <div className="text-xs text-gray-400 ml-4">
+                              <div className="text-xs text-muted-foreground/70 ms-4">
                                 {formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true })}
                               </div>
                             )}
@@ -565,7 +565,7 @@ export default function Invoices() {
                         <div className="mt-4">
                           <Link href={`/invoices/${invoice.id}`} className="w-full block">
                             <Button variant="outline" size="sm" className="w-full">
-                              <Eye className="w-3 h-3 mr-1" />
+                              <Eye className="w-3 h-3 me-1" />
                               View Details
                             </Button>
                           </Link>

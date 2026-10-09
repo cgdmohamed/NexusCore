@@ -82,7 +82,7 @@ export function SystemVerification() {
       case 'success': return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'error': return <XCircle className="w-5 h-5 text-red-600" />;
       case 'warning': return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-      default: return <AlertCircle className="w-5 h-5 text-gray-600" />;
+      default: return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -91,7 +91,7 @@ export function SystemVerification() {
       case 'success': return 'bg-green-100 text-green-800 border-green-200';
       case 'error': return 'bg-red-100 text-red-800 border-red-200';
       case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -116,7 +116,7 @@ export function SystemVerification() {
                 {getStatusIcon(result.status)}
                 <div>
                   <p className="font-medium">{result.module}</p>
-                  <p className="text-sm text-gray-600">{result.message}</p>
+                  <p className="text-sm text-muted-foreground">{result.message}</p>
                 </div>
               </div>
               <Badge variant="outline" className={getStatusColor(result.status)}>

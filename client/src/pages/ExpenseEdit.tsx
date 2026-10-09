@@ -32,12 +32,12 @@ export default function ExpenseEdit() {
         />
         <Card>
           <CardHeader>
-            <div className="h-6 bg-gray-200 rounded animate-pulse" />
+            <div className="h-6 bg-muted rounded animate-pulse" />
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="h-10 bg-gray-200 rounded animate-pulse" />
-            <div className="h-24 bg-gray-200 rounded animate-pulse" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+            <div className="h-24 bg-muted rounded animate-pulse" />
           </CardContent>
         </Card>
       </div>
@@ -53,12 +53,12 @@ export default function ExpenseEdit() {
         />
         <Card>
           <CardContent className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Expense Not Found</h3>
-            <p className="text-gray-500 mb-4">
+            <h3 className="text-lg font-medium text-foreground mb-2">Expense Not Found</h3>
+            <p className="text-muted-foreground mb-4">
               The expense you're trying to edit doesn't exist or has been deleted.
             </p>
             <Button onClick={() => setLocation("/expenses")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 me-2" />
               Back to Expenses
             </Button>
           </CardContent>

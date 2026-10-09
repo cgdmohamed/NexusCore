@@ -10,7 +10,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 function formatDisplay(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
-  const formatted = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (currency === "USD") return `${symbol}${formatted}`;
   return `${formatted} ${symbol}`;
 }
@@ -150,7 +150,7 @@ export default function InvoicePrint() {
         )}
 
         {/* BILL TO */}
-        <div style={{ marginBottom: "36px", padding: "20px 24px", background: "#f9fafb", borderLeft: "4px solid #1a1a2e", borderRadius: "0 6px 6px 0" }}>
+        <div style={{ marginBottom: "36px", padding: "20px 24px", background: "#f9fafb", borderInlineStart: "4px solid #1a1a2e", borderStartEndRadius: "6px", borderEndEndRadius: "6px" }}>
           <div style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "#9ca3af", marginBottom: "8px" }}>Bill To</div>
           <div style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a2e", marginBottom: "4px" }}>{snap.clientName || "—"}</div>
           {snap.clientEmail && <div style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.7 }}>{snap.clientEmail}</div>}

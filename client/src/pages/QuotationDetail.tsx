@@ -362,8 +362,8 @@ export default function QuotationDetail() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Quotation Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested quotation could not be found.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Quotation Not Found</h2>
+          <p className="text-muted-foreground mb-4">The requested quotation could not be found.</p>
           <Link href="/quotations">
             <Button>Back to Quotations</Button>
           </Link>
@@ -374,12 +374,12 @@ export default function QuotationDetail() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-muted text-foreground';
       case 'sent': return 'bg-blue-100 text-blue-800';
       case 'accepted': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       case 'expired': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -398,12 +398,12 @@ export default function QuotationDetail() {
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsPrintDialogOpen(true)} data-testid="button-print-quotation">
-              <Printer className="w-4 h-4 mr-2" />
+              <Printer className="w-4 h-4 me-2" />
               <span className="hidden sm:inline">Print</span>
               <span className="sm:hidden">Print</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportPDF}>
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 me-2" />
               <span className="hidden sm:inline">Export PDF</span>
               <span className="sm:hidden">PDF</span>
             </Button>
@@ -412,7 +412,7 @@ export default function QuotationDetail() {
               size="sm"
               onClick={() => setIsEditing(true)}
             >
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-4 h-4 me-2" />
               Edit
             </Button>
             {quotation.status === 'accepted' && (
@@ -421,7 +421,7 @@ export default function QuotationDetail() {
                 onClick={() => convertToInvoiceMutation.mutate()}
                 disabled={convertToInvoiceMutation.isPending}
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 me-2" />
                 <span className="hidden sm:inline">Convert to Invoice</span>
                 <span className="sm:hidden">Convert</span>
               </Button>
@@ -429,7 +429,7 @@ export default function QuotationDetail() {
             {quotation.status === 'invoiced' && quotation.invoiceId && (
               <Link href={`/invoices/${quotation.invoiceId}`}>
                 <Button size="sm" variant="outline">
-                  <FileText className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4 me-2" />
                   <span className="hidden sm:inline">View Invoice</span>
                   <span className="sm:hidden">Invoice</span>
                 </Button>
@@ -448,7 +448,7 @@ export default function QuotationDetail() {
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Client</p>
+                <p className="text-sm text-muted-foreground">Client</p>
                 <p className="text-xl font-bold">
                   {client ? (
                     <Link href={`/clients/${client.id}`} className="hover:underline">
@@ -468,7 +468,7 @@ export default function QuotationDetail() {
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="text-xl font-bold">{formatCurrency(quotationTotal)}</p>
               </div>
             </div>
@@ -482,7 +482,7 @@ export default function QuotationDetail() {
                 <FileText className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Items</p>
+                <p className="text-sm text-muted-foreground">Items</p>
                 <p className="text-xl font-bold">{quotationItems.length}</p>
               </div>
             </div>
@@ -499,11 +499,11 @@ export default function QuotationDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-gray-600">Description</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
                 <p className="text-lg">{quotation.description || "No description provided"}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-600">Valid Until</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Valid Until</Label>
                 <p className="text-lg">
                   {quotation.validUntil ? 
                     formatDistanceToNow(new Date(quotation.validUntil), { addSuffix: true }) : 
@@ -514,7 +514,7 @@ export default function QuotationDetail() {
             </div>
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-gray-600">Created</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Created</Label>
                 <p className="text-lg">
                   {quotation.createdAt ? 
                     formatDistanceToNow(new Date(quotation.createdAt), { addSuffix: true }) : 
@@ -523,7 +523,7 @@ export default function QuotationDetail() {
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-600">Last Updated</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
                 <p className="text-lg">
                   {quotation.updatedAt ? 
                     formatDistanceToNow(new Date(quotation.updatedAt), { addSuffix: true }) : 
@@ -565,7 +565,7 @@ export default function QuotationDetail() {
               onClick={() => updateStatusMutation.mutate('accepted')}
               disabled={updateStatusMutation.isPending}
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
+              <CheckCircle className="w-4 h-4 me-2" />
               Accepted
             </Button>
             <Button
@@ -574,7 +574,7 @@ export default function QuotationDetail() {
               onClick={() => updateStatusMutation.mutate('rejected')}
               disabled={updateStatusMutation.isPending}
             >
-              <XCircle className="w-4 h-4 mr-2" />
+              <XCircle className="w-4 h-4 me-2" />
               Rejected
             </Button>
             <Button
@@ -585,7 +585,7 @@ export default function QuotationDetail() {
               Invoiced
             </Button>
           </div>
-          <p className="text-sm text-gray-600 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Current status: <span className="font-medium capitalize">{quotation.status}</span>
           </p>
         </CardContent>
@@ -599,7 +599,7 @@ export default function QuotationDetail() {
             <Dialog open={isEditing} onOpenChange={setIsEditing}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 me-2" />
                   Edit Notes
                 </Button>
               </DialogTrigger>
@@ -660,11 +660,11 @@ export default function QuotationDetail() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label className="text-sm font-medium text-gray-600">Internal Notes</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Internal Notes</Label>
               <p className="text-lg mt-1">{quotation.description || "No internal notes"}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-600">Terms & Conditions</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Terms & Conditions</Label>
               <p className="text-lg mt-1">Standard terms apply. Payment due within 30 days of invoice date.</p>
             </div>
           </div>
@@ -679,7 +679,7 @@ export default function QuotationDetail() {
             <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 me-2" />
                   Add Item
                 </Button>
               </DialogTrigger>
@@ -756,7 +756,7 @@ export default function QuotationDetail() {
                     />
                   </div>
 
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total:</span>
                       <span className="text-lg font-bold">${calculateTotal().toFixed(2)}</span>
@@ -790,10 +790,10 @@ export default function QuotationDetail() {
         <CardContent>
           {quotationItems.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">No items added to this quotation yet.</p>
+              <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">No items added to this quotation yet.</p>
               <Button onClick={() => setIsAddingItem(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 me-2" />
                 Add First Item
               </Button>
             </div>
@@ -804,11 +804,11 @@ export default function QuotationDetail() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
-                    <TableHead className="text-right">Discount</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right w-24">Actions</TableHead>
+                    <TableHead className="text-end">Quantity</TableHead>
+                    <TableHead className="text-end">Unit Price</TableHead>
+                    <TableHead className="text-end">Discount</TableHead>
+                    <TableHead className="text-end">Total</TableHead>
+                    <TableHead className="text-end w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -818,17 +818,17 @@ export default function QuotationDetail() {
                         <div>
                           <p className="font-medium">{item.description}</p>
                           {item.serviceId && (
-                            <p className="text-sm text-gray-500">Service Item</p>
+                            <p className="text-sm text-muted-foreground">Service Item</p>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                      <TableCell className="text-right">{parseFloat(item.discount || '0').toFixed(1)}%</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-end">{item.quantity}</TableCell>
+                      <TableCell className="text-end">{formatCurrency(item.unitPrice)}</TableCell>
+                      <TableCell className="text-end">{parseFloat(item.discount || '0').toFixed(1)}%</TableCell>
+                      <TableCell className="text-end font-medium">
                         {formatCurrency(item.totalPrice)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -836,7 +836,7 @@ export default function QuotationDetail() {
                             className="h-8 w-8 p-0"
                             onClick={() => openEditDialog(item)}
                           >
-                            <Pencil className="h-4 w-4 text-gray-500" />
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -876,14 +876,14 @@ export default function QuotationDetail() {
               </div>
               
               {/* Quotation Summary */}
-              <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+              <div className="mt-6 bg-muted/50 p-6 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-sm text-gray-600">Subtotal</p>
+                    <p className="text-sm text-muted-foreground">Subtotal</p>
                     <p className="text-xl font-bold">{formatCurrency(quotationTotal)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Tax (0%)</p>
+                    <p className="text-sm text-muted-foreground">Tax (0%)</p>
                     <p className="text-xl font-bold">{formatCurrency(0)}</p>
                   </div>
                   <div className="bg-primary text-white p-4 rounded-lg">
@@ -908,19 +908,19 @@ export default function QuotationDetail() {
         <CardContent>
           {history.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No history events yet. Changes to this quotation will appear here.</p>
+              <Clock className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">No history events yet. Changes to this quotation will appear here.</p>
             </div>
           ) : (
             <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+              <div className="absolute start-4 top-0 bottom-0 w-px bg-muted" />
               <div className="space-y-4">
                 {history.map((entry) => (
-                  <div key={entry.id} className="flex gap-4 pl-10 relative">
-                    <div className="absolute left-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
-                    <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{entry.event}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                  <div key={entry.id} className="flex gap-4 ps-10 relative">
+                    <div className="absolute start-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
+                    <div className="flex-1 bg-muted/50 rounded-lg p-3 border border-border">
+                      <p className="text-sm font-medium text-foreground">{entry.event}</p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                         {entry.actor && (
                           <span className="flex items-center gap-1">
                             <User className="w-3 h-3" />
@@ -982,22 +982,22 @@ export default function QuotationDetail() {
                 data-testid="input-print-rate"
               />
               {printCurrency === "EGP" && (
-                <p className="text-xs text-gray-500 mt-1">Rate is locked to 1 for EGP.</p>
+                <p className="text-xs text-muted-foreground mt-1">Rate is locked to 1 for EGP.</p>
               )}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 border">
-              <p className="text-sm text-gray-600 mb-1">Live converted total preview</p>
-              <p className="text-xl font-bold text-gray-900">
+            <div className="bg-muted/50 rounded-lg p-4 border">
+              <p className="text-sm text-muted-foreground mb-1">Live converted total preview</p>
+              <p className="text-xl font-bold text-foreground">
                 {printCurrency === "EGP"
-                  ? `${liveTotalEgp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`
+                  ? `${liveTotalEgp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م`
                   : printCurrency === "USD"
-                  ? `$${printLiveTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  : `${printLiveTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+                  ? `$${printLiveTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : `${printLiveTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
                 }
               </p>
               {printCurrency !== "EGP" && (
-                <p className="text-xs text-gray-400 mt-1">Source total: {formatCurrency(liveTotalEgp)}</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Source total: {formatCurrency(liveTotalEgp)}</p>
               )}
             </div>
 
@@ -1008,7 +1008,7 @@ export default function QuotationDetail() {
                 className="flex-1"
                 data-testid="button-confirm-print"
               >
-                <Printer className="w-4 h-4 mr-2" />
+                <Printer className="w-4 h-4 me-2" />
                 {isPrinting ? "Preparing..." : "Print"}
               </Button>
               <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cancel</Button>
@@ -1029,33 +1029,33 @@ export default function QuotationDetail() {
               <Printer className="w-5 h-5" />
               Print History
               {printRecords.length > 0 && (
-                <span className="ml-1 text-xs font-normal text-gray-500">({printRecords.length})</span>
+                <span className="ms-1 text-xs font-normal text-muted-foreground">({printRecords.length})</span>
               )}
             </span>
-            {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground/70" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/70" />}
           </CardTitle>
         </CardHeader>
         {printHistoryOpen && <CardContent>
           {printRecords.length === 0 ? (
             <div className="text-center py-8">
-              <Printer className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No prints yet. Use the Print button to create a print record.</p>
+              <Printer className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm">No prints yet. Use the Print button to create a print record.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {printRecords.map((record: any) => {
                 const isStale = quotation.updatedAt && record.printedAt && new Date(quotation.updatedAt) > new Date(record.printedAt);
                 return (
-                  <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                  <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <span>{record.displayCurrency}</span>
                         {record.displayCurrency !== "EGP" && (
-                          <span className="text-gray-500">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
+                          <span className="text-muted-foreground">@ {parseFloat(record.exchangeRate).toFixed(2)} EGP</span>
                         )}
-                        <span className="text-gray-700">→ {parseFloat(record.convertedTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-foreground">→ {parseFloat(record.convertedTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span title={format(new Date(record.printedAt), 'MMM dd, yyyy HH:mm')}>
@@ -1082,7 +1082,7 @@ export default function QuotationDetail() {
                       onClick={() => window.open(`/quotations/print/${record.id}`, "_blank")}
                       data-testid={`button-reprint-${record.id}`}
                     >
-                      <ExternalLink className="w-3 h-3 mr-1" />
+                      <ExternalLink className="w-3 h-3 me-1" />
                       Reprint
                     </Button>
                   </div>
@@ -1148,7 +1148,7 @@ export default function QuotationDetail() {
               />
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="p-3 bg-muted/50 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="font-medium">{t("quotations.item_total")}:</span>
                 <span className="text-lg font-bold">{formatCurrency(calculateEditTotal().toFixed(2))}</span>

@@ -118,7 +118,7 @@ export function KPICards() {
         const ChangeIcon = ArrowUp;
         
         return (
-          <Card key={index} className="border border-gray-200">
+          <Card key={index} className="border border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

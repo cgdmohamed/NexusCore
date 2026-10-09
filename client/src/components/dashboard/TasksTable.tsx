@@ -19,7 +19,7 @@ export function TasksTable() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="border-b border-gray-200">
+        <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <div className="flex space-x-2">
@@ -52,7 +52,7 @@ export function TasksTable() {
 
   return (
     <Card>
-      <CardHeader className="border-b border-gray-200">
+      <CardHeader className="border-b border-border">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-text">Pending Tasks</h3>
           <div className="flex items-center space-x-2">
@@ -75,13 +75,13 @@ export function TasksTable() {
             {pendingTasks.map((task) => (
               <div 
                 key={task.id} 
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                className="flex items-center justify-between p-3 border border-border rounded-lg"
               >
                 <div className="flex items-center space-x-3">
                   <div className={`w-2 h-2 rounded-full ${
-                    task.priority === 'high' ? 'bg-accent' :
+                    task.priority === 'high' ? 'bg-destructive' :
                     task.priority === 'medium' ? 'bg-yellow-500' :
-                    'bg-secondary'
+                    'bg-success'
                   }`}></div>
                   <div>
                     <p className="text-sm font-medium text-text">{task.title}</p>
@@ -95,7 +95,7 @@ export function TasksTable() {
                     variant="outline"
                     className={
                       task.priority === 'high' 
-                        ? 'bg-red-100 text-accent border-red-200' :
+                        ? 'bg-danger-soft text-danger border-danger/20' :
                       task.priority === 'medium'
                         ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                         'bg-blue-100 text-blue-700 border-blue-200'

@@ -46,7 +46,7 @@ export function ClientCombobox({
           className="w-full justify-between font-normal"
         >
           {selectedClient ? selectedClient.name : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
@@ -67,7 +67,7 @@ export function ClientCombobox({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "me-2 h-4 w-4",
                       value === client.id ? "opacity-100" : "opacity-0"
                     )}
                   />

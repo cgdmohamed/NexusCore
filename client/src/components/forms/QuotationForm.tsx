@@ -105,7 +105,7 @@ export function QuotationForm({ trigger }: QuotationFormProps) {
       <DialogTrigger asChild>
         {trigger || (
           <Button>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 me-2" />
             Create Quotation
           </Button>
         )}

@@ -108,8 +108,8 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
       case "exceeded": return "text-green-600";
       case "on_track": return "text-blue-600";
       case "below_target": return "text-orange-600";
-      case "not_evaluated": return "text-gray-600";
-      default: return "text-gray-600";
+      case "not_evaluated": return "text-muted-foreground";
+      default: return "text-muted-foreground";
     }
   };
 

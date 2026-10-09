@@ -75,7 +75,7 @@ export function TeamPerformance() {
 
   return (
     <Card>
-      <CardHeader className="border-b border-gray-200">
+      <CardHeader className="border-b border-border">
         <h3 className="text-lg font-semibold text-text">Team Performance</h3>
         <p className="text-sm text-neutral">Real-time team metrics</p>
       </CardHeader>
@@ -84,7 +84,7 @@ export function TeamPerformance() {
           const Icon = metric.icon;
           
           return (
-            <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+            <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/60 rounded-lg transition-colors">
               <div className="flex items-center space-x-3">
                 <div className={`w-8 h-8 ${metric.bg} rounded-lg flex items-center justify-center`}>
                   <Icon className={`${metric.color} w-4 h-4`} />
@@ -94,7 +94,7 @@ export function TeamPerformance() {
                   <p className="text-neutral text-xs">Current status</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <p className={`text-sm font-medium ${metric.color}`}>
                   {metric.value}
                 </p>
@@ -105,7 +105,7 @@ export function TeamPerformance() {
         
         {/* Recent Task Activity */}
         {tasksData.length > 0 && (
-          <div className="pt-3 mt-4 border-t border-gray-200">
+          <div className="pt-3 mt-4 border-t border-border">
             <p className="text-xs text-neutral mb-2">Recent Task Updates</p>
             {tasksData.slice(0, 2).map((task: any) => (
               <div key={task.id} className="flex items-center justify-between text-xs py-1">

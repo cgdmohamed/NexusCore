@@ -43,7 +43,7 @@ const getNotificationIcon = (type: string) => {
     case "payment_refunded":
       return <Bell className="w-4 h-4 text-emerald-500" />;
     default:
-      return <Bell className="w-4 h-4 text-gray-500" />;
+      return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
 };
 
@@ -107,7 +107,7 @@ export default function Notifications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-foreground dark:text-gray-100">
             {t("notifications.title")}
           </h1>
           <p className="text-muted-foreground">
@@ -138,19 +138,19 @@ export default function Notifications() {
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/70 w-4 h-4" />
                 <Input
                   placeholder={t("notifications.searchPlaceholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="ps-10"
                 />
               </div>
             </div>
             
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-48">
-                <Filter className="w-4 h-4 mr-2" />
+                <Filter className="w-4 h-4 me-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -194,8 +194,8 @@ export default function Notifications() {
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="text-center py-12">
-                <Bell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground/70" />
+                <h3 className="text-lg font-medium text-foreground dark:text-gray-100 mb-2">
                   {t("notifications.empty")}
                 </h3>
                 <p className="text-muted-foreground">
@@ -210,10 +210,10 @@ export default function Notifications() {
                 {filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`flex items-start space-x-4 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    className={`flex items-start space-x-4 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/60 dark:hover:bg-gray-800 ${
                       !notification.isRead 
                         ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800" 
-                        : "bg-white dark:bg-gray-900"
+                        : "bg-card dark:bg-gray-900"
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -225,10 +225,10 @@ export default function Notifications() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <h4 className="text-sm font-medium text-foreground dark:text-gray-100">
                           {notification.title}
                         </h4>
-                        <div className="flex items-center space-x-2 ml-4">
+                        <div className="flex items-center space-x-2 ms-4">
                           {notification.priority && notification.priority !== "medium" && (
                             <div className={`w-2 h-2 rounded-full ${getPriorityColor(notification.priority)}`} />
                           )}
@@ -238,13 +238,13 @@ export default function Notifications() {
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-1">
                         {notification.message}
                       </p>
                       
                       <div className="flex items-center justify-between mt-3">
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
+                        <span className="text-xs text-muted-foreground flex items-center">
+                          <Clock className="w-3 h-3 me-1" />
                           {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
                         </span>
                         
@@ -259,7 +259,7 @@ export default function Notifications() {
                             }}
                             disabled={isMarkingAsRead}
                           >
-                            <Check className="w-3 h-3 mr-1" />
+                            <Check className="w-3 h-3 me-1" />
                             {t("notifications.markRead")}
                           </Button>
                         )}

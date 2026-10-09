@@ -446,7 +446,7 @@ export default function Projects() {
                 "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-primary-foreground"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  : "bg-card border border-slate-200 text-slate-600 hover:bg-slate-50"
               )}
             >
               {f.label}

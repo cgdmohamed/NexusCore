@@ -2,136 +2,156 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RTL Language Support */
-[dir="rtl"] {
-  /* Flip horizontal margins and paddings */
-  .space-x-1 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  .space-x-2 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  .space-x-3 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  .space-x-4 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  .space-x-6 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  .space-x-8 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
-  
-  /* Text alignment */
-  .text-left { text-align: right; }
-  .text-right { text-align: left; }
-  
-  /* Float directions */
-  .float-left { float: right; }
-  .float-right { float: left; }
-  
-  /* Border radius */
-  .rounded-l { border-radius: 0 0.25rem 0.25rem 0; }
-  .rounded-r { border-radius: 0.25rem 0 0 0.25rem; }
-  .rounded-tl { border-top-right-radius: 0.25rem; border-top-left-radius: 0; }
-  .rounded-tr { border-top-left-radius: 0.25rem; border-top-right-radius: 0; }
-  .rounded-bl { border-bottom-right-radius: 0.25rem; border-bottom-left-radius: 0; }
-  .rounded-br { border-bottom-left-radius: 0.25rem; border-bottom-right-radius: 0; }
+/* ---------------------------------------------------------------------------
+   Fonts (self-hosted in /public/fonts, no third-party requests)
+   Inter draws Latin letters and digits; IBM Plex Sans Arabic draws Arabic.
+   The stack lists Inter first, so digits and punctuation look the same in both languages.
+   --------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/Inter-latin-400-700.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSansArabic-arabic-400.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSansArabic-arabic-500.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSansArabic-arabic-600.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSansArabic-arabic-700.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 
-/* Arabic Font Support */
-[dir="rtl"] {
-  font-family: 'Tajawal', 'Segoe UI', 'Roboto', sans-serif;
-}
-
-/* Dropdown and Modal RTL Support */
-[dir="rtl"] .dropdown-content {
-  right: 0;
-  left: auto;
-}
-
-[dir="rtl"] .popover-content {
-  right: 0;
-  left: auto;
-}
-
-/* Form field RTL alignment */
-[dir="rtl"] input[type="text"],
-[dir="rtl"] input[type="email"],
-[dir="rtl"] input[type="password"],
-[dir="rtl"] textarea,
-[dir="rtl"] select {
-  text-align: right;
-  direction: rtl;
-}
-
-/* Icon and button RTL adjustments */
-[dir="rtl"] .icon-left {
-  margin-right: 0;
-  margin-left: 0.5rem;
-}
-
-[dir="rtl"] .icon-right {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-/* Table RTL Support */
-[dir="rtl"] th:first-child {
-  text-align: right;
-}
-
-[dir="rtl"] td:first-child {
-  text-align: right;
-}
-
-/* Card and component RTL spacing */
-[dir="rtl"] .card-content {
-  padding-right: 1.5rem;
-  padding-left: 1.5rem;
-}
-
+/* ---------------------------------------------------------------------------
+   Design tokens. Values are HSL triplets so Tailwind opacity modifiers work
+   (bg-primary/10, hover:bg-primary/90 ...).
+   Neutral cool-grey canvas, white surfaces separated by 1px borders, one calm blue.
+   --------------------------------------------------------------------------- */
 :root {
-  --background: hsl(248, 100%, 98%);
-  --foreground: hsl(216, 19%, 18%);
-  --muted: hsl(210, 40%, 96%);
-  --muted-foreground: hsl(215, 16%, 47%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(216, 19%, 18%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(216, 19%, 18%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(152, 81%, 39%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(0, 72%, 51%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(216, 19%, 18%);
+  --background: 220 14% 97%;          /* canvas behind cards */
+  --foreground: 222 22% 11%;          /* ink */
+  --card: 0 0% 100%;
+  --card-foreground: 222 22% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 22% 11%;
+  --muted: 220 14% 95%;
+  --muted-foreground: 220 9% 38%;     /* 6.4:1 on white */
+  --border: 220 13% 89%;
+  --input: 220 13% 84%;
+  --ring: 224 70% 49%;
+
+  --primary: 224 70% 49%;             /* the one brand colour; 6.3:1 with white text */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 94%;           /* neutral secondary surface */
+  --secondary-foreground: 222 22% 16%;
+  --accent: 220 14% 94%;              /* neutral hover / selected surface */
+  --accent-foreground: 222 22% 16%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Status colours: foreground + soft background, both pass contrast */
+  --success: 152 58% 28%;
+  --success-soft: 150 45% 93%;
+  --warning: 33 90% 33%;
+  --warning-soft: 42 95% 91%;
+  --danger: 0 68% 42%;
+  --danger-soft: 0 80% 95%;
+  --info: 224 70% 42%;
+  --info-soft: 222 80% 95%;
+
+  --chart-1: 224 70% 49%;
+  --chart-2: 152 50% 38%;
+  --chart-3: 33 85% 48%;
+  --chart-4: 0 65% 52%;
+  --chart-5: 262 40% 52%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 222 14% 28%;
+  --sidebar-primary: 224 70% 49%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 14% 95%;
+  --sidebar-accent-foreground: 222 22% 11%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 224 70% 49%;
+
   --radius: 0.5rem;
-  
-  /* Custom colors matching design */
-  --text: hsl(216, 19%, 18%);
-  --neutral: hsl(215, 16%, 47%);
+
+  /* legacy names still used by a few components */
+  --text: var(--foreground);
+  --neutral: var(--muted-foreground);
 }
 
 .dark {
-  --background: hsl(240, 10%, 4%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 4%, 16%);
-  --muted-foreground: hsl(240, 5%, 65%);
-  --popover: hsl(240, 10%, 4%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 4%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 4%, 16%);
-  --input: hsl(240, 4%, 16%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(152, 81%, 39%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(0, 72%, 51%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 63%, 31%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 5%, 84%);
-  
-  /* Custom colors for dark mode */
-  --text: hsl(0, 0%, 98%);
-  --neutral: hsl(240, 5%, 65%);
+  --background: 222 18% 8%;
+  --foreground: 220 14% 94%;
+  --card: 222 16% 11%;
+  --card-foreground: 220 14% 94%;
+  --popover: 222 16% 11%;
+  --popover-foreground: 220 14% 94%;
+  --muted: 222 14% 16%;
+  --muted-foreground: 220 10% 66%;
+  --border: 222 12% 20%;
+  --input: 222 12% 24%;
+  --ring: 224 80% 66%;
+
+  --primary: 224 80% 64%;
+  --primary-foreground: 222 30% 8%;
+  --secondary: 222 14% 17%;
+  --secondary-foreground: 220 14% 92%;
+  --accent: 222 14% 17%;
+  --accent-foreground: 220 14% 94%;
+  --destructive: 0 70% 58%;
+  --destructive-foreground: 222 30% 8%;
+
+  --success: 150 55% 62%;
+  --success-soft: 152 35% 15%;
+  --warning: 38 90% 62%;
+  --warning-soft: 36 40% 15%;
+  --danger: 0 80% 70%;
+  --danger-soft: 0 35% 16%;
+  --info: 224 85% 72%;
+  --info-soft: 224 35% 17%;
+
+  --chart-1: 224 80% 64%;
+  --chart-2: 152 50% 52%;
+  --chart-3: 38 85% 58%;
+  --chart-4: 0 70% 62%;
+  --chart-5: 262 55% 68%;
+
+  --sidebar-background: 222 16% 10%;
+  --sidebar-foreground: 220 12% 76%;
+  --sidebar-primary: 224 80% 64%;
+  --sidebar-primary-foreground: 222 30% 8%;
+  --sidebar-accent: 222 14% 16%;
+  --sidebar-accent-foreground: 220 14% 94%;
+  --sidebar-border: 222 12% 18%;
+  --sidebar-ring: 224 80% 66%;
 }
 
 @layer base {
@@ -139,81 +159,75 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.875rem;              /* 14px: the working size of the product */
+    line-height: 1.5;
+    font-feature-settings: "cv11", "ss03";
   }
-  
-  /* Custom utility classes */
-  .text-text {
-    color: var(--text);
+
+  /* Money and counts line up in columns and never jitter when they change */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
-  
-  .text-neutral {
-    color: var(--neutral);
+
+  /* Values that are always left-to-right (emails, phone numbers, codes) stay LTR inside RTL pages,
+     and sit on the reading-start side of the field. */
+  [dir="rtl"] input[type="email"],
+  [dir="rtl"] input[type="tel"],
+  [dir="rtl"] input[type="url"],
+  [dir="rtl"] input[type="password"],
+  [dir="rtl"] input[inputmode="numeric"],
+  [dir="rtl"] input[inputmode="decimal"] {
+    direction: ltr;
+    text-align: right;
+  }
+
+  /* iOS zooms into inputs below 16px; keep them readable and stable on phones */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
+  /* Tailwind's space-x-* uses a physical margin; in RTL pages mirror it so spacing sits on the correct side */
+  [dir="rtl"] [class*="space-x-"] > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* RTL support for Arabic */
-[dir="rtl"] {
-  .space-x-3 > * + * {
-    margin-left: 0;
-    margin-right: 0.75rem;
-  }
-  
-  .space-x-4 > * + * {
-    margin-left: 0;
-    margin-right: 1rem;
-  }
-  
-  .space-x-2 > * + * {
-    margin-left: 0;
-    margin-right: 0.5rem;
-  }
+/* Small helpers kept for existing markup */
+.text-text {
+  color: hsl(var(--foreground));
 }
-
-/* Loading spinner */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Custom spacing for design consistency */
-.p-5 {
-  padding: 20px;
-}
-
-.space-y-6 > * + * {
-  margin-top: 1.5rem;
-}
-
-/* Custom card styles */
-.card {
-  @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
-}
-
-/* Ensure proper contrast for badges */
-.badge-active {
-  @apply bg-green-100 text-green-800;
-}
-
-.badge-pending {
-  @apply bg-yellow-100 text-yellow-800;
-}
-
-.badge-high {
-  @apply bg-red-100 text-red-800;
-}
-
-.badge-medium {
-  @apply bg-yellow-100 text-yellow-800;
-}
-
-.badge-low {
-  @apply bg-blue-100 text-blue-800;
+.text-neutral {
+  color: hsl(var(--muted-foreground));
 }

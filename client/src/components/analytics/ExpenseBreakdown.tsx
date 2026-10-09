@@ -86,7 +86,7 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
                 />
                 <span className="text-text">{item.name}</span>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <div className="font-medium text-text">{formatCurrency(item.value)}</div>
                 <div className="text-xs text-neutral">{item.count} expenses</div>
               </div>

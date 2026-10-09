@@ -84,7 +84,7 @@ const COLUMN_DEFS = [
 ];
 
 const priorityColors: Record<string, string> = {
-  low:    "bg-gray-100 text-gray-700 border-gray-200",
+  low:    "bg-muted text-foreground border-border",
   medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
   high:   "bg-red-100 text-red-700 border-red-200",
 };
@@ -332,7 +332,7 @@ export default function ProjectKanban() {
           </Button>
         </Link>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-card border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="space-y-2 min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -415,7 +415,7 @@ export default function ProjectKanban() {
       <div className="mb-3 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-            <SelectTrigger className="w-40 h-8 text-xs bg-white">
+            <SelectTrigger className="w-40 h-8 text-xs bg-card">
               <SelectValue placeholder={t("kanban.filter_assignee")} />
             </SelectTrigger>
             <SelectContent>
@@ -429,7 +429,7 @@ export default function ProjectKanban() {
           </Select>
 
           <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-36 h-8 text-xs bg-white">
+            <SelectTrigger className="w-36 h-8 text-xs bg-card">
               <SelectValue placeholder={t("kanban.filter_priority")} />
             </SelectTrigger>
             <SelectContent>
@@ -449,7 +449,7 @@ export default function ProjectKanban() {
               {f.label}
               <button
                 onClick={f.clear}
-                className="ml-0.5 hover:text-primary/70 transition-colors"
+                className="ms-0.5 hover:text-primary/70 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -482,7 +482,7 @@ export default function ProjectKanban() {
                   </span>
                 </div>
 
-                <div className="bg-white rounded-b-lg border border-t-0 border-slate-200 flex flex-col shadow-sm">
+                <div className="bg-card rounded-b-lg border border-t-0 border-slate-200 flex flex-col shadow-sm">
                   <SortableContext
                     items={columnTasks.map((t: any) => t.id)}
                     strategy={verticalListSortingStrategy}

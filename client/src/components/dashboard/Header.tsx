@@ -18,40 +18,29 @@ export function Header({ title, subtitle, hideExport, actions }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4">
+      <div className="border-b border-border bg-card px-4 py-4 md:px-6">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-xl md:text-2xl font-semibold text-text truncate">{title}</h2>
-            {subtitle && (
-              <p className="text-neutral text-sm mt-0.5 truncate">{subtitle}</p>
-            )}
+            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+            {subtitle && <p className="mt-0.5 truncate text-sm text-muted-foreground">{subtitle}</p>}
           </div>
-          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {actions}
             {!hideExport && (
-              <>
-                {/* Icon-only on mobile */}
-                <Button
-                  onClick={() => setShowExportModal(true)}
-                  size="sm"
-                  className="md:hidden h-9 w-9 p-0"
-                  title={t('common.export')}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                {/* Full button on desktop */}
-                <Button
-                  onClick={() => setShowExportModal(true)}
-                  className="hidden md:flex items-center space-x-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{t('common.export')}</span>
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowExportModal(true)}
+                className="h-9 gap-2"
+                title={t('common.export')}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden md:inline">{t('common.export')}</span>
+              </Button>
             )}
           </div>
         </div>
-      </header>
+      </div>
 
       {!hideExport && (
         <ExportModal 

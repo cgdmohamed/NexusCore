@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gzuploads
+
+# Impeccable engine binary (downloaded per platform by `impeccable install`)
+.claude/skills/impeccable/scripts/bin/

@@ -101,7 +101,7 @@ export function ClientForm({ trigger }: ClientFormProps) {
       <DialogTrigger asChild>
         {trigger || (
           <Button>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 me-2" />
             Add Client
           </Button>
         )}

@@ -55,13 +55,13 @@ const getNotificationIcon = (type: string) => {
     case "user_added":
     case "user_updated":
     case "user_deactivated":
-      return <Users className="w-4 h-4 text-gray-500" />;
+      return <Users className="w-4 h-4 text-muted-foreground" />;
     case "system_maintenance":
     case "system_backup":
     case "system_alert":
       return <AlertCircle className="w-4 h-4 text-red-500" />;
     default:
-      return <Bell className="w-4 h-4 text-gray-500" />;
+      return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
 };
 
@@ -126,13 +126,13 @@ export function NotificationDropdown() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="relative hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="relative hover:bg-muted dark:hover:bg-gray-800"
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold min-w-[1.25rem]"
+              className="absolute -top-1 -end-1 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold min-w-[1.25rem]"
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
@@ -153,7 +153,7 @@ export function NotificationDropdown() {
               disabled={isMarkingMultipleAsRead}
               className="h-auto p-1 text-xs"
             >
-              <CheckCheck className="w-3 h-3 mr-1" />
+              <CheckCheck className="w-3 h-3 me-1" />
               {t("notifications.markAllRead")}
             </Button>
           )}
@@ -184,9 +184,9 @@ export function NotificationDropdown() {
               {(notifications || []).map((notification: any) => (
                 <DropdownMenuItem
                   key={notification.id}
-                  className={`p-3 cursor-pointer space-y-1 focus:bg-gray-50 dark:focus:bg-gray-800 ${
+                  className={`p-3 cursor-pointer space-y-1 focus:bg-muted/50 dark:focus:bg-gray-800 ${
                     !notification.isRead 
-                      ? "bg-blue-50 dark:bg-blue-950/20 border-l-2 border-blue-500" 
+                      ? "bg-blue-50 dark:bg-blue-950/20 border-s-2 border-blue-500" 
                       : ""
                   }`}
                   onClick={() => handleNotificationClick(notification)}
@@ -198,10 +198,10 @@ export function NotificationDropdown() {
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <p className="text-sm font-medium text-foreground dark:text-gray-100 truncate">
                           {notification.title}
                         </p>
-                        <div className="flex items-center space-x-1 ml-2">
+                        <div className="flex items-center space-x-1 ms-2">
                           {notification.priority && notification.priority !== "medium" && (
                             <div className={`w-2 h-2 rounded-full ${getPriorityColor(notification.priority)}`} />
                           )}
@@ -211,13 +211,13 @@ export function NotificationDropdown() {
                         </div>
                       </div>
                       
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                      <p className="text-xs text-muted-foreground dark:text-muted-foreground/70 mt-1 line-clamp-2">
                         {notification.message}
                       </p>
                       
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
+                        <span className="text-xs text-muted-foreground flex items-center">
+                          <Clock className="w-3 h-3 me-1" />
                           {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
                         </span>
                         

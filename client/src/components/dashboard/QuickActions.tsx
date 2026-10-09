@@ -49,7 +49,7 @@ export function QuickActions() {
       icon: UserPlus,
       label: "Add New Client",
       href: "/clients",
-      color: "text-secondary",
+      color: "text-success",
       badge: activeClients > 0 ? `${activeClients} active` : null,
     },
     {
@@ -70,7 +70,7 @@ export function QuickActions() {
 
   return (
     <Card>
-      <CardHeader className="border-b border-gray-200">
+      <CardHeader className="border-b border-border">
         <h3 className="text-lg font-semibold text-text">Quick Actions</h3>
         <p className="text-sm text-neutral">System overview and shortcuts</p>
       </CardHeader>
@@ -82,14 +82,14 @@ export function QuickActions() {
             <Link key={index} href={action.href}>
               <Button
                 variant="outline"
-                className="w-full justify-between gap-3 h-auto p-3 hover:bg-gray-50"
+                className="w-full justify-between gap-3 h-auto p-3 hover:bg-muted/60"
               >
                 <div className="flex items-center gap-3">
                   <Icon className={`${action.color} w-5 h-5`} />
                   <span className="text-text">{action.label}</span>
                 </div>
                 {action.badge && (
-                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600">
+                  <span className="text-xs px-2 py-1 bg-muted rounded-full text-muted-foreground">
                     {action.badge}
                   </span>
                 )}
@@ -99,11 +99,11 @@ export function QuickActions() {
         })}
         
         {/* System Status */}
-        <div className="pt-3 mt-6 border-t border-gray-200">
+        <div className="pt-3 mt-6 border-t border-border">
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral">System Status</span>
             {healthLoading ? (
-              <span className="text-gray-400 flex items-center gap-1">
+              <span className="text-muted-foreground/70 flex items-center gap-1">
                 <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
                 Checking...
               </span>

@@ -37,7 +37,7 @@ export function FilterBar({ onDateRangeChange, onPeriodChange, onExport, showExp
   ];
 
   return (
-    <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3 md:gap-4 p-4 bg-gray-50 rounded-lg">
+    <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3 md:gap-4 p-4 bg-muted/50 rounded-lg">
       {/* Label row */}
       <div className="flex items-center space-x-2">
         <Filter className="h-4 w-4 text-neutral" />
@@ -64,8 +64,8 @@ export function FilterBar({ onDateRangeChange, onPeriodChange, onExport, showExp
           <span className="text-sm text-neutral whitespace-nowrap w-10">From:</span>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex-1 md:flex-none md:w-32 justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+              <Button variant="outline" className="flex-1 md:flex-none md:w-32 justify-start text-start font-normal">
+                <CalendarIcon className="me-2 h-4 w-4 shrink-0" />
                 {startDate ? format(startDate, "MMM dd") : "Start date"}
               </Button>
             </PopoverTrigger>
@@ -84,8 +84,8 @@ export function FilterBar({ onDateRangeChange, onPeriodChange, onExport, showExp
           <span className="text-sm text-neutral whitespace-nowrap w-10 md:w-auto">To:</span>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex-1 md:flex-none md:w-32 justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+              <Button variant="outline" className="flex-1 md:flex-none md:w-32 justify-start text-start font-normal">
+                <CalendarIcon className="me-2 h-4 w-4 shrink-0" />
                 {endDate ? format(endDate, "MMM dd") : "End date"}
               </Button>
             </PopoverTrigger>
@@ -103,8 +103,8 @@ export function FilterBar({ onDateRangeChange, onPeriodChange, onExport, showExp
 
       {/* Export Button */}
       {showExport && (
-        <Button onClick={onExport} variant="outline" className="w-full md:w-auto md:ml-auto">
-          <Download className="mr-2 h-4 w-4" />
+        <Button onClick={onExport} variant="outline" className="w-full md:w-auto md:ms-auto">
+          <Download className="me-2 h-4 w-4" />
           Export Report
         </Button>
       )}

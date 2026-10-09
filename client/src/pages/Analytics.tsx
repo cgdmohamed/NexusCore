@@ -224,49 +224,49 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 title="Total Revenue"
                 value={formatCurrencyValue(kpis?.totalRevenue || 0)}
                 icon={DollarSign}
-                className="border-l-4 border-l-green-500"
+                className="border-s-4 border-s-green-500"
               />
               <KpiCard
                 title="Total Expenses"
                 value={formatCurrencyValue(kpis?.totalExpenses || 0)}
                 icon={CreditCard}
-                className="border-l-4 border-l-red-500"
+                className="border-s-4 border-s-red-500"
               />
               <KpiCard
                 title="Net Profit"
                 value={formatCurrencyValue(kpis?.netProfit || 0)}
                 icon={TrendingUp}
-                className={`border-l-4 ${(kpis?.netProfit || 0) >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}
+                className={`border-s-4 ${(kpis?.netProfit || 0) >= 0 ? 'border-s-green-500' : 'border-s-red-500'}`}
               />
               <KpiCard
                 title="Profit Margin"
                 value={`${(kpis?.profitMargin || 0).toFixed(1)}%`}
                 icon={Target}
-                className="border-l-4 border-l-blue-500"
+                className="border-s-4 border-s-blue-500"
               />
               <KpiCard
                 title="New Clients"
                 value={kpis?.newClients || 0}
                 icon={Users}
-                className="border-l-4 border-l-purple-500"
+                className="border-s-4 border-s-purple-500"
               />
               <KpiCard
                 title="Completed Tasks"
                 value={kpis?.completedTasks || 0}
                 icon={FileText}
-                className="border-l-4 border-l-indigo-500"
+                className="border-s-4 border-s-indigo-500"
               />
               <KpiCard
                 title="Conversion Rate"
                 value={`${(kpis?.conversionRate || 0).toFixed(1)}%`}
                 icon={BarChart3}
-                className="border-l-4 border-l-orange-500"
+                className="border-s-4 border-s-orange-500"
               />
               <KpiCard
                 title="Outstanding"
                 value={formatCurrencyValue(outstanding?.outstandingTotal || 0)}
                 icon={AlertCircle}
-                className="border-l-4 border-l-yellow-500"
+                className="border-s-4 border-s-yellow-500"
                 description={`${outstanding?.overdueCount || 0} overdue invoices`}
               />
             </div>
@@ -341,7 +341,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                       {formatCurrencyValue(kpis?.totalExpenses || 0)}
                     </span>
                   </div>
-                  <hr className="border-gray-200" />
+                  <hr className="border-border" />
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-text">Net Profit</span>
                     <span className={`font-bold text-lg ${(kpis?.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>

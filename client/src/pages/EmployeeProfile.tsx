@@ -40,11 +40,11 @@ export default function EmployeeProfile() {
         <Header title="Employee Profile" subtitle="Employee not found" />
         <Card>
           <CardContent className="p-8 text-center">
-            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <User className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Employee Not Found</h3>
-            <p className="text-gray-600 mb-4">The requested employee could not be found.</p>
+            <p className="text-muted-foreground mb-4">The requested employee could not be found.</p>
             <Link href="/team-roles">
-              <Button><ArrowLeft className="h-4 w-4 mr-2" />Back to Team & Roles</Button>
+              <Button><ArrowLeft className="h-4 w-4 me-2" />Back to Team & Roles</Button>
             </Link>
           </CardContent>
         </Card>
@@ -55,9 +55,9 @@ export default function EmployeeProfile() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active": return "bg-green-100 text-green-800";
-      case "inactive": return "bg-gray-100 text-gray-800";
+      case "inactive": return "bg-muted text-foreground";
       case "on_leave": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
+      default: return "bg-muted text-foreground";
     }
   };
 
@@ -83,7 +83,7 @@ export default function EmployeeProfile() {
         {/* Back Button */}
         <Link href="/team-roles">
           <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 me-2" />
             Back to Team & Roles
           </Button>
         </Link>
@@ -114,36 +114,36 @@ export default function EmployeeProfile() {
                 </div>
 
                 {/* Job Title */}
-                <p className="text-base text-gray-500 mb-4">{employee.jobTitle}</p>
+                <p className="text-base text-muted-foreground mb-4">{employee.jobTitle}</p>
 
                 {/* Contact Info — horizontal chips */}
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                     <span>{employee.email}</span>
                   </div>
 
                   {employee.phone && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                      <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                       <span>{employee.phone}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <Building className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                     <span>{getDepartmentIcon(employee.department)} {employee.department}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <Calendar className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                     <span>Hired {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMM d, yyyy') : 'N/A'}</span>
                   </div>
                 </div>
 
                 {employee.notes && (
-                  <div className="mt-4 px-3 py-2 bg-gray-50 rounded-md border border-gray-100">
-                    <p className="text-sm text-gray-600">{employee.notes}</p>
+                  <div className="mt-4 px-3 py-2 bg-muted/50 rounded-md border border-border">
+                    <p className="text-sm text-muted-foreground">{employee.notes}</p>
                   </div>
                 )}
               </div>
@@ -183,7 +183,7 @@ export default function EmployeeProfile() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h3>
+                    <h3 className="text-sm font-medium text-foreground mb-3">Personal Information</h3>
                     <div className="space-y-2">
                       {[
                         { label: "Full Name", value: `${employee.firstName} ${employee.lastName}` },
@@ -191,7 +191,7 @@ export default function EmployeeProfile() {
                         ...(employee.phone ? [{ label: "Phone", value: employee.phone }] : []),
                       ].map(({ label, value }) => (
                         <div key={label} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
-                          <span className="text-sm text-gray-500">{label}</span>
+                          <span className="text-sm text-muted-foreground">{label}</span>
                           <span className="text-sm font-medium text-text">{value}</span>
                         </div>
                       ))}
@@ -199,22 +199,22 @@ export default function EmployeeProfile() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Employment Information</h3>
+                    <h3 className="text-sm font-medium text-foreground mb-3">Employment Information</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-sm text-gray-500">Job Title</span>
+                        <span className="text-sm text-muted-foreground">Job Title</span>
                         <span className="text-sm font-medium text-text">{employee.jobTitle}</span>
                       </div>
                       <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-sm text-gray-500">Department</span>
+                        <span className="text-sm text-muted-foreground">Department</span>
                         <span className="text-sm font-medium text-text capitalize">{employee.department}</span>
                       </div>
                       <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-sm text-gray-500">Status</span>
+                        <span className="text-sm text-muted-foreground">Status</span>
                         <Badge className={getStatusColor(employee.status)}>{employee.status}</Badge>
                       </div>
                       <div className="flex justify-between items-center py-1">
-                        <span className="text-sm text-gray-500">Hiring Date</span>
+                        <span className="text-sm text-muted-foreground">Hiring Date</span>
                         <span className="text-sm font-medium text-text">
                           {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMMM d, yyyy') : 'N/A'}
                         </span>
@@ -225,9 +225,9 @@ export default function EmployeeProfile() {
 
                 {employee.notes && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Additional Notes</h3>
-                    <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                      <p className="text-sm text-gray-700">{employee.notes}</p>
+                    <h3 className="text-sm font-medium text-foreground mb-2">Additional Notes</h3>
+                    <div className="p-3 bg-muted/50 rounded-md border border-border">
+                      <p className="text-sm text-foreground">{employee.notes}</p>
                     </div>
                   </div>
                 )}
@@ -242,21 +242,21 @@ export default function EmployeeProfile() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-4 p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-start gap-4 p-4 border rounded-lg bg-muted/50">
                     <div className="w-2.5 h-2.5 bg-primary rounded-full mt-1.5 shrink-0" />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-text">{employee.jobTitle}</h4>
                         <Badge className="bg-green-100 text-green-800">Current</Badge>
                       </div>
-                      <p className="text-sm text-gray-500 capitalize mt-0.5">{employee.department} Department</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-sm text-muted-foreground capitalize mt-0.5">{employee.department} Department</p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">
                         {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMMM yyyy') : 'N/A'} — Present
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-center py-6 text-gray-400">
+                  <div className="text-center py-6 text-muted-foreground/70">
                     <Calendar className="h-6 w-6 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No previous employment history recorded</p>
                   </div>

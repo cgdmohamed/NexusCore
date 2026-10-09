@@ -108,7 +108,7 @@ export default function ResetPassword() {
                   </Link>
                   <Link href="/auth">
                     <Button variant="ghost" className="w-full" data-testid="link-back-to-login">
-                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      <ArrowLeft className="h-4 w-4 me-2" />
                       Back to Login
                     </Button>
                   </Link>
@@ -168,7 +168,7 @@ export default function ResetPassword() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -193,7 +193,7 @@ export default function ResetPassword() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute end-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -227,7 +227,7 @@ export default function ResetPassword() {
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-4 w-4 me-2 animate-spin" />
                           Resetting Password...
                         </>
                       ) : (
@@ -237,7 +237,7 @@ export default function ResetPassword() {
 
                     <Link href="/auth">
                       <Button variant="ghost" className="w-full" data-testid="link-back-to-login">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        <ArrowLeft className="h-4 w-4 me-2" />
                         Back to Login
                       </Button>
                     </Link>

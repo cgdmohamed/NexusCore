@@ -10,7 +10,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 function formatDisplay(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
-  const formatted = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (currency === "USD") return `${symbol}${formatted}`;
   return `${formatted} ${symbol}`;
 }
@@ -82,9 +82,9 @@ export default function QuotationPrint() {
             <h1 className="text-3xl font-bold text-gray-900">QUOTATION</h1>
             <p className="text-gray-500 mt-1">{snap.quotationNumber}</p>
           </div>
-          <div className="text-right text-sm text-gray-600">
+          <div className="text-end text-sm text-gray-600">
             <p className="font-semibold text-gray-900 text-lg">{snap.companyName || "CompanyOS"}</p>
-            <p className="mt-1">Print date: {snap.printDate ? new Date(snap.printDate).toLocaleDateString() : ""}</p>
+            <p className="mt-1">Print date: {snap.printDate ? new Date(snap.printDate).toLocaleDateString('en-GB') : ""}</p>
           </div>
         </div>
 
@@ -104,13 +104,13 @@ export default function QuotationPrint() {
             {snap.clientPhone && <p className="text-sm text-gray-600">{snap.clientPhone}</p>}
             {snap.clientAddress && <p className="text-sm text-gray-600">{snap.clientAddress}</p>}
           </div>
-          <div className="text-right">
+          <div className="text-end">
             <div className="space-y-1 text-sm">
               <div><span className="text-gray-500">Status: </span><span className="font-medium capitalize">{snap.status}</span></div>
               {snap.validUntil && (
-                <div><span className="text-gray-500">Valid Until: </span><span>{new Date(snap.validUntil).toLocaleDateString()}</span></div>
+                <div><span className="text-gray-500">Valid Until: </span><span>{new Date(snap.validUntil).toLocaleDateString('en-GB')}</span></div>
               )}
-              <div><span className="text-gray-500">Created: </span><span>{snap.createdAt ? new Date(snap.createdAt).toLocaleDateString() : "—"}</span></div>
+              <div><span className="text-gray-500">Created: </span><span>{snap.createdAt ? new Date(snap.createdAt).toLocaleDateString('en-GB') : "—"}</span></div>
             </div>
           </div>
         </div>
@@ -127,11 +127,11 @@ export default function QuotationPrint() {
         <table className="w-full mb-6" style={{ borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
-              <th className="text-left py-2 text-sm font-semibold text-gray-700">Description</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-16">Qty</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-28">Unit Price</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-16">Disc %</th>
-              <th className="text-right py-2 text-sm font-semibold text-gray-700 w-28">Total</th>
+              <th className="text-start py-2 text-sm font-semibold text-gray-700">Description</th>
+              <th className="text-end py-2 text-sm font-semibold text-gray-700 w-16">Qty</th>
+              <th className="text-end py-2 text-sm font-semibold text-gray-700 w-28">Unit Price</th>
+              <th className="text-end py-2 text-sm font-semibold text-gray-700 w-16">Disc %</th>
+              <th className="text-end py-2 text-sm font-semibold text-gray-700 w-28">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -141,14 +141,14 @@ export default function QuotationPrint() {
               return (
                 <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td className="py-2 text-sm text-gray-800">{item.description}</td>
-                  <td className="py-2 text-sm text-gray-800 text-right">{item.quantity}</td>
-                  <td className="py-2 text-sm text-gray-800 text-right">
+                  <td className="py-2 text-sm text-gray-800 text-end">{item.quantity}</td>
+                  <td className="py-2 text-sm text-gray-800 text-end">
                     {included ? "included" : formatDisplay(parseFloat(item.displayUnitPrice || "0"), currency)}
                   </td>
-                  <td className="py-2 text-sm text-gray-800 text-right">
+                  <td className="py-2 text-sm text-gray-800 text-end">
                     {parseFloat(item.discount || "0").toFixed(1)}%
                   </td>
-                  <td className="py-2 text-sm text-gray-800 text-right font-medium">
+                  <td className="py-2 text-sm text-gray-800 text-end font-medium">
                     {included ? "included" : formatDisplay(parseFloat(item.displayTotalPrice || "0"), currency)}
                   </td>
                 </tr>

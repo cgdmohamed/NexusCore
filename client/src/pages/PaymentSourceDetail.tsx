@@ -98,7 +98,7 @@ export default function PaymentSourceDetail() {
 
     const colors = {
       active: "bg-green-50 text-green-700 border-green-200",
-      inactive: "bg-gray-50 text-gray-700 border-gray-200",
+      inactive: "bg-muted/50 text-foreground border-border",
     } as const;
 
     return (
@@ -136,7 +136,7 @@ export default function PaymentSourceDetail() {
       case "refund":
         return <TrendingUp className="h-4 w-4 text-green-500" />;
       default:
-        return <Activity className="h-4 w-4 text-gray-500" />;
+        return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -161,11 +161,11 @@ export default function PaymentSourceDetail() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <div className="h-6 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 bg-muted rounded animate-pulse" />
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
               </CardContent>
             </Card>
           </div>
@@ -183,16 +183,16 @@ export default function PaymentSourceDetail() {
         />
         <Card>
           <CardContent className="text-center py-12">
-            <Wallet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Wallet className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               Payment Source Not Found
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               The payment source you're looking for doesn't exist or has been deleted.
             </p>
             <Link href="/payment-sources">
               <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4 me-2" />
                 Back to Payments
               </Button>
             </Link>
@@ -212,7 +212,7 @@ export default function PaymentSourceDetail() {
       <div className="p-3 md:p-6">
         <Link href="/payment-sources">
           <Button variant="outline" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 me-2" />
             Back to Payments
           </Button>
         </Link>
@@ -226,7 +226,7 @@ export default function PaymentSourceDetail() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="min-w-0">
-                  <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
+                  <CardTitle className="text-xl sm:text-2xl font-bold text-foreground break-words">
                     {paymentSource.name}
                   </CardTitle>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -236,11 +236,11 @@ export default function PaymentSourceDetail() {
                     </Badge>
                   </div>
                 </div>
-                <div className="sm:text-right flex-shrink-0">
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                <div className="sm:text-end flex-shrink-0">
+                  <div className="text-2xl sm:text-3xl font-bold text-foreground">
                     {formatCurrency(paymentSource.currentBalance || "0")}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-muted-foreground mt-1">
                     Current Balance
                   </div>
                 </div>
@@ -249,10 +249,10 @@ export default function PaymentSourceDetail() {
             <CardContent className="space-y-6">
               {paymentSource.description && (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
+                  <h4 className="font-medium text-foreground mb-2">
                     Description
                   </h4>
-                  <p className="text-gray-600">{paymentSource.description}</p>
+                  <p className="text-muted-foreground">{paymentSource.description}</p>
                 </div>
               )}
 
@@ -261,20 +261,20 @@ export default function PaymentSourceDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <Calendar className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Created Date</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {paymentSource.createdAt ? format(new Date(paymentSource.createdAt), "MMMM dd, yyyy") : "N/A"}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
+                    <CreditCard className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Account Type</div>
-                      <div className="text-sm text-gray-500 capitalize">
+                      <div className="text-sm text-muted-foreground capitalize">
                         {paymentSource.accountType.replace("_", " ")}
                       </div>
                     </div>
@@ -284,10 +284,10 @@ export default function PaymentSourceDetail() {
                 <div className="space-y-4">
                   {paymentSource.currency && (
                     <div className="flex items-center gap-3">
-                      <Building className="h-5 w-5 text-gray-400" />
+                      <Building className="h-5 w-5 text-muted-foreground/70" />
                       <div>
                         <div className="font-medium">Currency</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-muted-foreground">
                           {paymentSource.currency}
                         </div>
                       </div>
@@ -295,10 +295,10 @@ export default function PaymentSourceDetail() {
                   )}
 
                   <div className="flex items-center gap-3">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
+                    <DollarSign className="h-5 w-5 text-muted-foreground/70" />
                     <div>
                       <div className="font-medium">Initial Balance</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {formatCurrency(paymentSource.initialBalance || "0")}
                       </div>
                     </div>
@@ -340,7 +340,7 @@ export default function PaymentSourceDetail() {
                         <TableCell>
                           <div className="font-medium">{transaction.description}</div>
                           {transaction.referenceType && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                               Ref: {transaction.referenceType}
                             </div>
                           )}
@@ -353,7 +353,7 @@ export default function PaymentSourceDetail() {
                         <TableCell className="font-medium">
                           {formatCurrency(transaction.balanceAfter)}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">
+                        <TableCell className="text-sm text-muted-foreground">
                           {transaction.createdAt ? format(new Date(transaction.createdAt), "MMM dd, yyyy") : "N/A"}
                         </TableCell>
                       </TableRow>
@@ -362,11 +362,11 @@ export default function PaymentSourceDetail() {
                 </Table>
               ) : (
                 <div className="text-center py-12">
-                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <Activity className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
                     No Transactions Yet
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-muted-foreground">
                     This payment source hasn't been used for any transactions.
                   </p>
                 </div>
@@ -400,7 +400,7 @@ export default function PaymentSourceDetail() {
                         <TableCell>
                           <div className="font-medium">{expense.title}</div>
                           {expense.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                            <div className="text-sm text-muted-foreground truncate max-w-xs">
                               {expense.description}
                             </div>
                           )}
@@ -413,7 +413,7 @@ export default function PaymentSourceDetail() {
                             {expense.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-500">
+                        <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(expense.expenseDate), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>
@@ -429,11 +429,11 @@ export default function PaymentSourceDetail() {
                 </Table>
               ) : (
                 <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
                     No Related Expenses
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-muted-foreground">
                     No expenses have been linked to this payment source yet.
                   </p>
                 </div>
@@ -452,7 +452,7 @@ export default function PaymentSourceDetail() {
             <CardContent className="space-y-3">
               <Link href={`/payment-sources/${paymentSource.id}/edit`}>
                 <Button className="w-full" variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 me-2" />
                   Edit Details
                 </Button>
               </Link>
@@ -460,7 +460,7 @@ export default function PaymentSourceDetail() {
               <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="w-full" variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
+                    <Settings className="h-4 w-4 me-2" />
                     Adjust Balance
                   </Button>
                 </DialogTrigger>
@@ -491,7 +491,7 @@ export default function PaymentSourceDetail() {
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-2" />
                 {deleteMutation.isPending ? "Deleting..." : "Delete Source"}
               </Button>
             </CardContent>
@@ -504,22 +504,22 @@ export default function PaymentSourceDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Transactions</span>
+                <span className="text-muted-foreground">Total Transactions</span>
                 <span className="font-medium">{transactions.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Related Expenses</span>
+                <span className="text-muted-foreground">Related Expenses</span>
                 <span className="font-medium">{expenses.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Spent</span>
+                <span className="text-muted-foreground">Total Spent</span>
                 <span className="font-medium text-red-600">
                   {formatCurrency(expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0))}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
-                <span className="text-gray-600">Current Balance</span>
+                <span className="text-muted-foreground">Current Balance</span>
                 <span className="font-bold text-green-600">
                   {formatCurrency(paymentSource.currentBalance || "0")}
                 </span>

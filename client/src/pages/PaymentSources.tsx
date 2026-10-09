@@ -165,7 +165,7 @@ export default function PaymentSources() {
       case 'cash': return 'bg-green-100 text-green-800 border-green-200';
       case 'bank': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'wallet': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -183,7 +183,7 @@ export default function PaymentSources() {
   const getStatusColor = (isActive: boolean) => {
     return isActive
       ? 'bg-green-100 text-green-800 border-green-200'
-      : 'bg-gray-100 text-gray-800 border-gray-200';
+      : 'bg-muted text-foreground border-border';
   };
 
   const toggleSort = (field: string) => {
@@ -217,11 +217,11 @@ export default function PaymentSources() {
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-full"></div>
+                <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-full"></div>
               </CardContent>
             </Card>
           ))}
@@ -245,7 +245,7 @@ export default function PaymentSources() {
               <div className="flex items-center space-x-2">
                 <Wallet className="h-4 w-4 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Sources</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Sources</p>
                   <p className="text-2xl font-bold">{stats?.totalSources || 0}</p>
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default function PaymentSources() {
               <div className="flex items-center space-x-2">
                 <TrendingUp className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Sources</p>
+                  <p className="text-sm font-medium text-muted-foreground">Active Sources</p>
                   <p className="text-2xl font-bold">{stats?.activeSources || 0}</p>
                 </div>
               </div>
@@ -269,7 +269,7 @@ export default function PaymentSources() {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Balance</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.totalBalance || "0")}</p>
                 </div>
               </div>
@@ -285,12 +285,12 @@ export default function PaymentSources() {
           <CardContent>
             <div className="flex flex-col gap-3 mb-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   placeholder="Search payment sources..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
+                  className="ps-10 w-full"
                 />
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -338,7 +338,7 @@ export default function PaymentSources() {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Showing {filteredSources.length} of {paymentSources.length} payment sources
               </p>
               <div className="flex items-center gap-2">
@@ -382,14 +382,14 @@ export default function PaymentSources() {
               <TableHeader>
                 <TableRow>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer hover:bg-muted/60"
                     onClick={() => toggleSort("name")}
                   >
                     Name {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
                   </TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer hover:bg-muted/60"
                     onClick={() => toggleSort("currentBalance")}
                   >
                     Balance {sortBy === "currentBalance" && (sortOrder === "asc" ? "↑" : "↓")}
@@ -402,14 +402,14 @@ export default function PaymentSources() {
               </TableHeader>
               <TableBody>
                 {paginatedSources.map((source) => (
-                  <TableRow key={source.id} className="hover:bg-gray-50">
+                  <TableRow key={source.id} className="hover:bg-muted/60">
                     <TableCell>
                       <div>
                         <Link href={`/payment-sources/${source.id}`} className="font-medium hover:text-blue-600">
                           {source.name}
                         </Link>
                         {source.description && (
-                          <p className="text-sm text-gray-500 mt-1">{source.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{source.description}</p>
                         )}
                       </div>
                     </TableCell>
@@ -425,7 +425,7 @@ export default function PaymentSources() {
                         {source.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-500">
+                    <TableCell className="text-muted-foreground">
                       {formatDistanceToNow(new Date(source.createdAt ?? new Date()), { addSuffix: true })}
                     </TableCell>
                     <TableCell>
@@ -439,18 +439,18 @@ export default function PaymentSources() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
                             <Link href={`/payment-sources/${source.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
+                              <Eye className="h-4 w-4 me-2" />
                               View Details
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/payment-sources/${source.id}/edit`}>
-                              <Edit className="h-4 w-4 mr-2" />
+                              <Edit className="h-4 w-4 me-2" />
                               Edit
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleAdjustBalance(source)}>
-                            <Settings className="h-4 w-4 mr-2" />
+                            <Settings className="h-4 w-4 me-2" />
                             Adjust Balance
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -458,7 +458,7 @@ export default function PaymentSources() {
                             onClick={() => handleDelete(source)}
                             className="text-red-600"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-4 w-4 me-2" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -491,7 +491,7 @@ export default function PaymentSources() {
                         </Link>
                       </CardTitle>
                       {source.description && (
-                        <p className="text-sm text-gray-500 mt-1">{source.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{source.description}</p>
                       )}
                     </div>
                     <DropdownMenu>
@@ -503,18 +503,18 @@ export default function PaymentSources() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link href={`/payment-sources/${source.id}`}>
-                            <Eye className="h-4 w-4 mr-2" />
+                            <Eye className="h-4 w-4 me-2" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/payment-sources/${source.id}/edit`}>
-                            <Edit className="h-4 w-4 mr-2" />
+                            <Edit className="h-4 w-4 me-2" />
                             Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleAdjustBalance(source)}>
-                          <Settings className="h-4 w-4 mr-2" />
+                          <Settings className="h-4 w-4 me-2" />
                           Adjust Balance
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -522,7 +522,7 @@ export default function PaymentSources() {
                           onClick={() => handleDelete(source)}
                           className="text-red-600"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4 me-2" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -539,18 +539,18 @@ export default function PaymentSources() {
                   
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Current Balance:</span>
+                      <span className="text-sm text-muted-foreground">Current Balance:</span>
                       <span className="font-mono font-semibold text-lg">
                         {formatCurrency(source.currentBalance || "0")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Currency:</span>
+                      <span className="text-sm text-muted-foreground">Currency:</span>
                       <span className="text-sm">{source.currency}</span>
                     </div>
                   </div>
                   
-                  <div className="text-xs text-gray-500 pt-2 border-t">
+                  <div className="text-xs text-muted-foreground pt-2 border-t">
                     Created {formatDistanceToNow(new Date(source.createdAt ?? new Date()), { addSuffix: true })}
                   </div>
                 </CardContent>
@@ -571,9 +571,9 @@ export default function PaymentSources() {
         {filteredSources.length === 0 && (
           <Card>
             <CardContent className="text-center py-12">
-              <Wallet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment Sources Found</h3>
-              <p className="text-gray-500 mb-4">
+              <Wallet className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Payment Sources Found</h3>
+              <p className="text-muted-foreground mb-4">
                 {searchTerm || typeFilter !== "all" || statusFilter !== "all"
                   ? "No payment sources match your current filters."
                   : "Get started by adding your first payment source."}

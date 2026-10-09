@@ -130,20 +130,20 @@ function RoleViewDialog({
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
             {role.name}
-            <Badge variant={role.isActive ? "default" : "secondary"} className="text-xs ml-1">
+            <Badge variant={role.isActive ? "default" : "secondary"} className="text-xs ms-1">
               {role.isActive ? "Active" : "Inactive"}
             </Badge>
           </DialogTitle>
         </DialogHeader>
 
         {role.description && (
-          <p className="text-sm text-gray-600 -mt-2">{role.description}</p>
+          <p className="text-sm text-muted-foreground -mt-2">{role.description}</p>
         )}
 
         <div className="space-y-5">
           {/* Full permission matrix — all modules, all permission types */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+            <h4 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
               Permissions
             </h4>
 
@@ -151,21 +151,21 @@ function RoleViewDialog({
             <div className="grid grid-cols-[1fr_repeat(5,_auto)] gap-x-3 gap-y-1 mb-1">
               <div />
               {PERMISSION_KEYS.map(pk => (
-                <span key={pk} className="text-xs font-medium text-gray-500 text-center w-14">
+                <span key={pk} className="text-xs font-medium text-muted-foreground text-center w-14">
                   {PERMISSION_LABELS[pk]}
                 </span>
               ))}
             </div>
 
-            <div className="divide-y divide-gray-100 border border-gray-100 rounded-md overflow-hidden">
+            <div className="divide-y divide-border border border-border rounded-md overflow-hidden">
               {ROLE_MODULES.map(module => {
                 const modulePerms = permissions[module.key] ?? {};
                 return (
                   <div
                     key={module.key}
-                    className="grid grid-cols-[1fr_repeat(5,_auto)] gap-x-3 items-center px-3 py-2 bg-white hover:bg-gray-50"
+                    className="grid grid-cols-[1fr_repeat(5,_auto)] gap-x-3 items-center px-3 py-2 bg-card hover:bg-muted/60"
                   >
-                    <span className="text-sm text-gray-700 font-medium">{module.label}</span>
+                    <span className="text-sm text-foreground font-medium">{module.label}</span>
                     {PERMISSION_KEYS.map(pk => (
                       <div key={pk} className="flex justify-center w-14">
                         {modulePerms[pk] ? (
@@ -183,7 +183,7 @@ function RoleViewDialog({
 
           {/* Assigned Users */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+            <h4 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
               Assigned Users ({role.userCount})
             </h4>
             {isLoading ? (
@@ -191,7 +191,7 @@ function RoleViewDialog({
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
             ) : roleUsers.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">No users assigned to this role</p>
+              <p className="text-sm text-muted-foreground/70 italic">No users assigned to this role</p>
             ) : (
               <div className="space-y-2">
                 {roleUsers.map(u => (
@@ -209,12 +209,12 @@ function RoleViewDialog({
                           : u.email}
                       </p>
                       {u.employee && (
-                        <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                        <p className="text-xs text-muted-foreground/70 truncate">{u.email}</p>
                       )}
                     </div>
                     <Badge
                       variant={u.isActive ? "default" : "secondary"}
-                      className="text-xs ml-auto shrink-0"
+                      className="text-xs ms-auto shrink-0"
                     >
                       {u.isActive ? "Active" : "Inactive"}
                     </Badge>
@@ -372,7 +372,7 @@ export default function UserManagement() {
     green: "bg-green-50 text-green-600",
     purple: "bg-purple-50 text-purple-600",
     emerald: "bg-emerald-50 text-emerald-600",
-    gray: "bg-gray-100 text-gray-600",
+    gray: "bg-muted text-muted-foreground",
     orange: "bg-orange-50 text-orange-600",
   };
 
@@ -395,7 +395,7 @@ export default function UserManagement() {
                 <Card key={label}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <p className="text-xs text-gray-500 leading-tight">{label}</p>
+                      <p className="text-xs text-muted-foreground leading-tight">{label}</p>
                       <div className={`p-1.5 rounded-md shrink-0 ${colorMap[color]}`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
@@ -410,23 +410,23 @@ export default function UserManagement() {
           {/* Search and Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
               <Input
                 placeholder="Search users, employees, roles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="ps-10"
                 data-testid="input-search"
               />
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => setShowEmployeeForm(true)} data-testid="button-add-employee">
-                <UserPlus className="h-4 w-4 mr-2" />
+                <UserPlus className="h-4 w-4 me-2" />
                 Add Employee
               </Button>
               <Button onClick={() => setShowUserForm(true)} data-testid="button-create-user">
-                <Shield className="h-4 w-4 mr-2" />
+                <Shield className="h-4 w-4 me-2" />
                 Create User Account
               </Button>
               <Button
@@ -434,7 +434,7 @@ export default function UserManagement() {
                 onClick={() => { setCloneRoleData(null); setEditingRole(null); setShowRoleForm(true); }}
                 data-testid="button-new-role"
               >
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="h-4 w-4 me-2" />
                 New Role
               </Button>
             </div>
@@ -457,7 +457,7 @@ export default function UserManagement() {
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <Card>
-                  <CardContent className="p-8 text-center text-gray-500">
+                  <CardContent className="p-8 text-center text-muted-foreground">
                     <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
                     <p>No users found</p>
                   </CardContent>
@@ -478,20 +478,20 @@ export default function UserManagement() {
                             <p className="font-semibold text-text truncate">
                               {user.employee?.firstName} {user.employee?.lastName}
                             </p>
-                            <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                            <p className="text-xs text-gray-400 truncate">
+                            <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                            <p className="text-xs text-muted-foreground/70 truncate">
                               {user.employee?.jobTitle}{user.employee?.department ? ` · ${user.employee.department}` : ""}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right hidden sm:block">
+                          <div className="text-end hidden sm:block">
                             <Badge variant={user.isActive ? "default" : "secondary"} className="mb-1">
                               {user.isActive ? "Active" : "Inactive"}
                             </Badge>
                             {user.role?.name && (
-                              <p className="text-xs text-gray-500">{user.role.name}</p>
+                              <p className="text-xs text-muted-foreground">{user.role.name}</p>
                             )}
                           </div>
                           <div className="flex gap-1.5">
@@ -520,7 +520,7 @@ export default function UserManagement() {
                 </div>
               ) : filteredEmployees.length === 0 ? (
                 <Card>
-                  <CardContent className="p-8 text-center text-gray-500">
+                  <CardContent className="p-8 text-center text-muted-foreground">
                     <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
                     <p>No employees found</p>
                   </CardContent>
@@ -541,15 +541,15 @@ export default function UserManagement() {
                             <p className="font-semibold text-text truncate">
                               {employee.firstName} {employee.lastName}
                             </p>
-                            <p className="text-sm text-gray-500 truncate">{employee.email}</p>
-                            <p className="text-xs text-gray-400 truncate">
+                            <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
+                            <p className="text-xs text-muted-foreground/70 truncate">
                               {employee.jobTitle}{employee.department ? ` · ${employee.department}` : ""}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right hidden sm:block space-y-1">
+                          <div className="text-end hidden sm:block space-y-1">
                             <Badge variant={employee.status === 'active' ? "default" : "secondary"}>
                               {employee.status}
                             </Badge>
@@ -597,7 +597,7 @@ export default function UserManagement() {
                 </div>
               ) : filteredRoles.length === 0 ? (
                 <Card>
-                  <CardContent className="p-8 text-center text-gray-500">
+                  <CardContent className="p-8 text-center text-muted-foreground">
                     <Settings className="h-10 w-10 mx-auto mb-3 opacity-40" />
                     <p>No roles found</p>
                   </CardContent>
@@ -625,19 +625,19 @@ export default function UserManagement() {
                               <Badge variant={role.isActive ? "default" : "secondary"} className="text-xs">
                                 {role.isActive ? "Active" : "Inactive"}
                               </Badge>
-                              <Badge variant="outline" className="text-xs text-gray-500 font-normal">
-                                <Users className="h-3 w-3 mr-1 inline-block" />
+                              <Badge variant="outline" className="text-xs text-muted-foreground font-normal">
+                                <Users className="h-3 w-3 me-1 inline-block" />
                                 {role.userCount} {role.userCount === 1 ? "user" : "users"}
                               </Badge>
                             </div>
                             {role.description && (
-                              <p className="text-sm text-gray-500 mb-3">{role.description}</p>
+                              <p className="text-sm text-muted-foreground mb-3">{role.description}</p>
                             )}
                             {permEntries.length > 0 && (
                               <div className="space-y-1.5">
                                 {permEntries.map(({ module, label, allowed }) => (
                                   <div key={module} className="flex items-start gap-2 flex-wrap">
-                                    <span className="text-xs font-medium text-gray-500 w-28 shrink-0 pt-0.5">
+                                    <span className="text-xs font-medium text-muted-foreground w-28 shrink-0 pt-0.5">
                                       {label}
                                     </span>
                                     <div className="flex flex-wrap gap-1">
@@ -740,7 +740,7 @@ export default function UserManagement() {
                 </CardHeader>
                 <CardContent>
                   {auditLogs.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">No audit logs found</p>
+                    <p className="text-muted-foreground text-center py-8">No audit logs found</p>
                   ) : (
                     <div className="divide-y">
                       {auditLogs.map((log) => (
@@ -749,12 +749,12 @@ export default function UserManagement() {
                             <p className="text-sm font-medium text-text">
                               {log.action} {log.entityType}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               by {log.user?.employee?.firstName} {log.user?.employee?.lastName}
                             </p>
                           </div>
-                          <p className="text-xs text-gray-400">
-                            {new Date(log.createdAt).toLocaleDateString()}
+                          <p className="text-xs text-muted-foreground/70">
+                            {new Date(log.createdAt).toLocaleDateString('en-GB')}
                           </p>
                         </div>
                       ))}

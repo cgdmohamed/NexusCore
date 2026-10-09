@@ -252,12 +252,12 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                 <FormLabel>Amount *</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <DollarSign className="absolute start-3 top-3 h-4 w-4 text-muted-foreground/70" />
                     <Input 
                       type="number" 
                       step="0.01" 
                       placeholder="0.00" 
-                      className="pl-10"
+                      className="ps-10"
                       {...field} 
                     />
                   </div>
@@ -374,7 +374,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                           <Wallet className="h-4 w-4" />
                           <div>
                             <div className="font-medium">{source.name}</div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                               Balance: {formatCurrency(source.currentBalance || "0")}
                             </div>
                           </div>
@@ -401,7 +401,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full pl-3 text-left font-normal",
+                          "w-full ps-3 text-start font-normal",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -410,7 +410,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                         ) : (
                           <span>Pick a date</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <CalendarIcon className="ms-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -533,12 +533,12 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
           <Label>Receipt/Attachment (Optional)</Label>
           
           {!selectedFile && !expense?.attachmentUrl ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="border-2 border-dashed border-input rounded-lg p-6 text-center">
+              <Upload className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 Upload Receipt
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Attach receipt, invoice, or supporting document
               </p>
               <div>
@@ -557,12 +557,12 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                   Choose File
                 </Button>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-muted-foreground/70 mt-2">
                 Supported formats: JPEG, PNG, GIF, PDF (max 5MB)
               </p>
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg p-4">
+            <div className="border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Receipt className="h-8 w-8 text-green-600" />
@@ -570,7 +570,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                     <div className="font-medium">
                       {selectedFile?.name || "Current attachment"}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       {selectedFile ? 
                         `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : 
                         "Existing file"

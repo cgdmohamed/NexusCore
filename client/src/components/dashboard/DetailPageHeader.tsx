@@ -25,16 +25,16 @@ export function DetailPageHeader({
         <div className="flex flex-col gap-2 min-w-0">
           <Link href={backHref}>
             <Button variant="outline" size="sm" className="w-fit">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 me-2" />
               {backLabel}
             </Button>
           </Link>
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-gray-600 mt-0.5 text-sm sm:text-base">{subtitle}</p>
+              <p className="text-muted-foreground mt-0.5 text-sm sm:text-base">{subtitle}</p>
             )}
             {badge && <div className="mt-2 flex flex-wrap gap-2">{badge}</div>}
           </div>
