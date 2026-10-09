@@ -6,6 +6,8 @@
   It replaces the earlier hand-written `0001` that had no snapshot. Money columns are
   converted from `varchar` with an explicit `USING` cast.
 
+- `0002` – `projects.completed_at` (idempotent; the server also adds the column at startup, so existing databases need no manual step).
+
 ## Fresh database
 ```bash
 DATABASE_URL=... npx drizzle-kit migrate

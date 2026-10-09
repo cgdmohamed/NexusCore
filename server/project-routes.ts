@@ -1,7 +1,8 @@
 import type { Express, Request } from "express";
 import { db } from "./db";
-import { projects, tasks, users, clients, insertProjectSchema } from "@shared/schema";
-import { eq, count, sql } from "drizzle-orm";
+import { projects, tasks, users, clients, expenses, insertProjectSchema } from "@shared/schema";
+import { eq, count, sql, and, isNull, ne, inArray } from "drizzle-orm";
+import { projectHealth, startOfDay } from "./project-health";
 import { z } from "zod";
 import { requirePermission } from "./auth";
 import { logger } from "./logger";
@@ -38,6 +39,9 @@ async function runProjectMigrations(): Promise<void> {
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='budget') THEN
           ALTER TABLE projects ADD COLUMN budget NUMERIC;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='completed_at') THEN
+          ALTER TABLE projects ADD COLUMN completed_at TIMESTAMP;
         END IF;
       END $$;
     `);
@@ -95,39 +99,59 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
 
   app.get("/api/projects", requirePermission("projects", "view"), async (req, res) => {
     try {
-      const allProjects = await db.select().from(projects);
+      // Newest first inside each status; the page sorts further for its own views
+      const allProjects = await db.select().from(projects).orderBy(sql`${projects.createdAt} DESC NULLS LAST, ${projects.name}`);
+      const ids = allProjects.map((p) => p.id);
       const allClients = await db.select({ id: clients.id, name: clients.name }).from(clients);
       const clientMap = new Map(allClients.map(c => [c.id, c]));
-      const membersMap = await getMembersForProjects(allProjects.map(p => p.id));
+      const membersMap = await getMembersForProjects(ids);
 
-      const projectsWithCounts = await Promise.all(
-        allProjects.map(async (project) => {
-          const taskStats = await db
-            .select({ status: tasks.status, count: count() })
+      // One query each for task counts, late tasks and spend, instead of one set per project
+      const taskStats = ids.length
+        ? await db.select({ projectId: tasks.projectId, status: tasks.status, count: count() })
+            .from(tasks).where(inArray(tasks.projectId, ids)).groupBy(tasks.projectId, tasks.status)
+        : [];
+      const lateStats = ids.length
+        ? await db.select({ projectId: tasks.projectId, count: count() })
             .from(tasks)
-            .where(eq(tasks.projectId, project.id))
-            .groupBy(tasks.status);
+            .where(and(inArray(tasks.projectId, ids), inArray(tasks.status, ["pending", "in_progress"]), sql`${tasks.dueDate} < ${startOfDay(new Date())}`))
+            .groupBy(tasks.projectId)
+        : [];
+      const spendStats = ids.length
+        ? await db.select({ projectId: expenses.relatedProjectId, total: sql<string>`COALESCE(SUM(${expenses.amount}), 0)` })
+            .from(expenses)
+            .where(and(inArray(expenses.relatedProjectId, ids), ne(expenses.status, "cancelled"), isNull(expenses.rejectedAt)))
+            .groupBy(expenses.relatedProjectId)
+        : [];
 
-          const counts = { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 };
-          taskStats.forEach((stat) => {
-            const status = stat.status as keyof typeof counts;
-            if (status in counts) {
-              counts[status] = Number(stat.count);
-              if (status !== "cancelled") {
-                counts.total += Number(stat.count);
-              }
-            }
-          });
+      const countsByProject = new Map<string, { pending: number; in_progress: number; completed: number; cancelled: number; total: number }>();
+      for (const stat of taskStats) {
+        if (!stat.projectId) continue;
+        const counts = countsByProject.get(stat.projectId) ?? { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 };
+        const status = stat.status as keyof typeof counts;
+        if (status in counts && status !== "total") {
+          counts[status] = Number(stat.count);
+          if (status !== "cancelled") counts.total += Number(stat.count);
+        }
+        countsByProject.set(stat.projectId, counts);
+      }
+      const lateByProject = new Map(lateStats.map((r) => [r.projectId, Number(r.count)]));
+      const spendByProject = new Map(spendStats.map((r) => [r.projectId, parseFloat(r.total || "0")]));
 
-          const client = project.clientId ? clientMap.get(project.clientId) : null;
-          return {
-            ...project,
-            taskCounts: counts,
-            clientName: client?.name ?? null,
-            members: membersMap.get(project.id) ?? [],
-          };
-        })
-      );
+      const projectsWithCounts = allProjects.map((project) => {
+        const counts = countsByProject.get(project.id) ?? { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 };
+        const overdueTasks = lateByProject.get(project.id) ?? 0;
+        const client = project.clientId ? clientMap.get(project.clientId) : null;
+        return {
+          ...project,
+          taskCounts: counts,
+          overdueTasks,
+          spent: spendByProject.get(project.id) ?? 0,
+          health: projectHealth({ status: project.status, dueDate: project.dueDate, total: counts.total, completed: counts.completed, overdueTasks }),
+          clientName: client?.name ?? null,
+          members: membersMap.get(project.id) ?? [],
+        };
+      });
 
       res.json(projectsWithCounts);
     } catch (error) {
@@ -138,17 +162,21 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
 
   app.post("/api/projects", requirePermission("projects", "add"), async (req, res) => {
     try {
-      const validatedData = projectInputSchema.parse(req.body);
+      const { completedAt: _ignoredInput, ...rawBody } = req.body ?? {};
+      const validatedData = projectInputSchema.parse(rawBody);
       const userId = getUserId(req);
 
       const [newProject] = await db
         .insert(projects)
-        .values({ ...validatedData, createdBy: userId })
+        .values({ ...validatedData, completedAt: validatedData.status === "completed" ? new Date() : null, createdBy: userId })
         .returning();
 
       res.status(201).json({
         ...newProject,
         taskCounts: { pending: 0, in_progress: 0, completed: 0, cancelled: 0, total: 0 },
+        overdueTasks: 0,
+        spent: 0,
+        health: projectHealth({ status: newProject.status, dueDate: newProject.dueDate, total: 0, completed: 0, overdueTasks: 0 }),
         clientName: null,
         members: [],
       });
@@ -209,11 +237,22 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
   app.put("/api/projects/:id", requirePermission("projects", "edit"), async (req, res) => {
     try {
       const { id } = req.params;
-      const validatedData = projectInputSchema.partial().parse(req.body);
+      // completedAt is never taken from the client: it follows the status change below
+      const { completedAt: _ignoredInput, ...rawBody } = req.body ?? {};
+      const validatedData = projectInputSchema.partial().parse(rawBody);
+
+      const [current] = await db.select({ status: projects.status }).from(projects).where(eq(projects.id, id));
+      if (!current) return res.status(404).json({ message: "Project not found" });
+
+      const changes: Record<string, unknown> = { ...validatedData };
+      if (validatedData.status && validatedData.status !== current.status) {
+        if (validatedData.status === "completed") changes.completedAt = new Date();
+        else if (current.status === "completed") changes.completedAt = null;
+      }
 
       const [updatedProject] = await db
         .update(projects)
-        .set(validatedData)
+        .set(changes)
         .where(eq(projects.id, id))
         .returning();
 
@@ -231,7 +270,12 @@ export async function registerProjectRoutes(app: Express): Promise<void> {
   app.delete("/api/projects/:id", requirePermission("projects", "delete"), async (req, res) => {
     try {
       const { id } = req.params;
-      await db.update(tasks).set({ projectId: null }).where(eq(tasks.projectId, id));
+      // A project that has history is archived, not deleted: its tasks and spend would lose their context
+      const [taskRow] = await db.select({ n: count() }).from(tasks).where(eq(tasks.projectId, id));
+      const [expenseRow] = await db.select({ n: count() }).from(expenses).where(eq(expenses.relatedProjectId, id));
+      if (Number(taskRow?.n ?? 0) > 0 || Number(expenseRow?.n ?? 0) > 0) {
+        return res.status(409).json({ message: "This project has tasks or expenses. Archive it instead of deleting it." });
+      }
       const [deletedProject] = await db.delete(projects).where(eq(projects.id, id)).returning();
       if (!deletedProject) return res.status(404).json({ message: "Project not found" });
       res.json({ message: "Project deleted successfully" });

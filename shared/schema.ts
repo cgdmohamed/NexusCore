@@ -304,6 +304,8 @@ export const projects = pgTable("projects", {
   startDate: timestamp("start_date"),
   dueDate: timestamp("due_date"),
   budget: decimal("budget"),
+  // Set when the project is marked completed, cleared when it is reopened
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
 });

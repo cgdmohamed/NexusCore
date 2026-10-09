@@ -15,6 +15,13 @@
       "when": 1791234840298,
       "tag": "0001_aberrant_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791550862680,
+      "tag": "0002_project_completed_at",
+      "breakpoints": true
     }
   ]
 }

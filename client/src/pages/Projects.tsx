@@ -1,20 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { 
-  Loader2, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  FolderKanban, 
-  ExternalLink,
-  User2,
-  CalendarDays,
-  DollarSign,
-} from "lucide-react";
+import { Plus, FolderKanban, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
   Dialog, 
   DialogContent, 
@@ -58,11 +47,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { Header } from "@/components/dashboard/Header";
-import { Link } from "wouter";
+import { ProjectCard, type ProjectRow } from "@/components/projects/ProjectCard";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/currency";
-import { format } from "@/lib/dateUtils";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -83,34 +71,19 @@ const projectFormSchema = insertProjectSchema.extend({
 
 type ProjectFormData = z.infer<typeof projectFormSchema>;
 
-type StatusFilter = "all" | "active" | "on_hold" | "completed" | "archived";
+type ViewKey = "live" | "completed" | "archived" | "all" | "overdue" | "due_week" | "ready";
 
-const STATUS_BADGE_CLS: Record<string, string> = {
-  active:   "bg-success-soft text-success border-success/20",
-  on_hold:  "bg-warning-soft text-warning border-warning/20",
-  completed:"bg-info-soft text-info border-info/20",
-  archived: "bg-muted text-muted-foreground border-border",
-};
+const DAY = 24 * 60 * 60 * 1000;
+const HEALTH_RANK: Record<string, number> = { overdue: 0, at_risk: 1, ready_to_close: 2, on_track: 3, no_tasks: 4, on_hold: 5, completed: 6, archived: 7 };
+const isLive = (p: ProjectRow) => p.status === "active" || p.status === "on_hold";
 
-function ProjectProgressBar({ completed, total, cancelled = 0, tasksLabel }: { completed: number; total: number; cancelled?: number; tasksLabel: string }) {
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between items-center text-xs text-muted-foreground">
-        <span>
-          {completed}/{total} {tasksLabel}
-          {cancelled > 0 && <span className="ms-1 opacity-60">({cancelled} cancelled)</span>}
-        </span>
-        <span className="font-medium">{pct}%</span>
-      </div>
-      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-primary transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
+// Most urgent first, then by the nearest deadline; projects without a deadline come last
+function byUrgency(a: ProjectRow, b: ProjectRow) {
+  const rank = HEALTH_RANK[a.health] - HEALTH_RANK[b.health];
+  if (rank !== 0) return rank;
+  const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+  const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+  return da - db;
 }
 
 export default function Projects() {
@@ -118,9 +91,12 @@ export default function Projects() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [view, setView] = useState<ViewKey>("live");
+  const [completeTarget, setCompleteTarget] = useState<ProjectRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectRow | null>(null);
+  const { canEdit, canDelete, canAdd } = usePermissions();
 
-  const { data: projects = [], isLoading } = useQuery<any[]>({
+  const { data: projects = [], isLoading } = useQuery<ProjectRow[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -201,6 +177,31 @@ export default function Projects() {
     },
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: ProjectRow["status"] }) => {
+      await apiRequest("PUT", `/api/projects/${id}`, { status });
+      return status;
+    },
+    onSuccess: (status) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      const message = status === "archived" ? "projects.archived_toast" : status === "completed" ? "projects.completed_toast" : "projects.restored_toast";
+      toast({ title: t("common.success"), description: t(message) });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Completing a project that still has open tasks asks first; every other change goes straight through
+  const requestStatus = (project: ProjectRow, status: ProjectRow["status"]) => {
+    const open = project.taskCounts.total - project.taskCounts.completed;
+    if (status === "completed" && open > 0) {
+      setCompleteTarget(project);
+      return;
+    }
+    statusMutation.mutate({ id: project.id, status });
+  };
+
   const onSubmit = (data: ProjectFormData) => {
     if (editingProject) {
       updateMutation.mutate({ id: editingProject.id, data });
@@ -229,20 +230,49 @@ export default function Projects() {
     form.reset();
   };
 
-  const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
-    { key: "all",       label: t("projects.filter_all") },
-    { key: "active",    label: t("projects.status_active") },
-    { key: "on_hold",   label: t("projects.status_on_hold") },
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const weekEnd = startOfToday.getTime() + 7 * DAY;
+  const dueThisWeek = (p: ProjectRow) =>
+    isLive(p) && p.dueDate != null && new Date(p.dueDate).getTime() >= startOfToday.getTime() && new Date(p.dueDate).getTime() <= weekEnd;
+
+  const live = projects.filter(isLive);
+  const counts = {
+    live: live.length,
+    completed: projects.filter((p) => p.status === "completed").length,
+    archived: projects.filter((p) => p.status === "archived").length,
+    all: projects.length,
+    overdue: projects.filter((p) => p.health === "overdue").length,
+    due_week: projects.filter(dueThisWeek).length,
+    ready: projects.filter((p) => p.health === "ready_to_close").length,
+  };
+
+  const visible = (() => {
+    switch (view) {
+      case "live": return [...live].sort(byUrgency);
+      case "overdue": return projects.filter((p) => p.health === "overdue").sort(byUrgency);
+      case "due_week": return projects.filter(dueThisWeek).sort(byUrgency);
+      case "ready": return projects.filter((p) => p.health === "ready_to_close").sort(byUrgency);
+      case "completed":
+        return projects.filter((p) => p.status === "completed")
+          .sort((a, b) => new Date(b.completedAt ?? 0).getTime() - new Date(a.completedAt ?? 0).getTime());
+      case "archived": return projects.filter((p) => p.status === "archived");
+      default: return [...projects].sort(byUrgency);
+    }
+  })();
+
+  const tabs: { key: ViewKey; label: string }[] = [
+    { key: "live", label: t("projects.tab_live") },
     { key: "completed", label: t("projects.status_completed") },
-    { key: "archived",  label: t("projects.status_archived") },
+    { key: "archived", label: t("projects.status_archived") },
+    { key: "all", label: t("projects.filter_all") },
   ];
-
-  const filteredProjects = statusFilter === "all"
-    ? projects
-    : projects.filter((p) => p.status === statusFilter);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const summary: { key: ViewKey; label: string; value: number; alert?: boolean }[] = [
+    { key: "live", label: t("projects.summary_active"), value: counts.live },
+    { key: "overdue", label: t("projects.summary_overdue"), value: counts.overdue, alert: counts.overdue > 0 },
+    { key: "due_week", label: t("projects.summary_due_week"), value: counts.due_week },
+    { key: "ready", label: t("projects.summary_ready"), value: counts.ready },
+  ];
 
   return (
     <div className="flex-1 overflow-auto bg-muted/50">
@@ -252,8 +282,7 @@ export default function Projects() {
       />
       
       <div className="p-3 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-foreground">{t("projects.all_projects")}</h2>
+        <div className="mb-4 flex items-center justify-end">
           <Dialog 
             open={isCreateDialogOpen || !!editingProject} 
             onOpenChange={(open) => { if (!open) closeDialog(); }}
@@ -436,31 +465,43 @@ export default function Projects() {
           </Dialog>
         </div>
 
-        {/* Status filter tabs */}
-        <div className="flex gap-1.5 mb-6 flex-wrap">
-          {STATUS_FILTERS.map((f) => (
+        {/* Where things stand right now; each box filters the list */}
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {summary.map((item) => (
             <button
-              key={f.key}
-              onClick={() => setStatusFilter(f.key)}
+              key={item.key}
+              type="button"
+              onClick={() => setView(item.key)}
+              aria-pressed={view === item.key}
               className={cn(
-                "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-                statusFilter === f.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-border text-muted-foreground hover:bg-muted/50"
+                "rounded-lg border bg-card p-4 text-start transition-colors hover:bg-accent/40",
+                view === item.key ? "border-primary ring-1 ring-primary" : "border-border",
               )}
             >
-              {f.label}
-              {f.key !== "all" && (
-                <span className="ms-1.5 text-xs opacity-70">
-                  ({projects.filter((p) => p.status === f.key).length})
-                </span>
+              <p className="text-sm text-muted-foreground">{item.label}</p>
+              <p className={cn("mt-1 text-2xl font-semibold tabular-nums", item.alert && "text-danger")}>{item.value}</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-5 flex flex-wrap gap-1.5">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setView(tab.key)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                view === tab.key ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-muted/50",
               )}
+            >
+              {tab.label}
+              <span className="ms-1.5 text-xs opacity-70 tabular-nums">({counts[tab.key as "live" | "completed" | "archived" | "all"]})</span>
             </button>
           ))}
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="h-48">
                 <CardHeader>
@@ -468,148 +509,93 @@ export default function Projects() {
                   <Skeleton className="h-4 w-1/2" />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="mb-2 h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="bg-muted p-6 rounded-full mb-4">
-              <FolderKanban className="h-12 w-12 text-muted-foreground" />
+        ) : visible.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="mb-4 rounded-full bg-muted p-5">
+              <FolderKanban className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground">{t("projects.no_projects")}</h3>
-            <p className="text-muted-foreground max-w-sm mt-2">
-              {t("projects.no_projects_desc")}
+            <h3 className="text-lg font-medium text-foreground">
+              {projects.length === 0 ? t("projects.no_projects") : view === "live" ? t("projects.empty_live") : t("projects.empty_filter")}
+            </h3>
+            <p className="mt-2 max-w-sm text-muted-foreground">
+              {projects.length === 0 ? t("projects.no_projects_desc") : view === "live" ? t("projects.empty_live_desc") : ""}
             </p>
-            {statusFilter === "all" && (
-              <Button className="mt-6" onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 me-2" />
-                {t("projects.create_btn")}
-              </Button>
-            )}
+            <div className="mt-6 flex gap-2">
+              {projects.length > 0 && view !== "all" && (
+                <Button variant="outline" onClick={() => setView("all")}>{t("projects.show_all")}</Button>
+              )}
+              {canAdd("projects") && (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="me-2 h-4 w-4" />
+                  {t("projects.create_btn")}
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => {
-              const cancelledTasks = project.taskCounts?.cancelled || 0;
-              const totalTasks = project.taskCounts?.total || 0;
-              const completedTasks = project.taskCounts?.completed || 0;
-              const dueDate = project.dueDate ? new Date(project.dueDate) : null;
-              const isOverdue = dueDate && dueDate < today && project.status !== "completed";
-              const statusLabel = {
-                active: t("projects.status_active"),
-                on_hold: t("projects.status_on_hold"),
-                completed: t("projects.status_completed"),
-                archived: t("projects.status_archived"),
-              }[project.status as string] ?? project.status;
-
-              return (
-                <Card key={project.id} className="group hover:shadow-md transition-shadow flex flex-col">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: project.color }}
-                        />
-                        <CardTitle className="text-lg font-semibold truncate">{project.name}</CardTitle>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ms-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => startEdit(project)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{t("projects.delete_title")}</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t("projects.delete_desc")}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => deleteMutation.mutate(project.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                {t("common.delete")}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE_CLS[project.status] ?? "")}>
-                        {statusLabel}
-                      </Badge>
-                      {project.clientName ? (
-                        <Link href={`/clients/${project.clientId}`}>
-                          <div className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
-                            <User2 className="h-3.5 w-3.5" />
-                            <span>{project.clientName}</span>
-                          </div>
-                        </Link>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">{t("common.internal_project")}</p>
-                      )}
-                    </div>
-
-                    {project.description && (
-                      <CardDescription className="line-clamp-2 mt-2">
-                        {project.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="pb-4 flex-1 space-y-3">
-                    <ProjectProgressBar completed={completedTasks} total={totalTasks} cancelled={cancelledTasks} tasksLabel={t("projects.tasks_count")} />
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-                      {dueDate && (
-                        <span className={cn("flex items-center gap-1", isOverdue && "text-danger font-medium")}>
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {format(dueDate, "MMM d, yyyy")}
-                          {isOverdue && (
-                            <Badge className="ms-1 bg-danger-soft text-danger border-danger/20 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>
-                          )}
-                        </span>
-                      )}
-                      {project.budget != null && (
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-3.5 w-3.5" />
-                          {t("projects.budget_label")}: {formatCurrency(project.budget)}
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-
-                  <CardFooter className="pt-0">
-                    <Link href={`/projects/${project.id}`} className="w-full">
-                      <Button variant="secondary" className="w-full">
-                        {t("projects.open_board")}
-                        <ExternalLink className="ms-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {visible.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                canEdit={canEdit("projects")}
+                canDelete={canDelete("projects")}
+                onEdit={startEdit}
+                onSetStatus={requestStatus}
+                onDelete={setDeleteTarget}
+              />
+            ))}
           </div>
         )}
+
+        <AlertDialog open={!!completeTarget} onOpenChange={(open) => { if (!open) setCompleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("projects.complete_title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {completeTarget && t("projects.complete_open_tasks", { n: String(completeTarget.taskCounts.total - completeTarget.taskCounts.completed) })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (completeTarget) statusMutation.mutate({ id: completeTarget.id, status: "completed" });
+                  setCompleteTarget(null);
+                }}
+              >
+                {t("projects.complete_confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("projects.delete_title")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("projects.delete_desc_empty")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                  setDeleteTarget(null);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {t("common.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
