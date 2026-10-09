@@ -361,6 +361,7 @@ export default function Tasks() {
       <Header 
         title={t('nav.tasks')} 
         subtitle="Assign, track, and evaluate tasks across all departments"
+        hideExport
       />
       
       <div className="p-3 md:p-6 space-y-6">

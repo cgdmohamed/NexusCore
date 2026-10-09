@@ -56,7 +56,7 @@ export default function PaymentSourceEdit() {
               The payment source you're trying to edit doesn't exist or has been deleted.
             </p>
             <Button onClick={() => setLocation("/payment-sources")}>
-              <ArrowLeft className="h-4 w-4 me-2" />
+              <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
               Back to Payment Sources
             </Button>
           </CardContent>

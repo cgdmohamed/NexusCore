@@ -253,6 +253,7 @@ export default function CRM() {
       <Header 
         title={t('nav.clients')}
         subtitle="Manage your client relationships and opportunities"
+        hideExport
       />
       
       <div className="p-3 md:p-6 space-y-6">
@@ -478,7 +479,7 @@ export default function CRM() {
                       
                       return (
                         <TableRow key={client.id} className="hover:bg-muted/60">
-                          <TableCell className="font-medium">
+                          <TableCell className="min-w-[9rem] font-medium">
                             <Link href={`/clients/${client.id}`} className="text-primary hover:text-info">
                               {client.name}
                             </Link>
@@ -494,7 +495,7 @@ export default function CRM() {
                               {client.phone && (
                                 <div className="flex items-center text-sm text-muted-foreground">
                                   <Phone className="w-3 h-3 me-1" />
-                                  {client.phone}
+                                  <bdi dir="ltr">{client.phone}</bdi>
                                 </div>
                               )}
                             </div>
@@ -522,7 +523,7 @@ export default function CRM() {
                               <div>{clientInvoices.length} invoices</div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                             <div>
                               <div>{client.createdAt ? format(new Date(client.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
                               <div className="text-xs text-muted-foreground/70">
@@ -531,11 +532,10 @@ export default function CRM() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex space-x-1">
+                            <div className="flex items-center gap-1">
                               <Link href={`/clients/${client.id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="w-3 h-3 me-1" />
-                                  View
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="View" title="View">
+                                  <Eye className="h-4 w-4" />
                                 </Button>
                               </Link>
                               {isAdmin && (client.status === 'archived' ? (
@@ -546,7 +546,7 @@ export default function CRM() {
                               ) : (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-danger hover:text-danger hover:bg-danger-soft">
+                                    <Button variant="outline" size="sm" className="whitespace-nowrap">
                                       <Archive className="w-3 h-3 me-1" />
                                       Archive
                                     </Button>
@@ -631,7 +631,7 @@ export default function CRM() {
                             {client.phone && (
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Phone className="w-3 h-3 me-2" />
-                                {client.phone}
+                                <bdi dir="ltr">{client.phone}</bdi>
                               </div>
                             )}
                           </div>

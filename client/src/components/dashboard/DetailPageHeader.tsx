@@ -25,7 +25,7 @@ export function DetailPageHeader({
         <div className="flex flex-col gap-2 min-w-0">
           <Link href={backHref}>
             <Button variant="outline" size="sm" className="w-fit">
-              <ArrowLeft className="w-4 h-4 me-2" />
+              <ArrowLeft className="w-4 h-4 me-2 rtl:-scale-x-100" />
               {backLabel}
             </Button>
           </Link>

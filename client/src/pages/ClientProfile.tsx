@@ -851,7 +851,7 @@ export default function ClientProfile() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
-                    <p className="text-lg">{client.phone || "Not provided"}</p>
+                    <p className="text-lg"><bdi dir="ltr">{client.phone || "Not provided"}</bdi></p>
                   </div>
                 </div>
                 <div className="space-y-4">

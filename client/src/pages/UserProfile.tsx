@@ -298,7 +298,7 @@ export default function UserProfile() {
         <Header title="User Not Found" subtitle="The requested user profile could not be found" />
         <div className="p-6">
           <Button onClick={() => setLocation("/team-roles")}>
-            <ArrowLeft className="h-4 w-4 me-2" />
+            <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
             Back to Team & Roles
           </Button>
         </div>
@@ -316,7 +316,7 @@ export default function UserProfile() {
       <div className="p-3 md:p-6 space-y-6">
         {/* Back Navigation */}
         <Button variant="outline" onClick={() => setLocation("/team-roles")}>
-          <ArrowLeft className="h-4 w-4 me-2" />
+          <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
           Back to Team & Roles
         </Button>
 
@@ -388,7 +388,7 @@ export default function UserProfile() {
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">Phone</p>
-                      <p className="text-sm text-muted-foreground">{user.employee?.phone || "Not provided"}</p>
+                      <p className="text-sm text-muted-foreground"><bdi dir="ltr">{user.employee?.phone || "Not provided"}</bdi></p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

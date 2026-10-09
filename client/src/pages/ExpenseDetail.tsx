@@ -223,7 +223,7 @@ export default function ExpenseDetail() {
             </p>
             <Link href="/expenses">
               <Button>
-                <ArrowLeft className="h-4 w-4 me-2" />
+                <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
                 Back to Expenses
               </Button>
             </Link>
@@ -432,7 +432,7 @@ export default function ExpenseDetail() {
 
               <Link href="/expenses">
                 <Button className="w-full" variant="ghost">
-                  <ArrowLeft className="h-4 w-4 me-2" />
+                  <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
                   Back to Expenses
                 </Button>
               </Link>

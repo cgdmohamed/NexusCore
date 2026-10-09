@@ -172,6 +172,7 @@ export default function Quotations() {
       <Header 
         title={t('nav.quotations')}
         subtitle="Create and manage quotations for your clients"
+        hideExport
       />
       
       <div className="p-3 md:p-6 space-y-6">
@@ -396,8 +397,8 @@ export default function Quotations() {
                   <TableBody>
                     {paginatedQuotations.map((quotation) => (
                       <TableRow key={quotation.id} className="hover:bg-muted/60">
-                        <TableCell className="font-medium">
-                          <Link href={`/quotations/${quotation.id}`} className="text-primary hover:text-info">
+                        <TableCell className="whitespace-nowrap font-medium" dir="ltr">
+                          <Link href={`/quotations/${quotation.id}`} className="text-primary hover:underline">
                             {quotation.quotationNumber}
                           </Link>
                         </TableCell>
@@ -406,10 +407,10 @@ export default function Quotations() {
                             {quotation.title}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="min-w-[8rem] text-sm text-muted-foreground">
                           {getClientName(quotation.clientId)}
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="whitespace-nowrap font-medium tabular-nums">
                           {formatCurrency(quotation.amount)}
                         </TableCell>
                         <TableCell>
@@ -420,7 +421,7 @@ export default function Quotations() {
                             </div>
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                           {quotation.validUntil ? (
                             <div>
                               <div>{format(new Date(quotation.validUntil), 'MMM dd, yyyy')}</div>
@@ -432,7 +433,7 @@ export default function Quotations() {
                             'No expiry'
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                           <div>
                             <div>{format(new Date(quotation.createdAt ?? new Date()), 'MMM dd, yyyy')}</div>
                             <div className="text-xs text-muted-foreground/70">
@@ -441,11 +442,10 @@ export default function Quotations() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-1">
+                          <div className="flex items-center gap-1">
                             <Link href={`/quotations/${quotation.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 me-1" />
-                                View
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="View" title="View">
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                             <StatusUpdateForm

@@ -179,6 +179,7 @@ export default function Expenses() {
         <Header 
           title={t('nav.expenses')}
           subtitle="Track and manage company expenses and payments"
+          hideExport
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[...Array(4)].map((_, i) => (

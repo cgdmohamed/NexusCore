@@ -58,7 +58,7 @@ export default function ExpenseEdit() {
               The expense you're trying to edit doesn't exist or has been deleted.
             </p>
             <Button onClick={() => setLocation("/expenses")}>
-              <ArrowLeft className="h-4 w-4 me-2" />
+              <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
               Back to Expenses
             </Button>
           </CardContent>

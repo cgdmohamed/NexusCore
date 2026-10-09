@@ -212,6 +212,7 @@ export default function PaymentSources() {
         <Header 
           title={t('nav.payments')}
           subtitle="Manage company financial accounts and track balances"
+          hideExport
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[...Array(4)].map((_, i) => (
@@ -416,7 +417,7 @@ export default function PaymentSources() {
                     <TableCell>
                       {getAccountTypeBadge(source.accountType)}
                     </TableCell>
-                    <TableCell className="font-mono">
+                    <TableCell className="whitespace-nowrap font-medium tabular-nums">
                       {formatCurrency(source.currentBalance || "0")}
                     </TableCell>
                     <TableCell>{source.currency}</TableCell>
@@ -540,7 +541,7 @@ export default function PaymentSources() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Current Balance:</span>
-                      <span className="font-mono font-semibold text-lg">
+                      <span className="font-semibold tabular-nums text-lg">
                         {formatCurrency(source.currentBalance || "0")}
                       </span>
                     </div>

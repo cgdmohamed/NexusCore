@@ -688,7 +688,7 @@ export default function InvoiceDetail() {
           <p className="text-muted-foreground mb-4">Invoice not found</p>
           <Link href="/invoices">
             <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 me-2" />
+              <ArrowLeft className="w-4 h-4 me-2 rtl:-scale-x-100" />
               Back to Invoices
             </Button>
           </Link>
@@ -847,11 +847,11 @@ export default function InvoiceDetail() {
       />
       
       {/* Action Buttons */}
-      <div className="px-3 md:px-6 pb-4">
+      <div className="px-3 pt-4 pb-4 md:px-6">
         <div className="flex flex-wrap gap-2">
           <Link href="/invoices">
             <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 me-2" />
+              <ArrowLeft className="w-4 h-4 me-2 rtl:-scale-x-100" />
               Back to Invoices
             </Button>
           </Link>
@@ -981,7 +981,7 @@ export default function InvoiceDetail() {
               {client?.phone && (
                 <div>
                   <Label className="text-sm text-muted-foreground">Phone</Label>
-                  <p>{client.phone}</p>
+                  <p><bdi dir="ltr">{client.phone}</bdi></p>
                 </div>
               )}
               {client?.address && (
@@ -1043,42 +1043,42 @@ export default function InvoiceDetail() {
         </div>
 
         {/* Financial Summary */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-info/20">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center text-info">
+            <CardTitle className="text-lg flex items-center">
               <DollarSign className="w-5 h-5 me-2" />
               Financial Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
             {/* Prominent Invoice Total */}
-            <div className="bg-card p-6 rounded-lg border-2 border-info/20 shadow-sm mb-6">
+            <div className="bg-card p-6 rounded-lg border mb-6">
               <div className="text-center">
-                <Label className="text-sm text-info font-medium">INVOICE TOTAL</Label>
-                <p className="text-5xl font-bold text-info mt-2">{formatCurrency(totalAmount)}</p>
+                <Label className="text-sm text-muted-foreground font-medium">Invoice Total</Label>
+                <p className="text-4xl font-semibold tracking-tight tabular-nums mt-2">{formatCurrency(totalAmount)}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-card p-4 rounded-lg border">
                 <Label className="text-sm text-muted-foreground">Subtotal</Label>
-                <p className="text-xl font-bold">{formatCurrency(subtotal)}</p>
+                <p className="text-xl font-semibold tabular-nums">{formatCurrency(subtotal)}</p>
               </div>
               <div className="bg-card p-4 rounded-lg border">
                 <Label className="text-sm text-muted-foreground">VAT ({parseFloat(invoice.taxRate || "0")}%)</Label>
-                <p className="text-xl font-bold text-primary">+{formatCurrency(taxAmount)}</p>
+                <p className="text-xl font-semibold tabular-nums">+{formatCurrency(taxAmount)}</p>
               </div>
               <div className="bg-card p-4 rounded-lg border">
                 <Label className="text-sm text-muted-foreground">Discount</Label>
-                <p className="text-xl font-bold text-warning">-{formatCurrency(discountAmount)}</p>
+                <p className="text-xl font-semibold tabular-nums">-{formatCurrency(discountAmount)}</p>
               </div>
               <div className="bg-success-soft p-4 rounded-lg border border-success/20">
                 <Label className="text-sm text-success font-medium">Paid Amount</Label>
-                <p className="text-xl font-bold text-success">{formatCurrency(paidAmount)}</p>
+                <p className="text-xl font-semibold tabular-nums text-success">{formatCurrency(paidAmount)}</p>
               </div>
               <div className="bg-danger-soft p-4 rounded-lg border border-danger/20">
                 <Label className="text-sm text-danger font-medium">Outstanding</Label>
-                <p className="text-xl font-bold text-danger">{formatCurrency(remainingAmount)}</p>
+                <p className="text-xl font-semibold tabular-nums text-danger">{formatCurrency(remainingAmount)}</p>
               </div>
             </div>
             
@@ -1086,11 +1086,11 @@ export default function InvoiceDetail() {
             <div className="mt-6 bg-card p-4 rounded-lg border">
               <div className="flex justify-between items-center mb-3">
                 <Label className="text-sm text-muted-foreground font-medium">Payment Progress</Label>
-                <span className="text-lg font-bold text-primary">{paymentProgress.toFixed(1)}%</span>
+                <span className="text-lg font-semibold tabular-nums">{paymentProgress.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-4">
                 <div 
-                  className="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-300" 
+                  className="bg-success h-4 rounded-full transition-all duration-300" 
                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
                 ></div>
               </div>

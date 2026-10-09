@@ -192,7 +192,7 @@ export default function PaymentSourceDetail() {
             </p>
             <Link href="/payment-sources">
               <Button>
-                <ArrowLeft className="h-4 w-4 me-2" />
+                <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
                 Back to Payments
               </Button>
             </Link>
@@ -212,7 +212,7 @@ export default function PaymentSourceDetail() {
       <div className="p-3 md:p-6">
         <Link href="/payment-sources">
           <Button variant="outline" size="sm">
-            <ArrowLeft className="w-4 h-4 me-2" />
+            <ArrowLeft className="w-4 h-4 me-2 rtl:-scale-x-100" />
             Back to Payments
           </Button>
         </Link>

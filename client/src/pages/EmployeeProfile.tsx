@@ -44,7 +44,7 @@ export default function EmployeeProfile() {
             <h3 className="text-lg font-medium mb-2">Employee Not Found</h3>
             <p className="text-muted-foreground mb-4">The requested employee could not be found.</p>
             <Link href="/team-roles">
-              <Button><ArrowLeft className="h-4 w-4 me-2" />Back to Team & Roles</Button>
+              <Button><ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />Back to Team & Roles</Button>
             </Link>
           </CardContent>
         </Card>
@@ -83,7 +83,7 @@ export default function EmployeeProfile() {
         {/* Back Button */}
         <Link href="/team-roles">
           <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 me-2" />
+            <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
             Back to Team & Roles
           </Button>
         </Link>
@@ -126,7 +126,7 @@ export default function EmployeeProfile() {
                   {employee.phone && (
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                      <span>{employee.phone}</span>
+                      <bdi dir="ltr">{employee.phone}</bdi>
                     </div>
                   )}
 

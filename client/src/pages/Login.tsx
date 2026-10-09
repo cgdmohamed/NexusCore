@@ -159,7 +159,7 @@ export default function Login() {
             {/* Logo and Company Info */}
             <div className="text-center lg:text-left rtl:lg:text-right">
               <div className="flex justify-center lg:justify-start rtl:lg:justify-end mb-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-card rounded-3xl flex items-center justify-center shadow-lg">
                   <Building className="text-white w-10 h-10" />
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function Login() {
             <Card className="w-full max-w-md shadow-2xl border-0 bg-background/80 backdrop-blur-xl">
               <CardHeader className="pb-8 pt-8">
                 <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                  <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                     <LogIn className="text-white w-8 h-8" />
                   </div>
                   
@@ -264,7 +264,7 @@ export default function Login() {
                   <Button 
                     onClick={handleLogin}
                     disabled={loginLoading}
-                    className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="w-full py-6 text-lg bg-card hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
                     size="lg"
                   >
                     {loginLoading ? (
