@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 export type Language = 'en' | 'ar';
 
@@ -542,33 +542,50 @@ const translations: Translations = {
   'common.table_view': { en: 'Table View', ar: 'عرض الجدول' },
 };
 
-export function useTranslation() {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('language');
-    return (saved as Language) || 'en';
-  });
+// One shared language store so every component re-renders when the language changes
+const readLanguage = (): Language => {
+  try {
+    return (localStorage.getItem('language') as Language) || 'en';
+  } catch {
+    return 'en';
+  }
+};
+let currentLanguage: Language = readLanguage();
+const listeners = new Set<() => void>();
 
-  useEffect(() => {
-    localStorage.setItem('language', language);
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
-  }, [language]);
+const applyLanguage = (lang: Language) => {
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+};
+applyLanguage(currentLanguage);
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+export function useTranslation() {
+  const language = useSyncExternalStore(subscribe, () => currentLanguage);
 
   const t = (key: string, params?: Record<string, string>) => {
     const translation = translations[key]?.[language] || key;
-    
+
     if (params) {
       return Object.entries(params).reduce(
         (acc, [param, value]) => acc.replace(`{{${param}}}`, value),
         translation
       );
     }
-    
+
     return translation;
   };
 
   const changeLanguage = (newLanguage: Language) => {
-    setLanguage(newLanguage);
+    if (newLanguage === currentLanguage) return;
+    currentLanguage = newLanguage;
+    try { localStorage.setItem('language', newLanguage); } catch {}
+    applyLanguage(newLanguage);
+    listeners.forEach((l) => l());
   };
 
   return { t, language, changeLanguage };
