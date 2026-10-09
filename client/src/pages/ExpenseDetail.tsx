@@ -136,12 +136,12 @@ export default function ExpenseDetail() {
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800",
-      paid: "bg-green-100 text-green-800",
-      approved: "bg-blue-100 text-blue-800",
-      overdue: "bg-red-100 text-red-800",
+      pending: "bg-warning-soft text-warning",
+      paid: "bg-success-soft text-success",
+      approved: "bg-info-soft text-info",
+      overdue: "bg-danger-soft text-danger",
       cancelled: "bg-muted text-foreground",
-      rejected: "bg-red-100 text-red-800",
+      rejected: "bg-danger-soft text-danger",
     };
 
     return (
@@ -183,7 +183,7 @@ export default function ExpenseDetail() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header
           title="Loading..."
           subtitle="Please wait while we load the expense details"
@@ -207,7 +207,7 @@ export default function ExpenseDetail() {
 
   if (!expense) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header
           title="Expense Not Found"
           subtitle="The requested expense could not be found"
@@ -239,7 +239,7 @@ export default function ExpenseDetail() {
     : null;
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header
         title={expense.title}
         subtitle={`Expense #${expense.id.slice(0, 8)}`}
@@ -472,9 +472,9 @@ export default function ExpenseDetail() {
 
           {/* Rejection Info */}
           {expense.status === "rejected" && expense.rejectionReason && (
-            <Card className="border-red-200">
+            <Card className="border-danger/20">
               <CardHeader>
-                <CardTitle className="text-red-700 flex items-center gap-2">
+                <CardTitle className="text-danger flex items-center gap-2">
                   <XCircle className="h-5 w-5" />
                   Rejection Details
                 </CardTitle>

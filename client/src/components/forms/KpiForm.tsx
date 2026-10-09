@@ -105,9 +105,9 @@ export function KpiForm({ employeeId, kpi, onClose }: KpiFormProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "exceeded": return "text-green-600";
-      case "on_track": return "text-blue-600";
-      case "below_target": return "text-orange-600";
+      case "exceeded": return "text-success";
+      case "on_track": return "text-primary";
+      case "below_target": return "text-warning";
       case "not_evaluated": return "text-muted-foreground";
       default: return "text-muted-foreground";
     }

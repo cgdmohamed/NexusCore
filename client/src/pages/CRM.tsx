@@ -210,12 +210,12 @@ export default function CRM() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'active': return 'bg-success-soft text-success border-success/20';
       case 'inactive': return 'bg-muted text-foreground border-border';
-      case 'lead': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'prospect': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'lost': return 'bg-red-100 text-red-800 border-red-200';
+      case 'lead': return 'bg-info-soft text-info border-info/20';
+      case 'prospect': return 'bg-warning-soft text-warning border-warning/20';
+      case 'pending': return 'bg-warning-soft text-warning border-warning/20';
+      case 'lost': return 'bg-danger-soft text-danger border-danger/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -249,7 +249,7 @@ export default function CRM() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.clients')}
         subtitle="Manage your client relationships and opportunities"
@@ -261,7 +261,7 @@ export default function CRM() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
@@ -273,7 +273,7 @@ export default function CRM() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <UserCheck className="h-4 w-4 text-green-600" />
+                <UserCheck className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active</p>
                   <p className="text-2xl font-bold">{stats.active}</p>
@@ -285,7 +285,7 @@ export default function CRM() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <TrendingUp className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Leads</p>
                   <p className="text-2xl font-bold">{stats.lead}</p>
@@ -309,7 +309,7 @@ export default function CRM() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Value</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.totalValue)}</p>
@@ -321,7 +321,7 @@ export default function CRM() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Building className="h-4 w-4 text-purple-600" />
+                <Building className="h-4 w-4 text-info" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Avg Value</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.avgValue)}</p>
@@ -479,7 +479,7 @@ export default function CRM() {
                       return (
                         <TableRow key={client.id} className="hover:bg-muted/60">
                           <TableCell className="font-medium">
-                            <Link href={`/clients/${client.id}`} className="text-blue-600 hover:text-blue-800">
+                            <Link href={`/clients/${client.id}`} className="text-primary hover:text-info">
                               {client.name}
                             </Link>
                           </TableCell>
@@ -546,7 +546,7 @@ export default function CRM() {
                               ) : (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <Button variant="outline" size="sm" className="text-danger hover:text-danger hover:bg-danger-soft">
                                       <Archive className="w-3 h-3 me-1" />
                                       Archive
                                     </Button>
@@ -564,7 +564,7 @@ export default function CRM() {
                                       <AlertDialogAction
                                         onClick={() => deleteClientMutation.mutate(client.id)}
                                         disabled={deleteClientMutation.isPending}
-                                        className="bg-amber-600 hover:bg-amber-700"
+                                        className="bg-warning hover:bg-warning"
                                       >
                                         {deleteClientMutation.isPending ? "Archiving..." : "Archive Client"}
                                       </AlertDialogAction>
@@ -602,7 +602,7 @@ export default function CRM() {
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div>
-                            <Link href={`/clients/${client.id}`} className="text-blue-600 hover:text-blue-800">
+                            <Link href={`/clients/${client.id}`} className="text-primary hover:text-info">
                               <CardTitle className="text-lg">{client.name}</CardTitle>
                             </Link>
                             <div className="flex items-center text-sm text-muted-foreground mt-1">
@@ -642,7 +642,7 @@ export default function CRM() {
                               <p className="text-xs text-muted-foreground">Total Value</p>
                               <p className="text-lg font-bold">{formatCurrency(client.totalValue || "0")}</p>
                               {parseFloat(client.creditBalance || "0") > 0 && (
-                                <p className="text-xs text-green-600 font-medium">
+                                <p className="text-xs text-success font-medium">
                                   Credit: {formatCurrency(client.creditBalance || "0")}
                                 </p>
                               )}
@@ -677,7 +677,7 @@ export default function CRM() {
                               ) : (
                                 <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                <Button variant="outline" size="sm" className="text-danger hover:text-danger hover:bg-danger-soft">
                                   <Archive className="w-3 h-3" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -694,7 +694,7 @@ export default function CRM() {
                                   <AlertDialogAction
                                     onClick={() => deleteClientMutation.mutate(client.id)}
                                     disabled={deleteClientMutation.isPending}
-                                    className="bg-red-600 hover:bg-red-700"
+                                    className="bg-destructive hover:bg-destructive"
                                   >
                                     {deleteClientMutation.isPending ? "Archiving..." : "Archive Client"}
                                   </AlertDialogAction>

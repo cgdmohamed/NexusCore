@@ -142,14 +142,14 @@ export default function Invoices() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800 border-green-200';
-      case 'partially_paid': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'sent': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'paid': return 'bg-success-soft text-success border-success/20';
+      case 'partially_paid': return 'bg-info-soft text-info border-info/20';
+      case 'sent': return 'bg-warning-soft text-warning border-warning/20';
       case 'draft': return 'bg-muted text-foreground border-border';
-      case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
+      case 'overdue': return 'bg-danger-soft text-danger border-danger/20';
       case 'cancelled': return 'bg-muted text-muted-foreground border-border';
-      case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'refunded': return 'bg-info-soft text-info border-info/20';
+      case 'partially_refunded': return 'bg-warning-soft text-warning border-warning/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -188,10 +188,11 @@ export default function Invoices() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.invoices')}
         subtitle="Track payments and manage invoice status"
+        hideExport
       />
       
       <div className="p-3 md:p-6 space-y-6">
@@ -200,7 +201,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-blue-600" />
+                <FileText className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Invoices</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
@@ -212,7 +213,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Paid</p>
                   <p className="text-2xl font-bold">{stats.paid}</p>
@@ -224,7 +225,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <CreditCard className="h-4 w-4 text-blue-600" />
+                <CreditCard className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Partial</p>
                   <p className="text-2xl font-bold">{stats.partiallyPaid}</p>
@@ -236,7 +237,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-danger" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-bold">{stats.overdue}</p>
@@ -248,7 +249,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
@@ -260,7 +261,7 @@ export default function Invoices() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Building className="h-4 w-4 text-red-600" />
+                <Building className="h-4 w-4 text-danger" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.outstanding)}</p>
@@ -417,44 +418,44 @@ export default function Invoices() {
                       const paymentProgress = amount > 0 ? (paid / amount) * 100 : 0;
                       
                       return (
-                        <TableRow key={invoice.id} className={`hover:bg-muted/60 ${isOverdue(invoice) ? 'bg-red-50' : ''}`}>
-                          <TableCell className="font-medium">
-                            <Link href={`/invoices/${invoice.id}`} className="text-blue-600 hover:text-blue-800">
+                        <TableRow key={invoice.id} className={`hover:bg-muted/60 ${isOverdue(invoice) ? 'bg-danger-soft' : ''}`}>
+                          <TableCell className="whitespace-nowrap font-medium" dir="ltr">
+                            <Link href={`/invoices/${invoice.id}`} className="text-primary hover:underline">
                               {invoice.invoiceNumber}
                             </Link>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="min-w-[10rem]">
                             <div className="flex items-center">
                               <User className="w-3 h-3 me-1 text-muted-foreground/70" />
                               {getClientName(invoice.clientId)}
                             </div>
                           </TableCell>
-                          <TableCell className="font-medium">
+                          <TableCell className="whitespace-nowrap font-medium tabular-nums">
                             {formatCurrency(amount)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="min-w-[13rem]">
                             <div className="space-y-1">
-                              <div className="flex justify-between text-sm">
+                              <div className="flex justify-between gap-4 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                                 <span>Paid: {formatCurrency(paid)}</span>
                                 <span>Due: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-muted rounded-full h-2">
                                 <div 
-                                  className="bg-green-600 h-2 rounded-full" 
+                                  className="bg-success h-2 rounded-full" 
                                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
                                 ></div>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={getStatusColor(invoice.status)}>
-                              <div className="flex items-center space-x-1">
+                            <Badge variant="outline" className={`whitespace-nowrap ${getStatusColor(invoice.status)}`}>
+                              <div className="flex items-center gap-1">
                                 {getStatusIcon(invoice.status)}
                                 <span className="capitalize">{invoice.status.replace('_', ' ')}</span>
                               </div>
                             </Badge>
                           </TableCell>
-                          <TableCell className={isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-sm text-muted-foreground'}>
+                          <TableCell className={`whitespace-nowrap ${isOverdue(invoice) ? 'text-danger font-medium' : 'text-sm text-muted-foreground'}`}>
                             <div>
                               <div>{invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}</div>
                               {invoice.dueDate && (
@@ -464,7 +465,7 @@ export default function Invoices() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                             <div>
                               <div>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
                               <div className="text-xs text-muted-foreground/70">
@@ -474,9 +475,8 @@ export default function Invoices() {
                           </TableCell>
                           <TableCell>
                             <Link href={`/invoices/${invoice.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 me-1" />
-                                View
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="View" title="View">
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                           </TableCell>
@@ -506,11 +506,11 @@ export default function Invoices() {
                   const paymentProgress = amount > 0 ? (paid / amount) * 100 : 0;
                   
                   return (
-                    <Card key={invoice.id} className={`hover:shadow-md transition-shadow ${isOverdue(invoice) ? 'border-red-200 bg-red-50' : ''}`}>
+                    <Card key={invoice.id} className={`hover:shadow-md transition-shadow ${isOverdue(invoice) ? 'border-danger/20 bg-danger-soft' : ''}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div>
-                            <Link href={`/invoices/${invoice.id}`} className="text-blue-600 hover:text-blue-800">
+                            <Link href={`/invoices/${invoice.id}`} className="text-primary hover:text-info">
                               <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
                             </Link>
                             <div className="flex items-center text-sm text-muted-foreground mt-1">
@@ -536,12 +536,12 @@ export default function Invoices() {
                             </div>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
-                                <span className="text-green-600">Paid: {formatCurrency(paid)}</span>
-                                <span className="text-red-600">Due: {formatCurrency(remaining)}</span>
+                                <span className="text-success">Paid: {formatCurrency(paid)}</span>
+                                <span className="text-danger">Due: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-muted rounded-full h-2">
                                 <div 
-                                  className="bg-green-600 h-2 rounded-full" 
+                                  className="bg-success h-2 rounded-full" 
                                   style={{ width: `${Math.min(paymentProgress, 100)}%` }}
                                 ></div>
                               </div>
@@ -550,7 +550,7 @@ export default function Invoices() {
 
                           {/* Due Date */}
                           <div className="pt-2 border-t border-border">
-                            <div className={`flex items-center text-xs ${isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                            <div className={`flex items-center text-xs ${isOverdue(invoice) ? 'text-danger font-medium' : 'text-muted-foreground'}`}>
                               <Calendar className="w-3 h-3 me-1" />
                               Due: {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}
                             </div>

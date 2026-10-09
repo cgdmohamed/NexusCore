@@ -375,10 +375,10 @@ export default function QuotationDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-muted text-foreground';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'accepted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'expired': return 'bg-yellow-100 text-yellow-800';
+      case 'sent': return 'bg-info-soft text-info';
+      case 'accepted': return 'bg-success-soft text-success';
+      case 'rejected': return 'bg-danger-soft text-danger';
+      case 'expired': return 'bg-warning-soft text-warning';
       default: return 'bg-muted text-foreground';
     }
   };
@@ -444,8 +444,8 @@ export default function QuotationDetail() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Client</p>
@@ -464,8 +464,8 @@ export default function QuotationDetail() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-success-soft rounded-lg">
+                <DollarSign className="w-6 h-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
@@ -478,8 +478,8 @@ export default function QuotationDetail() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FileText className="w-6 h-6 text-purple-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <FileText className="w-6 h-6 text-info" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Items</p>
@@ -846,7 +846,7 @@ export default function QuotationDetail() {
                                 className="h-8 w-8 p-0"
                                 disabled={deleteItemMutation.isPending}
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-danger" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -859,7 +859,7 @@ export default function QuotationDetail() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="bg-destructive hover:bg-destructive"
                                   onClick={() => deleteItemMutation.mutate(item.id)}
                                 >
                                   {t("common.delete")}
@@ -1070,7 +1070,7 @@ export default function QuotationDetail() {
                         )}
                       </div>
                       {isStale && (
-                        <div className="flex items-center gap-1 text-xs text-amber-600">
+                        <div className="flex items-center gap-1 text-xs text-warning">
                           <AlertTriangle className="w-3 h-3" />
                           This document may have changed since this print.
                         </div>

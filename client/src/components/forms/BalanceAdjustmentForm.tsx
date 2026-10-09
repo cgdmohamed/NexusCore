@@ -98,7 +98,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
           {watchedAmount && (
             <div>
               <span className="text-muted-foreground">New Balance:</span>
-              <span className={`font-mono font-semibold ms-2 ${newBalance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+              <span className={`font-mono font-semibold ms-2 ${newBalance < 0 ? 'text-danger' : 'text-success'}`}>
                 {formatCurrency(newBalance)}
               </span>
             </div>
@@ -122,7 +122,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
             </SelectContent>
           </Select>
           {form.formState.errors.type && (
-            <p className="text-sm text-red-600">{form.formState.errors.type.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.type.message}</p>
           )}
         </div>
 
@@ -136,7 +136,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
             {...form.register("amount")}
           />
           {form.formState.errors.amount && (
-            <p className="text-sm text-red-600">{form.formState.errors.amount.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.amount.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
             {watchedType === "income" 
@@ -155,7 +155,7 @@ export function BalanceAdjustmentForm({ paymentSource, onClose }: BalanceAdjustm
             {...form.register("description")}
           />
           {form.formState.errors.description && (
-            <p className="text-sm text-red-600">{form.formState.errors.description.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.description.message}</p>
           )}
         </div>
 

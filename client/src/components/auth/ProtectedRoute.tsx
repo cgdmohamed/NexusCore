@@ -47,7 +47,7 @@ export function ProtectedRoute({
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4 max-w-md p-8">
-          <Shield className="w-16 h-16 text-red-500 mx-auto" />
+          <Shield className="w-16 h-16 text-danger mx-auto" />
           <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
           <p className="text-muted-foreground">
             You don't have permission to access this page. Required role: {requiredRole}
@@ -68,7 +68,7 @@ export function ProtectedRoute({
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4 max-w-md p-8">
-          <Shield className="w-16 h-16 text-red-500 mx-auto" />
+          <Shield className="w-16 h-16 text-danger mx-auto" />
           <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
           <p className="text-muted-foreground">
             You don't have permission to access this page. Required department: {requiredDepartment}

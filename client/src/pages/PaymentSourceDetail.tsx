@@ -97,7 +97,7 @@ export default function PaymentSourceDetail() {
     } as const;
 
     const colors = {
-      active: "bg-green-50 text-green-700 border-green-200",
+      active: "bg-success-soft text-success border-success/20",
       inactive: "bg-muted/50 text-foreground border-border",
     } as const;
 
@@ -130,11 +130,11 @@ export default function PaymentSourceDetail() {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case "expense":
-        return <TrendingDown className="h-4 w-4 text-red-500" />;
+        return <TrendingDown className="h-4 w-4 text-danger" />;
       case "adjustment":
-        return <Settings className="h-4 w-4 text-blue-500" />;
+        return <Settings className="h-4 w-4 text-primary" />;
       case "refund":
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
+        return <TrendingUp className="h-4 w-4 text-success" />;
       default:
         return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
@@ -152,7 +152,7 @@ export default function PaymentSourceDetail() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header
           title="Loading..."
           subtitle="Please wait while we load the payment source details"
@@ -176,7 +176,7 @@ export default function PaymentSourceDetail() {
 
   if (!paymentSource) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header
           title="Payment Source Not Found"
           subtitle="The requested payment source could not be found"
@@ -203,7 +203,7 @@ export default function PaymentSourceDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header
         title={paymentSource.name}
         subtitle={`Payment Source #${paymentSource.id.slice(0, 8)}`}
@@ -346,7 +346,7 @@ export default function PaymentSourceDetail() {
                           )}
                         </TableCell>
                         <TableCell className={`font-medium ${
-                          transaction.type === "expense" ? "text-red-600" : "text-green-600"
+                          transaction.type === "expense" ? "text-danger" : "text-success"
                         }`}>
                           {transaction.type === "expense" ? "-" : "+"}{formatCurrency(transaction.amount)}
                         </TableCell>
@@ -513,14 +513,14 @@ export default function PaymentSourceDetail() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Spent</span>
-                <span className="font-medium text-red-600">
+                <span className="font-medium text-danger">
                   {formatCurrency(expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0))}
                 </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Current Balance</span>
-                <span className="font-bold text-green-600">
+                <span className="font-bold text-success">
                   {formatCurrency(paymentSource.currentBalance || "0")}
                 </span>
               </div>

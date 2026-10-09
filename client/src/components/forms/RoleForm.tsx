@@ -156,7 +156,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
             data-testid="input-role-name"
           />
           {form.formState.errors.name && (
-            <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.name.message}</p>
           )}
         </div>
 
@@ -180,7 +180,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
             data-testid="textarea-role-description"
           />
           {form.formState.errors.description && (
-            <p className="text-sm text-red-600">{form.formState.errors.description.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.description.message}</p>
           )}
         </div>
       </div>
@@ -199,7 +199,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               variant="outline"
               size="sm"
               onClick={handleGrantAll}
-              className="text-green-700 border-green-300 hover:bg-green-50"
+              className="text-success border-success/20 hover:bg-success-soft"
               data-testid="button-grant-all"
             >
               <CheckSquare className="h-3.5 w-3.5 me-1.5" />
@@ -210,7 +210,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               variant="outline"
               size="sm"
               onClick={handleRevokeAll}
-              className="text-red-700 border-red-300 hover:bg-red-50"
+              className="text-danger border-danger/20 hover:bg-danger-soft"
               data-testid="button-revoke-all"
             >
               <XSquare className="h-3.5 w-3.5 me-1.5" />

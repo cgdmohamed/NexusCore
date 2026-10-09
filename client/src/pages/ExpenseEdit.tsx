@@ -25,7 +25,7 @@ export default function ExpenseEdit() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header 
           title="Loading..."
           subtitle="Please wait while we load the expense details"
@@ -46,7 +46,7 @@ export default function ExpenseEdit() {
 
   if (!expense) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header 
           title="Expense Not Found"
           subtitle="The requested expense could not be found"
@@ -68,7 +68,7 @@ export default function ExpenseEdit() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title="Edit Expense"
         subtitle={`Editing: ${expense.title}`}

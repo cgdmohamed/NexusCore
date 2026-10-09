@@ -169,7 +169,7 @@ function RoleViewDialog({
                     {PERMISSION_KEYS.map(pk => (
                       <div key={pk} className="flex justify-center w-14">
                         {modulePerms[pk] ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <CheckCircle2 className="h-4 w-4 text-success" />
                         ) : (
                           <XCircle className="h-4 w-4 text-gray-200" />
                         )}
@@ -368,19 +368,19 @@ export default function UserManagement() {
   ];
 
   const colorMap: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    purple: "bg-purple-50 text-purple-600",
-    emerald: "bg-emerald-50 text-emerald-600",
+    blue: "bg-info-soft text-primary",
+    green: "bg-success-soft text-success",
+    purple: "bg-info-soft text-info",
+    emerald: "bg-success-soft text-success",
     gray: "bg-muted text-muted-foreground",
-    orange: "bg-orange-50 text-orange-600",
+    orange: "bg-warning-soft text-warning",
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div>
         <Header
           title={t('nav.team_roles')}
           subtitle="Manage system users, employee profiles, and role-based access control"
@@ -555,9 +555,9 @@ export default function UserManagement() {
                             </Badge>
                             <div>
                               {employee.hasUserAccount ? (
-                                <Badge variant="outline" className="text-green-600 text-xs">Has Account</Badge>
+                                <Badge variant="outline" className="text-success text-xs">Has Account</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-orange-500 text-xs">No Account</Badge>
+                                <Badge variant="outline" className="text-warning text-xs">No Account</Badge>
                               )}
                             </div>
                           </div>
@@ -573,7 +573,7 @@ export default function UserManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft"
                               onClick={() => handleDeleteEmployee(employee)}
                               disabled={deleteEmployeeMutation.isPending}
                               data-testid={`button-delete-employee-${employee.id}`}
@@ -705,7 +705,7 @@ export default function UserManagement() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className={`h-8 w-8 p-0 ${canDelete ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "opacity-40 cursor-not-allowed"}`}
+                                    className={`h-8 w-8 p-0 ${canDelete ? "text-danger hover:text-danger hover:bg-danger-soft" : "opacity-40 cursor-not-allowed"}`}
                                     onClick={() => canDelete && handleDeleteRole(role)}
                                     disabled={!canDelete || deleteRoleMutation.isPending}
                                     data-testid={`button-delete-role-${role.id}`}

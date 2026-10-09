@@ -86,10 +86,10 @@ type ProjectFormData = z.infer<typeof projectFormSchema>;
 type StatusFilter = "all" | "active" | "on_hold" | "completed" | "archived";
 
 const STATUS_BADGE_CLS: Record<string, string> = {
-  active:   "bg-green-50 text-green-700 border-green-200",
-  on_hold:  "bg-yellow-50 text-yellow-700 border-yellow-200",
-  completed:"bg-blue-50 text-blue-700 border-blue-200",
-  archived: "bg-slate-100 text-slate-600 border-slate-200",
+  active:   "bg-success-soft text-success border-success/20",
+  on_hold:  "bg-warning-soft text-warning border-warning/20",
+  completed:"bg-info-soft text-info border-info/20",
+  archived: "bg-muted text-muted-foreground border-border",
 };
 
 function ProjectProgressBar({ completed, total, cancelled = 0, tasksLabel }: { completed: number; total: number; cancelled?: number; tasksLabel: string }) {
@@ -103,7 +103,7 @@ function ProjectProgressBar({ completed, total, cancelled = 0, tasksLabel }: { c
         </span>
         <span className="font-medium">{pct}%</span>
       </div>
-      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
         <div
           className="h-full rounded-full bg-primary transition-all"
           style={{ width: `${pct}%` }}
@@ -245,7 +245,7 @@ export default function Projects() {
   today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-50/50">
+    <div className="flex-1 overflow-auto bg-muted/50">
       <Header 
         title={t("nav.projects")}
         subtitle={t("projects.subtitle")}
@@ -253,7 +253,7 @@ export default function Projects() {
       
       <div className="p-3 md:p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">{t("projects.all_projects")}</h2>
+          <h2 className="text-xl font-semibold text-foreground">{t("projects.all_projects")}</h2>
           <Dialog 
             open={isCreateDialogOpen || !!editingProject} 
             onOpenChange={(open) => { if (!open) closeDialog(); }}
@@ -338,7 +338,7 @@ export default function Projects() {
                                 type="button"
                                 className={cn(
                                   "w-8 h-8 rounded-full border-2 transition-all",
-                                  field.value === color ? "border-slate-900 scale-110" : "border-transparent"
+                                  field.value === color ? "border-border scale-110" : "border-transparent"
                                 )}
                                 style={{ backgroundColor: color }}
                                 onClick={() => field.onChange(color)}
@@ -446,7 +446,7 @@ export default function Projects() {
                 "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  : "bg-card border border-border text-muted-foreground hover:bg-muted/50"
               )}
             >
               {f.label}
@@ -476,11 +476,11 @@ export default function Projects() {
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="bg-slate-100 p-6 rounded-full mb-4">
-              <FolderKanban className="h-12 w-12 text-slate-400" />
+            <div className="bg-muted p-6 rounded-full mb-4">
+              <FolderKanban className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-slate-900">{t("projects.no_projects")}</h3>
-            <p className="text-slate-500 max-w-sm mt-2">
+            <h3 className="text-lg font-medium text-foreground">{t("projects.no_projects")}</h3>
+            <p className="text-muted-foreground max-w-sm mt-2">
               {t("projects.no_projects_desc")}
             </p>
             {statusFilter === "all" && (
@@ -580,11 +580,11 @@ export default function Projects() {
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
                       {dueDate && (
-                        <span className={cn("flex items-center gap-1", isOverdue && "text-red-600 font-medium")}>
+                        <span className={cn("flex items-center gap-1", isOverdue && "text-danger font-medium")}>
                           <CalendarDays className="h-3.5 w-3.5" />
                           {format(dueDate, "MMM d, yyyy")}
                           {isOverdue && (
-                            <Badge className="ms-1 bg-red-100 text-red-700 border-red-200 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>
+                            <Badge className="ms-1 bg-danger-soft text-danger border-danger/20 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>
                           )}
                         </span>
                       )}

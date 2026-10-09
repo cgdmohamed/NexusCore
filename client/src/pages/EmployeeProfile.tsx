@@ -25,7 +25,7 @@ export default function EmployeeProfile() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header title="Employee Profile" subtitle="Loading employee information..." />
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -36,7 +36,7 @@ export default function EmployeeProfile() {
 
   if (!employee) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header title="Employee Profile" subtitle="Employee not found" />
         <Card>
           <CardContent className="p-8 text-center">
@@ -54,9 +54,9 @@ export default function EmployeeProfile() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800";
+      case "active": return "bg-success-soft text-success";
       case "inactive": return "bg-muted text-foreground";
-      case "on_leave": return "bg-yellow-100 text-yellow-800";
+      case "on_leave": return "bg-warning-soft text-warning";
       default: return "bg-muted text-foreground";
     }
   };
@@ -73,7 +73,7 @@ export default function EmployeeProfile() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header
         title="Employee Profile"
         subtitle={`${employee.firstName} ${employee.lastName} — ${employee.jobTitle}`}
@@ -247,7 +247,7 @@ export default function EmployeeProfile() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-text">{employee.jobTitle}</h4>
-                        <Badge className="bg-green-100 text-green-800">Current</Badge>
+                        <Badge className="bg-success-soft text-success">Current</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground capitalize mt-0.5">{employee.department} Department</p>
                       <p className="text-xs text-muted-foreground/70 mt-0.5">

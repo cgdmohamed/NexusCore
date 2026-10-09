@@ -669,7 +669,7 @@ export default function InvoiceDetail() {
 
   if (invoiceLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header title="Loading..." subtitle="Please wait" />
         <div className="p-6 text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -681,7 +681,7 @@ export default function InvoiceDetail() {
 
   if (!invoice) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header title="Invoice Not Found" subtitle="The requested invoice could not be found" />
         <div className="p-6 text-center">
           <FileText className="w-16 h-16 text-muted-foreground/70 mx-auto mb-4" />
@@ -708,14 +708,14 @@ export default function InvoiceDetail() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800 border-green-200';
-      case 'partially_paid': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'sent': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'paid': return 'bg-success-soft text-success border-success/20';
+      case 'partially_paid': return 'bg-info-soft text-info border-info/20';
+      case 'sent': return 'bg-warning-soft text-warning border-warning/20';
       case 'draft': return 'bg-muted text-foreground border-border';
-      case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
+      case 'overdue': return 'bg-danger-soft text-danger border-danger/20';
       case 'cancelled': return 'bg-muted text-muted-foreground border-border';
-      case 'refunded': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'partially_refunded': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'refunded': return 'bg-info-soft text-info border-info/20';
+      case 'partially_refunded': return 'bg-warning-soft text-warning border-warning/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -768,7 +768,7 @@ export default function InvoiceDetail() {
   const getFileIcon = (filePath: string) => {
     const ext = filePath.split('.').pop()?.toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) {
-      return <Image className="w-5 h-5 text-blue-500" />;
+      return <Image className="w-5 h-5 text-primary" />;
     }
     return <File className="w-5 h-5 text-muted-foreground" />;
   };
@@ -840,7 +840,7 @@ export default function InvoiceDetail() {
   const isOverdue = invoice.status !== 'paid' && invoice.dueDate && new Date(invoice.dueDate) < new Date();
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={`Invoice ${invoice.invoiceNumber}`}
         subtitle={`${client?.name || 'Unknown Client'} • ${invoice.status}`}
@@ -883,7 +883,7 @@ export default function InvoiceDetail() {
           {['draft', 'pending', 'sent', 'overdue', 'partially_paid'].includes(invoice.status) && (
             <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50" data-testid="button-cancel-invoice">
+                <Button variant="outline" className="border-warning/20 text-warning hover:bg-warning-soft" data-testid="button-cancel-invoice">
                   <Ban className="w-4 h-4 me-2" />
                   Cancel Invoice
                 </Button>
@@ -900,7 +900,7 @@ export default function InvoiceDetail() {
                   <AlertDialogAction
                     onClick={() => cancelInvoiceMutation.mutate()}
                     disabled={cancelInvoiceMutation.isPending}
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-warning hover:bg-warning"
                     data-testid="button-confirm-cancel"
                   >
                     {cancelInvoiceMutation.isPending ? "Cancelling..." : "Yes, Cancel Invoice"}
@@ -915,11 +915,11 @@ export default function InvoiceDetail() {
       <div className="p-6 space-y-6">
         {/* Cancelled Invoice Banner */}
         {invoice.status === 'cancelled' && (
-          <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+          <div className="flex items-center gap-3 rounded-lg border border-danger/20 bg-danger-soft p-4 text-danger">
             <Ban className="w-5 h-5 shrink-0" />
             <div>
               <p className="font-semibold">This invoice has been cancelled</p>
-              <p className="text-sm text-red-600">No further payments can be recorded. This invoice is excluded from revenue calculations but remains visible for record keeping.</p>
+              <p className="text-sm text-danger">No further payments can be recorded. This invoice is excluded from revenue calculations but remains visible for record keeping.</p>
             </div>
           </div>
         )}
@@ -993,7 +993,7 @@ export default function InvoiceDetail() {
               {clientCredit && parseFloat((clientCredit as any)?.currentBalance || "0") > 0 ? (
                 <div>
                   <Label className="text-sm text-muted-foreground">Available Credit</Label>
-                  <p className="font-semibold text-green-600">
+                  <p className="font-semibold text-success">
                     {formatCurrency((clientCredit as any).currentBalance)}
                   </p>
                   <Button 
@@ -1023,7 +1023,7 @@ export default function InvoiceDetail() {
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">Due Date</Label>
-                <p className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                <p className={isOverdue ? 'text-danger font-medium' : ''}>
                   {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'Not set'}
                   {isOverdue && ' (Overdue)'}
                 </p>
@@ -1043,19 +1043,19 @@ export default function InvoiceDetail() {
         </div>
 
         {/* Financial Summary */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-info/20">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center text-blue-900">
+            <CardTitle className="text-lg flex items-center text-info">
               <DollarSign className="w-5 h-5 me-2" />
               Financial Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
             {/* Prominent Invoice Total */}
-            <div className="bg-card p-6 rounded-lg border-2 border-blue-300 shadow-sm mb-6">
+            <div className="bg-card p-6 rounded-lg border-2 border-info/20 shadow-sm mb-6">
               <div className="text-center">
-                <Label className="text-sm text-blue-700 font-medium">INVOICE TOTAL</Label>
-                <p className="text-5xl font-bold text-blue-900 mt-2">{formatCurrency(totalAmount)}</p>
+                <Label className="text-sm text-info font-medium">INVOICE TOTAL</Label>
+                <p className="text-5xl font-bold text-info mt-2">{formatCurrency(totalAmount)}</p>
               </div>
             </div>
 
@@ -1066,19 +1066,19 @@ export default function InvoiceDetail() {
               </div>
               <div className="bg-card p-4 rounded-lg border">
                 <Label className="text-sm text-muted-foreground">VAT ({parseFloat(invoice.taxRate || "0")}%)</Label>
-                <p className="text-xl font-bold text-blue-600">+{formatCurrency(taxAmount)}</p>
+                <p className="text-xl font-bold text-primary">+{formatCurrency(taxAmount)}</p>
               </div>
               <div className="bg-card p-4 rounded-lg border">
                 <Label className="text-sm text-muted-foreground">Discount</Label>
-                <p className="text-xl font-bold text-orange-600">-{formatCurrency(discountAmount)}</p>
+                <p className="text-xl font-bold text-warning">-{formatCurrency(discountAmount)}</p>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <Label className="text-sm text-green-700 font-medium">Paid Amount</Label>
-                <p className="text-xl font-bold text-green-700">{formatCurrency(paidAmount)}</p>
+              <div className="bg-success-soft p-4 rounded-lg border border-success/20">
+                <Label className="text-sm text-success font-medium">Paid Amount</Label>
+                <p className="text-xl font-bold text-success">{formatCurrency(paidAmount)}</p>
               </div>
-              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                <Label className="text-sm text-red-700 font-medium">Outstanding</Label>
-                <p className="text-xl font-bold text-red-700">{formatCurrency(remainingAmount)}</p>
+              <div className="bg-danger-soft p-4 rounded-lg border border-danger/20">
+                <Label className="text-sm text-danger font-medium">Outstanding</Label>
+                <p className="text-xl font-bold text-danger">{formatCurrency(remainingAmount)}</p>
               </div>
             </div>
             
@@ -1086,7 +1086,7 @@ export default function InvoiceDetail() {
             <div className="mt-6 bg-card p-4 rounded-lg border">
               <div className="flex justify-between items-center mb-3">
                 <Label className="text-sm text-muted-foreground font-medium">Payment Progress</Label>
-                <span className="text-lg font-bold text-blue-600">{paymentProgress.toFixed(1)}%</span>
+                <span className="text-lg font-bold text-primary">{paymentProgress.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-4">
                 <div 
@@ -1126,8 +1126,8 @@ export default function InvoiceDetail() {
                   />
                 </div>
                 {taxDiscountForm.applyVat && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-                    <p className="text-sm text-blue-700">
+                  <div className="mt-3 p-3 bg-info-soft rounded border border-info/20">
+                    <p className="text-sm text-info">
                       VAT Amount: <span className="font-bold">{formatCurrency((subtotal * VAT_RATE) / 100)}</span>
                     </p>
                   </div>
@@ -1183,8 +1183,8 @@ export default function InvoiceDetail() {
                       </div>
                     </div>
                     {taxDiscountForm.discountValue && (
-                      <div className="p-3 bg-orange-50 rounded border border-orange-200">
-                        <p className="text-sm text-orange-700">
+                      <div className="p-3 bg-warning-soft rounded border border-warning/20">
+                        <p className="text-sm text-warning">
                           Discount Amount: <span className="font-bold">
                             {formatCurrency(
                               taxDiscountForm.discountType === "percentage"
@@ -1201,17 +1201,17 @@ export default function InvoiceDetail() {
             </div>
 
             {/* Save Button */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-6 p-4 bg-info-soft border border-info/20 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-blue-900">Save Tax & Discount Settings</p>
-                  <p className="text-sm text-blue-700">Click the button to save your changes to this invoice</p>
+                  <p className="font-medium text-info">Save Tax & Discount Settings</p>
+                  <p className="text-sm text-info">Click the button to save your changes to this invoice</p>
                 </div>
                 <Button 
                   onClick={handleApplyTaxDiscount}
                   disabled={updateTaxDiscountMutation.isPending}
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-info hover:bg-info"
                   data-testid="button-apply-tax-discount"
                 >
                   {updateTaxDiscountMutation.isPending ? "Saving..." : "Save Changes"}
@@ -1612,16 +1612,16 @@ export default function InvoiceDetail() {
                     </div>
                     {/* Overpayment Warning */}
                     {overpaymentWarning && (
-                      <div className="p-4 border border-red-200 bg-red-50 rounded-md">
+                      <div className="p-4 border border-danger/20 bg-danger-soft rounded-md">
                         <div className="flex items-start space-x-2">
-                          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                          <AlertCircle className="w-5 h-5 text-danger mt-0.5" />
                           <div className="flex-1">
-                            <h4 className="font-semibold text-red-800">Overpayment Detected</h4>
-                            <p className="text-sm text-red-700 mt-1">
+                            <h4 className="font-semibold text-danger">Overpayment Detected</h4>
+                            <p className="text-sm text-danger mt-1">
                               {overpaymentWarning.message}
                             </p>
                             {overpaymentWarning.details && (
-                              <div className="text-xs text-red-600 mt-2 space-y-1">
+                              <div className="text-xs text-danger mt-2 space-y-1">
                                 <p>Payment Amount: ${overpaymentWarning.details.paymentAmount}</p>
                                 <p>Remaining Balance: ${overpaymentWarning.details.remainingAmount}</p>
                                 <p>Overpayment: ${overpaymentWarning.details.overpaymentAmount}</p>
@@ -1698,12 +1698,12 @@ export default function InvoiceDetail() {
                           <div className="flex items-center space-x-2">
                             <span className="capitalize">{payment.paymentMethod.replace('_', ' ')}</span>
                             {payment.isOverpayment && (
-                              <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+                              <Badge variant="outline" className="text-xs bg-warning-soft text-warning border-warning/20">
                                 Overpayment
                               </Badge>
                             )}
                             {payment.paymentMethod === 'credit_balance' && (
-                              <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                              <Badge variant="outline" className="text-xs bg-info-soft text-info border-info/20">
                                 Credit
                               </Badge>
                             )}
@@ -1783,7 +1783,7 @@ export default function InvoiceDetail() {
                         href={attachment}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                         data-testid={`link-attachment-${index}`}
                       >
                         {getFileName(attachment)}
@@ -1794,7 +1794,7 @@ export default function InvoiceDetail() {
                       size="sm"
                       onClick={() => deleteAttachmentMutation.mutate(attachment)}
                       disabled={deleteAttachmentMutation.isPending}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      className="text-danger hover:text-danger hover:bg-danger-soft"
                       data-testid={`button-delete-attachment-${index}`}
                     >
                       <X className="w-4 h-4" />
@@ -1834,7 +1834,7 @@ export default function InvoiceDetail() {
                   size="sm"
                   onClick={() => removeQrCodeMutation.mutate()}
                   disabled={removeQrCodeMutation.isPending}
-                  className="text-red-600 hover:text-red-700 hover:border-red-300 print:hidden"
+                  className="text-danger hover:text-danger hover:border-danger/20 print:hidden"
                   data-testid="button-remove-qr-code"
                 >
                   <X className="w-4 h-4 me-2" />
@@ -1935,7 +1935,7 @@ export default function InvoiceDetail() {
                             )}
                           </div>
                           {isStale && (
-                            <div className="flex items-center gap-1 text-xs text-amber-600">
+                            <div className="flex items-center gap-1 text-xs text-warning">
                               <AlertTriangle className="w-3 h-3" />
                               This document may have changed since this print.
                             </div>
@@ -2097,11 +2097,11 @@ export default function InvoiceDetail() {
           
           {clientCredit ? (
             <div className="space-y-4">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="p-4 bg-success-soft rounded-lg border border-success/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm text-green-700">Current Credit Balance</Label>
-                    <p className="text-2xl font-bold text-green-800">
+                    <Label className="text-sm text-success">Current Credit Balance</Label>
+                    <p className="text-2xl font-bold text-success">
                       {formatCurrency((clientCredit as any)?.currentBalance || "0")}
                     </p>
                   </div>
@@ -2112,7 +2112,7 @@ export default function InvoiceDetail() {
                         applyCreditMutation.mutate(creditToApply);
                       }}
                       disabled={applyCreditMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-success hover:bg-success"
                     >
                       {applyCreditMutation.isPending ? "Applying..." : "Apply to Invoice"}
                     </Button>

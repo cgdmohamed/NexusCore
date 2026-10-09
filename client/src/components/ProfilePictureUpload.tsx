@@ -148,7 +148,7 @@ export function ProfilePictureUpload({
               variant="ghost"
               size="sm"
               onClick={handleRemoveImage}
-              className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+              className="flex items-center space-x-2 text-danger hover:text-danger"
             >
               <X className="w-4 h-4" />
               <span>Remove</span>

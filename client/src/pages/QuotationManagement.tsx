@@ -61,11 +61,11 @@ export default function QuotationManagement() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-muted text-foreground';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'accepted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'invoiced': return 'bg-purple-100 text-purple-800';
-      case 'expired': return 'bg-yellow-100 text-yellow-800';
+      case 'sent': return 'bg-info-soft text-info';
+      case 'accepted': return 'bg-success-soft text-success';
+      case 'rejected': return 'bg-danger-soft text-danger';
+      case 'invoiced': return 'bg-info-soft text-info';
+      case 'expired': return 'bg-warning-soft text-warning';
       default: return 'bg-muted text-foreground';
     }
   };
@@ -95,8 +95,8 @@ export default function QuotationManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Quotations</p>
@@ -109,8 +109,8 @@ export default function QuotationManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-success-soft rounded-lg">
+                <CheckCircle className="w-6 h-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Accepted</p>
@@ -124,8 +124,8 @@ export default function QuotationManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="p-3 bg-warning-soft rounded-lg">
+                <Clock className="w-6 h-6 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pending</p>
@@ -138,8 +138,8 @@ export default function QuotationManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <DollarSign className="w-6 h-6 text-info" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Value</p>
@@ -162,19 +162,19 @@ export default function QuotationManagement() {
               <div className="text-sm text-muted-foreground">Draft</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.sent}</div>
+              <div className="text-2xl font-bold text-primary">{stats.sent}</div>
               <div className="text-sm text-muted-foreground">Sent</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
+              <div className="text-2xl font-bold text-success">{stats.accepted}</div>
               <div className="text-sm text-muted-foreground">Accepted</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+              <div className="text-2xl font-bold text-danger">{stats.rejected}</div>
               <div className="text-sm text-muted-foreground">Rejected</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.invoiced}</div>
+              <div className="text-2xl font-bold text-info">{stats.invoiced}</div>
               <div className="text-sm text-muted-foreground">Invoiced</div>
             </div>
             <div className="text-center">
@@ -291,7 +291,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/clients/${quotation.clientId}`} className="hover:underline text-blue-600">
+                  <Link href={`/clients/${quotation.clientId}`} className="hover:underline text-primary">
                     {getClientName(quotation.clientId)}
                   </Link>
                 </TableCell>

@@ -25,7 +25,8 @@ export function formatNumber(amount: number | string | null | undefined, maxFrac
 }
 
 function withSymbol(formatted: string): string {
-  return CURRENCY.position === 'after' ? `${formatted} ${CURRENCY.symbol}` : `${CURRENCY.symbol}${formatted}`;
+  // No-break space so the symbol never wraps onto its own line in narrow cells
+  return CURRENCY.position === 'after' ? `${formatted}\u00A0${CURRENCY.symbol}` : `${CURRENCY.symbol}\u00A0${formatted}`;
 }
 
 export function formatCurrency(amount: number | string | null | undefined): string {

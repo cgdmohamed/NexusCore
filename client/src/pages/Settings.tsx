@@ -103,17 +103,17 @@ export default function Settings() {
 
   const statCards = info
     ? [
-        { label: "Users", value: info.stats.users, icon: Users, color: "text-blue-500" },
-        { label: "Employees", value: info.stats.employees, icon: Users, color: "text-indigo-500" },
+        { label: "Users", value: info.stats.users, icon: Users, color: "text-primary" },
+        { label: "Employees", value: info.stats.employees, icon: Users, color: "text-info" },
         { label: "Clients", value: info.stats.clients, icon: Building2, color: "text-violet-500" },
-        { label: "Invoices", value: info.stats.invoices, icon: FileText, color: "text-emerald-500" },
-        { label: "Tasks", value: info.stats.tasks, icon: CheckSquare, color: "text-amber-500" },
+        { label: "Invoices", value: info.stats.invoices, icon: FileText, color: "text-success" },
+        { label: "Tasks", value: info.stats.tasks, icon: CheckSquare, color: "text-warning" },
         { label: "Notifications", value: info.stats.notifications, icon: Bell, color: "text-rose-500" },
       ]
     : [];
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header title="Settings" subtitle="System configuration and administration tools" />
 
       <div className="p-3 md:p-6 space-y-6">
@@ -219,9 +219,9 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-4 rounded-lg border">
                   {info?.smtp.configured ? (
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-6 w-6 text-success shrink-0" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-500 shrink-0" />
+                    <XCircle className="h-6 w-6 text-danger shrink-0" />
                   )}
                   <div>
                     <p className="text-sm font-medium">

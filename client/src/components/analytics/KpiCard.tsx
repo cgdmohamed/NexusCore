@@ -28,7 +28,7 @@ export function KpiCard({ title, value, change, icon: Icon, className, descripti
         {change && (
           <p className={cn(
             "text-xs",
-            change.isPositive ? "text-green-600" : "text-red-600"
+            change.isPositive ? "text-success" : "text-danger"
           )}>
             {change.isPositive ? "+" : ""}{change.value.toFixed(1)}% from last period
           </p>

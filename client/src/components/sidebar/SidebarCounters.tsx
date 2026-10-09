@@ -45,7 +45,7 @@ export function SidebarCounters({ currentPath }: SidebarCountersProps) {
   if (count === 0) return null;
 
   return (
-    <span className="ms-auto text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+    <span className="ms-auto text-xs bg-info-soft text-info px-2 py-0.5 rounded-full">
       {count}
     </span>
   );

@@ -173,7 +173,7 @@ export function TaskForm({ trigger }: TaskFormProps) {
                       <Input type="date" {...field} />
                     </FormControl>
                     {isPast && (
-                      <p className="text-sm text-amber-600 flex items-center gap-1">
+                      <p className="text-sm text-warning flex items-center gap-1">
                         ⚠ The selected date is in the past.
                       </p>
                     )}

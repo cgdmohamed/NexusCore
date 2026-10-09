@@ -79,18 +79,18 @@ export function SystemVerification() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'error': return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'warning': return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+      case 'success': return <CheckCircle className="w-5 h-5 text-success" />;
+      case 'error': return <XCircle className="w-5 h-5 text-danger" />;
+      case 'warning': return <AlertCircle className="w-5 h-5 text-warning" />;
       default: return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success': return 'bg-green-100 text-green-800 border-green-200';
-      case 'error': return 'bg-red-100 text-red-800 border-red-200';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'success': return 'bg-success-soft text-success border-success/20';
+      case 'error': return 'bg-danger-soft text-danger border-danger/20';
+      case 'warning': return 'bg-warning-soft text-warning border-warning/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -103,7 +103,7 @@ export function SystemVerification() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>System Functionality Verification</span>
-          <Badge className={successCount === totalCount ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+          <Badge className={successCount === totalCount ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'}>
             {successCount}/{totalCount} Modules Working
           </Badge>
         </CardTitle>
@@ -125,9 +125,9 @@ export function SystemVerification() {
             </div>
           ))}
           
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-2">Refresh System Data</h3>
-            <p className="text-sm text-blue-700 mb-3">Click to refresh all module data from the database</p>
+          <div className="mt-6 p-4 bg-info-soft rounded-lg">
+            <h3 className="font-medium text-info mb-2">Refresh System Data</h3>
+            <p className="text-sm text-info mb-3">Click to refresh all module data from the database</p>
             <Button 
               onClick={() => refreshMutation.mutate()}
               disabled={refreshMutation.isPending}
@@ -136,10 +136,10 @@ export function SystemVerification() {
               {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Data'}
             </Button>
             {refreshMutation.isSuccess && (
-              <p className="text-sm text-green-600 mt-2">✅ Data refresh successful!</p>
+              <p className="text-sm text-success mt-2">✅ Data refresh successful!</p>
             )}
             {refreshMutation.isError && (
-              <p className="text-sm text-red-600 mt-2">❌ Data refresh failed</p>
+              <p className="text-sm text-danger mt-2">❌ Data refresh failed</p>
             )}
           </div>
         </div>

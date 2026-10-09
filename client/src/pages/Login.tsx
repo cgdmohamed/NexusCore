@@ -97,25 +97,25 @@ export default function Login() {
       icon: BarChart3,
       title: language === 'en' ? 'Analytics & KPIs' : 'التحليلات ومؤشرات الأداء',
       description: language === 'en' ? 'Real-time business intelligence' : 'ذكاء الأعمال في الوقت الفعلي',
-      color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+      color: 'bg-info-soft  text-primary '
     },
     {
       icon: Users,
       title: language === 'en' ? 'Client Management' : 'إدارة العملاء',
       description: language === 'en' ? 'Complete CRM solution' : 'حل إدارة علاقات عملاء شامل',
-      color: 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+      color: 'bg-success-soft  text-success '
     },
     {
       icon: FileText,
       title: language === 'en' ? 'Document Management' : 'إدارة الوثائق',
       description: language === 'en' ? 'Invoices, quotes & reports' : 'الفواتير والعروض والتقارير',
-      color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+      color: 'bg-info-soft  text-info '
     },
     {
       icon: Shield,
       title: language === 'en' ? 'Secure & Compliant' : 'آمن ومطابق للمعايير',
       description: language === 'en' ? 'Role-based access control' : 'التحكم في الوصول بناء على الأدوار',
-      color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
+      color: 'bg-warning-soft  text-warning '
     }
   ];
 
@@ -209,7 +209,7 @@ export default function Login() {
               <div className="grid grid-cols-1 gap-2">
                 {capabilities.map((capability, index) => (
                   <div key={index} className="flex items-center space-x-3 rtl:space-x-reverse">
-                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
                     <span className="text-sm text-muted-foreground">{capability.text}</span>
                   </div>
                 ))}
@@ -243,14 +243,14 @@ export default function Login() {
               <CardContent className="pb-8 px-8">
                 <div className="space-y-6">
                   {/* Security Notice */}
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div className="p-4 rounded-lg bg-info-soft  border border-info/20 ">
                     <div className="flex items-start space-x-3 rtl:space-x-reverse">
-                      <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <Shield className="w-5 h-5 text-primary  flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm">
+                        <h4 className="font-medium text-info  text-sm">
                           {language === 'en' ? 'Secure Authentication' : 'مصادقة آمنة'}
                         </h4>
-                        <p className="text-blue-700 dark:text-blue-300 text-xs mt-1">
+                        <p className="text-info  text-xs mt-1">
                           {language === 'en' 
                             ? 'Your login is protected by enterprise-grade security protocols.'
                             : 'تسجيل دخولك محمي ببروتوكولات الأمان على مستوى المؤسسات.'

@@ -294,7 +294,7 @@ export default function UserProfile() {
 
   if (!user) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header title="User Not Found" subtitle="The requested user profile could not be found" />
         <div className="p-6">
           <Button onClick={() => setLocation("/team-roles")}>
@@ -307,7 +307,7 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title="User Profile" 
         subtitle={`Profile details for ${user.employee?.firstName} ${user.employee?.lastName}`}

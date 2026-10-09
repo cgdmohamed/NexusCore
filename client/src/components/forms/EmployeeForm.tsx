@@ -118,7 +118,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("firstName")}
           />
           {form.formState.errors.firstName && (
-            <p className="text-sm text-red-600">{form.formState.errors.firstName.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.firstName.message}</p>
           )}
         </div>
 
@@ -130,7 +130,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("lastName")}
           />
           {form.formState.errors.lastName && (
-            <p className="text-sm text-red-600">{form.formState.errors.lastName.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.lastName.message}</p>
           )}
         </div>
 
@@ -143,7 +143,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("email")}
           />
           {form.formState.errors.email && (
-            <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.email.message}</p>
           )}
         </div>
 
@@ -155,7 +155,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("phone")}
           />
           {form.formState.errors.phone && (
-            <p className="text-sm text-red-600">{form.formState.errors.phone.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.phone.message}</p>
           )}
         </div>
 
@@ -167,7 +167,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("jobTitle")}
           />
           {form.formState.errors.jobTitle && (
-            <p className="text-sm text-red-600">{form.formState.errors.jobTitle.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.jobTitle.message}</p>
           )}
         </div>
 
@@ -189,7 +189,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             </SelectContent>
           </Select>
           {form.formState.errors.department && (
-            <p className="text-sm text-red-600">{form.formState.errors.department.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.department.message}</p>
           )}
         </div>
 
@@ -201,7 +201,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("hiringDate")}
           />
           {form.formState.errors.hiringDate && (
-            <p className="text-sm text-red-600">{form.formState.errors.hiringDate.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.hiringDate.message}</p>
           )}
         </div>
 
@@ -223,7 +223,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             </SelectContent>
           </Select>
           {form.formState.errors.status && (
-            <p className="text-sm text-red-600">{form.formState.errors.status.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.status.message}</p>
           )}
         </div>
 
@@ -249,7 +249,7 @@ export function EmployeeForm({ employee, onClose }: EmployeeFormProps) {
             {...form.register("notes")}
           />
           {form.formState.errors.notes && (
-            <p className="text-sm text-red-600">{form.formState.errors.notes.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.notes.message}</p>
           )}
         </div>
       </div>

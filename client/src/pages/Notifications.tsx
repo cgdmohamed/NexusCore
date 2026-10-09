@@ -17,23 +17,23 @@ const getNotificationIcon = (type: string) => {
     case "task_updated":
     case "task_completed":
     case "task_overdue":
-      return <Bell className="w-4 h-4 text-blue-500" />;
+      return <Bell className="w-4 h-4 text-primary" />;
     case "expense_submitted":
     case "expense_approved":
     case "expense_rejected":
     case "expense_paid":
-      return <Bell className="w-4 h-4 text-green-500" />;
+      return <Bell className="w-4 h-4 text-success" />;
     case "invoice_created":
     case "invoice_updated":
     case "invoice_paid":
     case "invoice_overdue":
-      return <Bell className="w-4 h-4 text-purple-500" />;
+      return <Bell className="w-4 h-4 text-info" />;
     case "quotation_created":
     case "quotation_sent":
     case "quotation_accepted":
     case "quotation_rejected":
     case "quotation_expired":
-      return <Bell className="w-4 h-4 text-orange-500" />;
+      return <Bell className="w-4 h-4 text-warning" />;
     case "client_added":
     case "client_updated":
     case "client_status_changed":
@@ -41,7 +41,7 @@ const getNotificationIcon = (type: string) => {
     case "payment_received":
     case "payment_failed":
     case "payment_refunded":
-      return <Bell className="w-4 h-4 text-emerald-500" />;
+      return <Bell className="w-4 h-4 text-success" />;
     default:
       return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
@@ -50,11 +50,11 @@ const getNotificationIcon = (type: string) => {
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case "urgent":
-      return "bg-red-500";
+      return "bg-destructive";
     case "high":
-      return "bg-orange-500";
+      return "bg-warning";
     case "medium":
-      return "bg-blue-500";
+      return "bg-info";
     case "low":
       return "bg-gray-500";
     default:
@@ -212,7 +212,7 @@ export default function Notifications() {
                     key={notification.id}
                     className={`flex items-start space-x-4 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/60 dark:hover:bg-gray-800 ${
                       !notification.isRead 
-                        ? "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800" 
+                        ? "bg-info-soft  border-info/20 " 
                         : "bg-card dark:bg-gray-900"
                     }`}
                     onClick={() => handleNotificationClick(notification)}
@@ -233,7 +233,7 @@ export default function Notifications() {
                             <div className={`w-2 h-2 rounded-full ${getPriorityColor(notification.priority)}`} />
                           )}
                           {!notification.isRead && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <div className="w-2 h-2 rounded-full bg-info" />
                           )}
                         </div>
                       </div>

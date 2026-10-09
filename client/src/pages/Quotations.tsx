@@ -132,11 +132,11 @@ export default function Quotations() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-muted text-foreground border-border';
-      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'accepted': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      case 'invoiced': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'expired': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'sent': return 'bg-info-soft text-info border-info/20';
+      case 'accepted': return 'bg-success-soft text-success border-success/20';
+      case 'rejected': return 'bg-danger-soft text-danger border-danger/20';
+      case 'invoiced': return 'bg-info-soft text-info border-info/20';
+      case 'expired': return 'bg-warning-soft text-warning border-warning/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -168,7 +168,7 @@ export default function Quotations() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.quotations')}
         subtitle="Create and manage quotations for your clients"
@@ -180,7 +180,7 @@ export default function Quotations() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-blue-600" />
+                <FileText className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
@@ -204,7 +204,7 @@ export default function Quotations() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <RefreshCw className="h-4 w-4 text-blue-600" />
+                <RefreshCw className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Sent</p>
                   <p className="text-2xl font-bold">{stats.sent}</p>
@@ -216,7 +216,7 @@ export default function Quotations() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Accepted</p>
                   <p className="text-2xl font-bold">{stats.accepted}</p>
@@ -228,7 +228,7 @@ export default function Quotations() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Value</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.totalValue)}</p>
@@ -240,7 +240,7 @@ export default function Quotations() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <TrendingUp className="h-4 w-4 text-info" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Avg Value</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.avgValue)}</p>
@@ -397,7 +397,7 @@ export default function Quotations() {
                     {paginatedQuotations.map((quotation) => (
                       <TableRow key={quotation.id} className="hover:bg-muted/60">
                         <TableCell className="font-medium">
-                          <Link href={`/quotations/${quotation.id}`} className="text-blue-600 hover:text-blue-800">
+                          <Link href={`/quotations/${quotation.id}`} className="text-primary hover:text-info">
                             {quotation.quotationNumber}
                           </Link>
                         </TableCell>
@@ -484,7 +484,7 @@ export default function Quotations() {
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <Link href={`/quotations/${quotation.id}`} className="text-blue-600 hover:text-blue-800">
+                          <Link href={`/quotations/${quotation.id}`} className="text-primary hover:text-info">
                             <CardTitle className="text-lg">{quotation.quotationNumber}</CardTitle>
                           </Link>
                           <p className="text-sm text-muted-foreground mt-1">{quotation.title}</p>

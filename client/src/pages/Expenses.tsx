@@ -132,11 +132,11 @@ export default function Expenses() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case "pending":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
+        return <Clock className="h-4 w-4 text-warning" />;
       case "overdue":
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+        return <AlertCircle className="h-4 w-4 text-danger" />;
       case "cancelled":
         return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
@@ -146,14 +146,14 @@ export default function Expenses() {
 
   const getStatusColor = (status: string) => {
     const colorMap: Record<string, string> = {
-      paid: "bg-green-100 text-green-800 border-green-200",
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      overdue: "bg-red-100 text-red-800 border-red-200",
+      paid: "bg-success-soft text-success border-success/20",
+      pending: "bg-warning-soft text-warning border-warning/20",
+      overdue: "bg-danger-soft text-danger border-danger/20",
       cancelled: "bg-muted text-foreground border-border",
       draft: "bg-muted text-foreground border-border",
-      submitted: "bg-blue-100 text-blue-800 border-blue-200",
-      approved: "bg-green-100 text-green-800 border-green-200",
-      rejected: "bg-red-100 text-red-800 border-red-200",
+      submitted: "bg-info-soft text-info border-info/20",
+      approved: "bg-success-soft text-success border-success/20",
+      rejected: "bg-danger-soft text-danger border-danger/20",
     };
     return colorMap[status] || colorMap.pending;
   };
@@ -175,7 +175,7 @@ export default function Expenses() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header 
           title={t('nav.expenses')}
           subtitle="Track and manage company expenses and payments"
@@ -198,7 +198,7 @@ export default function Expenses() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.expenses')}
         subtitle="Track and manage company expenses and payments"
@@ -210,7 +210,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Receipt className="h-4 w-4 text-blue-600" />
+                <Receipt className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
                   <p className="text-2xl font-bold">{stats?.totalExpenses || 0}</p>
@@ -222,7 +222,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Paid</p>
                   <p className="text-2xl font-bold">{stats?.paidExpenses || 0}</p>
@@ -234,7 +234,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-yellow-600" />
+                <Clock className="h-4 w-4 text-warning" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending</p>
                   <p className="text-2xl font-bold">{stats?.pendingExpenses || 0}</p>
@@ -246,7 +246,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-danger" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-bold">{stats?.overdueExpenses || 0}</p>
@@ -258,7 +258,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.totalAmount || 0)}</p>
@@ -270,7 +270,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <TrendingDown className="h-4 w-4 text-orange-600" />
+                <TrendingDown className="h-4 w-4 text-warning" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.pendingAmount || 0)}</p>
@@ -355,7 +355,7 @@ export default function Expenses() {
                 <DataExportButton data={filteredExpenses} filename="expenses-export" type="csv" />
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button className="bg-info hover:bg-info">
                       <Plus className="h-4 w-4 me-2" />
                       Add Expense
                     </Button>
@@ -469,7 +469,7 @@ export default function Expenses() {
                   </TableCell>
                   <TableCell>
                     {expense.category && (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                      <Badge variant="outline" className="bg-info-soft text-info border-info/20">
                         {expense.category.name}
                       </Badge>
                     )}
@@ -500,8 +500,8 @@ export default function Expenses() {
                     </div>
                     {expense.attachmentUrl && (
                       <div className="flex items-center gap-1 mt-1">
-                        <Receipt className="h-3 w-3 text-green-600" />
-                        <span className="text-xs text-green-600">Attached</span>
+                        <Receipt className="h-3 w-3 text-success" />
+                        <span className="text-xs text-success">Attached</span>
                       </div>
                     )}
                   </TableCell>
@@ -579,7 +579,7 @@ export default function Expenses() {
                       {formatCurrency(expense.amount)}
                     </span>
                     {expense.category && (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                      <Badge variant="outline" className="bg-info-soft text-info border-info/20">
                         {expense.category.name}
                       </Badge>
                     )}
@@ -603,7 +603,7 @@ export default function Expenses() {
                   </div>
                   
                   {expense.attachmentUrl && (
-                    <div className="flex items-center gap-1 text-sm text-green-600">
+                    <div className="flex items-center gap-1 text-sm text-success">
                       <Receipt className="h-4 w-4" />
                       <span>Attachment available</span>
                     </div>

@@ -375,7 +375,7 @@ export default function Services() {
   );
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header
         title={t('nav.services')}
         subtitle={t('services.subtitle')}
@@ -390,7 +390,7 @@ export default function Services() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Package className="h-4 w-4 text-blue-600" />
+              <Package className="h-4 w-4 text-primary" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t('services.total_services')}</p>
                 <p className="text-2xl font-bold">{totalServices}</p>
@@ -401,7 +401,7 @@ export default function Services() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t('services.active_services')}</p>
                 <p className="text-2xl font-bold">{activeServices}</p>
@@ -412,7 +412,7 @@ export default function Services() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Tag className="h-4 w-4 text-purple-600" />
+              <Tag className="h-4 w-4 text-info" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t('services.categories')}</p>
                 <p className="text-2xl font-bold">{categories.length}</p>
@@ -423,7 +423,7 @@ export default function Services() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <DollarSign className="h-4 w-4 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t('services.avg_price')}</p>
                 <p className="text-xl font-bold">
@@ -550,7 +550,7 @@ export default function Services() {
                   <div className="flex-1">
                     <CardTitle className="text-lg">{service.name}</CardTitle>
                     {service.category && (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 mt-2">
+                      <Badge variant="outline" className="bg-info-soft text-info border-info/20 mt-2">
                         {service.category}
                       </Badge>
                     )}
@@ -558,7 +558,7 @@ export default function Services() {
                   <Badge
                     variant="outline"
                     className={service.isActive
-                      ? "bg-green-100 text-green-800 border-green-200"
+                      ? "bg-success-soft text-success border-success/20"
                       : "bg-muted text-foreground border-border"}
                   >
                     {service.isActive ? t('common.active') : t('common.inactive')}
@@ -632,7 +632,7 @@ export default function Services() {
                   </TableCell>
                   <TableCell>
                     {service.category && (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                      <Badge variant="outline" className="bg-info-soft text-info border-info/20">
                         {service.category}
                       </Badge>
                     )}
@@ -644,7 +644,7 @@ export default function Services() {
                     <Badge
                       variant="outline"
                       className={service.isActive
-                        ? "bg-green-100 text-green-800 border-green-200"
+                        ? "bg-success-soft text-success border-success/20"
                         : "bg-muted text-foreground border-border"}
                     >
                       {service.isActive ? t('common.active') : t('common.inactive')}

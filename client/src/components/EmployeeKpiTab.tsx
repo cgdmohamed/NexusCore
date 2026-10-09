@@ -88,21 +88,21 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "exceeded": return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
-      case "on_track": return <Target className="h-3.5 w-3.5 text-blue-600" />;
-      case "below_target": return <AlertCircle className="h-3.5 w-3.5 text-orange-500" />;
+      case "exceeded": return <CheckCircle2 className="h-3.5 w-3.5 text-success" />;
+      case "on_track": return <Target className="h-3.5 w-3.5 text-primary" />;
+      case "below_target": return <AlertCircle className="h-3.5 w-3.5 text-warning" />;
       case "not_evaluated": return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
-      default: return <XCircle className="h-3.5 w-3.5 text-red-500" />;
+      default: return <XCircle className="h-3.5 w-3.5 text-danger" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "exceeded": return "bg-green-100 text-green-800";
-      case "on_track": return "bg-blue-100 text-blue-800";
-      case "below_target": return "bg-orange-100 text-orange-800";
+      case "exceeded": return "bg-success-soft text-success";
+      case "on_track": return "bg-info-soft text-info";
+      case "below_target": return "bg-warning-soft text-warning";
       case "not_evaluated": return "bg-muted text-muted-foreground";
-      default: return "bg-red-100 text-red-800";
+      default: return "bg-danger-soft text-danger";
     }
   };
 
@@ -165,10 +165,10 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
   }
 
   const statItems = [
-    { label: "Total KPIs", value: stats?.total, icon: TrendingUp, accent: "border-t-blue-500", iconColor: "text-blue-500" },
-    { label: "Exceeded", value: stats?.exceeded, icon: CheckCircle2, accent: "border-t-green-500", iconColor: "text-green-500" },
-    { label: "On Track", value: stats?.onTrack, icon: Target, accent: "border-t-blue-400", iconColor: "text-blue-400" },
-    { label: "Below Target", value: stats?.belowTarget, icon: AlertCircle, accent: "border-t-orange-500", iconColor: "text-orange-500" },
+    { label: "Total KPIs", value: stats?.total, icon: TrendingUp, accent: "border-t-blue-500", iconColor: "text-primary" },
+    { label: "Exceeded", value: stats?.exceeded, icon: CheckCircle2, accent: "border-t-green-500", iconColor: "text-success" },
+    { label: "On Track", value: stats?.onTrack, icon: Target, accent: "border-t-blue-400", iconColor: "text-primary" },
+    { label: "Below Target", value: stats?.belowTarget, icon: AlertCircle, accent: "border-t-orange-500", iconColor: "text-warning" },
     { label: "Not Evaluated", value: stats?.notEvaluated, icon: Clock, accent: "border-t-gray-400", iconColor: "text-muted-foreground/70" },
   ];
 
@@ -333,7 +333,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground/70 hover:text-red-500">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground/70 hover:text-danger">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
@@ -348,7 +348,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDeleteKpi(kpi.id)}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-destructive hover:bg-destructive"
                           >
                             Delete
                           </AlertDialogAction>

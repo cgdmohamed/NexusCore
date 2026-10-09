@@ -162,9 +162,9 @@ export default function PaymentSources() {
 
   const getAccountTypeColor = (type: string) => {
     switch (type) {
-      case 'cash': return 'bg-green-100 text-green-800 border-green-200';
-      case 'bank': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'wallet': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'cash': return 'bg-success-soft text-success border-success/20';
+      case 'bank': return 'bg-info-soft text-info border-info/20';
+      case 'wallet': return 'bg-info-soft text-info border-info/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -182,7 +182,7 @@ export default function PaymentSources() {
 
   const getStatusColor = (isActive: boolean) => {
     return isActive
-      ? 'bg-green-100 text-green-800 border-green-200'
+      ? 'bg-success-soft text-success border-success/20'
       : 'bg-muted text-foreground border-border';
   };
 
@@ -208,7 +208,7 @@ export default function PaymentSources() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header 
           title={t('nav.payments')}
           subtitle="Manage company financial accounts and track balances"
@@ -231,7 +231,7 @@ export default function PaymentSources() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.payments')}
         subtitle="Manage company financial accounts and track balances"
@@ -243,7 +243,7 @@ export default function PaymentSources() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Wallet className="h-4 w-4 text-blue-600" />
+                <Wallet className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Sources</p>
                   <p className="text-2xl font-bold">{stats?.totalSources || 0}</p>
@@ -255,7 +255,7 @@ export default function PaymentSources() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <TrendingUp className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Sources</p>
                   <p className="text-2xl font-bold">{stats?.activeSources || 0}</p>
@@ -267,7 +267,7 @@ export default function PaymentSources() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-success" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Balance</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.totalBalance || "0")}</p>
@@ -405,7 +405,7 @@ export default function PaymentSources() {
                   <TableRow key={source.id} className="hover:bg-muted/60">
                     <TableCell>
                       <div>
-                        <Link href={`/payment-sources/${source.id}`} className="font-medium hover:text-blue-600">
+                        <Link href={`/payment-sources/${source.id}`} className="font-medium hover:text-primary">
                           {source.name}
                         </Link>
                         {source.description && (
@@ -456,7 +456,7 @@ export default function PaymentSources() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => handleDelete(source)}
-                            className="text-red-600"
+                            className="text-danger"
                           >
                             <Trash2 className="h-4 w-4 me-2" />
                             Delete
@@ -486,7 +486,7 @@ export default function PaymentSources() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg">
-                        <Link href={`/payment-sources/${source.id}`} className="hover:text-blue-600">
+                        <Link href={`/payment-sources/${source.id}`} className="hover:text-primary">
                           {source.name}
                         </Link>
                       </CardTitle>
@@ -520,7 +520,7 @@ export default function PaymentSources() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => handleDelete(source)}
-                          className="text-red-600"
+                          className="text-danger"
                         >
                           <Trash2 className="h-4 w-4 me-2" />
                           Delete

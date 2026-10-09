@@ -77,23 +77,23 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 const COLUMN_DEFS = [
-  { id: "pending",     titleKey: "kanban.pending",     accent: "#94a3b8", headerBg: "bg-slate-50",  badgeCls: "bg-slate-200 text-slate-700" },
-  { id: "in_progress", titleKey: "kanban.in_progress", accent: "#60a5fa", headerBg: "bg-blue-50",   badgeCls: "bg-blue-200 text-blue-700"  },
-  { id: "completed",   titleKey: "kanban.completed",   accent: "#34d399", headerBg: "bg-green-50",  badgeCls: "bg-green-200 text-green-700"},
-  { id: "cancelled",   titleKey: "kanban.cancelled",   accent: "#f87171", headerBg: "bg-red-50",    badgeCls: "bg-red-200 text-red-700"   },
+  { id: "pending",     titleKey: "kanban.pending",     accent: "#94a3b8", headerBg: "bg-muted/50",  badgeCls: "bg-muted text-foreground" },
+  { id: "in_progress", titleKey: "kanban.in_progress", accent: "#60a5fa", headerBg: "bg-info-soft",   badgeCls: "bg-info-soft text-info"  },
+  { id: "completed",   titleKey: "kanban.completed",   accent: "#34d399", headerBg: "bg-success-soft",  badgeCls: "bg-success-soft text-success"},
+  { id: "cancelled",   titleKey: "kanban.cancelled",   accent: "#f87171", headerBg: "bg-danger-soft",    badgeCls: "bg-danger-soft text-danger"   },
 ];
 
 const priorityColors: Record<string, string> = {
   low:    "bg-muted text-foreground border-border",
-  medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  high:   "bg-red-100 text-red-700 border-red-200",
+  medium: "bg-warning-soft text-warning border-warning/20",
+  high:   "bg-danger-soft text-danger border-danger/20",
 };
 
 const STATUS_BADGE_CLS: Record<string, string> = {
-  active:    "bg-green-50 text-green-700 border-green-200",
-  on_hold:   "bg-yellow-50 text-yellow-700 border-yellow-200",
-  completed: "bg-blue-50 text-blue-700 border-blue-200",
-  archived:  "bg-slate-100 text-slate-600 border-slate-200",
+  active:    "bg-success-soft text-success border-success/20",
+  on_hold:   "bg-warning-soft text-warning border-warning/20",
+  completed: "bg-info-soft text-info border-info/20",
+  archived:  "bg-muted text-muted-foreground border-border",
 };
 
 function DroppableColumn({ colId, children }: { colId: string; children: React.ReactNode }) {
@@ -133,7 +133,7 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
       <div
         ref={setNodeRef}
         style={style}
-        className="opacity-30 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg h-20 mb-2"
+        className="opacity-30 bg-muted border-2 border-dashed border-border rounded-lg h-20 mb-2"
       />
     );
   }
@@ -144,7 +144,7 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-slate-200"
+      className="mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-border"
       onClick={() => onClick(task)}
     >
       <CardContent className="p-3 space-y-2">
@@ -162,10 +162,10 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
             </span>
           )}
           {dueDate && (
-            <span className={cn("flex items-center gap-1", isOverdue && "text-red-600 font-medium")}>
+            <span className={cn("flex items-center gap-1", isOverdue && "text-danger font-medium")}>
               <CalendarIcon className="h-3 w-3" />
               {format(dueDate, "MMM d")}
-              {isOverdue && <span className="text-red-600">!</span>}
+              {isOverdue && <span className="text-danger">!</span>}
             </span>
           )}
         </div>
@@ -322,7 +322,7 @@ export default function ProjectKanban() {
   };
 
   return (
-    <div className="flex-1 flex flex-col p-3 md:p-6 overflow-hidden bg-slate-50/50 min-h-0">
+    <div className="flex-1 flex flex-col p-3 md:p-6 overflow-hidden bg-muted/50 min-h-0">
       {/* Enhanced Header */}
       <div className="mb-4 flex-shrink-0">
         <Link href="/projects">
@@ -332,12 +332,12 @@ export default function ProjectKanban() {
           </Button>
         </Link>
 
-        <div className="bg-card border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="space-y-2 min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
-                <h1 className="text-xl font-bold text-slate-900 truncate">{project?.name ?? t("nav.projects")}</h1>
+                <h1 className="text-xl font-bold text-foreground truncate">{project?.name ?? t("nav.projects")}</h1>
                 {project?.status && (
                   <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE_CLS[project.status] ?? "")}>
                     {statusLabel}
@@ -364,7 +364,7 @@ export default function ProjectKanban() {
                   </span>
                   <span className="font-medium">{progressPct}%</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
                     style={{ width: `${progressPct}%` }}
@@ -374,10 +374,10 @@ export default function ProjectKanban() {
 
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 {dueDate && (
-                  <span className={cn("flex items-center gap-1", isProjectOverdue && "text-red-600 font-medium")}>
+                  <span className={cn("flex items-center gap-1", isProjectOverdue && "text-danger font-medium")}>
                     <CalendarDays className="h-3.5 w-3.5" />
                     {t("projects.due_label")} {format(dueDate, "MMM d, yyyy")}
-                    {isProjectOverdue && <Badge className="ms-1 bg-red-100 text-red-700 border-red-200 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>}
+                    {isProjectOverdue && <Badge className="ms-1 bg-danger-soft text-danger border-danger/20 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>}
                   </span>
                 )}
                 {project?.budget != null && (
@@ -400,7 +400,7 @@ export default function ProjectKanban() {
                     <MemberAvatar key={m.userId} name={m.name ?? m.userId} />
                   ))}
                   {members.length > 5 && (
-                    <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                    <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-medium text-muted-foreground">
                       +{members.length - 5}
                     </div>
                   )}
@@ -474,7 +474,7 @@ export default function ProjectKanban() {
                   className={cn("rounded-t-lg px-4 py-3 flex items-center justify-between", col.headerBg)}
                   style={{ borderTop: `3px solid ${col.accent}` }}
                 >
-                  <span className="text-sm font-semibold text-slate-700 tracking-wide">
+                  <span className="text-sm font-semibold text-foreground tracking-wide">
                     {t(col.titleKey)}
                   </span>
                   <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full min-w-[1.5rem] text-center", col.badgeCls)}>
@@ -482,7 +482,7 @@ export default function ProjectKanban() {
                   </span>
                 </div>
 
-                <div className="bg-card rounded-b-lg border border-t-0 border-slate-200 flex flex-col shadow-sm">
+                <div className="bg-card rounded-b-lg border border-t-0 border-border flex flex-col shadow-sm">
                   <SortableContext
                     items={columnTasks.map((t: any) => t.id)}
                     strategy={verticalListSortingStrategy}
@@ -509,11 +509,11 @@ export default function ProjectKanban() {
                     </DroppableColumn>
                   </SortableContext>
 
-                  <div className="px-3 pb-3 pt-1 border-t border-slate-100">
+                  <div className="px-3 pb-3 pt-1 border-t border-border">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-muted-foreground hover:text-slate-800 hover:bg-slate-50 h-8 text-xs"
+                      className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 text-xs"
                       onClick={() => openCreateDialog(col.id)}
                     >
                       <Plus className="h-3.5 w-3.5 me-1.5" />
@@ -621,14 +621,14 @@ export default function ProjectKanban() {
             {selectedTask?.description && (
               <div>
                 <p className="text-xs text-muted-foreground font-medium mb-1">{t("kanban.description_label")}</p>
-                <p className="text-sm whitespace-pre-wrap text-slate-700">{selectedTask.description}</p>
+                <p className="text-sm whitespace-pre-wrap text-foreground">{selectedTask.description}</p>
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 rounded-full">
-                  <User className="h-4 w-4 text-slate-600" />
+                <div className="p-2 bg-muted rounded-full">
+                  <User className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("kanban.assignee_label")}</p>
@@ -637,8 +637,8 @@ export default function ProjectKanban() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 rounded-full">
-                  <CalendarIcon className="h-4 w-4 text-slate-600" />
+                <div className="p-2 bg-muted rounded-full">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("kanban.due_date_label")}</p>
@@ -651,8 +651,8 @@ export default function ProjectKanban() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 rounded-full">
-                  <Clock className="h-4 w-4 text-slate-600" />
+                <div className="p-2 bg-muted rounded-full">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t("kanban.status_label")}</p>

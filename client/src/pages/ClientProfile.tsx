@@ -50,11 +50,11 @@ const CREDENTIAL_TYPE_LABELS: Record<CredentialType, string> = {
 };
 
 const CREDENTIAL_TYPE_COLORS: Record<CredentialType, string> = {
-  social: "bg-pink-100 text-pink-800",
-  website: "bg-blue-100 text-blue-800",
+  social: "bg-info-soft text-info",
+  website: "bg-info-soft text-info",
   server: "bg-muted text-foreground",
-  email: "bg-yellow-100 text-yellow-800",
-  other: "bg-purple-100 text-purple-800",
+  email: "bg-warning-soft text-warning",
+  other: "bg-info-soft text-info",
 };
 
 function CredentialTypeIcon({ type }: { type: CredentialType }) {
@@ -390,7 +390,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
                         {cred.url && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground w-20 shrink-0">URL / Host</span>
-                            <a href={cred.url.startsWith("http") ? cred.url : `https://${cred.url}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-xs flex items-center gap-1" data-testid={`link-credential-url-${cred.id}`}>
+                            <a href={cred.url.startsWith("http") ? cred.url : `https://${cred.url}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate max-w-xs flex items-center gap-1" data-testid={`link-credential-url-${cred.id}`}>
                               {cred.url}
                               <ExternalLink className="w-3 h-3 shrink-0" />
                             </a>
@@ -417,7 +417,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-50" data-testid={`button-delete-credential-${cred.id}`}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-danger hover:text-danger hover:bg-danger-soft" data-testid={`button-delete-credential-${cred.id}`}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </AlertDialogTrigger>
@@ -428,7 +428,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(cred.id)} className="bg-red-600 hover:bg-red-700" data-testid={`button-confirm-delete-credential-${cred.id}`}>Delete</AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(cred.id)} className="bg-destructive hover:bg-destructive" data-testid={`button-confirm-delete-credential-${cred.id}`}>Delete</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -573,10 +573,10 @@ export default function ClientProfile() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'prospect': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'active': return 'bg-success-soft text-success';
+      case 'inactive': return 'bg-danger-soft text-danger';
+      case 'prospect': return 'bg-info-soft text-info';
+      case 'pending': return 'bg-warning-soft text-warning';
       default: return 'bg-muted text-foreground';
     }
   };
@@ -593,9 +593,9 @@ export default function ClientProfile() {
   const getCreditTypeIcon = (type: string) => {
     switch (type) {
       case 'credit_added':
-      case 'credit_refunded': return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'credit_refunded': return <TrendingUp className="w-4 h-4 text-success" />;
       case 'credit_used':
-      case 'credit_applied': return <TrendingDown className="w-4 h-4 text-red-600" />;
+      case 'credit_applied': return <TrendingDown className="w-4 h-4 text-danger" />;
       default: return <Minus className="w-4 h-4 text-muted-foreground/70" />;
     }
   };
@@ -603,18 +603,18 @@ export default function ClientProfile() {
   const getCreditTypeColor = (type: string) => {
     switch (type) {
       case 'credit_added':
-      case 'credit_refunded': return 'text-green-700';
+      case 'credit_refunded': return 'text-success';
       case 'credit_used':
-      case 'credit_applied': return 'text-red-700';
+      case 'credit_applied': return 'text-danger';
       default: return 'text-foreground';
     }
   };
 
   const getProjectStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
+      case 'active': return 'bg-success-soft text-success';
+      case 'completed': return 'bg-info-soft text-info';
+      case 'on_hold': return 'bg-warning-soft text-warning';
       case 'archived': return 'bg-muted text-foreground';
       default: return 'bg-muted text-foreground';
     }
@@ -734,8 +734,8 @@ export default function ClientProfile() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Mail className="w-5 h-5 text-blue-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
@@ -751,8 +751,8 @@ export default function ClientProfile() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-green-600" />
+                <div className="p-3 bg-success-soft rounded-lg">
+                  <DollarSign className="w-5 h-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Value</p>
@@ -776,12 +776,12 @@ export default function ClientProfile() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center space-x-3">
-              <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-emerald-100' : 'bg-muted'}`}>
-                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-emerald-600' : 'text-muted-foreground/70'}`} />
+              <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-success-soft' : 'bg-muted'}`}>
+                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-success' : 'text-muted-foreground/70'}`} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Credit Balance</p>
-                <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-foreground'}`}>
+                <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-success' : 'text-foreground'}`}>
                   EGP {creditBalance.toLocaleString('en-US')}
                 </p>
               </div>
@@ -792,8 +792,8 @@ export default function ClientProfile() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FileText className="w-5 h-5 text-purple-600" />
+              <div className="p-3 bg-info-soft rounded-lg">
+                <FileText className="w-5 h-5 text-info" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Quotations</p>
@@ -806,8 +806,8 @@ export default function ClientProfile() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Calendar className="w-5 h-5 text-orange-600" />
+              <div className="p-3 bg-warning-soft rounded-lg">
+                <Calendar className="w-5 h-5 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Invoices</p>
@@ -984,7 +984,7 @@ export default function ClientProfile() {
                 <CardTitle>Credit History</CardTitle>
                 <div className="text-end">
                   <p className="text-sm text-muted-foreground">Current Balance</p>
-                  <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-emerald-700' : 'text-foreground'}`}>
+                  <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-success' : 'text-foreground'}`}>
                     EGP {creditBalance.toLocaleString('en-US')}
                   </p>
                 </div>
@@ -1028,7 +1028,7 @@ export default function ClientProfile() {
                         </TableCell>
                         <TableCell className="text-sm">
                           {entry.relatedInvoiceId ? (
-                            <Link href={`/invoices/${entry.relatedInvoiceId}`} className="text-blue-600 hover:underline flex items-center gap-1">
+                            <Link href={`/invoices/${entry.relatedInvoiceId}`} className="text-primary hover:underline flex items-center gap-1">
                               <FileText className="w-3 h-3" />
                               #{entry.relatedInvoiceId.slice(0, 8)}
                             </Link>
@@ -1165,7 +1165,7 @@ export default function ClientProfile() {
                 ) : (
                   <div className="space-y-4">
                     {notes.map((note) => (
-                      <div key={note.id} className="border-s-4 border-blue-200 ps-4 py-2">
+                      <div key={note.id} className="border-s-4 border-info/20 ps-4 py-2">
                         <div className="flex items-center space-x-2 mb-2">
                           {getNoteTypeIcon(note.type)}
                           <span className="font-medium capitalize">{note.type}</span>

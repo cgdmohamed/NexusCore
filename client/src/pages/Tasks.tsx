@@ -69,17 +69,17 @@ type TaskFormData = z.infer<typeof taskFormSchema>;
 
 // Priority colors (outline badge style — matches Quotations/Invoices)
 const priorityColors = {
-  low: "bg-green-100 text-green-800 border-green-200",
-  medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  high: "bg-red-100 text-red-800 border-red-200",
+  low: "bg-success-soft text-success border-success/20",
+  medium: "bg-warning-soft text-warning border-warning/20",
+  high: "bg-danger-soft text-danger border-danger/20",
 };
 
 // Status colors (outline badge style — matches Quotations/Invoices)
 const statusColors = {
   pending: "bg-muted text-foreground border-border",
-  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-red-100 text-red-800 border-red-200",
+  in_progress: "bg-info-soft text-info border-info/20",
+  completed: "bg-success-soft text-success border-success/20",
+  cancelled: "bg-danger-soft text-danger border-danger/20",
 };
 
 export default function Tasks() {
@@ -357,7 +357,7 @@ export default function Tasks() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.tasks')} 
         subtitle="Assign, track, and evaluate tasks across all departments"
@@ -368,11 +368,11 @@ export default function Tasks() {
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {[
-              { label: "Total Tasks",   value: stats.totalTasks || 0,                         icon: Briefcase,    iconColor: "text-blue-600" },
-              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,          icon: CheckCircle2, iconColor: "text-green-600" },
-              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-yellow-600" },
-              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-orange-600" },
-              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-red-600" },
+              { label: "Total Tasks",   value: stats.totalTasks || 0,                         icon: Briefcase,    iconColor: "text-primary" },
+              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,          icon: CheckCircle2, iconColor: "text-success" },
+              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-warning" },
+              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-warning" },
+              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-danger" },
               { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-muted-foreground" },
             ].map(({ label, value, icon: Icon, iconColor }) => (
               <Card key={label}>
@@ -929,7 +929,7 @@ export default function Tasks() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-500 hover:text-red-700 shrink-0"
+                          className="text-danger hover:text-danger shrink-0"
                           disabled={removeDepMutation.isPending}
                           onClick={() => removeDepMutation.mutate({ taskId: selectedTask.id, dependsOnId: dep.dependsOnTaskId || dep.id })}
                         >

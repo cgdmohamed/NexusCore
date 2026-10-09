@@ -120,8 +120,8 @@ export function CreditRefundForm({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Available Credit Display */}
-          <div className="bg-blue-50 p-3 rounded-md">
-            <div className="text-sm text-blue-700">
+          <div className="bg-info-soft p-3 rounded-md">
+            <div className="text-sm text-info">
               Available Credit Balance: <strong>{availableCredit} EGP</strong>
             </div>
           </div>

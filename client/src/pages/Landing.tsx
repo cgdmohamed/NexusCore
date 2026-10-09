@@ -35,20 +35,20 @@ export default function Landing() {
             {/* Features */}
             <div className="grid grid-cols-3 gap-4 py-6">
               <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-info-soft rounded-lg flex items-center justify-center mx-auto mb-2">
                   <BarChart3 className="text-primary w-6 h-6" />
                 </div>
                 <p className="text-xs text-neutral">Analytics</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-success-soft rounded-lg flex items-center justify-center mx-auto mb-2">
                   <Users className="text-success w-6 h-6" />
                 </div>
                 <p className="text-xs text-neutral">CRM</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <FileText className="text-purple-600 w-6 h-6" />
+                <div className="w-12 h-12 bg-info-soft rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <FileText className="text-info w-6 h-6" />
                 </div>
                 <p className="text-xs text-neutral">Documents</p>
               </div>

@@ -23,27 +23,27 @@ const getNotificationIcon = (type: string) => {
     case "task_updated":
     case "task_completed":
     case "task_overdue":
-      return <CheckSquare className="w-4 h-4 text-blue-500" />;
+      return <CheckSquare className="w-4 h-4 text-primary" />;
     case "expense_submitted":
     case "expense_approved":
     case "expense_rejected":
     case "expense_paid":
-      return <DollarSign className="w-4 h-4 text-green-500" />;
+      return <DollarSign className="w-4 h-4 text-success" />;
     case "invoice_created":
     case "invoice_updated":
     case "invoice_paid":
     case "invoice_overdue":
-      return <FileText className="w-4 h-4 text-purple-500" />;
+      return <FileText className="w-4 h-4 text-info" />;
     case "quotation_created":
     case "quotation_sent":
     case "quotation_accepted":
     case "quotation_rejected":
     case "quotation_expired":
-      return <FileText className="w-4 h-4 text-orange-500" />;
+      return <FileText className="w-4 h-4 text-warning" />;
     case "kpi_assigned":
     case "kpi_updated":
     case "kpi_reviewed":
-      return <TrendingUp className="w-4 h-4 text-indigo-500" />;
+      return <TrendingUp className="w-4 h-4 text-info" />;
     case "client_added":
     case "client_updated":
     case "client_status_changed":
@@ -51,7 +51,7 @@ const getNotificationIcon = (type: string) => {
     case "payment_received":
     case "payment_failed":
     case "payment_refunded":
-      return <DollarSign className="w-4 h-4 text-emerald-500" />;
+      return <DollarSign className="w-4 h-4 text-success" />;
     case "user_added":
     case "user_updated":
     case "user_deactivated":
@@ -59,7 +59,7 @@ const getNotificationIcon = (type: string) => {
     case "system_maintenance":
     case "system_backup":
     case "system_alert":
-      return <AlertCircle className="w-4 h-4 text-red-500" />;
+      return <AlertCircle className="w-4 h-4 text-danger" />;
     default:
       return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
@@ -68,11 +68,11 @@ const getNotificationIcon = (type: string) => {
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case "urgent":
-      return "bg-red-500";
+      return "bg-destructive";
     case "high":
-      return "bg-orange-500";
+      return "bg-warning";
     case "medium":
-      return "bg-blue-500";
+      return "bg-info";
     case "low":
       return "bg-gray-500";
     default:
@@ -186,7 +186,7 @@ export function NotificationDropdown() {
                   key={notification.id}
                   className={`p-3 cursor-pointer space-y-1 focus:bg-muted/50 dark:focus:bg-gray-800 ${
                     !notification.isRead 
-                      ? "bg-blue-50 dark:bg-blue-950/20 border-s-2 border-blue-500" 
+                      ? "bg-info-soft  border-s-2 border-info/20" 
                       : ""
                   }`}
                   onClick={() => handleNotificationClick(notification)}
@@ -206,7 +206,7 @@ export function NotificationDropdown() {
                             <div className={`w-2 h-2 rounded-full ${getPriorityColor(notification.priority)}`} />
                           )}
                           {!notification.isRead && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <div className="w-2 h-2 rounded-full bg-info" />
                           )}
                         </div>
                       </div>

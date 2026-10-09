@@ -135,7 +135,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             {...form.register("username")}
           />
           {form.formState.errors.username && (
-            <p className="text-sm text-red-600">{form.formState.errors.username.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.username.message}</p>
           )}
         </div>
 
@@ -148,7 +148,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             {...form.register("email")}
           />
           {form.formState.errors.email && (
-            <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.email.message}</p>
           )}
         </div>
 
@@ -170,7 +170,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             </SelectContent>
           </Select>
           {form.formState.errors.employeeId && (
-            <p className="text-sm text-red-600">{form.formState.errors.employeeId.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.employeeId.message}</p>
           )}
         </div>
 
@@ -192,7 +192,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             </SelectContent>
           </Select>
           {form.formState.errors.roleId && (
-            <p className="text-sm text-red-600">{form.formState.errors.roleId.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.roleId.message}</p>
           )}
         </div>
 
@@ -207,7 +207,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             {...form.register("password")}
           />
           {form.formState.errors.password && (
-            <p className="text-sm text-red-600">{form.formState.errors.password.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.password.message}</p>
           )}
         </div>
 
@@ -220,7 +220,7 @@ export function UserForm({ user, onClose }: UserFormProps) {
             {...form.register("confirmPassword")}
           />
           {form.formState.errors.confirmPassword && (
-            <p className="text-sm text-red-600">{form.formState.errors.confirmPassword.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.confirmPassword.message}</p>
           )}
         </div>
       </div>

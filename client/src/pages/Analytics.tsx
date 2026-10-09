@@ -173,7 +173,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
 
   if (kpisLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <Header 
           title={t('nav.reports_kpis')}
           subtitle={t('analytics.subtitle')}
@@ -191,7 +191,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <Header 
         title={t('nav.reports_kpis')}
         subtitle={t('analytics.subtitle')}
@@ -276,7 +276,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-green-600">Paid Invoices</CardTitle>
+                    <CardTitle className="text-success">Paid Invoices</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-text">
@@ -290,7 +290,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-yellow-600">Pending Invoices</CardTitle>
+                    <CardTitle className="text-warning">Pending Invoices</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-text">
@@ -304,7 +304,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-blue-600">Partially Paid Invoices</CardTitle>
+                    <CardTitle className="text-primary">Partially Paid Invoices</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-text">
@@ -331,20 +331,20 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-neutral">Total Revenue</span>
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-success">
                       {formatCurrencyValue(kpis?.totalRevenue || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-neutral">Total Expenses</span>
-                    <span className="font-semibold text-red-600">
+                    <span className="font-semibold text-danger">
                       {formatCurrencyValue(kpis?.totalExpenses || 0)}
                     </span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-text">Net Profit</span>
-                    <span className={`font-bold text-lg ${(kpis?.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`font-bold text-lg ${(kpis?.netProfit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                       {formatCurrencyValue(kpis?.netProfit || 0)}
                     </span>
                   </div>
@@ -429,7 +429,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-yellow-600">Outstanding Receivables</CardTitle>
+                    <CardTitle className="text-warning">Outstanding Receivables</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-text mb-4">
@@ -442,7 +442,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                       </div>
                       <div className="flex justify-between">
                         <span className="text-neutral">Overdue Invoices</span>
-                        <span className="font-medium text-red-600">{outstanding.overdueCount}</span>
+                        <span className="font-medium text-danger">{outstanding.overdueCount}</span>
                       </div>
                     </div>
                   </CardContent>

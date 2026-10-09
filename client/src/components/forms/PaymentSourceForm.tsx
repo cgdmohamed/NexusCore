@@ -79,7 +79,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
             {...form.register("name")}
           />
           {form.formState.errors.name && (
-            <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.name.message}</p>
           )}
         </div>
 
@@ -99,7 +99,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
             </SelectContent>
           </Select>
           {form.formState.errors.accountType && (
-            <p className="text-sm text-red-600">{form.formState.errors.accountType.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.accountType.message}</p>
           )}
         </div>
 
@@ -134,7 +134,7 @@ export function PaymentSourceForm({ paymentSource, onClose }: PaymentSourceFormP
             {...form.register("initialBalance")}
           />
           {form.formState.errors.initialBalance && (
-            <p className="text-sm text-red-600">{form.formState.errors.initialBalance.message}</p>
+            <p className="text-sm text-danger">{form.formState.errors.initialBalance.message}</p>
           )}
         </div>
       </div>
