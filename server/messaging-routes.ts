@@ -1,12 +1,30 @@
 import type { Express } from "express";
 import { db, badRequestFromDbError } from "./db";
-import { conversations, conversationParticipants, messages, users } from "@shared/schema";
+import { conversations, conversationParticipants, messages, users, employees } from "@shared/schema";
+import { parseAvatar, avatarUrlFor } from "./avatar-image";
 import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { requireAuth } from "./auth";
 import { notificationService } from "./notification-service";
 import { scheduleMessageEmail, cancelMessageEmail, cancelAllMessageEmails } from "./messaging-email";
 
 const MAX_MESSAGE_LENGTH = 5000;
+
+// Which of these people have a usable picture? One query, without loading the images themselves.
+async function avatarUrls(userIds: string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  if (userIds.length === 0) return found;
+  const rows = await db
+    .select({
+      id: users.id,
+      own: sql<boolean>`COALESCE(${users.profileImageUrl}, '') <> ''`,
+      employee: sql<boolean>`COALESCE(${employees.profileImage}, '') <> ''`,
+    })
+    .from(users)
+    .leftJoin(employees, eq(users.employeeId, employees.id))
+    .where(inArray(users.id, userIds));
+  for (const r of rows) if (r.own || r.employee) found.set(r.id, avatarUrlFor(r.id));
+  return found;
+}
 
 export function registerMessagingRoutes(app: Express) {
   // GET /api/messaging/users — lightweight user list for messaging (all authenticated users)
@@ -24,10 +42,30 @@ export function registerMessagingRoutes(app: Express) {
         .where(eq(users.isActive, true));
       // Exclude self
       const filtered = usersList.filter((u) => u.id !== userId);
-      res.json(filtered);
+      const avatars = await avatarUrls(filtered.map((u) => u.id));
+      res.json(filtered.map((u) => ({ ...u, avatarUrl: avatars.get(u.id) ?? null })));
     } catch (error) {
       console.error("Error fetching user directory:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // GET /api/avatars/:userId — a person's picture, served so lists never carry the image data itself
+  app.get("/api/avatars/:userId", requireAuth, async (req: any, res) => {
+    try {
+      const [row] = await db
+        .select({ own: users.profileImageUrl, employee: employees.profileImage })
+        .from(users)
+        .leftJoin(employees, eq(users.employeeId, employees.id))
+        .where(eq(users.id, req.params.userId));
+      const image = parseAvatar(row?.own) ?? parseAvatar(row?.employee);
+      if (!image) return res.status(404).end();
+      res.set("Cache-Control", "private, max-age=3600");
+      if (image.kind === "redirect") return res.redirect(302, image.url);
+      res.type(image.mime).send(image.data);
+    } catch (error) {
+      console.error("Error serving avatar:", error);
+      res.status(500).end();
     }
   });
 
@@ -145,7 +183,8 @@ export function registerMessagingRoutes(app: Express) {
         return bTime - aTime;
       });
 
-      res.json(result);
+      const avatars = await avatarUrls(result.flatMap((c) => (c.otherUser ? [c.otherUser.id] : [])));
+      res.json(result.map((c) => (c.otherUser ? { ...c, otherUser: { ...c.otherUser, avatarUrl: avatars.get(c.otherUser.id) ?? null } } : c)));
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ message: "Failed to fetch conversations" });

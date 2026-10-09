@@ -10,7 +10,7 @@ import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ import type { User } from "@shared/schema";
 
 interface ConversationSummary {
   id: string;
-  otherUser: { id: string; name: string; username: string } | null;
+  otherUser: { id: string; name: string; username: string; avatarUrl?: string | null } | null;
   lastMessage: { content: string; createdAt: string; senderId: string } | null;
   unreadCount: number;
 }
@@ -181,6 +181,7 @@ export default function Messages() {
                     <SelectItem key={u.id} value={u.id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="w-6 h-6">
+                          <AvatarImage src={(u as any).avatarUrl ?? undefined} alt="" />
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
                             {getInitials(displayName)}
                           </AvatarFallback>
@@ -242,6 +243,7 @@ export default function Messages() {
                     onClick={() => setSelectedConvId(conv.id)}
                   >
                     <Avatar className="w-9 h-9 flex-shrink-0">
+                      <AvatarImage src={conv.otherUser?.avatarUrl ?? undefined} alt="" />
                       <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {getInitials(name)}
                       </AvatarFallback>
@@ -302,6 +304,7 @@ export default function Messages() {
                   </svg>
                 </button>
                 <Avatar className="w-8 h-8">
+                  <AvatarImage src={selectedConversation?.otherUser?.avatarUrl ?? undefined} alt="" />
                   <AvatarFallback className="text-xs bg-primary/10 text-primary">
                     {getInitials(selectedConversation?.otherUser?.name || "?")}
                   </AvatarFallback>

@@ -9,18 +9,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "@/lib/dateUtils";
 import { BottomSheet, ListState, SearchBox, inputCls } from "./ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useOnline } from "./hooks";
 
 interface Conversation {
   id: string;
-  otherUser: { id: string; name: string; username: string } | null;
+  otherUser: { id: string; name: string; username: string; avatarUrl: string | null } | null;
   lastMessage: { content: string; createdAt: string; senderId: string | null } | null;
   unreadCount: number;
 }
 interface Message { id: string; conversationId: string; senderId: string | null; content: string; createdAt: string; senderName: string }
-interface Person { id: string; username: string; firstName: string | null; lastName: string | null }
+interface Person { id: string; username: string; firstName: string | null; lastName: string | null; avatarUrl: string | null }
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
+function Face({ name, src, size = "h-11 w-11" }: { name: string; src?: string | null; size?: string }) {
+  return (
+    <Avatar className={size}>
+      <AvatarImage src={src ?? undefined} alt="" />
+      <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">{initials(name)}</AvatarFallback>
+    </Avatar>
+  );
+}
+
 const personName = (p: Person) => [p.firstName, p.lastName].filter(Boolean).join(" ") || p.username;
 
 // Keeps the badge, the list and the notification count in step after reading or sending
@@ -52,7 +62,7 @@ function ConversationList() {
             return (
               <li key={c.id}>
                 <button onClick={() => navigate(`/m/messages/${c.id}`)} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-start">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">{initials(name)}</span>
+                  <Face name={name} src={c.otherUser?.avatarUrl} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
                       <span className={cn("truncate", c.unreadCount > 0 ? "font-semibold" : "font-medium")}>{name}</span>
@@ -99,7 +109,7 @@ function PersonPicker({ open, onOpenChange, onOpened }: { open: boolean; onOpenC
           {visible.map((p) => (
             <li key={p.id}>
               <button disabled={start.isPending} onClick={() => start.mutate(p.id)} className="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-start active:bg-accent">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">{initials(personName(p))}</span>
+                <Face name={personName(p)} src={p.avatarUrl} size="h-10 w-10" />
                 <span className="font-medium">{personName(p)}</span>
               </button>
             </li>
@@ -148,6 +158,7 @@ function Thread({ id }: { id: string }) {
         <button onClick={() => navigate("/m/messages")} aria-label={t("m.back")} className="flex h-11 w-11 items-center justify-center rounded-full">
           <ChevronLeft className="h-5 w-5 rtl:-scale-x-100" />
         </button>
+        <Face name={other?.name ?? "?"} src={other?.avatarUrl} size="h-8 w-8" />
         <span className="truncate font-semibold">{other?.name ?? t("m.messages")}</span>
       </div>
 

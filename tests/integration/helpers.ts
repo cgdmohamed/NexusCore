@@ -111,6 +111,7 @@ export async function startApp() {
     api,
     upload,
     raw,
+    base,
     db,
     uploadsDir,
     currentUserId: user.id as string,
