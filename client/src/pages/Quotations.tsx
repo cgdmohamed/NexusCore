@@ -27,7 +27,7 @@ import {
   AlertCircle,
   RefreshCw
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,
@@ -171,7 +171,7 @@ export default function Quotations() {
     <div>
       <Header 
         title={t('nav.quotations')}
-        subtitle="Create and manage quotations for your clients"
+        subtitle={t('page.quotations.sub')}
         hideExport
       />
       

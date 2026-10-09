@@ -25,7 +25,7 @@ import { KpiForm } from "@/components/forms/KpiForm";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { EmployeeKpi } from "@shared/schema";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 
 interface EmployeeKpiTabProps {
   employeeId: string;

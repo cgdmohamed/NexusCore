@@ -58,9 +58,9 @@ export function RecentActivities() {
     <Card className="lg:col-span-2">
       <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Recent Activities</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("dashboard.recentActivities")}</h3>
           <Button variant="link" size="sm" className="h-auto p-0">
-            View All
+            {t("common.viewAll")}
           </Button>
         </div>
       </CardHeader>
@@ -71,8 +71,8 @@ export function RecentActivities() {
               <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                 <AlertCircle className="w-6 h-6 text-muted-foreground/70" />
               </div>
-              <p className="text-neutral text-sm">No recent activities</p>
-              <p className="text-neutral text-xs mt-1">Activities will appear here as users interact with the system</p>
+              <p className="text-neutral text-sm">{t("dash.no_activities")}</p>
+              <p className="text-neutral text-xs mt-1">{t("dash.no_activities_hint")}</p>
             </div>
           ) : (
             activityList.slice(0, 5).map((activity) => {

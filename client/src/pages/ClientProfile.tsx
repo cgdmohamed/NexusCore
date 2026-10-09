@@ -17,7 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Phone, Mail, MapPin, Calendar, DollarSign, FileText, MessageSquare, RefreshCcw, Wallet, FolderKanban, ExternalLink, TrendingDown, TrendingUp, Minus, KeyRound, Plus, Eye, EyeOff, Copy, Trash2, Globe, Server, AtSign, Share2 } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
+import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
@@ -629,7 +630,7 @@ export default function ClientProfile() {
         backHref="/clients"
         backLabel="Back to Clients"
         title={client.name}
-        subtitle="Client Profile"
+        subtitle={t('page.client_profile.sub')}
         badge={
           <Badge className={getStatusColor(client.status)}>
             {client.status}
@@ -756,7 +757,7 @@ export default function ClientProfile() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Value</p>
-                  <p className="text-lg font-bold">EGP {parseFloat(client.totalValue || '0').toLocaleString('en-US')}</p>
+                  <p className="text-lg font-bold">{formatCurrency(client.totalValue || '0')}</p>
                 </div>
               </div>
               <Button 
@@ -782,7 +783,7 @@ export default function ClientProfile() {
               <div>
                 <p className="text-sm text-muted-foreground">Credit Balance</p>
                 <p className={`text-lg font-bold ${creditBalance > 0 ? 'text-success' : 'text-foreground'}`}>
-                  EGP {creditBalance.toLocaleString('en-US')}
+                  {formatCurrency(creditBalance)}
                 </p>
               </div>
             </div>
@@ -901,7 +902,7 @@ export default function ClientProfile() {
                       <TableRow key={quotation.id}>
                         <TableCell className="font-medium">{quotation.quotationNumber}</TableCell>
                         <TableCell>{quotation.title}</TableCell>
-                        <TableCell>EGP {parseFloat(quotation.amount || '0').toLocaleString('en-US')}</TableCell>
+                        <TableCell>{formatCurrency(quotation.amount || '0')}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(quotation.status)}>
                             {quotation.status}
@@ -950,7 +951,7 @@ export default function ClientProfile() {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                        <TableCell>EGP {parseFloat(invoice.amount || '0').toLocaleString('en-US')}</TableCell>
+                        <TableCell>{formatCurrency(invoice.amount || '0')}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(invoice.status)}>
                             {invoice.status}
@@ -985,7 +986,7 @@ export default function ClientProfile() {
                 <div className="text-end">
                   <p className="text-sm text-muted-foreground">Current Balance</p>
                   <p className={`text-xl font-bold ${creditBalance > 0 ? 'text-success' : 'text-foreground'}`}>
-                    EGP {creditBalance.toLocaleString('en-US')}
+                    {formatCurrency(creditBalance)}
                   </p>
                 </div>
               </div>
@@ -1021,10 +1022,10 @@ export default function ClientProfile() {
                         <TableCell className="text-sm max-w-xs truncate">{entry.description}</TableCell>
                         <TableCell className={`font-medium ${getCreditTypeColor(entry.type)}`}>
                           {entry.type === 'credit_used' || entry.type === 'credit_applied' ? '-' : '+'}
-                          EGP {parseFloat(entry.amount).toLocaleString('en-US')}
+                          {formatCurrency(entry.amount)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          EGP {parseFloat(entry.newBalance).toLocaleString('en-US')}
+                          {formatCurrency(entry.newBalance)}
                         </TableCell>
                         <TableCell className="text-sm">
                           {entry.relatedInvoiceId ? (

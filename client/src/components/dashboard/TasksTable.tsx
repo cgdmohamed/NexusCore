@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Task } from "@shared/schema";
 
@@ -57,13 +57,13 @@ export function TasksTable() {
     <Card>
       <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Pending Tasks</h3>
-          <Link href="/tasks" className="text-sm text-primary hover:underline">View All</Link>
+          <h3 className="text-sm font-semibold text-foreground">{t("dash.pending_tasks")}</h3>
+          <Link href="/tasks" className="text-sm text-primary hover:underline">{t("common.viewAll")}</Link>
         </div>
       </CardHeader>
       <CardContent className="p-2">
         {pendingTasks.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No pending tasks</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{t("dash.no_pending_tasks")}</p>
         ) : (
           <ul>
             {pendingTasks.map((task) => (
@@ -71,11 +71,11 @@ export function TasksTable() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    Due: {task.dueDate ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : 'No due date'}
+                    {t('dash.due', { when: task.dueDate ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : t('dash.no_due_date') })}
                   </p>
                 </div>
                 <Badge variant="secondary" className={`shrink-0 hover:bg-transparent ${priorityTone(task.priority)}`}>
-                  {task.priority}
+                  {task.priority && t(`priority.${task.priority}`) !== `priority.${task.priority}` ? t(`priority.${task.priority}`) : task.priority}
                 </Badge>
               </li>
             ))}

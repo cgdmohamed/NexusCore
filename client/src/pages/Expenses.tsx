@@ -29,7 +29,7 @@ import {
   TrendingDown,
   PieChart
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,
@@ -178,7 +178,7 @@ export default function Expenses() {
       <div>
         <Header 
           title={t('nav.expenses')}
-          subtitle="Track and manage company expenses and payments"
+          subtitle={t('page.expenses.sub')}
           hideExport
         />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -202,7 +202,7 @@ export default function Expenses() {
     <div>
       <Header 
         title={t('nav.expenses')}
-        subtitle="Track and manage company expenses and payments"
+        subtitle={t('page.expenses.sub')}
       />
       
       <div className="p-3 md:p-6 space-y-6">

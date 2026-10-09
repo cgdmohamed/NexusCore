@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import {
   ArrowLeft,
   Edit,

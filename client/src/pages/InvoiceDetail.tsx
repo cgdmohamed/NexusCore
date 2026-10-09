@@ -52,7 +52,7 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,

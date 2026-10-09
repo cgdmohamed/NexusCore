@@ -235,3 +235,6 @@
 .text-neutral {
   color: hsl(var(--muted-foreground));
 }
+
+/* Arabic letterforms read smaller at the same size; scale the root slightly in Arabic */
+html[lang="ar"] { font-size: 106.25%; }

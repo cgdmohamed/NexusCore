@@ -30,7 +30,7 @@ import {
   Archive,
   RotateCcw
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,
@@ -252,7 +252,7 @@ export default function CRM() {
     <div>
       <Header 
         title={t('nav.clients')}
-        subtitle="Manage your client relationships and opportunities"
+        subtitle={t('page.clients.sub')}
         hideExport
       />
       

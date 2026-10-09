@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import { Eye, FileText, DollarSign, Clock, CheckCircle, XCircle, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

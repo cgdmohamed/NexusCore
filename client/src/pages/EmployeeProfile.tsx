@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Mail, Phone, Calendar, Building, User, TrendingUp } from "lucide-react";
 import { EmployeeKpiTab } from "@/components/EmployeeKpiTab";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import { Link } from "wouter";
 import type { Employee } from "@shared/schema";
 

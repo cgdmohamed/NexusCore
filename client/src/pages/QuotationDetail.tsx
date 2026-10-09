@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, FileText, DollarSign, Download, Edit, RefreshCw, CheckCircle, XCircle, Pencil, History, Clock, User, Printer, ExternalLink, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, DollarSign, Calendar, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface CreditRefundFormProps {

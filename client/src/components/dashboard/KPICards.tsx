@@ -73,30 +73,30 @@ export function KPICards() {
   // Secondary lines stay neutral; colour is reserved for something that needs attention.
   const kpiCards = [
     {
-      title: "Total Revenue",
+      title: t("dash.kpi.revenue"),
       value: formatCurrency(realTimeStats.totalRevenue),
-      note: `${formatCurrency(realTimeStats.pendingRevenue)} pending`,
+      note: t("dash.kpi.revenue_note", { n: formatCurrency(realTimeStats.pendingRevenue) }),
       icon: DollarSign,
       alert: false,
     },
     {
-      title: "Active Clients",
+      title: t("dash.kpi.clients"),
       value: realTimeStats.activeClients.toString(),
-      note: `${clients.length} total clients`,
+      note: t("dash.kpi.clients_note", { n: String(clients.length) }),
       icon: Users,
       alert: false,
     },
     {
-      title: "Active Tasks",
+      title: t("dash.kpi.tasks"),
       value: taskData?.totalTasks?.toString() || '0',
-      note: `${pendingTasks} pending`,
+      note: t("dash.kpi.tasks_note", { n: String(pendingTasks) }),
       icon: CheckSquare,
       alert: false,
     },
     {
-      title: "Task Performance",
+      title: t("dash.kpi.performance"),
       value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
-      note: `${overdueTasks} overdue tasks`,
+      note: t("dash.kpi.performance_note", { n: String(overdueTasks) }),
       icon: TrendingUp,
       alert: overdueTasks > 0,
     },
@@ -107,7 +107,7 @@ export function KPICards() {
       {kpiCards.map((kpi, index) => {
         const Icon = kpi.icon;
         return (
-          <Card key={kpi.title} className={index === 0 ? "col-span-2 lg:col-span-1" : undefined}>
+          <Card key={index} className={index === 0 ? "col-span-2 lg:col-span-1" : undefined}>
             <CardContent className="p-4 md:p-5">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>

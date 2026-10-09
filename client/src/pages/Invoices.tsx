@@ -27,7 +27,7 @@ import {
   RotateCcw,
   RefreshCw
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   Table,
@@ -191,7 +191,7 @@ export default function Invoices() {
     <div>
       <Header 
         title={t('nav.invoices')}
-        subtitle="Track payments and manage invoice status"
+        subtitle={t('page.invoices.sub')}
         hideExport
       />
       

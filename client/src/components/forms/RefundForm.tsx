@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, DollarSign, Calendar, FileText, Banknote } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 
 interface RefundFormProps {
   type: "invoice" | "credit";

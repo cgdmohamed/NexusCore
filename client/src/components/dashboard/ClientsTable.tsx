@@ -62,20 +62,20 @@ export function ClientsTable() {
     <Card>
       <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Recent Clients</h3>
-          <Link href="/clients" className="text-sm text-primary hover:underline">View All</Link>
+          <h3 className="text-sm font-semibold text-foreground">{t("dash.recent_clients")}</h3>
+          <Link href="/clients" className="text-sm text-primary hover:underline">{t("common.viewAll")}</Link>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {recentClients.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No clients found</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{t("dash.no_clients")}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="px-5 text-xs font-medium text-muted-foreground">Client</TableHead>
-                <TableHead className="px-5 text-xs font-medium text-muted-foreground">Status</TableHead>
-                <TableHead className="px-5 text-end text-xs font-medium text-muted-foreground">Value</TableHead>
+                <TableHead className="px-5 text-xs font-medium text-muted-foreground">{t("dash.client")}</TableHead>
+                <TableHead className="px-5 text-xs font-medium text-muted-foreground">{t("common.status")}</TableHead>
+                <TableHead className="px-5 text-end text-xs font-medium text-muted-foreground">{t("dash.value")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -90,7 +90,7 @@ export function ClientsTable() {
                       variant="secondary"
                       className={client.status === 'active' ? 'bg-success-soft text-success hover:bg-success-soft' : 'bg-muted text-muted-foreground hover:bg-muted'}
                     >
-                      {client.status}
+                      {t(`status.${client.status}`) === `status.${client.status}` ? client.status : t(`status.${client.status}`)}
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap px-5 py-3 text-end text-sm font-medium tabular-nums text-foreground">

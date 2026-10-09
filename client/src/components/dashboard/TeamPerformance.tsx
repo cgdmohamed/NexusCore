@@ -27,17 +27,17 @@ export function TeamPerformance() {
   // Calculate performance metrics based on real data
   const teamMetrics = [
     {
-      title: "Team Size",
+      title: t("dash.team_size"),
       value: employeeData.length.toString(),
       icon: Users,
     },
     {
-      title: "Active Tasks",
+      title: t("dash.kpi.tasks"),
       value: taskData?.totalTasks?.toString() || '0',
       icon: CheckSquare,
     },
     {
-      title: "Completion Rate",
+      title: t("dash.completion_rate"),
       value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
       icon: TrendingUp,
     }
@@ -67,13 +67,15 @@ export function TeamPerformance() {
     );
   }
 
+  const label = (key: string, raw: string) => (t(key) === key ? raw : t(key));
+
   const statusTone = (status: string) =>
     status === 'completed' ? 'bg-success-soft text-success' : status === 'pending' ? 'bg-warning-soft text-warning' : 'bg-info-soft text-info';
 
   return (
     <Card>
       <CardHeader className="border-b border-border px-5 py-4">
-        <h3 className="text-sm font-semibold text-foreground">Team Performance</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t("dashboard.teamPerformance")}</h3>
       </CardHeader>
       <CardContent className="p-2">
         {teamMetrics.map((metric) => {
@@ -89,11 +91,11 @@ export function TeamPerformance() {
 
         {tasksData.length > 0 && (
           <div className="mx-3 mt-2 border-t border-border py-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Recent Task Updates</p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">{t("dash.recent_task_updates")}</p>
             {tasksData.slice(0, 2).map((task: any) => (
               <div key={task.id} className="flex items-center justify-between gap-2 py-1 text-sm">
                 <span className="flex-1 truncate text-foreground">{task.title}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${statusTone(task.status)}`}>{task.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${statusTone(task.status)}`}>{label(`status.${task.status}`, task.status)}</span>
               </div>
             ))}
           </div>

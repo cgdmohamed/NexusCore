@@ -62,7 +62,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 
 const PRESET_COLORS = [
   "#3b82f6",

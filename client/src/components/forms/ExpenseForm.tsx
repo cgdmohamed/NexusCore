@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
 import {
   CalendarIcon,

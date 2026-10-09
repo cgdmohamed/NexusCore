@@ -35,7 +35,7 @@ import type { NotificationSettings } from "@shared/schema";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import type { AuthUser } from "@/hooks/useAuth";
 
 function UserActivityFeed({ userId }: { userId: string | undefined }) {

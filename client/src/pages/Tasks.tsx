@@ -44,7 +44,7 @@ import {
   Grid3X3,
   List
 } from "lucide-react";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -360,7 +360,7 @@ export default function Tasks() {
     <div>
       <Header 
         title={t('nav.tasks')} 
-        subtitle="Assign, track, and evaluate tasks across all departments"
+        subtitle={t('page.tasks.sub')}
         hideExport
       />
       

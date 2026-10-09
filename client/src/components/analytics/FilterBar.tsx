@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Download, Filter } from "lucide-react";
-import { format } from "date-fns";
+import { format } from "@/lib/dateUtils";
 import { useState } from "react";
 
 interface FilterBarProps {
