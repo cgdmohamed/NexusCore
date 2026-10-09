@@ -32,13 +32,13 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center space-x-2">
-              <Building2 className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold">{companyName}</h1>
+              <Building2 className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-semibold">{companyName}</h1>
             </div>
           </div>
 
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
               <div>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                     <span>Check Your Email</span>
                   </CardTitle>
                   <CardDescription>
@@ -55,8 +55,8 @@ export default function ForgotPassword() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <p className="text-sm text-green-800 dark:text-green-200">
+                  <div className="bg-success-soft border border-success/20 rounded-lg p-4">
+                    <p className="text-sm text-success">
                       If an account exists with this email address, you will receive a password reset link shortly.
                       Please check your inbox and spam folder.
                     </p>
@@ -66,7 +66,7 @@ export default function ForgotPassword() {
                   </p>
                   <Link href="/auth">
                     <Button variant="outline" className="w-full" data-testid="link-back-to-login">
-                      <ArrowLeft className="h-4 w-4 me-2" />
+                      <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
                       Back to Login
                     </Button>
                   </Link>
@@ -122,7 +122,7 @@ export default function ForgotPassword() {
 
                     <Link href="/auth">
                       <Button variant="ghost" className="w-full" data-testid="link-back-to-login">
-                        <ArrowLeft className="h-4 w-4 me-2" />
+                        <ArrowLeft className="h-4 w-4 me-2 rtl:-scale-x-100" />
                         Back to Login
                       </Button>
                     </Link>
