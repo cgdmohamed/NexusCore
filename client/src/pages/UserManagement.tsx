@@ -425,7 +425,7 @@ export default function UserManagement() {
                 <UserPlus className="h-4 w-4 me-2" />
                 Add Employee
               </Button>
-              <Button onClick={() => setShowUserForm(true)} data-testid="button-create-user">
+              <Button variant="outline" onClick={() => setShowUserForm(true)} data-testid="button-create-user">
                 <Shield className="h-4 w-4 me-2" />
                 Create User Account
               </Button>
