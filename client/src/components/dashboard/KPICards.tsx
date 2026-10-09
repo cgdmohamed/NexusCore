@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { DollarSign, Users, AlertTriangle, TrendingUp, ArrowUp, Clock, CheckSquare } from "lucide-react";
+import { DollarSign, Users, TrendingUp, CheckSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/currency";
 
@@ -53,18 +53,13 @@ export function KPICards() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-                <Skeleton className="w-12 h-12 rounded-lg" />
-              </div>
+            <CardContent className="space-y-2 p-5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-28" />
+              <Skeleton className="h-3 w-32" />
             </CardContent>
           </Card>
         ))}
@@ -72,67 +67,54 @@ export function KPICards() {
     );
   }
 
+  const pendingTasks = taskData?.statusBreakdown?.pending || 0;
+  const overdueTasks = taskData?.overdueTasks || 0;
+
+  // Secondary lines stay neutral; colour is reserved for something that needs attention.
   const kpiCards = [
     {
       title: "Total Revenue",
       value: formatCurrency(realTimeStats.totalRevenue),
-      change: `${formatCurrency(realTimeStats.pendingRevenue)} pending`,
+      note: `${formatCurrency(realTimeStats.pendingRevenue)} pending`,
       icon: DollarSign,
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
-      changeColor: realTimeStats.pendingRevenue > 0 ? "text-orange-600" : "text-green-600",
+      alert: false,
     },
     {
       title: "Active Clients",
       value: realTimeStats.activeClients.toString(),
-      change: `${clients.length} total clients`,
+      note: `${clients.length} total clients`,
       icon: Users,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-      changeColor: "text-blue-600",
+      alert: false,
     },
     {
       title: "Active Tasks",
       value: taskData?.totalTasks?.toString() || '0',
-      change: `${taskData?.statusBreakdown?.pending || 0} pending`,
+      note: `${pendingTasks} pending`,
       icon: CheckSquare,
-      iconBg: "bg-yellow-100",
-      iconColor: "text-yellow-600",
-      changeColor: (taskData?.statusBreakdown?.pending || 0) > 0 ? "text-yellow-600" : "text-green-600",
+      alert: false,
     },
     {
       title: "Task Performance",
       value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
-      change: `${taskData?.overdueTasks || 0} overdue tasks`,
+      note: `${overdueTasks} overdue tasks`,
       icon: TrendingUp,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-      changeColor: (taskData?.overdueTasks || 0) > 0 ? "text-red-600" : "text-purple-600",
+      alert: overdueTasks > 0,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
       {kpiCards.map((kpi, index) => {
         const Icon = kpi.icon;
-        const ChangeIcon = ArrowUp;
-        
         return (
-          <Card key={index} className="border border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-neutral text-sm font-medium">{kpi.title}</p>
-                  <p className="text-2xl font-semibold text-text mt-1">{kpi.value}</p>
-                  <p className={`text-sm mt-1 flex items-center gap-1 ${kpi.changeColor}`}>
-                    <ChangeIcon className="w-3 h-3" />
-                    {kpi.change}
-                  </p>
-                </div>
-                <div className={`w-12 h-12 ${kpi.iconBg} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`${kpi.iconColor} text-lg w-6 h-6`} />
-                </div>
+          <Card key={kpi.title} className={index === 0 ? "col-span-2 lg:col-span-1" : undefined}>
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-muted-foreground">{kpi.title}</p>
+                <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
               </div>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">{kpi.value}</p>
+              <p className={`mt-1 text-xs tabular-nums ${kpi.alert ? "text-danger" : "text-muted-foreground"}`}>{kpi.note}</p>
             </CardContent>
           </Card>
         );

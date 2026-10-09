@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
@@ -19,7 +19,7 @@ export function TasksTable() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="border-b border-border">
+        <CardHeader className="border-b border-border px-5 py-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <div className="flex space-x-2">
@@ -50,64 +50,36 @@ export function TasksTable() {
 
   const pendingTasks = taskList.filter((task) => task.status === 'pending').slice(0, 3);
 
+  const priorityTone = (priority: string | null) =>
+    priority === 'high' ? 'bg-danger-soft text-danger' : priority === 'medium' ? 'bg-warning-soft text-warning' : 'bg-muted text-muted-foreground';
+
   return (
     <Card>
-      <CardHeader className="border-b border-border">
+      <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-text">Pending Tasks</h3>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              Priority
-            </Button>
-            <Button size="sm">
-              Assign
-            </Button>
-          </div>
+          <h3 className="text-sm font-semibold text-foreground">Pending Tasks</h3>
+          <Link href="/tasks" className="text-sm text-primary hover:underline">View All</Link>
         </div>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-2">
         {pendingTasks.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-neutral">No pending tasks</p>
-          </div>
+          <p className="py-8 text-center text-sm text-muted-foreground">No pending tasks</p>
         ) : (
-          <div className="space-y-4">
+          <ul>
             {pendingTasks.map((task) => (
-              <div 
-                key={task.id} 
-                className="flex items-center justify-between p-3 border border-border rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    task.priority === 'high' ? 'bg-destructive' :
-                    task.priority === 'medium' ? 'bg-yellow-500' :
-                    'bg-success'
-                  }`}></div>
-                  <div>
-                    <p className="text-sm font-medium text-text">{task.title}</p>
-                    <p className="text-xs text-neutral">
-                      Due: {task.dueDate ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : 'No due date'}
-                    </p>
-                  </div>
+              <li key={task.id} className="flex items-center justify-between gap-3 rounded-md px-3 py-2.5 hover:bg-accent/60">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Due: {task.dueDate ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true }) : 'No due date'}
+                  </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant="outline"
-                    className={
-                      task.priority === 'high' 
-                        ? 'bg-danger-soft text-danger border-danger/20' :
-                      task.priority === 'medium'
-                        ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        'bg-blue-100 text-blue-700 border-blue-200'
-                    }
-                  >
-                    {task.priority}
-                  </Badge>
-                  <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
-                </div>
-              </div>
+                <Badge variant="secondary" className={`shrink-0 hover:bg-transparent ${priorityTone(task.priority)}`}>
+                  {task.priority}
+                </Badge>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </CardContent>
     </Card>

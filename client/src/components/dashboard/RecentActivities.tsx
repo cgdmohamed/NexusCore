@@ -10,8 +10,8 @@ import type { Activity } from "@shared/schema";
 
 const activityIcons = {
   invoice_paid: { icon: Check, bg: "bg-success-soft", color: "text-success" },
-  client_added: { icon: UserPlus, bg: "bg-blue-100", color: "text-primary" },
-  quotation_sent: { icon: FileText, bg: "bg-yellow-100", color: "text-yellow-600" },
+  client_added: { icon: UserPlus, bg: "bg-muted", color: "text-muted-foreground" },
+  quotation_sent: { icon: FileText, bg: "bg-muted", color: "text-muted-foreground" },
   expense_approval: { icon: AlertCircle, bg: "bg-danger-soft", color: "text-danger" },
 };
 
@@ -30,7 +30,7 @@ export function RecentActivities() {
   if (isLoading) {
     return (
       <Card className="lg:col-span-2">
-        <CardHeader className="border-b border-border">
+        <CardHeader className="border-b border-border px-5 py-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-8 w-16" />
@@ -56,16 +56,16 @@ export function RecentActivities() {
 
   return (
     <Card className="lg:col-span-2">
-      <CardHeader className="border-b border-border">
+      <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-text">Recent Activities</h3>
-          <Button variant="link" size="sm">
+          <h3 className="text-sm font-semibold text-foreground">Recent Activities</h3>
+          <Button variant="link" size="sm" className="h-auto p-0">
             View All
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-4">
+      <CardContent className="p-2">
+        <div>
           {activityList.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
@@ -80,14 +80,14 @@ export function RecentActivities() {
               const Icon = activityType.icon;
               
               return (
-                <div key={activity.id} className="flex items-start space-x-4 p-3 hover:bg-muted/60 rounded-lg transition-colors">
-                  <div className={`w-8 h-8 ${activityType.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={`${activityType.color} text-sm w-4 h-4`} />
+                <div key={activity.id} className="flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-accent/60">
+                  <div className={`h-7 w-7 ${activityType.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`${activityType.color} h-3.5 w-3.5`} />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-text font-medium">{activity.title}</p>
-                    <p className="text-neutral text-sm">{activity.description}</p>
-                    <p className="text-neutral text-xs mt-1">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                    <p className="text-sm text-muted-foreground">{activity.description}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {formatDistanceToNow(activity.createdAt, { addSuffix: true })}
                     </p>
                   </div>

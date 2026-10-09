@@ -30,29 +30,23 @@ export function TeamPerformance() {
       title: "Team Size",
       value: employeeData.length.toString(),
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-100"
     },
     {
       title: "Active Tasks",
       value: taskData?.totalTasks?.toString() || '0',
       icon: CheckSquare,
-      color: "text-yellow-600",
-      bg: "bg-yellow-100"
     },
     {
       title: "Completion Rate",
       value: taskData?.totalTasks > 0 ? `${Math.round(((taskData?.statusBreakdown?.completed || 0) / taskData.totalTasks) * 100)}%` : '0%',
       icon: TrendingUp,
-      color: "text-green-600",
-      bg: "bg-green-100"
     }
   ];
 
   if (employeesLoading) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="px-5 py-4">
           <Skeleton className="h-6 w-32" />
         </CardHeader>
         <CardContent className="space-y-4">
@@ -73,50 +67,33 @@ export function TeamPerformance() {
     );
   }
 
+  const statusTone = (status: string) =>
+    status === 'completed' ? 'bg-success-soft text-success' : status === 'pending' ? 'bg-warning-soft text-warning' : 'bg-info-soft text-info';
+
   return (
     <Card>
-      <CardHeader className="border-b border-border">
-        <h3 className="text-lg font-semibold text-text">Team Performance</h3>
-        <p className="text-sm text-neutral">Real-time team metrics</p>
+      <CardHeader className="border-b border-border px-5 py-4">
+        <h3 className="text-sm font-semibold text-foreground">Team Performance</h3>
       </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        {teamMetrics.map((metric, index) => {
+      <CardContent className="p-2">
+        {teamMetrics.map((metric) => {
           const Icon = metric.icon;
-          
           return (
-            <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/60 rounded-lg transition-colors">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 ${metric.bg} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`${metric.color} w-4 h-4`} />
-                </div>
-                <div>
-                  <p className="text-text text-sm font-medium">{metric.title}</p>
-                  <p className="text-neutral text-xs">Current status</p>
-                </div>
-              </div>
-              <div className="text-end">
-                <p className={`text-sm font-medium ${metric.color}`}>
-                  {metric.value}
-                </p>
-              </div>
+            <div key={metric.title} className="flex h-10 items-center gap-3 px-3 text-sm">
+              <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <span className="flex-1 text-foreground">{metric.title}</span>
+              <span className="font-medium text-foreground tabular-nums">{metric.value}</span>
             </div>
           );
         })}
-        
-        {/* Recent Task Activity */}
+
         {tasksData.length > 0 && (
-          <div className="pt-3 mt-4 border-t border-border">
-            <p className="text-xs text-neutral mb-2">Recent Task Updates</p>
+          <div className="mx-3 mt-2 border-t border-border py-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Recent Task Updates</p>
             {tasksData.slice(0, 2).map((task: any) => (
-              <div key={task.id} className="flex items-center justify-between text-xs py-1">
-                <span className="text-neutral truncate flex-1">{task.title}</span>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  task.status === 'completed' ? 'bg-green-100 text-green-600' :
-                  task.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
-                  'bg-blue-100 text-blue-600'
-                }`}>
-                  {task.status}
-                </span>
+              <div key={task.id} className="flex items-center justify-between gap-2 py-1 text-sm">
+                <span className="flex-1 truncate text-foreground">{task.title}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${statusTone(task.status)}`}>{task.status}</span>
               </div>
             ))}
           </div>

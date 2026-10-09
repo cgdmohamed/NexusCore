@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
@@ -27,7 +27,7 @@ export function ClientsTable() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="border-b border-border">
+        <CardHeader className="border-b border-border px-5 py-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-32" />
             <div className="flex space-x-2">
@@ -60,61 +60,40 @@ export function ClientsTable() {
 
   return (
     <Card>
-      <CardHeader className="border-b border-border">
+      <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-text">Recent Clients</h3>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              Filter
-            </Button>
-            <Button size="sm">
-              {t('common.export')}
-            </Button>
-          </div>
+          <h3 className="text-sm font-semibold text-foreground">Recent Clients</h3>
+          <Link href="/clients" className="text-sm text-primary hover:underline">View All</Link>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {recentClients.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-neutral">No clients found</p>
-          </div>
+          <p className="py-8 text-center text-sm text-muted-foreground">No clients found</p>
         ) : (
           <Table>
-            <TableHeader className="bg-muted/50">
+            <TableHeader>
               <TableRow>
-                <TableHead className="px-6 py-3 text-xs font-medium text-neutral uppercase tracking-wider">
-                  Client
-                </TableHead>
-                <TableHead className="px-6 py-3 text-xs font-medium text-neutral uppercase tracking-wider">
-                  Status
-                </TableHead>
-                <TableHead className="px-6 py-3 text-xs font-medium text-neutral uppercase tracking-wider">
-                  Value
-                </TableHead>
+                <TableHead className="px-5 text-xs font-medium text-muted-foreground">Client</TableHead>
+                <TableHead className="px-5 text-xs font-medium text-muted-foreground">Status</TableHead>
+                <TableHead className="px-5 text-end text-xs font-medium text-muted-foreground">Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {recentClients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-text">{client.name}</p>
-                      <p className="text-sm text-neutral">{client.city}, {client.country}</p>
-                    </div>
+                  <TableCell className="px-5 py-3">
+                    <p className="text-sm font-medium text-foreground">{client.name}</p>
+                    <p className="text-xs text-muted-foreground">{[client.city, client.country].filter(Boolean).join(", ")}</p>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge 
-                      variant={client.status === 'active' ? 'default' : 'secondary'}
-                      className={
-                        client.status === 'active' 
-                          ? 'bg-success-soft text-success hover:bg-success-soft' 
-                          : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                      }
+                  <TableCell className="px-5 py-3">
+                    <Badge
+                      variant="secondary"
+                      className={client.status === 'active' ? 'bg-success-soft text-success hover:bg-success-soft' : 'bg-muted text-muted-foreground hover:bg-muted'}
                     >
                       {client.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-sm text-text">
+                  <TableCell className="whitespace-nowrap px-5 py-3 text-end text-sm font-medium tabular-nums text-foreground">
                     {formatCurrency(client.totalValue || "0")}
                   </TableCell>
                 </TableRow>

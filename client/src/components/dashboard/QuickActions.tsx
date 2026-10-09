@@ -1,10 +1,8 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
-import { PlusCircle, UserPlus, Receipt, CheckSquare, TrendingUp, DollarSign } from "lucide-react";
+import { PlusCircle, UserPlus, Receipt, CheckSquare } from "lucide-react";
 import { Link } from "wouter";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function QuickActions() {
   const { t } = useTranslation();
@@ -42,87 +40,75 @@ export function QuickActions() {
       icon: PlusCircle,
       label: "Create Quotation",
       href: "/quotations",
-      color: "text-primary",
       badge: null,
     },
     {
       icon: UserPlus,
       label: "Add New Client",
       href: "/clients",
-      color: "text-success",
       badge: activeClients > 0 ? `${activeClients} active` : null,
     },
     {
       icon: Receipt,
       label: "Log Expense",
       href: "/expenses",
-      color: "text-purple-600",
       badge: null,
     },
     {
       icon: CheckSquare,
       label: "Assign Task",
       href: "/tasks",
-      color: "text-yellow-600",
       badge: pendingTasks > 0 ? `${pendingTasks} pending` : null,
     },
   ];
 
   return (
     <Card>
-      <CardHeader className="border-b border-border">
-        <h3 className="text-lg font-semibold text-text">Quick Actions</h3>
-        <p className="text-sm text-neutral">System overview and shortcuts</p>
+      <CardHeader className="border-b border-border px-5 py-4">
+        <h3 className="text-sm font-semibold text-foreground">Quick Actions</h3>
       </CardHeader>
-      <CardContent className="space-y-3 pt-6">
-        {actions.map((action, index) => {
-          const Icon = action.icon;
-          
-          return (
-            <Link key={index} href={action.href}>
-              <Button
-                variant="outline"
-                className="w-full justify-between gap-3 h-auto p-3 hover:bg-muted/60"
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`${action.color} w-5 h-5`} />
-                  <span className="text-text">{action.label}</span>
-                </div>
-                {action.badge && (
-                  <span className="text-xs px-2 py-1 bg-muted rounded-full text-muted-foreground">
-                    {action.badge}
-                  </span>
-                )}
-              </Button>
-            </Link>
-          );
-        })}
-        
-        {/* System Status */}
-        <div className="pt-3 mt-6 border-t border-border">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral">System Status</span>
+      <CardContent className="p-2">
+        <ul>
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <li key={action.label}>
+                <Link href={action.href}>
+                  <div className="flex h-10 cursor-pointer items-center gap-3 rounded-md px-3 text-sm text-foreground hover:bg-accent">
+                    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+                    <span className="flex-1">{action.label}</span>
+                    {action.badge && <span className="text-xs text-muted-foreground tabular-nums">{action.badge}</span>}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mx-3 mt-2 space-y-2 border-t border-border py-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">System Status</span>
             {healthLoading ? (
-              <span className="text-muted-foreground/70 flex items-center gap-1">
-                <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground/40" />
                 Checking...
               </span>
             ) : healthData?.db ? (
-              <span className="text-green-600 flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="flex items-center gap-1.5 text-success">
+                <span className="h-2 w-2 rounded-full bg-success" />
                 Online
               </span>
             ) : (
-              <span className="text-red-600 flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="flex items-center gap-1.5 text-danger">
+                <span className="h-2 w-2 rounded-full bg-danger" />
                 Degraded
               </span>
             )}
           </div>
           {overdueInvoices > 0 && (
-            <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-neutral">Overdue Invoices</span>
-              <span className="text-red-600">{overdueInvoices}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Overdue Invoices</span>
+              <span className="font-medium text-danger tabular-nums">{overdueInvoices}</span>
             </div>
           )}
         </div>
