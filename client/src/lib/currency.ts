@@ -25,8 +25,7 @@ export function formatNumber(amount: number | string | null | undefined, maxFrac
 }
 
 function withSymbol(formatted: string): string {
-  const body = CURRENCY.position === 'after' ? `${formatted}${NBSP}${CURRENCY.symbol}` : `${CURRENCY.symbol}${NBSP}${formatted}`;
-  return `${LRI}${body}${PDI}`;
+  return CURRENCY.position === 'after' ? `${formatted} ${CURRENCY.symbol}` : `${CURRENCY.symbol}${formatted}`;
 }
 
 export function formatCurrency(amount: number | string | null | undefined): string {
