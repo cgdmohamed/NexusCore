@@ -14,11 +14,11 @@ import {
   CreditCard,
   Tag,
   FileText,
-  DollarSign,
   Wallet
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CurrencyAmountField } from "@/components/forms/CurrencyAmountField";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -251,16 +251,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
               <FormItem>
                 <FormLabel>Amount *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <DollarSign className="absolute start-3 top-3 h-4 w-4 text-muted-foreground/70" />
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="0.00" 
-                      className="ps-10"
-                      {...field} 
-                    />
-                  </div>
+                  <CurrencyAmountField id="expense-amount" name={field.name} value={String(field.value ?? "")} onChange={field.onChange} onBlur={field.onBlur} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -14,6 +14,7 @@ import { DetailPageHeader } from "@/components/dashboard/DetailPageHeader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, format } from "@/lib/dateUtils";
 import { formatCurrency } from "@/lib/currency";
+import { CurrencyAmountField } from "@/components/forms/CurrencyAmountField";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
@@ -716,7 +717,7 @@ export default function QuotationDetail() {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-[7rem_1fr] gap-4">
                     <div>
                       <Label htmlFor="quantity">Quantity</Label>
                       <Input
@@ -730,15 +731,12 @@ export default function QuotationDetail() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="unitPrice">Unit Price (EGP)</Label>
-                      <Input
+                      <Label htmlFor="unitPrice">{t("quotations.item_unit_price")}</Label>
+                      <CurrencyAmountField
                         id="unitPrice"
-                        type="number"
                         value={unitPrice}
-                        onChange={(e) => setUnitPrice(e.target.value)}
-                        min="0"
-                        step="0.01"
-                        required
+                        onChange={setUnitPrice}
+                        rememberKey={`quotation:${id}`}
                       />
                     </div>
                   </div>
@@ -759,7 +757,7 @@ export default function QuotationDetail() {
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total:</span>
-                      <span className="text-lg font-bold">${calculateTotal().toFixed(2)}</span>
+                      <span className="text-lg font-bold">{formatCurrency(calculateTotal())}</span>
                     </div>
                   </div>
 
@@ -1110,7 +1108,7 @@ export default function QuotationDetail() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-[7rem_1fr] gap-4">
               <div>
                 <Label htmlFor="edit-quantity">{t("quotations.item_quantity")}</Label>
                 <Input
@@ -1124,13 +1122,11 @@ export default function QuotationDetail() {
               </div>
               <div>
                 <Label htmlFor="edit-unitPrice">{t("quotations.item_unit_price")}</Label>
-                <Input
+                <CurrencyAmountField
                   id="edit-unitPrice"
-                  type="number"
                   value={editUnitPrice}
-                  onChange={(e) => setEditUnitPrice(e.target.value)}
-                  min="0"
-                  step="0.01"
+                  onChange={setEditUnitPrice}
+                  rememberKey={`quotation:${id}`}
                 />
               </div>
             </div>

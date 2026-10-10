@@ -21,6 +21,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { CurrencyAmountField } from "@/components/forms/CurrencyAmountField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientCombobox } from "@/components/ui/client-combobox";
@@ -130,9 +131,9 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount (EGP) *</FormLabel>
+                  <FormLabel>Amount *</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <CurrencyAmountField id="invoice-amount" name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
