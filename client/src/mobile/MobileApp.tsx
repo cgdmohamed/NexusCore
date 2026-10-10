@@ -75,7 +75,7 @@ export default function MobileApp() {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
-      <header className="flex items-center justify-between border-b border-border bg-card px-4 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
+      <header className="flex items-center justify-between border-b border-border bg-card px-4 pb-3 pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <h1 className="text-lg font-semibold">{t(TABS.find((x) => x.key === active)!.label)}</h1>
         <div className="flex items-center gap-1">
           <Link
