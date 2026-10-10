@@ -353,7 +353,7 @@ export default function Expenses() {
                 <Button variant="outline" size="sm" onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}>
                   {viewMode === "table" ? "Card View" : "Table View"}
                 </Button>
-                <DataExportButton data={filteredExpenses} filename="expenses-export" type="csv" />
+                <DataExportButton data={filteredExpenses} filename="expenses-export" type="csv" amountFields={["amount"]} />
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-info hover:bg-info">

@@ -354,6 +354,7 @@ export default function PaymentSources() {
                   data={filteredSources}
                   filename="payment-sources-export"
                   type="csv"
+                  amountFields={["initialBalance", "currentBalance"]}
                 />
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>

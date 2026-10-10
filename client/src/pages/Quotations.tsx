@@ -265,6 +265,7 @@ export default function Quotations() {
                   data={filteredAndSortedQuotations} 
                   filename="quotations-export" 
                   type="csv" 
+                  amountFields={["amount", "subtotal", "taxAmount", "discountAmount"]}
                 />
               </div>
             </div>

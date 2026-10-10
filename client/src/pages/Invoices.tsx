@@ -277,6 +277,7 @@ export default function Invoices() {
                   data={filteredAndSortedInvoices} 
                   filename="invoices-export" 
                   type="csv" 
+                  amountFields={["amount", "paidAmount", "subtotal", "taxAmount", "discountAmount"]}
                 />
               </div>
             </div>
