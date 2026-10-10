@@ -847,9 +847,15 @@ export function registerQuotationsRoutes(app: Express) {
       const [qPrintSum] = await db.select({
         totalSum: sql<string>`COALESCE(SUM(${quotationItems.totalPrice}), 0)`,
       }).from(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+      // Line totals already carry each item's own discount, so the subtotal is already net of it. Only a
+      // discount beyond the item discounts (stored discount minus what the items account for) is taken off again.
+      const [qGross] = await db.select({
+        grossSum: sql<string>`COALESCE(SUM(${quotationItems.quantity}::numeric * ${quotationItems.unitPrice}::numeric), 0)`,
+      }).from(quotationItems).where(eq(quotationItems.quotationId, quotationId));
       const egpSubtotal = parseFloat(qPrintSum?.totalSum || '0');
+      const itemDiscounts = Math.max(0, parseFloat(qGross?.grossSum || '0') - egpSubtotal);
       const egpTaxAmount = parseFloat(quotation.taxAmount || "0");
-      const egpDiscountAmount = parseFloat(quotation.discountAmount || "0");
+      const egpDiscountAmount = Math.max(0, parseFloat(quotation.discountAmount || "0") - itemDiscounts);
       const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
       const convertedTotal = convertAmount(egpGrandTotal, exchangeRate);
 

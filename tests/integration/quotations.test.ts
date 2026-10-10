@@ -200,4 +200,46 @@ describe.skipIf(!TEST_DATABASE_URL)("quotations (integration)", () => {
       expect((await api("DELETE", "/api/quotations/00000000-0000-0000-0000-000000000000")).status).toBe(404);
     });
   });
+
+  describe("print snapshot", () => {
+    it("does not take item discounts off a second time", async () => {
+      const client = await createClient(api, "QPrint");
+      const q = await createQuotation(api, client.id);
+      await addItem(api, q.id, 1, 42240, { discountPercent: 20 });
+      await addItem(api, q.id, 1, 33000);
+      await addItem(api, q.id, 1, 14520, { discountPercent: 100 });
+
+      const net = 33792 + 33000; // what the page shows as subtotal and total
+      expect(parseFloat((await getQuotation(q.id)).amount)).toBe(net);
+
+      const printed = await api("POST", `/api/quotations/${q.id}/print`, { displayCurrency: "SAR", exchangeRate: "13.2" });
+      expect(printed.status).toBe(200);
+      const record = (await api("GET", `/api/quotation-print-records/${printed.body.printRecordId}`)).body;
+      const snap = record.printSnapshotJson ?? record.snapshot ?? record;
+      expect(parseFloat(snap.egpSubtotal)).toBe(net);
+      expect(parseFloat(snap.egpDiscountAmount)).toBe(0);
+      expect(parseFloat(snap.egpTotal)).toBe(net);
+      expect(parseFloat(snap.displayTotal)).toBeCloseTo(net / 13.2, 2);
+    });
+
+    it("prints an invoice converted from a discounted quotation with the invoice's own total", async () => {
+      const client = await createClient(api, "QPrintInvoice");
+      const q = await createQuotation(api, client.id);
+      await addItem(api, q.id, 1, 1000, { discountPercent: 20 });
+      await addItem(api, q.id, 1, 500);
+      expect((await setStatus(q.id, "sent")).status).toBe(200);
+      expect((await setStatus(q.id, "accepted")).status).toBe(200);
+      const converted = await api("POST", `/api/quotations/${q.id}/convert-to-invoice`);
+      expect(converted.status).toBe(201);
+      const invoice = converted.body.invoice ?? converted.body;
+
+      const printed = await api("POST", `/api/invoices/${invoice.id}/print`, { displayCurrency: "USD", exchangeRate: "50" });
+      expect(printed.status).toBe(200);
+      const record = (await api("GET", `/api/invoice-print-records/${printed.body.printRecordId}`)).body;
+      const snap = record.printSnapshotJson ?? record.snapshot ?? record;
+      expect(parseFloat(snap.egpTotal)).toBe(parseFloat(invoice.amount));
+      expect(parseFloat(snap.egpTotal)).toBe(1300);
+      expect(parseFloat(snap.displayTotal)).toBe(26);
+    });
+  });
 });

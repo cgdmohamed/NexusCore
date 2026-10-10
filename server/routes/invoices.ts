@@ -791,10 +791,13 @@ export function registerInvoicesRoutes(app: Express) {
       const [iPrintSum] = await db.select({
         totalSum: sql<string>`COALESCE(SUM(${invoiceItems.totalPrice}), 0)`,
       }).from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
-      const egpSubtotal = parseFloat(iPrintSum?.totalSum || '0');
+      // The invoice's stored figures are the ones shown on screen. Item lines can already carry a discount
+      // (invoices converted from a quotation), so they are not re-added and re-discounted here.
       const egpTaxAmount = parseFloat(invoice.taxAmount || "0");
       const egpDiscountAmount = parseFloat(invoice.discountAmount || "0");
-      const egpGrandTotal = egpSubtotal + egpTaxAmount - egpDiscountAmount;
+      const egpGrandTotal = parseFloat(invoice.amount || "0");
+      const storedSubtotal = parseFloat(invoice.subtotal || "0");
+      const egpSubtotal = storedSubtotal > 0 ? storedSubtotal : parseFloat(iPrintSum?.totalSum || '0') || egpGrandTotal - egpTaxAmount + egpDiscountAmount;
       const egpPaidAmount = parseFloat(invoice.paidAmount || "0");
 
       const snapshotItems = items.map(item => ({
