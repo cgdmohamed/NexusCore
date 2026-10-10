@@ -7,7 +7,7 @@ import { clients, quotations, invoices, invoiceItems, users, quotationItems, act
 import { eq, sql, desc } from "drizzle-orm";
 import { notificationService } from "../notification-service";
 
-import { lockNumbering, generateQuotationNumber, generateInvoiceNumber, VALID_CURRENCIES, convertAmount, isIncludedPrintItem } from "./shared";
+import { lockNumbering, generateQuotationNumber, generateInvoiceNumber, VALID_CURRENCIES, convertAmount, isIncludedPrintItem, companyInfo } from "./shared";
 
 // Quotations: items, status, conversion, export, print records
 export function registerQuotationsRoutes(app: Express) {
@@ -898,7 +898,7 @@ export function registerQuotationsRoutes(app: Express) {
         displayDiscountAmount: convertAmount(egpDiscountAmount, exchangeRate).toFixed(2),
         displayTotal: convertAmount(egpGrandTotal, exchangeRate).toFixed(2),
         printDate: new Date().toISOString(),
-        companyName: process.env.COMPANY_NAME || "CompanyOS",
+        company: companyInfo(),
       };
 
       const [printRecord] = await db.insert(quotationPrintRecords).values({

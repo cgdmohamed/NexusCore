@@ -5,6 +5,7 @@ import { logAudit } from "../audit";
 import { parseMoney } from "../validation";
 import { requirePermission } from "../auth";
 import { clients, quotations, invoices, payments, clientCreditHistory, clientNotes, activities } from "@shared/schema";
+import { companyInfo } from "./shared";
 import { eq, sql, ne, and, inArray } from "drizzle-orm";
 import { buildStatement } from "../statement";
 
@@ -144,14 +145,7 @@ export function registerClientsRoutes(app: Express) {
 
       res.json({
         client: { id: client.id, name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city, country: client.country, status: client.status },
-        company: {
-          name: process.env.COMPANY_NAME || "Creative Code Nexus",
-          email: process.env.COMPANY_EMAIL || "",
-          phone: process.env.COMPANY_PHONE || "",
-          address: process.env.COMPANY_ADDRESS || "",
-          vatNumber: process.env.COMPANY_VAT_NUMBER || "",
-          regNumber: process.env.COMPANY_REGISTRATION_NUMBER || "",
-        },
+        company: companyInfo(),
         currency: "EGP",
         period: { from: from ? from.toISOString().slice(0, 10) : null, to: to ? to.toISOString().slice(0, 10) : null },
         generatedAt: new Date().toISOString(),

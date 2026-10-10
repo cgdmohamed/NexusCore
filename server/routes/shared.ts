@@ -88,6 +88,18 @@ export async function guardInvoiceItemChange(invoiceId: string, subtotalDelta: n
 
 export const VALID_CURRENCIES = ["EGP", "USD", "SAR"];
 
+// One company block for every printed document (invoice, quotation, client statement)
+export function companyInfo() {
+  return {
+    name: process.env.COMPANY_NAME || "Creative Code Nexus",
+    email: process.env.COMPANY_EMAIL || "",
+    phone: process.env.COMPANY_PHONE || "",
+    address: process.env.COMPANY_ADDRESS || "",
+    vatNumber: process.env.COMPANY_VAT_NUMBER || "",
+    regNumber: process.env.COMPANY_REGISTRATION_NUMBER || "",
+  };
+}
+
 export function convertAmount(egpValue: number, exchangeRate: number): number {
   return Math.round((egpValue / exchangeRate) * 100) / 100;
 }

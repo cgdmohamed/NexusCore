@@ -10,7 +10,7 @@ import { eq, sql, desc } from "drizzle-orm";
 
 import fs from "fs";
 import QRCode from "qrcode";
-import { lockNumbering, generateInvoiceNumber, statusAfterTotalChange, guardInvoiceItemChange, uploadInvoiceFile, VALID_CURRENCIES, convertAmount, isIncludedPrintItem } from "./shared";
+import { lockNumbering, generateInvoiceNumber, statusAfterTotalChange, guardInvoiceItemChange, uploadInvoiceFile, VALID_CURRENCIES, convertAmount, isIncludedPrintItem, companyInfo } from "./shared";
 
 // Invoices: lifecycle, items, attachments, QR codes, print records
 export function registerInvoicesRoutes(app: Express) {
@@ -843,10 +843,7 @@ export function registerInvoicesRoutes(app: Express) {
         displayTotal: convertAmount(egpGrandTotal, exchangeRate).toFixed(2),
         displayPaidAmount: convertAmount(egpPaidAmount, exchangeRate).toFixed(2),
         printDate: new Date().toISOString(),
-        companyName: process.env.COMPANY_NAME || "CompanyOS",
-        companyEmail: process.env.COMPANY_EMAIL || "",
-        companyPhone: process.env.COMPANY_PHONE || "",
-        companyAddress: process.env.COMPANY_ADDRESS || "",
+        company: companyInfo(),
       };
 
       const convertedTotal = convertAmount(egpGrandTotal, exchangeRate);
