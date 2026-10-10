@@ -16,8 +16,6 @@ interface Props {
   placeholder?: string;
   min?: string;
   className?: string;
-  // Keeps the chosen currency for this key (for example one quotation), so every item of it uses the same one
-  rememberKey?: string;
 }
 
 const RATES_KEY = "nx.fx.rates";
@@ -29,18 +27,12 @@ function savedRates(): Record<string, string> {
 }
 
 // A money field that accepts dollars or riyals with the exchange rate and hands the form pounds
-export function CurrencyAmountField({ value, onChange, onBlur, id, name, placeholder = "0.00", min = "0", className, rememberKey }: Props) {
+export function CurrencyAmountField({ value, onChange, onBlur, id, name, placeholder = "0.00", min = "0", className }: Props) {
   const { t } = useTranslation();
-  const [currency, setCurrency] = useState<InputCurrency>(() => {
-    const stored = rememberKey ? read(`nx.fx.cur.${rememberKey}`) : null;
-    return isInputCurrency(stored) ? stored : "EGP";
-  });
-  const [rate, setRate] = useState<string>(() => savedRates()[currency] ?? "");
-  const [typed, setTyped] = useState<string>(() => {
-    if (currency === "EGP") return value;
-    const back = fromEgp(value, currency, savedRates()[currency] ?? "");
-    return back === null ? "" : String(back);
-  });
+  // Every field starts in pounds, so opening an item never changes how another one is shown or saved
+  const [currency, setCurrency] = useState<InputCurrency>("EGP");
+  const [rate, setRate] = useState<string>("");
+  const [typed, setTyped] = useState<string>(value);
   const lastEmitted = useRef(value);
 
   const emit = (text: string, cur: InputCurrency, r: string) => {
@@ -60,7 +52,6 @@ export function CurrencyAmountField({ value, onChange, onBlur, id, name, placeho
 
   const changeCurrency = (next: string) => {
     if (!isInputCurrency(next) || next === currency) return;
-    if (rememberKey) write(`nx.fx.cur.${rememberKey}`, next);
     const nextRate = next === "EGP" ? "" : savedRates()[next] ?? "";
     setCurrency(next);
     setRate(nextRate);

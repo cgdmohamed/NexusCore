@@ -736,7 +736,6 @@ export default function QuotationDetail() {
                         id="unitPrice"
                         value={unitPrice}
                         onChange={setUnitPrice}
-                        rememberKey={`quotation:${id}`}
                       />
                     </div>
                   </div>
@@ -1123,10 +1122,10 @@ export default function QuotationDetail() {
               <div>
                 <Label htmlFor="edit-unitPrice">{t("quotations.item_unit_price")}</Label>
                 <CurrencyAmountField
+                  key={editingItem?.id}
                   id="edit-unitPrice"
                   value={editUnitPrice}
                   onChange={setEditUnitPrice}
-                  rememberKey={`quotation:${id}`}
                 />
               </div>
             </div>
