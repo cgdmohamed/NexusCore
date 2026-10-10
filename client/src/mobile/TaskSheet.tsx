@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
 import type { ProjectRow } from "@/components/projects/ProjectCard";
-import { BottomSheet, Field, Segmented, inputCls } from "./ui";
+import { BottomSheet, Field, Segmented, dateInputCls, inputCls } from "./ui";
 import { refreshLists, useOnline } from "./hooks";
 import type { MobileTask } from "./logic";
 
@@ -73,7 +73,7 @@ export function TaskSheet({ task, projects, onClose }: { task: MobileTask | null
                 setDue(e.target.value);
                 if (e.target.value) change({ dueDate: e.target.value });
               }}
-              className={inputCls}
+              className={dateInputCls}
             />
           </Field>
           <dl className="grid grid-cols-2 gap-3 text-sm">

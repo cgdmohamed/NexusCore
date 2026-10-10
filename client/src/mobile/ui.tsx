@@ -2,18 +2,36 @@ import type { ReactNode } from "react";
 import { WifiOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { useKeyboard } from "./keyboard";
 import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
 export const inputCls =
   "h-12 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
+// iOS gives date inputs their own minimum width and hides an empty value; this keeps them inside the form
+export const dateInputCls = `${inputCls} block min-w-0 max-w-full appearance-none text-start [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-start`;
+
 export function BottomSheet({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; children: ReactNode }) {
+  const { inset, height } = useKeyboard();
+  // With the keyboard up the sheet rests on top of it and never grows taller than what is visible
+  const style = {
+    bottom: inset,
+    maxHeight: height ? `min(92dvh, ${Math.floor(height) - 12}px)` : undefined,
+  };
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92dvh]">
+    <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+      <DrawerContent className="max-h-[92dvh]" style={style}>
         <DrawerTitle className="px-4 pt-4 text-lg font-semibold">{title}</DrawerTitle>
         <DrawerDescription className="sr-only">{title}</DrawerDescription>
-        <div className="overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">{children}</div>
+        <div
+          className="overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3"
+          onFocus={(e) => {
+            const el = e.target as HTMLElement;
+            if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+          }}
+        >
+          {children}
+        </div>
       </DrawerContent>
     </Drawer>
   );

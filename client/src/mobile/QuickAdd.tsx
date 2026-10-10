@@ -8,7 +8,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import type { ProjectRow } from "@/components/projects/ProjectCard";
-import { BottomSheet, Field, Segmented, inputCls } from "./ui";
+import { BottomSheet, Field, Segmented, dateInputCls, inputCls } from "./ui";
 import { useList, useOnline, refreshLists } from "./hooks";
 import { clientPayload, projectPayload, taskPayload, type MobileTask } from "./logic";
 
@@ -85,11 +85,12 @@ function SaveBar({ pending, onSaveAnother }: { pending: boolean; onSaveAnother: 
   const { t } = useTranslation();
   const online = useOnline();
   return (
-    <div className="mt-5 space-y-2">
-      <Button type="submit" className="h-12 w-full text-base" disabled={pending || !online}>
+    // Stays at the foot of the sheet so saving is always reachable, even with the keyboard open
+    <div className="sticky bottom-0 -mx-4 mt-5 grid grid-cols-2 gap-2 border-t border-border bg-background px-4 pb-1 pt-3">
+      <Button type="submit" className="h-12 text-base" disabled={pending || !online}>
         {pending ? t("m.saving") : t("m.save")}
       </Button>
-      <Button type="button" variant="ghost" className="h-11 w-full" disabled={pending || !online} onClick={onSaveAnother}>
+      <Button type="button" variant="outline" className="h-12 whitespace-normal leading-tight" disabled={pending || !online} onClick={onSaveAnother}>
         {t("m.save_another")}
       </Button>
     </div>
@@ -135,10 +136,10 @@ function TaskForm({ request, onDone }: { request: AddRequest; onDone: () => void
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(false); }} className="space-y-4">
       <Field label={t("m.title")} error={error}>
-        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("m.title_ph")} className={inputCls} enterKeyHint="done" />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("m.title_ph")} className={inputCls} enterKeyHint="done" />
       </Field>
       <Field label={t("m.due_date")}>
-        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={dateInputCls} />
       </Field>
       <Field label={t("m.priority")}>
         <Segmented value={priority} onChange={setPriority} options={[
@@ -173,7 +174,7 @@ function ProjectForm({ request, onDone }: { request: AddRequest; onDone: () => v
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(false); }} className="space-y-4">
       <Field label={t("m.name")} error={error}>
-        <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputCls} enterKeyHint="done" />
+        <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} enterKeyHint="done" />
       </Field>
       <Field label={t("m.client")}>
         <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputCls}>
@@ -182,7 +183,7 @@ function ProjectForm({ request, onDone }: { request: AddRequest; onDone: () => v
         </select>
       </Field>
       <Field label={t("m.due_date")}>
-        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={dateInputCls} />
       </Field>
       <SaveBar pending={create.isPending} onSaveAnother={() => submit(true)} />
     </form>
@@ -201,7 +202,7 @@ function ClientForm({ onDone }: { onDone: () => void }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); submit(false); }} className="space-y-4">
       <Field label={t("m.name")} error={error}>
-        <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputCls} autoComplete="off" />
+        <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} autoComplete="off" />
       </Field>
       <Field label={t("m.phone")}>
         <input type="tel" inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputCls} text-start`} autoComplete="off" />
