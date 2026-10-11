@@ -43,6 +43,13 @@
       "when": 1791756273350,
       "tag": "0005_payment_source_link",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791842673350,
+      "tag": "0006_default_payment_source",
+      "breakpoints": true
     }
   ]
 }

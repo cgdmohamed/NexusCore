@@ -625,6 +625,8 @@ export const paymentSources = pgTable("payment_sources", {
   initialBalance: decimal("initial_balance", { precision: 12, scale: 2 }).default("0"),
   currentBalance: decimal("current_balance", { precision: 12, scale: 2 }).default("0"),
   isActive: boolean("is_active").default(true),
+  // At most one account is the default: it receives client payments when no other account is chosen
+  isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -668,6 +670,7 @@ export const paymentSourceTransactionsRelations = relations(paymentSourceTransac
 }));
 
 export const insertPaymentSourceSchema = createInsertSchema(paymentSources).omit({
+  isDefault: true, // changed only through the dedicated endpoint, which keeps it to one account
   id: true,
   createdAt: true,
   updatedAt: true,

@@ -21,4 +21,13 @@ describe("suggestSource", () => {
     expect(suggestSource([{ ...bank, isActive: false }], "bank_transfer")).toBe("");
     expect(suggestSource([{ ...bank, isActive: false }, { ...bank, id: "b2" }], "bank_transfer")).toBe("b2");
   });
+
+  it("falls back to the default account only when asked to", () => {
+    const def = { ...bank, id: "d1", isDefault: true };
+    const two = [def, { ...bank, id: "b2" }];
+    expect(suggestSource(two, "bank_transfer")).toBe("");
+    expect(suggestSource(two, "bank_transfer", true)).toBe("d1");
+    expect(suggestSource([def], "other", true)).toBe("d1");
+    expect(suggestSource([{ ...def, isActive: false }], "other", true)).toBe("");
+  });
 });

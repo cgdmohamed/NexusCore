@@ -255,6 +255,38 @@ export function registerPaymentSourceRoutes(app: Express) {
     }
   });
 
+  // Make one account the default (the only one): it receives client payments when no account is chosen
+  app.post("/api/payment-sources/:id/default", requirePermission("paymentSources", "edit"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const outcome = await db.transaction(async (tx) => {
+        const [source] = await tx.select().from(paymentSources).where(eq(paymentSources.id, id)).for("update");
+        if (!source) return { status: 404, message: "Payment source not found" };
+        if (source.isActive === false) return { status: 400, message: "An inactive account cannot be the default." };
+        await tx.update(paymentSources).set({ isDefault: false, updatedAt: new Date() }).where(sql`${paymentSources.isDefault} = true AND ${paymentSources.id} <> ${id}`);
+        const [updated] = await tx.update(paymentSources).set({ isDefault: true, updatedAt: new Date() }).where(eq(paymentSources.id, id)).returning();
+        return { status: 200, source: updated };
+      });
+      if (outcome.status !== 200) return res.status(outcome.status).json({ message: (outcome as any).message });
+      res.json((outcome as any).source);
+    } catch (error) {
+      console.error("Error setting default payment source:", error);
+      res.status(500).json({ message: "Failed to set the default account" });
+    }
+  });
+
+  // Take the default mark off (client payments then go to no account unless one is chosen)
+  app.delete("/api/payment-sources/:id/default", requirePermission("paymentSources", "edit"), async (req, res) => {
+    try {
+      const [updated] = await db.update(paymentSources).set({ isDefault: false, updatedAt: new Date() }).where(eq(paymentSources.id, req.params.id)).returning();
+      if (!updated) return res.status(404).json({ message: "Payment source not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error clearing default payment source:", error);
+      res.status(500).json({ message: "Failed to clear the default account" });
+    }
+  });
+
   // Delete payment source
   app.delete("/api/payment-sources/:id", requirePermission("paymentSources", "delete"), async (req, res) => {
     try {

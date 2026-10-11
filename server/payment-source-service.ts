@@ -14,6 +14,8 @@ export class PaymentSourceError extends Error {
 export async function runPaymentSourceLinkMigration(): Promise<void> {
   try {
     await db.execute(sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_source_id VARCHAR REFERENCES payment_sources(id)`);
+    await db.execute(sql`ALTER TABLE payment_sources ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS payment_sources_one_default ON payment_sources (is_default) WHERE is_default = true`);
   } catch (err) {
     console.error("⚠️ Payment source link migration failed (non-fatal):", err);
   }
@@ -62,6 +64,13 @@ export async function moveMoney(tx: Tx, m: MoveMoney): Promise<void> {
     balanceAfter: updated?.currentBalance ?? (parseFloat(balanceBefore) + signed).toFixed(2),
     createdBy: m.userId,
   });
+}
+
+// The account that receives client payments when none is chosen: the default one, if it is still active
+export async function activeDefaultSourceId(tx: Tx | typeof db): Promise<string | null> {
+  const [row] = await tx.select({ id: paymentSources.id }).from(paymentSources)
+    .where(sql`${paymentSources.isDefault} = true AND ${paymentSources.isActive} IS NOT FALSE`);
+  return row?.id ?? null;
 }
 
 // Checks an account can receive or pay out before the record that refers to it is written

@@ -1663,6 +1663,7 @@ export default function InvoiceDetail() {
                       value={paymentForm.paymentSourceId}
                       onChange={(v) => setPaymentForm(prev => ({ ...prev, paymentSourceId: v }))}
                       suggestFor={paymentForm.paymentMethod}
+                      fallbackToDefault
                     />
                     <div>
                       <Label htmlFor="bankTransferNumber">Reference Number</Label>
@@ -2098,7 +2099,7 @@ export default function InvoiceDetail() {
             <DialogTitle>{t("paysrc.assign_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <PaymentSourceSelect id="assign-source" value={assignSourceId} onChange={setAssignSourceId} suggestFor={assigningPayment?.paymentMethod} />
+            <PaymentSourceSelect id="assign-source" value={assignSourceId} onChange={setAssignSourceId} suggestFor={assigningPayment?.paymentMethod} fallbackToDefault />
             <p className="text-xs text-muted-foreground">{t("paysrc.assign_hint")}</p>
           </div>
           <DialogFooter>

@@ -118,4 +118,72 @@ describe.skipIf(!TEST_DATABASE_URL)("client payments and the accounts they land 
     await pay(api, inv.id, 50, { paymentSourceId: src.id });
     expect((await api("DELETE", `/api/payment-sources/${src.id}`)).status).toBe(400);
   });
+
+  describe("default account", () => {
+    it("keeps a single default and refuses an inactive account", async () => {
+      const a = await createPaymentSource(api, "0", "Default A");
+      const b = await createPaymentSource(api, "0", "Default B");
+      expect((await api("POST", `/api/payment-sources/${a.id}/default`)).status).toBe(200);
+      expect((await api("POST", `/api/payment-sources/${b.id}/default`)).status).toBe(200);
+      const list = (await api("GET", "/api/payment-sources")).body as any[];
+      expect(list.filter((x) => x.isDefault).map((x) => x.id)).toEqual([b.id]);
+
+      const dormant = await createPaymentSource(api, "0", "Dormant default");
+      await api("PUT", `/api/payment-sources/${dormant.id}`, { name: dormant.name, accountType: "bank", isActive: false });
+      expect((await api("POST", `/api/payment-sources/${dormant.id}/default`)).status).toBe(400);
+      expect((await api("POST", "/api/payment-sources/00000000-0000-0000-0000-000000000000/default")).status).toBe(404);
+    });
+
+    it("sends a payment with no account chosen to the default, but not one left empty on purpose", async () => {
+      const def = await createPaymentSource(api, "100", "Receives by default");
+      await api("POST", `/api/payment-sources/${def.id}/default`);
+      const client = await createClient(api, "DefaultPay");
+      const inv = await createInvoice(api, client.id, "1000");
+
+      const implicit = await pay(api, inv.id, 200);
+      expect(implicit.body.payment.paymentSourceId).toBe(def.id);
+      expect(await balance(def.id)).toBe(300);
+
+      const explicitNone = await pay(api, inv.id, 50, { paymentSourceId: "" });
+      expect(explicitNone.body.payment.paymentSourceId).toBeNull();
+      const fromCredit = await pay(api, inv.id, 10, { paymentMethod: "credit_balance" });
+      expect(fromCredit.body.payment.paymentSourceId).toBeNull();
+      expect(await balance(def.id)).toBe(300);
+    });
+
+    it("moves every earlier payment to the default account once, after the count is confirmed", async () => {
+      const def = await createPaymentSource(api, "1000", "Old payments go here");
+      const client = await createClient(api, "OldPay");
+      const inv = await createInvoice(api, client.id, "900");
+      // recorded while no default exists, so they have no account
+      await api("DELETE", `/api/payment-sources/${(await api("GET", "/api/payment-sources")).body.find((x: any) => x.isDefault)?.id}/default`);
+      await pay(api, inv.id, 300);
+      await pay(api, inv.id, 200);
+      await api("POST", `/api/invoices/${inv.id}/refund`, { refundAmount: 50, refundMethod: "cash" });
+
+      expect((await api("POST", "/api/payments/assign-default", { expectedCount: 0 })).status).toBe(400); // no default yet
+      await api("POST", `/api/payment-sources/${def.id}/default`);
+
+      const summary = (await api("GET", "/api/payments/unassigned-summary")).body;
+      expect(summary.defaultSource.id).toBe(def.id);
+      expect(summary.collections).toBeGreaterThanOrEqual(2);
+      expect(summary.refunds).toBeGreaterThanOrEqual(1);
+      const count = summary.collections + summary.refunds;
+
+      expect((await api("POST", "/api/payments/assign-default", { expectedCount: count + 1 })).status).toBe(409);
+      expect(await balance(def.id)).toBe(1000);
+
+      const before = await balance(def.id);
+      const done = await api("POST", "/api/payments/assign-default", { expectedCount: count });
+      expect(done.status).toBe(200);
+      expect(done.body.moved).toBe(count);
+      expect(await balance(def.id)).toBeCloseTo(before + summary.net, 2);
+
+      const after = (await api("GET", "/api/payments/unassigned-summary")).body;
+      expect(after.collections + after.refunds).toBe(0);
+      const again = await api("POST", "/api/payments/assign-default", { expectedCount: 0 });
+      expect(again.body.moved).toBe(0);
+      expect(await balance(def.id)).toBeCloseTo(before + summary.net, 2);
+    });
+  });
 });

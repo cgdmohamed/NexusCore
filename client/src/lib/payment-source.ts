@@ -4,14 +4,16 @@ export interface SourceOption {
   accountType?: string | null;
   isActive?: boolean | null;
   currentBalance?: string | null;
+  isDefault?: boolean | null;
 }
 
 // Which account to offer when the payment method is picked: only when it is unambiguous
 // (one active cash account for cash, one active bank account for bank-like methods). Otherwise nothing is guessed.
-export function suggestSource(sources: SourceOption[], method: string): string {
+// When nothing is unambiguous, `fallbackToDefault` offers the default account (used for money received, not for refunds).
+export function suggestSource(sources: SourceOption[], method: string, fallbackToDefault = false): string {
   const active = sources.filter((s) => s.isActive !== false);
   const wanted = method === "cash" ? "cash" : ["bank_transfer", "credit_card", "check"].includes(method) ? "bank" : null;
-  if (!wanted) return "";
-  const matches = active.filter((s) => s.accountType === wanted);
-  return matches.length === 1 ? matches[0].id : "";
+  const matches = wanted ? active.filter((s) => s.accountType === wanted) : [];
+  if (matches.length === 1) return matches[0].id;
+  return fallbackToDefault ? active.find((s) => s.isDefault)?.id ?? "" : "";
 }

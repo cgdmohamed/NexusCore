@@ -13,7 +13,8 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { 
   Plus, 
   Search, 
-  Wallet, 
+  Wallet,
+  Landmark, 
   Building, 
   Banknote,
   Eye, 
@@ -53,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PaymentSourceForm } from "@/components/forms/PaymentSourceForm";
+import { UnassignedPaymentsBanner } from "@/components/payments/UnassignedPaymentsBanner";
 import { BalanceAdjustmentForm } from "@/components/forms/BalanceAdjustmentForm";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -97,6 +99,20 @@ export default function PaymentSources() {
         description: error.message || t("paymentSources.delete_failed_desc"),
         variant: "destructive",
       });
+    },
+  });
+
+  const defaultMutation = useMutation({
+    mutationFn: async ({ id, clear }: { id: string; clear: boolean }) => {
+      await apiRequest(clear ? "DELETE" : "POST", `/api/payment-sources/${id}/default`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/unassigned-summary"] });
+      toast({ title: t("paysrc.default_set") });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to update the default account", variant: "destructive" });
     },
   });
 
@@ -239,6 +255,7 @@ export default function PaymentSources() {
       />
       
       <div className="p-3 md:p-6 space-y-6">
+        <UnassignedPaymentsBanner />
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
           <Card>
@@ -410,6 +427,7 @@ export default function PaymentSources() {
                         <Link href={`/payment-sources/${source.id}`} className="font-medium hover:text-primary">
                           {source.name}
                         </Link>
+                        {source.isDefault && <Badge variant="outline" className="ms-2 border-primary/30 text-primary">{t("paysrc.default")}</Badge>}
                         {source.description && (
                           <p className="text-sm text-muted-foreground mt-1">{source.description}</p>
                         )}
@@ -455,6 +473,10 @@ export default function PaymentSources() {
                             <Settings className="h-4 w-4 me-2" />
                             Adjust Balance
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => defaultMutation.mutate({ id: source.id, clear: !!source.isDefault })} data-testid={`default-${source.id}`}>
+                            <Landmark className="h-4 w-4 me-2" />
+                            {source.isDefault ? t("paysrc.clear_default") : t("paysrc.set_default")}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => handleDelete(source)}
@@ -491,6 +513,7 @@ export default function PaymentSources() {
                         <Link href={`/payment-sources/${source.id}`} className="hover:text-primary">
                           {source.name}
                         </Link>
+                        {source.isDefault && <Badge variant="outline" className="ms-2 border-primary/30 text-primary">{t("paysrc.default")}</Badge>}
                       </CardTitle>
                       {source.description && (
                         <p className="text-sm text-muted-foreground mt-1">{source.description}</p>
@@ -519,7 +542,11 @@ export default function PaymentSources() {
                           <Settings className="h-4 w-4 me-2" />
                           Adjust Balance
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => defaultMutation.mutate({ id: source.id, clear: !!source.isDefault })} data-testid={`default-${source.id}`}>
+                            <Landmark className="h-4 w-4 me-2" />
+                            {source.isDefault ? t("paysrc.clear_default") : t("paysrc.set_default")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => handleDelete(source)}
                           className="text-danger"

@@ -11,17 +11,19 @@ interface Props {
   label?: string;
   // When given, an unambiguous account for this payment method is chosen for the person until they pick one themselves
   suggestFor?: string;
+  // For money received: with no better match the default account is offered
+  fallbackToDefault?: boolean;
 }
 
 // The account (bank, cash box, wallet) the money goes into or comes out of. Optional: left empty, no balance changes.
-export function PaymentSourceSelect({ id, value, onChange, label, suggestFor }: Props) {
+export function PaymentSourceSelect({ id, value, onChange, label, suggestFor, fallbackToDefault }: Props) {
   const { t } = useTranslation();
   const { data: sources = [] } = useQuery<SourceOption[]>({ queryKey: ["/api/payment-sources"] });
   const touched = useRef(false);
 
   useEffect(() => {
-    if (!suggestFor || touched.current || sources.length === 0) return;
-    onChange(suggestSource(sources, suggestFor));
+    if (suggestFor === undefined || touched.current || sources.length === 0) return;
+    onChange(suggestSource(sources, suggestFor, fallbackToDefault));
   }, [suggestFor, sources]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const usable = sources.filter((s) => s.isActive !== false || s.id === value);
@@ -37,7 +39,7 @@ export function PaymentSourceSelect({ id, value, onChange, label, suggestFor }: 
       >
         <option value="">{t("paysrc.none")}</option>
         {usable.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}</option>
+          <option key={s.id} value={s.id}>{s.name}{s.isDefault ? ` — ${t("paysrc.default")}` : ""}</option>
         ))}
       </select>
       <p className="mt-1 text-xs text-muted-foreground">{t("paysrc.hint")}</p>

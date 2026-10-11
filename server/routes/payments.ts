@@ -6,7 +6,7 @@ import { parseMoney, parseDateValue, isAbsent } from "../validation";
 import { requirePermission } from "../auth";
 import { clients, invoices, payments, clientCreditHistory, activities, invoiceHistory, paymentSources } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { moveMoney, assertUsableSource, sourceIdFrom, PaymentSourceError } from "../payment-source-service";
+import { moveMoney, assertUsableSource, activeDefaultSourceId, sourceIdFrom, PaymentSourceError } from "../payment-source-service";
 import { notificationService } from "../notification-service";
 
 // Payments, refunds and client credit
@@ -41,7 +41,11 @@ export function registerPaymentsRoutes(app: Express) {
         return res.status(400).json({ message: "Payment method is required." });
       }
       const isAdminApproved = req.body.adminApproved || false;
-      const paymentSourceId = sourceIdFrom(req.body.paymentSourceId);
+      // Left out entirely, the payment goes to the default account; an empty value means "no account" on purpose
+      let paymentSourceId = sourceIdFrom(req.body.paymentSourceId);
+      if (req.body.paymentSourceId === undefined && req.body.paymentMethod !== "credit_balance") {
+        paymentSourceId = await activeDefaultSourceId(db);
+      }
       if (paymentSourceId && req.body.paymentMethod === "credit_balance") {
         return res.status(400).json({ message: "Paying from the client's credit does not move money into an account." });
       }
@@ -397,6 +401,81 @@ export function registerPaymentsRoutes(app: Express) {
       if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
       console.error("Error assigning payment source:", error);
       res.status(500).json({ message: "Failed to assign payment source" });
+    }
+  });
+
+  // Payments recorded before accounts were linked: what moving them to the default account would change
+  const unassignedWhere = sql`${payments.paymentSourceId} IS NULL AND ${payments.paymentMethod} <> 'credit_balance' AND ${payments.amount}::numeric <> 0`;
+
+  app.get('/api/payments/unassigned-summary', requirePermission("paymentSources", "view"), async (_req: any, res) => {
+    try {
+      const [row] = await db.select({
+        collections: sql<number>`COUNT(*) FILTER (WHERE ${payments.amount}::numeric > 0)::int`,
+        collected: sql<string>`COALESCE(SUM(${payments.amount}::numeric) FILTER (WHERE ${payments.amount}::numeric > 0), 0)`,
+        refunds: sql<number>`COUNT(*) FILTER (WHERE ${payments.amount}::numeric < 0)::int`,
+        refunded: sql<string>`COALESCE(-SUM(${payments.amount}::numeric) FILTER (WHERE ${payments.amount}::numeric < 0), 0)`,
+      }).from(payments).where(unassignedWhere);
+      const defaultId = await activeDefaultSourceId(db);
+      const [source] = defaultId ? await db.select({ id: paymentSources.id, name: paymentSources.name }).from(paymentSources).where(eq(paymentSources.id, defaultId)) : [];
+      res.json({
+        collections: Number(row.collections), collected: parseFloat(row.collected),
+        refunds: Number(row.refunds), refunded: parseFloat(row.refunded),
+        net: parseFloat(row.collected) - parseFloat(row.refunded),
+        defaultSource: source ?? null,
+      });
+    } catch (error) {
+      console.error("Error summarising unassigned payments:", error);
+      res.status(500).json({ message: "Failed to summarise payments" });
+    }
+  });
+
+  // One-time move of every payment without an account into the default account, one logged movement per payment.
+  // The caller sends the count it was shown, so a list that changed in the meantime is not applied blindly.
+  app.post('/api/payments/assign-default', requirePermission("paymentSources", "edit"), async (req: any, res) => {
+    try {
+      const expected = Number(req.body.expectedCount);
+      const defaultId = await activeDefaultSourceId(db);
+      if (!defaultId) return res.status(400).json({ message: "Set an active default account first." });
+
+      const result = await db.transaction(async (tx) => {
+        await assertUsableSource(tx, defaultId);
+        const rows = await tx
+          .select({ payment: payments, invoiceNumber: invoices.invoiceNumber })
+          .from(payments)
+          .leftJoin(invoices, eq(payments.invoiceId, invoices.id))
+          .where(unassignedWhere)
+          .orderBy(payments.paymentDate, payments.createdAt);
+        if (!Number.isFinite(expected) || rows.length !== expected) {
+          throw new PaymentSourceError("The list of payments changed. Reload and review it again.", 409);
+        }
+        let moved = 0;
+        for (const { payment, invoiceNumber } of rows) {
+          const claimed = await tx.update(payments)
+            .set({ paymentSourceId: defaultId })
+            .where(sql`${payments.id} = ${payment.id} AND ${payments.paymentSourceId} IS NULL`)
+            .returning({ id: payments.id });
+          if (claimed.length === 0) continue;
+          const amount = parseFloat(payment.amount);
+          await moveMoney(tx, {
+            sourceId: defaultId,
+            direction: amount > 0 ? "in" : "out",
+            amount: Math.abs(amount),
+            description: `${amount > 0 ? "Payment received" : "Refund"} for invoice ${invoiceNumber ?? ""} (moved to the default account)`.trim(),
+            referenceType: "payment_assignment",
+            referenceId: payment.id,
+            userId: req.user?.id,
+          });
+          moved++;
+        }
+        return moved;
+      });
+
+      await logAudit(req, "assign_default_payment_source", "payment_source", defaultId, null, { moved: result });
+      res.json({ moved: result });
+    } catch (error) {
+      if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
+      console.error("Error moving payments to the default account:", error);
+      res.status(500).json({ message: "Failed to move payments" });
     }
   });
 
