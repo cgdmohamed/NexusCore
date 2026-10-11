@@ -1,5 +1,8 @@
 import { Header } from "@/components/dashboard/Header";
 import { KPICards } from "@/components/dashboard/KPICards";
+import { AttentionStrip } from "@/components/dashboard/AttentionStrip";
+import { ReceivablesAging } from "@/components/dashboard/ReceivablesAging";
+import { RevenueVsExpenses } from "@/components/dashboard/RevenueVsExpenses";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
@@ -26,6 +29,13 @@ export default function Dashboard() {
       <div className="p-3 md:p-6 space-y-4">
         {/* KPI Cards */}
         <KPICards />
+
+        {/* What needs attention, then the money picture */}
+        <AttentionStrip />
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          <RevenueVsExpenses />
+          <ReceivablesAging />
+        </div>
         
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
