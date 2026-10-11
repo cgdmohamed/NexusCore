@@ -36,6 +36,13 @@
       "when": 1791669873350,
       "tag": "0004_daily_digest",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791756273350,
+      "tag": "0005_payment_source_link",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,5 @@
+import { PaymentSourceSelect } from "@/components/forms/PaymentSourceSelect";
+import { useTranslation } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, DollarSign, Calendar, FileText, Banknote } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format } from "@/lib/dateUtils";
 
 interface RefundFormProps {
@@ -29,10 +31,12 @@ export function RefundForm({
   onCancel 
 }: RefundFormProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     refundAmount: "",
     refundMethod: "",
     refundReference: "",
+    refundSourceId: "",
     notes: ""
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +92,7 @@ export function RefundForm({
         refundAmount: refundAmount,
         refundMethod: formData.refundMethod,
         refundReference: formData.refundReference,
+        refundSourceId: formData.refundSourceId,
         notes: formData.notes
       };
 
@@ -98,6 +103,7 @@ export function RefundForm({
       }
 
       await apiRequest("POST", endpoint, requestData);
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
 
       toast({
         title: "Refund Processed",
@@ -171,6 +177,14 @@ export function RefundForm({
               </SelectContent>
             </Select>
           </div>
+
+          <PaymentSourceSelect
+            id="refund-form-source"
+            label={t("paysrc.refund_from")}
+            value={formData.refundSourceId}
+            onChange={(v) => setFormData(prev => ({ ...prev, refundSourceId: v }))}
+            suggestFor={formData.refundMethod}
+          />
 
           {/* Refund Reference */}
           <div className="space-y-2">

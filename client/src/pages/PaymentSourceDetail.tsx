@@ -134,7 +134,10 @@ export default function PaymentSourceDetail() {
       case "adjustment":
         return <Settings className="h-4 w-4 text-primary" />;
       case "refund":
+      case "income":
         return <TrendingUp className="h-4 w-4 text-success" />;
+      case "client_refund":
+        return <TrendingDown className="h-4 w-4 text-danger" />;
       default:
         return <Activity className="h-4 w-4 text-muted-foreground" />;
     }
@@ -334,7 +337,7 @@ export default function PaymentSourceDetail() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {getTransactionIcon(transaction.type)}
-                            <span className="capitalize">{transaction.type}</span>
+                            <span className="capitalize">{t(`paysrc.type.${transaction.type}`) === `paysrc.type.${transaction.type}` ? transaction.type : t(`paysrc.type.${transaction.type}`)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -346,9 +349,9 @@ export default function PaymentSourceDetail() {
                           )}
                         </TableCell>
                         <TableCell className={`font-medium ${
-                          transaction.type === "expense" ? "text-danger" : "text-success"
+                          ["expense", "client_refund"].includes(transaction.type) ? "text-danger" : "text-success"
                         }`}>
-                          {transaction.type === "expense" ? "-" : "+"}{formatCurrency(transaction.amount)}
+                          {["expense", "client_refund"].includes(transaction.type) ? "-" : "+"}{formatCurrency(transaction.amount)}
                         </TableCell>
                         <TableCell className="font-medium">
                           {formatCurrency(transaction.balanceAfter)}

@@ -5,6 +5,7 @@ import {
   paymentSources, 
   paymentSourceTransactions, 
   expenses,
+  payments,
   insertPaymentSourceSchema, 
   insertPaymentSourceTransactionSchema,
   type PaymentSource,
@@ -268,6 +269,17 @@ export function registerPaymentSourceRoutes(app: Express) {
       if (expenseCount.count > 0) {
         return res.status(400).json({ 
           message: "Cannot delete payment source with associated expenses. Please remove or reassign expenses first." 
+        });
+      }
+
+      // Collections and refunds that point at the account keep their history, so it cannot go
+      const [paymentCount] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(payments)
+        .where(eq(payments.paymentSourceId, id));
+      if (Number(paymentCount.count) > 0) {
+        return res.status(400).json({
+          message: "Cannot delete payment source with client payments recorded on it. Deactivate it instead.",
         });
       }
 

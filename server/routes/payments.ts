@@ -4,8 +4,9 @@ import { db } from "../db";
 import { logAudit } from "../audit";
 import { parseMoney, parseDateValue, isAbsent } from "../validation";
 import { requirePermission } from "../auth";
-import { clients, invoices, payments, clientCreditHistory, activities, invoiceHistory } from "@shared/schema";
+import { clients, invoices, payments, clientCreditHistory, activities, invoiceHistory, paymentSources } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
+import { moveMoney, assertUsableSource, sourceIdFrom, PaymentSourceError } from "../payment-source-service";
 import { notificationService } from "../notification-service";
 
 // Payments, refunds and client credit
@@ -14,8 +15,12 @@ export function registerPaymentsRoutes(app: Express) {
   // Payment Records CRUD
   app.get('/api/invoices/:id/payments', requirePermission("invoices", "view"), async (req: any, res) => {
     try {
-      const paymentRecords = await db.select().from(payments).where(eq(payments.invoiceId, req.params.id));
-      res.json(paymentRecords);
+      const rows = await db
+        .select({ payment: payments, sourceName: paymentSources.name })
+        .from(payments)
+        .leftJoin(paymentSources, eq(payments.paymentSourceId, paymentSources.id))
+        .where(eq(payments.invoiceId, req.params.id));
+      res.json(rows.map((r) => ({ ...r.payment, paymentSourceName: r.sourceName })));
     } catch (error) {
       console.error("Error fetching payment records:", error);
       res.status(500).json({ message: "Failed to fetch payment records" });
@@ -36,6 +41,10 @@ export function registerPaymentsRoutes(app: Express) {
         return res.status(400).json({ message: "Payment method is required." });
       }
       const isAdminApproved = req.body.adminApproved || false;
+      const paymentSourceId = sourceIdFrom(req.body.paymentSourceId);
+      if (paymentSourceId && req.body.paymentMethod === "credit_balance") {
+        return res.status(400).json({ message: "Paying from the client's credit does not move money into an account." });
+      }
       
       // Get current invoice and payment information
       const [invoice] = await db.select().from(invoices).where(eq(invoices.id, req.params.id));
@@ -85,11 +94,29 @@ export function registerPaymentsRoutes(app: Express) {
         bankTransferNumber: req.body.bankTransferNumber || null,
         attachmentUrl: req.body.attachmentUrl || null,
         notes: req.body.notes || null,
+        paymentSourceId,
         createdBy: req.user?.id,
         approvedBy: isOverpayment && isAdminApproved ? req.user?.id : null,
       };
 
-      const [newPayment] = await db.insert(payments).values(paymentData).returning();
+      // The payment and the money arriving in the account are saved together. The whole amount received counts,
+      // including any part above the invoice that becomes client credit, because the money did arrive.
+      const newPayment = await db.transaction(async (tx) => {
+        if (paymentSourceId) await assertUsableSource(tx, paymentSourceId);
+        const [created] = await tx.insert(payments).values(paymentData).returning();
+        if (paymentSourceId) {
+          await moveMoney(tx, {
+            sourceId: paymentSourceId,
+            direction: "in",
+            amount: paymentAmount,
+            description: `Payment received for invoice ${invoice.invoiceNumber}`,
+            referenceType: "payment",
+            referenceId: created.id,
+            userId: req.user?.id,
+          });
+        }
+        return created;
+      });
       
       // Calculate new totals including this payment
       const newTotalPaid = currentPaidAmount + paymentAmount;
@@ -221,6 +248,7 @@ export function registerPaymentsRoutes(app: Express) {
         creditAdded: isOverpayment && isAdminApproved ? overpaymentAmount : 0
       });
     } catch (error) {
+      if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
       console.error("Error recording payment:", error);
       res.status(500).json({ message: "Failed to record payment" });
     }
@@ -231,6 +259,7 @@ export function registerPaymentsRoutes(app: Express) {
     try {
       const { refundAmount, refundMethod, refundReference, notes } = req.body;
       const refundAmountNum = parseFloat(refundAmount);
+      const refundSourceId = sourceIdFrom(req.body.refundSourceId);
 
       // Validate request
       if (!refundAmountNum || refundAmountNum <= 0) {
@@ -253,17 +282,34 @@ export function registerPaymentsRoutes(app: Express) {
       }
 
       // Create refund payment record (negative amount)
-      const refundPayment = await db.insert(payments).values({
-        invoiceId: req.params.id,
-        amount: (-Math.abs(refundAmountNum)).toString(),
-        paymentDate: new Date(),
-        paymentMethod: refundMethod || "bank_transfer",
-        bankTransferNumber: refundReference,
-        notes: notes || `Partial refund: ${refundAmountNum}`,
-        isRefund: true,
-        refundReference: refundReference,
-        createdBy: req.user?.id,
-      }).returning().then(rows => rows[0]);
+      // The refund and the money leaving the chosen account are saved together
+      const refundPayment = await db.transaction(async (tx) => {
+        if (refundSourceId) await assertUsableSource(tx, refundSourceId);
+        const [created] = await tx.insert(payments).values({
+          invoiceId: req.params.id,
+          amount: (-Math.abs(refundAmountNum)).toString(),
+          paymentDate: new Date(),
+          paymentMethod: refundMethod || "bank_transfer",
+          bankTransferNumber: refundReference,
+          notes: notes || `Partial refund: ${refundAmountNum}`,
+          isRefund: true,
+          refundReference: refundReference,
+          paymentSourceId: refundSourceId,
+          createdBy: req.user?.id,
+        }).returning();
+        if (refundSourceId) {
+          await moveMoney(tx, {
+            sourceId: refundSourceId,
+            direction: "out",
+            amount: refundAmountNum,
+            description: `Refund for invoice ${invoice.invoiceNumber}`,
+            referenceType: "refund",
+            referenceId: created.id,
+            userId: req.user?.id,
+          });
+        }
+        return created;
+      });
 
       // Update invoice paid amount and status
       const newPaidAmount = paidAmount - refundAmountNum;
@@ -308,8 +354,49 @@ export function registerPaymentsRoutes(app: Express) {
         message: `Successfully processed refund of ${refundAmountNum}. Invoice status updated to ${newStatus}.`
       });
     } catch (error) {
+      if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
       console.error("Error processing refund:", error);
       res.status(500).json({ message: "Failed to process refund" });
+    }
+  });
+
+  // Gives an account to a payment recorded before accounts were linked, once: its amount is added to that account now
+  app.patch('/api/payments/:id/source', requirePermission("invoices", "approve"), async (req: any, res) => {
+    try {
+      const sourceId = sourceIdFrom(req.body.paymentSourceId);
+      if (!sourceId) return res.status(400).json({ message: "A payment source is required." });
+
+      const [payment] = await db.select().from(payments).where(eq(payments.id, req.params.id));
+      if (!payment) return res.status(404).json({ message: "Payment not found" });
+      if (payment.paymentSourceId) return res.status(409).json({ message: "This payment already has an account." });
+      if (payment.isRefund || parseFloat(payment.amount) <= 0) return res.status(400).json({ message: "Only received payments can be assigned an account." });
+      if (payment.paymentMethod === "credit_balance") return res.status(400).json({ message: "Payments from client credit do not move money." });
+
+      const [invoice] = await db.select({ invoiceNumber: invoices.invoiceNumber }).from(invoices).where(eq(invoices.id, payment.invoiceId));
+      await db.transaction(async (tx) => {
+        // The condition makes a second request fail instead of adding the amount twice
+        const claimed = await tx.update(payments)
+          .set({ paymentSourceId: sourceId })
+          .where(sql`${payments.id} = ${payment.id} AND ${payments.paymentSourceId} IS NULL`)
+          .returning({ id: payments.id });
+        if (claimed.length === 0) throw new PaymentSourceError("This payment already has an account.", 409);
+        await moveMoney(tx, {
+          sourceId,
+          direction: "in",
+          amount: parseFloat(payment.amount),
+          description: `Payment received for invoice ${invoice?.invoiceNumber ?? ""} (account assigned later)`.trim(),
+          referenceType: "payment_assignment",
+          referenceId: payment.id,
+          userId: req.user?.id,
+        });
+      });
+
+      await logAudit(req, "assign_payment_source", "payment", payment.id, null, { paymentSourceId: sourceId, amount: payment.amount });
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
+      console.error("Error assigning payment source:", error);
+      res.status(500).json({ message: "Failed to assign payment source" });
     }
   });
 
@@ -318,6 +405,7 @@ export function registerPaymentsRoutes(app: Express) {
     try {
       const { refundAmount, refundMethod, refundReference, notes } = req.body;
       const refundAmountNum = parseFloat(refundAmount);
+      const refundSourceId = sourceIdFrom(req.body.refundSourceId);
 
       // Validate request
       if (!refundAmountNum || refundAmountNum <= 0) {
@@ -340,24 +428,39 @@ export function registerPaymentsRoutes(app: Express) {
 
       // Update client credit balance
       const newCreditBalance = availableCredit - refundAmountNum;
-      await db.update(clients)
-        .set({ 
-          creditBalance: newCreditBalance.toFixed(2),
-          updatedAt: new Date()
-        })
-        .where(eq(clients.id, req.params.clientId));
+      await db.transaction(async (tx) => {
+        await tx.update(clients)
+          .set({
+            creditBalance: newCreditBalance.toFixed(2),
+            updatedAt: new Date()
+          })
+          .where(eq(clients.id, req.params.clientId));
 
-      // Record credit history
-      await db.insert(clientCreditHistory).values({
-        clientId: req.params.clientId,
-        type: 'credit_refunded',
-        amount: refundAmountNum.toFixed(2),
-        description: `Credit refunded via ${refundMethod}${refundReference ? ` - Ref: ${refundReference}` : ''}`,
-        notes: notes || `Credit balance refunded to client`,
-        refundReference: refundReference,
-        previousBalance: availableCredit.toFixed(2),
-        newBalance: newCreditBalance.toFixed(2),
-        createdBy: req.user?.id,
+        // Record credit history
+        await tx.insert(clientCreditHistory).values({
+          clientId: req.params.clientId,
+          type: 'credit_refunded',
+          amount: refundAmountNum.toFixed(2),
+          description: `Credit refunded via ${refundMethod}${refundReference ? ` - Ref: ${refundReference}` : ''}`,
+          notes: notes || `Credit balance refunded to client`,
+          refundReference: refundReference,
+          previousBalance: availableCredit.toFixed(2),
+          newBalance: newCreditBalance.toFixed(2),
+          createdBy: req.user?.id,
+        });
+
+        // The money leaves the chosen account in the same step
+        if (refundSourceId) {
+          await moveMoney(tx, {
+            sourceId: refundSourceId,
+            direction: "out",
+            amount: refundAmountNum,
+            description: `Credit refund to ${client.name}`,
+            referenceType: "credit_refund",
+            referenceId: req.params.clientId,
+            userId: req.user?.id,
+          });
+        }
       });
 
       await logAudit(req, "credit_refund", "client", req.params.clientId, { creditBalance: availableCredit }, { refundAmount: refundAmountNum, newCreditBalance });
@@ -371,6 +474,7 @@ export function registerPaymentsRoutes(app: Express) {
         message: `Successfully processed credit refund of ${refundAmountNum}`
       });
     } catch (error) {
+      if (error instanceof PaymentSourceError) return res.status(error.status).json({ message: error.message });
       console.error("Error processing credit refund:", error);
       res.status(500).json({ message: "Failed to process credit refund" });
     }

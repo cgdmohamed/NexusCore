@@ -1,3 +1,5 @@
+import { PaymentSourceSelect } from "@/components/forms/PaymentSourceSelect";
+import { useTranslation } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,11 +28,13 @@ export function CreditRefundForm({
   onCancel 
 }: CreditRefundFormProps) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     refundAmount: "",
     refundMethod: "",
     refundReference: "",
+    refundSourceId: "",
     notes: ""
   });
   const [validationError, setValidationError] = useState("");
@@ -42,6 +46,7 @@ export function CreditRefundForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/credit`] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
       
       toast({
         title: "Credit Refund Processed",
@@ -105,6 +110,7 @@ export function CreditRefundForm({
       refundAmount: refundAmount,
       refundMethod: formData.refundMethod,
       refundReference: formData.refundReference,
+      refundSourceId: formData.refundSourceId,
       notes: formData.notes
     });
   };
@@ -167,6 +173,14 @@ export function CreditRefundForm({
               </SelectContent>
             </Select>
           </div>
+
+          <PaymentSourceSelect
+            id="credit-refund-source"
+            label={t("paysrc.refund_from")}
+            value={formData.refundSourceId}
+            onChange={(v) => setFormData(prev => ({ ...prev, refundSourceId: v }))}
+            suggestFor={formData.refundMethod}
+          />
 
           {/* Refund Reference */}
           <div className="space-y-2">

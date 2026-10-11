@@ -19,6 +19,7 @@ import { queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n";
 import { isInvoiceOverdue } from "@/lib/invoice-status";
 import { usePermissions } from "@/hooks/usePermissions";
+import { PaymentSourceSelect } from "@/components/forms/PaymentSourceSelect";
 import { useParams, Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -102,13 +103,14 @@ interface PaymentFormData {
   bankTransferNumber: string;
   notes: string;
   adminApproved: boolean;
+  paymentSourceId: string;
 }
 
 const VAT_RATE = 15;
 
 export default function InvoiceDetail() {
   const { t } = useTranslation();
-  const { canEdit } = usePermissions();
+  const { canEdit, canApprove } = usePermissions();
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -134,7 +136,8 @@ export default function InvoiceDetail() {
     paymentMethod: 'bank_transfer',
     bankTransferNumber: '',
     notes: '',
-    adminApproved: false
+    adminApproved: false,
+    paymentSourceId: ''
   });
   const [overpaymentWarning, setOverpaymentWarning] = useState<any>(null);
   const [showCreditInfo, setShowCreditInfo] = useState(false);
@@ -144,8 +147,11 @@ export default function InvoiceDetail() {
     refundAmount: "",
     refundMethod: "",
     refundReference: "",
+    refundSourceId: "",
     notes: ""
   });
+  const [assigningPayment, setAssigningPayment] = useState<any>(null);
+  const [assignSourceId, setAssignSourceId] = useState("");
   const [taxDiscountForm, setTaxDiscountForm] = useState({
     applyVat: false,
     applyDiscount: false,
@@ -327,6 +333,7 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/kpis"] });
       queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
       setIsAddingPayment(false);
       setOverpaymentWarning(null);
       setPaymentForm({
@@ -335,7 +342,8 @@ export default function InvoiceDetail() {
         paymentMethod: 'bank_transfer',
         bankTransferNumber: '',
         notes: '',
-        adminApproved: false
+        adminApproved: false,
+        paymentSourceId: ''
       });
       
       let message = "Payment recorded successfully";
@@ -391,6 +399,21 @@ export default function InvoiceDetail() {
     },
   });
 
+  const assignSourceMutation = useMutation({
+    mutationFn: async ({ paymentId, paymentSourceId }: { paymentId: string; paymentSourceId: string }) =>
+      apiRequest("PATCH", `/api/payments/${paymentId}/source`, { paymentSourceId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/payments`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
+      setAssigningPayment(null);
+      setAssignSourceId("");
+      toast({ title: t("paysrc.assigned") });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to assign the account", variant: "destructive" });
+    },
+  });
+
   const refundMutation = useMutation({
     mutationFn: async (refundData: any) => {
       return apiRequest("POST", `/api/invoices/${id}/refund`, refundData);
@@ -401,12 +424,14 @@ export default function InvoiceDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${invoice?.clientId}/credit`] });
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       queryClient.invalidateQueries({ queryKey: [`/api/invoices/${id}/history`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment-sources"] });
       
       setIsProcessingRefund(false);
       setRefundForm({
         refundAmount: "",
         refundMethod: "",
         refundReference: "",
+        refundSourceId: "",
         notes: ""
       });
       
@@ -683,6 +708,7 @@ export default function InvoiceDetail() {
       refundAmount: refundAmount,
       refundMethod: refundForm.refundMethod,
       refundReference: refundForm.refundReference,
+      refundSourceId: refundForm.refundSourceId,
       notes: refundForm.notes
     });
   };
@@ -1542,6 +1568,13 @@ export default function InvoiceDetail() {
                             <option value="check">Check</option>
                           </select>
                         </div>
+                        <PaymentSourceSelect
+                          id="refund-source"
+                          label={t("paysrc.refund_from")}
+                          value={refundForm.refundSourceId}
+                          onChange={(v) => setRefundForm(prev => ({ ...prev, refundSourceId: v }))}
+                          suggestFor={refundForm.refundMethod}
+                        />
                         <div>
                           <Label htmlFor="refundReference">Reference Number (Optional)</Label>
                           <Input
@@ -1625,6 +1658,12 @@ export default function InvoiceDetail() {
                         <option value="other">Other</option>
                       </select>
                     </div>
+                    <PaymentSourceSelect
+                      id="payment-source"
+                      value={paymentForm.paymentSourceId}
+                      onChange={(v) => setPaymentForm(prev => ({ ...prev, paymentSourceId: v }))}
+                      suggestFor={paymentForm.paymentMethod}
+                    />
                     <div>
                       <Label htmlFor="bankTransferNumber">Reference Number</Label>
                       <Input
@@ -1719,11 +1758,12 @@ export default function InvoiceDetail() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Method</TableHead>
                       <TableHead>Reference</TableHead>
+                      <TableHead>{t("paysrc.col")}</TableHead>
                       <TableHead>Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payments.map((payment) => (
+                    {payments.map((payment: any) => (
                       <TableRow key={payment.id}>
                         <TableCell>{format(new Date(payment.paymentDate), 'MMM dd, yyyy')}</TableCell>
                         <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
@@ -1743,6 +1783,15 @@ export default function InvoiceDetail() {
                           </div>
                         </TableCell>
                         <TableCell>{payment.bankTransferNumber || '-'}</TableCell>
+                        <TableCell>
+                          {payment.paymentSourceName ? (
+                            <span>{payment.paymentSourceName}</span>
+                          ) : parseFloat(payment.amount) > 0 && !payment.isRefund && payment.paymentMethod !== 'credit_balance' && canApprove("invoices") ? (
+                            <Button variant="outline" size="sm" onClick={() => { setAssigningPayment(payment); setAssignSourceId(""); }} data-testid={`assign-source-${payment.id}`}>
+                              {t("paysrc.assign")}
+                            </Button>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell>{payment.notes || '-'}</TableCell>
                       </TableRow>
                     ))}
@@ -2043,6 +2092,28 @@ export default function InvoiceDetail() {
       </div>
       
       {/* Print Dialog */}
+      <Dialog open={!!assigningPayment} onOpenChange={(o) => { if (!o) setAssigningPayment(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("paysrc.assign_title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <PaymentSourceSelect id="assign-source" value={assignSourceId} onChange={setAssignSourceId} suggestFor={assigningPayment?.paymentMethod} />
+            <p className="text-xs text-muted-foreground">{t("paysrc.assign_hint")}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssigningPayment(null)}>{t("common.cancel")}</Button>
+            <Button
+              disabled={!assignSourceId || assignSourceMutation.isPending}
+              onClick={() => assignSourceMutation.mutate({ paymentId: assigningPayment.id, paymentSourceId: assignSourceId })}
+              data-testid="confirm-assign-source"
+            >
+              {t("paysrc.assign")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

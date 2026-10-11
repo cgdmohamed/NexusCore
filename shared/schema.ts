@@ -235,6 +235,8 @@ export const payments = pgTable("payments", {
   isRefund: boolean("is_refund").default(false),
   refundReference: varchar("refund_reference"),
   originalPaymentId: varchar("original_payment_id").references((): AnyPgColumn => payments.id),
+  // The account the money went into (or came out of for a refund); empty for payments recorded before accounts were linked
+  paymentSourceId: varchar("payment_source_id").references((): AnyPgColumn => paymentSources.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
   approvedBy: varchar("approved_by").references(() => users.id),

@@ -13,6 +13,7 @@ import { registerTaskManagementRoutes } from "./task-management-routes";
 import { registerProjectRoutes } from "./project-routes";
 import { registerPushRoutes } from "./push-routes";
 import { runDigestMigrations, startDailyDigest } from "./daily-digest";
+import { runPaymentSourceLinkMigration } from "./payment-source-service";
 import { registerServicesRoutes } from "./services-routes";
 import { registerMessagingRoutes } from "./messaging-routes";
 import { registerSettingsRoutes } from "./settings-routes";
@@ -102,6 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerMessagingRoutes(app);
   await registerPushRoutes(app);
   await runDigestMigrations();
+  await runPaymentSourceLinkMigration();
   startDailyDigest();
   registerSettingsRoutes(app);
   registerCredentialRoutes(app);
