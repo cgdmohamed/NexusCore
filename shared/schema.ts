@@ -631,6 +631,19 @@ export const paymentSources = pgTable("payment_sources", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Access tokens for non-interactive clients (the MCP endpoint). Only a hash is stored; the token is shown once.
+export const apiTokens = pgTable("api_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  tokenHash: varchar("token_hash").notNull().unique(),
+  prefix: varchar("prefix").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+});
+
 export type PaymentSource = typeof paymentSources.$inferSelect;
 export type InsertPaymentSource = typeof paymentSources.$inferInsert;
 

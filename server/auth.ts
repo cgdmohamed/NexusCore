@@ -14,6 +14,7 @@ import nodemailer from "nodemailer";
 import { validatePassword } from "./password-policy";
 import { invalidateUserSessions } from "./sessions";
 import { logger } from "./logger";
+import { registerMcpRoutes } from "./mcp/routes";
 
 declare global {
   namespace Express {
@@ -93,6 +94,9 @@ function cookieSameSite(): "none" | "lax" | "strict" {
 }
 
 export function setupAuth(app: Express) {
+  // Token-authenticated MCP endpoint: it must not create sessions or meet the CSRF check
+  registerMcpRoutes(app);
+
   // Validate required environment variables
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET must be set in environment variables");

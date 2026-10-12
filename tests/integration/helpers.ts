@@ -43,10 +43,13 @@ export async function startApp() {
   const { registerProjectRoutes } = await import("../../server/project-routes");
   const { registerPushRoutes } = await import("../../server/push-routes");
   const { registerDashboardOverviewRoutes } = await import("../../server/dashboard-overview");
+  const { registerMcpRoutes } = await import("../../server/mcp/routes");
+  const { registerAiAccessRoutes } = await import("../../server/ai-access-routes");
 
   const app = express();
   app.set("trust proxy", 1); // same as production, so req.ip honours X-Forwarded-For
   app.use(express.json({ limit: "10mb" })); // same as production
+  registerMcpRoutes(app as any); // bearer-token endpoint, ahead of the stand-in session below
   // Stand-in for passport: every request is an authenticated user with all permissions.
   // Tests can switch the acting user with `actAs({ id })` and restore it with `actAs(null)`.
   let acting: Record<string, unknown> | null = null;
@@ -68,6 +71,7 @@ export async function startApp() {
   await registerProjectRoutes(app as any);
   await registerPushRoutes(app as any);
   registerDashboardOverviewRoutes(app as any);
+  registerAiAccessRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));

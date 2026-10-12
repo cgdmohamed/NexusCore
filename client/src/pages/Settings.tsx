@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { AiAccessCard } from "@/components/settings/AiAccessCard";
 import {
   Download,
   Database,
@@ -303,6 +304,8 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+
+        <AiAccessCard />
       </div>
     </div>
   );
