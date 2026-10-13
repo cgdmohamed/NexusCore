@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertUserSchema, type Employee, type Role, type User } from "@shared/schema";
 import { z } from "zod";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 const createFormSchema = (isEditing: boolean) => z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
@@ -154,21 +155,13 @@ export function UserForm({ user, onClose }: UserFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="employeeId">Employee *</Label>
-          <Select
+          <SearchableSelect
+            id="employeeId"
+            options={availableEmployees.map((e: any) => ({ value: e.id, label: `${e.firstName ?? ""} ${e.lastName ?? ""}`.trim(), description: e.jobTitle || undefined }))}
             value={form.watch("employeeId")}
             onValueChange={(value) => form.setValue("employeeId", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select employee" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableEmployees.map((employee: any) => (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {employee.firstName} {employee.lastName} - {employee.jobTitle}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select employee"
+          />
           {form.formState.errors.employeeId && (
             <p className="text-sm text-danger">{form.formState.errors.employeeId.message}</p>
           )}
@@ -176,21 +169,13 @@ export function UserForm({ user, onClose }: UserFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="roleId">Role *</Label>
-          <Select
+          <SearchableSelect
+            id="roleId"
+            options={roles.map((r: any) => ({ value: r.id, label: r.name, description: r.description || undefined }))}
             value={form.watch("roleId")}
             onValueChange={(value) => form.setValue("roleId", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((role: any) => (
-                <SelectItem key={role.id} value={role.id}>
-                  {role.name} - {role.description}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Select role"
+          />
           {form.formState.errors.roleId && (
             <p className="text-sm text-danger">{form.formState.errors.roleId.message}</p>
           )}

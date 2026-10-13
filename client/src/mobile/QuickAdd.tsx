@@ -8,7 +8,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import type { ProjectRow } from "@/components/projects/ProjectCard";
-import { BottomSheet, Field, Segmented, dateInputCls, inputCls } from "./ui";
+import { BottomSheet, Field, Segmented, SearchPicker, dateInputCls, inputCls } from "./ui";
+import { clientOptions, projectOptions } from "@/lib/select-options";
 import { useList, useOnline, refreshLists } from "./hooks";
 import { clientPayload, projectPayload, taskPayload, type MobileTask } from "./logic";
 
@@ -147,10 +148,7 @@ function TaskForm({ request, onDone }: { request: AddRequest; onDone: () => void
         ]} />
       </Field>
       <Field label={t("m.project")}>
-        <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={inputCls}>
-          <option value="">{t("m.none")}</option>
-          {live.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        <SearchPicker value={projectId} onChange={setProjectId} placeholder={t("m.none")} options={[{ value: "", label: t("m.none") }, ...projectOptions(live)]} />
       </Field>
       <label className="flex h-11 items-center gap-3 text-base">
         <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="h-5 w-5 accent-[hsl(var(--primary))]" />
@@ -177,10 +175,7 @@ function ProjectForm({ request, onDone }: { request: AddRequest; onDone: () => v
         <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} enterKeyHint="done" />
       </Field>
       <Field label={t("m.client")}>
-        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputCls}>
-          <option value="">{t("m.none")}</option>
-          {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <SearchPicker value={clientId} onChange={setClientId} placeholder={t("m.none")} options={[{ value: "", label: t("m.none") }, ...clientOptions(clients)]} />
       </Field>
       <Field label={t("m.due_date")}>
         <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={dateInputCls} />

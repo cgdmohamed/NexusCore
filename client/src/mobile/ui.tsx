@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import { WifiOff, Loader2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { WifiOff, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { searchText, type SelectOption } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useKeyboard } from "./keyboard";
@@ -141,5 +142,43 @@ export function SearchBox({ value, onChange, placeholder }: { value: string; onC
       className={inputCls}
       aria-label={placeholder}
     />
+  );
+}
+
+// A searchable list for phone forms. It opens inline, in the page, rather than in a floating layer: a layer opened from
+// inside a bottom sheet fights the sheet for focus and the keyboard.
+export function SearchPicker({ value, onChange, options, placeholder, searchPlaceholder, emptyText }: {
+  value: string; onChange: (v: string) => void; options: SelectOption[]; placeholder: string; searchPlaceholder?: string; emptyText?: string;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selected = options.find((o) => o.value === value);
+  const q = query.trim().toLowerCase();
+  const shown = q ? options.filter((o) => searchText(o).toLowerCase().includes(q)) : options;
+
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={cn(inputCls, "flex items-center justify-between gap-2 text-start")} data-testid="search-picker">
+        <span className={cn("truncate", !selected && "text-muted-foreground")}>{selected ? selected.label : placeholder}</span>
+        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+      </button>
+      {open && (
+        <div className="mt-1.5 overflow-hidden rounded-lg border border-border bg-card">
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchPlaceholder ?? t("common.search")} className="h-12 w-full border-b border-border bg-background px-3 text-base focus:outline-none" autoFocus data-testid="search-picker-input" />
+          <ul className="max-h-56 overflow-y-auto overscroll-contain">
+            {shown.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">{emptyText ?? t("common.noResults")}</li>}
+            {shown.map((o) => (
+              <li key={o.value}>
+                <button type="button" onClick={() => { onChange(o.value); setOpen(false); setQuery(""); }} className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-start text-base active:bg-accent">
+                  <Check className={cn("h-4 w-4 shrink-0", o.value === value ? "opacity-100" : "opacity-0")} />
+                  <span className="min-w-0"><span className="block truncate">{o.label}</span>{o.description && <span className="block truncate text-xs text-muted-foreground">{o.description}</span>}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }

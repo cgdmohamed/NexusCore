@@ -54,6 +54,8 @@ import { Header } from "@/components/dashboard/Header";
 import { DataExportButton } from "@/components/DataExportButton";
 import { useTranslation } from "@/lib/i18n";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { userOptions, projectOptions } from "@/lib/select-options";
 // Task form schema - simplified for existing database
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -575,14 +577,9 @@ export default function Tasks() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assign To</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select assignee" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {(users as any[]).map((user: any) => (
-                            <SelectItem key={user.id} value={user.id}>{user.email}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder="Select assignee" />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -594,18 +591,14 @@ export default function Tasks() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                        <Select
-                          onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                          value={field.value ?? "none"}
-                        >
-                          <FormControl><SelectTrigger><SelectValue placeholder="Not linked to a project" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Not linked to a project</SelectItem>
-                            {projects.map((p: any) => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SearchableSelect
+                            options={[{ value: "none", label: "Not linked to a project" }, ...projectOptions(projects)]}
+                            value={field.value ?? "none"}
+                            onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                            placeholder="Not linked to a project"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1155,20 +1148,9 @@ export default function Tasks() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assign To</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select assignee" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {(users as any[]).map((user: any) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder="Select assignee" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1181,24 +1163,14 @@ export default function Tasks() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                      <Select
-                        onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                        value={field.value ?? "none"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Not linked to a project" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Not linked to a project</SelectItem>
-                          {projects.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={[{ value: "none", label: "Not linked to a project" }, ...projectOptions(projects)]}
+                          value={field.value ?? "none"}
+                          onValueChange={(v) => field.onChange(v === "none" ? null : v)}
+                          placeholder="Not linked to a project"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

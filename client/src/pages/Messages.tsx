@@ -28,6 +28,7 @@ import {
 import { MessageSquare, Plus, Send } from "lucide-react";
 import type { User } from "@shared/schema";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 interface ConversationSummary {
   id: string;
   otherUser: { id: string; name: string; username: string; avatarUrl?: string | null } | null;
@@ -164,36 +165,26 @@ export default function Messages() {
           <DialogTitle>{t("messages.new_conversation")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          <Select value={newConvUserId} onValueChange={setNewConvUserId}>
-            <SelectTrigger>
-              <SelectValue placeholder={t("messages.select_user")} />
-            </SelectTrigger>
-            <SelectContent>
-              {otherUsers.length === 0 ? (
-                <SelectItem value="_none" disabled>
-                  No users available
-                </SelectItem>
-              ) : (
-                otherUsers.map((u) => {
-                  const displayName =
-                    `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.username;
-                  return (
-                    <SelectItem key={u.id} value={u.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6">
-                          <AvatarImage src={(u as any).avatarUrl ?? undefined} alt="" />
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {getInitials(displayName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{displayName}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })
-              )}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={otherUsers.map((u) => {
+              const displayName = `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.username;
+              return {
+                value: u.id,
+                label: displayName,
+                keywords: u.username,
+                icon: (
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={(u as any).avatarUrl ?? undefined} alt="" />
+                    <AvatarFallback className="bg-primary/10 text-[10px] text-primary">{getInitials(displayName)}</AvatarFallback>
+                  </Avatar>
+                ),
+              };
+            })}
+            value={newConvUserId}
+            onValueChange={setNewConvUserId}
+            placeholder={t("messages.select_user")}
+            emptyText="No users available"
+          />
           <Button
             className="w-full"
             disabled={!newConvUserId || newConvUserId === "_none" || createConversationMutation.isPending}

@@ -65,6 +65,8 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { userOptions, projectOptions } from "@/lib/select-options";
 const taskFormSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
@@ -414,19 +416,13 @@ export default function ProjectKanban() {
       {/* Filter bar */}
       <div className="mb-3 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-            <SelectTrigger className="w-40 h-8 text-xs bg-card">
-              <SelectValue placeholder={t("kanban.filter_assignee")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("kanban.filter_all_assignees")}</SelectItem>
-              {users.map((u: any) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || u.email}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            className="h-8 w-40 bg-card text-xs"
+            options={[{ value: "all", label: t("kanban.filter_all_assignees") }, ...userOptions(users)]}
+            value={filterAssignee}
+            onValueChange={setFilterAssignee}
+            placeholder={t("kanban.filter_assignee")}
+          />
 
           <Select value={filterPriority} onValueChange={setFilterPriority}>
             <SelectTrigger className="w-36 h-8 text-xs bg-card">
@@ -577,17 +573,12 @@ export default function ProjectKanban() {
               </div>
               <div className="space-y-2">
                 <Label>{t("kanban.assignee")}</Label>
-                <Select onValueChange={(v) => form.setValue("assignedTo", v === "none" ? null : v)}>
-                  <SelectTrigger><SelectValue placeholder={t("common.unassigned")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t("common.unassigned")}</SelectItem>
-                    {users.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || u.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={[{ value: "none", label: t("common.unassigned") }, ...userOptions(users)]}
+                  value={form.watch("assignedTo") ?? "none"}
+                  onValueChange={(v) => form.setValue("assignedTo", v === "none" ? null : v)}
+                  placeholder={t("common.unassigned")}
+                />
               </div>
             </div>
             <div className="space-y-2">

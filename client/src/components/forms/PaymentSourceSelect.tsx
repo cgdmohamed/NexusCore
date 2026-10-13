@@ -2,7 +2,10 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/i18n";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { suggestSource, type SourceOption } from "@/lib/payment-source";
+
+const NONE = "__none__"; // the empty choice ("no account") needs a value of its own
 
 interface Props {
   id: string;
@@ -30,18 +33,17 @@ export function PaymentSourceSelect({ id, value, onChange, label, suggestFor, fa
   return (
     <div>
       <Label htmlFor={id}>{label ?? t("paysrc.account")}</Label>
-      <select
+      <SearchableSelect
         id={id}
-        value={value}
-        onChange={(e) => { touched.current = true; onChange(e.target.value); }}
-        className="w-full p-2 border border-input rounded-md bg-background"
+        options={[
+          { value: NONE, label: t("paysrc.none") },
+          ...usable.map((s) => ({ value: s.id, label: `${s.name}${s.isDefault ? ` — ${t("paysrc.default")}` : ""}`, keywords: s.name })),
+        ]}
+        value={value || NONE}
+        onValueChange={(v) => { touched.current = true; onChange(v === NONE ? "" : v); }}
+        placeholder={t("paysrc.none")}
         data-testid={id}
-      >
-        <option value="">{t("paysrc.none")}</option>
-        {usable.map((s) => (
-          <option key={s.id} value={s.id}>{s.name}{s.isDefault ? ` — ${t("paysrc.default")}` : ""}</option>
-        ))}
-      </select>
+      />
       <p className="mt-1 text-xs text-muted-foreground">{t("paysrc.hint")}</p>
     </div>
   );

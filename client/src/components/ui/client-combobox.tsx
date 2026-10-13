@@ -1,20 +1,6 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useTranslation } from "@/lib/i18n";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { clientOptions } from "@/lib/select-options";
 import type { Client } from "@shared/schema";
 
 interface ClientComboboxProps {
@@ -24,60 +10,17 @@ interface ClientComboboxProps {
   placeholder?: string;
 }
 
-export function ClientCombobox({
-  clients,
-  value,
-  onChange,
-  placeholder = "Select a client",
-}: ClientComboboxProps) {
-  const [open, setOpen] = useState(false);
-
-  const selectedClient = clients.find((c) => c.id === value);
-
+// Kept for the forms that already use it; it is the shared searchable select with the client list
+export function ClientCombobox({ clients, value, onChange, placeholder = "Select a client" }: ClientComboboxProps) {
+  const { t } = useTranslation();
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          data-testid="button-client-combobox"
-          className="w-full justify-between font-normal"
-        >
-          {selectedClient ? selectedClient.name : placeholder}
-          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search clients..." data-testid="input-client-search" />
-          <CommandList>
-            <CommandEmpty>No clients found.</CommandEmpty>
-            <CommandGroup>
-              {clients.filter((client) => client.status !== "archived").map((client) => (
-                <CommandItem
-                  key={client.id}
-                  value={client.name}
-                  onSelect={() => {
-                    onChange(client.id);
-                    setOpen(false);
-                  }}
-                  data-testid={`option-client-${client.id}`}
-                >
-                  <Check
-                    className={cn(
-                      "me-2 h-4 w-4",
-                      value === client.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {client.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <SearchableSelect
+      options={clientOptions(clients)}
+      value={value}
+      onValueChange={onChange}
+      placeholder={placeholder}
+      searchPlaceholder={t("common.search")}
+      data-testid="button-client-combobox"
+    />
   );
 }

@@ -27,6 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { EmployeeKpi } from "@shared/schema";
 import { format } from "@/lib/dateUtils";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { listOptions } from "@/lib/select-options";
 interface EmployeeKpiTabProps {
   employeeId: string;
   employeeName: string;
@@ -207,17 +209,13 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
           </div>
 
           {/* Period filter */}
-          <Select value={periodFilter} onValueChange={setPeriodFilter}>
-            <SelectTrigger className="w-full sm:w-36 h-9">
-              <SelectValue placeholder="Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Periods</SelectItem>
-              {periods.map((period: string) => (
-                <SelectItem key={period} value={period}>{period}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            className="h-9 w-full sm:w-36"
+            options={[{ value: "all", label: "All Periods" }, ...listOptions(periods)]}
+            value={periodFilter}
+            onValueChange={setPeriodFilter}
+            placeholder="Period"
+          />
 
           {/* Status filter */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>

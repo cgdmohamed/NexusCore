@@ -48,6 +48,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getCsrfToken, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { clientOptions } from "@/lib/select-options";
 const expenseFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
@@ -313,33 +315,16 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={categoriesLoading ? "Loading..." : "Select category"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categoriesLoading && (
-                      <SelectItem value="loading" disabled>Loading categories...</SelectItem>
-                    )}
-                    {Array.isArray(categories) && categories.length > 0 ? (
-                      categories.map((category: any) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                            {category.name}
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      !categoriesLoading && <SelectItem value="none" disabled>No categories available</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    options={Array.isArray(categories) ? categories.map((c: any) => ({ value: c.id, label: c.name, icon: <span className="h-3 w-3 rounded-full" style={{ backgroundColor: c.color }} /> })) : []}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    loading={categoriesLoading}
+                    placeholder={categoriesLoading ? "Loading..." : "Select category"}
+                    emptyText="No categories available"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -352,28 +337,14 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Payment Source *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment source" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Array.isArray(paymentSources) && paymentSources.map((source: any) => (
-                      <SelectItem key={source.id} value={source.id}>
-                        <div className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4" />
-                          <div>
-                            <div className="font-medium">{source.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Balance: {formatCurrency(source.currentBalance || "0")}
-                            </div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    options={Array.isArray(paymentSources) ? paymentSources.map((s: any) => ({ value: s.id, label: s.name, description: `Balance: ${formatCurrency(s.currentBalance || "0")}`, icon: <Wallet className="h-4 w-4" /> })) : []}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select payment source"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -455,21 +426,14 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Project (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="none">No Project</SelectItem>
-                    {Array.isArray(clients) && clients.filter((client: any) => client.status !== "archived").map((client: any) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    options={[{ value: "none", label: "No Project" }, ...clientOptions(clients as any[])]}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select project"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

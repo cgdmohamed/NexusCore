@@ -52,6 +52,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { clientOptions } from "@/lib/select-options";
 const PRESET_COLORS = [
   "#3b82f6",
   "#10b981",
@@ -331,24 +333,14 @@ export default function Projects() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("projects.client_optional")}</FormLabel>
-                        <Select
-                          onValueChange={(val) => field.onChange(val === "none" ? null : val)}
-                          value={field.value ?? "none"}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("projects.select_client")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">{t("projects.no_client")}</SelectItem>
-                            {clients.filter((client: any) => client.status !== "archived").map((client: any) => (
-                              <SelectItem key={client.id} value={client.id}>
-                                {client.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SearchableSelect
+                            options={[{ value: "none", label: t("projects.no_client") }, ...clientOptions(clients)]}
+                            value={field.value ?? "none"}
+                            onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                            placeholder={t("projects.select_client")}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

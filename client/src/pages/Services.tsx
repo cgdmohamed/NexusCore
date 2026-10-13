@@ -29,6 +29,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/currency";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { listOptions } from "@/lib/select-options";
 interface Service {
   id: string;
   name: string;
@@ -292,20 +294,9 @@ export default function Services() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('services.category')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('services.select_category')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category || ""}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect options={listOptions(categories)} value={field.value} onValueChange={field.onChange} placeholder={t('services.select_category')} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -457,19 +448,13 @@ export default function Services() {
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder={t('services.all_categories')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('services.all_categories')}</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category || ""}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                className="w-full sm:w-48"
+                options={[{ value: "all", label: t('services.all_categories') }, ...listOptions(categories)]}
+                value={selectedCategory || "all"}
+                onValueChange={(value) => setSelectedCategory(value === "all" ? "" : value)}
+                placeholder={t('services.all_categories')}
+              />
               <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
                 const parts = value.split("-");
                 const order = parts.pop() as "asc" | "desc";

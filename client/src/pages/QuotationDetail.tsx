@@ -20,6 +20,7 @@ import { useTranslation } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import type { Quotation, QuotationItem, Service, Client, QuotationHistory } from "@shared/schema";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 export default function QuotationDetail() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -691,19 +692,13 @@ export default function QuotationDetail() {
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="service">Service (Optional)</Label>
-                    <Select value={selectedService} onValueChange={handleServiceChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a service or enter custom" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="custom">Custom Item</SelectItem>
-                        {services.map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name} - {formatCurrency(service.defaultPrice || "0")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      id="service"
+                      options={[{ value: "custom", label: "Custom Item" }, ...services.map((service) => ({ value: service.id, label: `${service.name} - ${formatCurrency(service.defaultPrice || "0")}`, keywords: service.category || "" }))]}
+                      value={selectedService}
+                      onValueChange={handleServiceChange}
+                      placeholder="Select a service or enter custom"
+                    />
                   </div>
                   
                   <div>
