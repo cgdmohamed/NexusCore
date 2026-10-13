@@ -79,7 +79,7 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
       expect((await api("GET", `/api/users/${user.id}`)).status).toBe(404);
     });
 
-    it("refuses with 409 and changes nothing when the user account has created records", async () => {
+    it("archives instead of deleting when the user account has created records", async () => {
       const emp = await createEmployee("Busy");
       const user = await createUser({ employeeId: emp.id });
       ctx.actAs({ id: user.id });
@@ -87,10 +87,47 @@ describe.skipIf(!TEST_DATABASE_URL)("route behaviour: reachability, client error
       ctx.actAs(null);
 
       const r = await api("DELETE", `/api/employees/${emp.id}`);
-      expect(r.status).toBe(409);
-      expect(r.body.message).toMatch(/deactivate/i);
+      expect(r.status).toBe(200);
+      expect(r.body.mode).toBe("archived");
+      // Still there for history, but hidden from the lists and unable to sign in
       expect((await api("GET", `/api/employees/${emp.id}`)).status).toBe(200);
-      expect((await api("GET", `/api/users/${user.id}`)).status).toBe(200);
+      const u = (await api("GET", `/api/users/${user.id}`)).body;
+      expect(u.isActive).toBe(false);
+      expect((await api("GET", "/api/employees")).body.some((e: any) => e.id === emp.id)).toBe(false);
+      expect((await api("GET", "/api/users")).body.some((x: any) => x.id === user.id)).toBe(false);
+      expect((await api("GET", "/api/employees?archived=true")).body.some((e: any) => e.id === emp.id)).toBe(true);
+      expect((await api("GET", "/api/users?archived=true")).body.some((x: any) => x.id === user.id)).toBe(true);
+
+      // Restoring brings both back
+      expect((await api("PUT", `/api/users/${user.id}/restore`)).status).toBe(200);
+      expect((await api("GET", "/api/users")).body.find((x: any) => x.id === user.id).isActive).toBe(true);
+      expect((await api("GET", "/api/employees")).body.some((e: any) => e.id === emp.id)).toBe(true);
+    });
+
+    it("deletes a user outright when nothing refers to them, clearing their notifications", async () => {
+      const user = await createUser({});
+      const { notifications } = await import("../../shared/schema");
+      await ctx.db.insert(notifications).values({ userId: user.id, type: "system_alert", title: "x", message: "y" } as any);
+      const r = await api("DELETE", `/api/users/${user.id}`);
+      expect(r.status).toBe(200);
+      expect(r.body.mode).toBe("deleted");
+      expect((await api("GET", `/api/users/${user.id}`)).status).toBe(404);
+    });
+
+    it("archives a user who created records, and protects yourself and the last admin", async () => {
+      const user = await createUser({});
+      ctx.actAs({ id: user.id });
+      await createClient(api, "Made by someone leaving");
+      ctx.actAs(null);
+      const r = await api("DELETE", `/api/users/${user.id}`);
+      expect(r.body.mode).toBe("archived");
+      expect((await api("GET", `/api/users/${user.id}`)).body.isActive).toBe(false);
+
+      const other = await createUser({});
+      ctx.actAs({ id: other.id });
+      expect((await api("DELETE", `/api/users/${other.id}`)).status).toBe(400);
+      ctx.actAs(null);
+      expect((await api("DELETE", `/api/users/${MISSING}`)).status).toBe(404);
     });
 
     it("refuses to delete the employee behind the signed-in account", async () => {

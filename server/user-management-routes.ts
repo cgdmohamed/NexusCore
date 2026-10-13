@@ -22,6 +22,7 @@ import { requireAuth, requireAdmin, requirePermission } from "./auth";
 import { logAudit } from "./audit";
 import { validatePassword } from "./password-policy";
 import { invalidateUserSessions } from "./sessions";
+import { removePerson } from "./account-removal";
 import { storeProfileImage, removeProfileImageFile, ProfileImageError } from "./profile-images";
 import { ZodError } from "zod";
 
@@ -278,9 +279,10 @@ export function registerUserManagementRoutes(app: Express) {
   // Get all employees
   app.get("/api/employees", requirePermission("employees", "view"), async (req, res) => {
     try {
-      const { search, department, status } = req.query;
+      const { search, department, status, archived } = req.query;
       
-      const conditions = [];
+      // Archived people are hidden unless asked for
+      const conditions = [archived === "true" ? sql`${employees.archivedAt} IS NOT NULL` : sql`${employees.archivedAt} IS NULL`];
       
       if (typeof search === "string" && search.trim()) {
         conditions.push(
@@ -441,34 +443,22 @@ export function registerUserManagementRoutes(app: Express) {
         return res.status(404).json({ message: "Employee not found" });
       }
 
-      // Check if employee has an associated user account
-      const [userAccount] = await db.select().from(users).where(eq(users.employeeId, id));
-      if (userAccount) {
-        if (userAccount.id === userId) {
+      // Accounts linked to this employee
+      const accounts = await db.select().from(users).where(eq(users.employeeId, id));
+      for (const account of accounts) {
+        if (account.id === userId) {
           return res.status(400).json({ message: "You cannot delete the employee record of your own account." });
         }
-        if (await isLastActiveAdmin(userAccount)) {
+        if (await isLastActiveAdmin(account)) {
           return res.status(409).json({ message: "This is the last active administrator and cannot be deleted." });
         }
       }
 
-      try {
-        await db.transaction(async (tx) => {
-          if (userAccount) await tx.delete(users).where(eq(users.employeeId, id));
-          await tx.delete(employees).where(eq(employees.id, id));
-        });
-      } catch (deleteError) {
-        if (pgError(deleteError)?.code === "23503") {
-          return res.status(409).json({
-            message: "This employee's account has related records (clients, invoices, tasks...). Deactivate the user instead of deleting.",
-          });
-        }
-        throw deleteError;
-      }
+      const mode = await removePerson({ userIds: accounts.map((a) => a.id), employeeId: id });
 
-      await logAudit(req, 'delete', 'employee', id, employee, null);
+      await logAudit(req, mode === "deleted" ? 'delete' : 'archive', 'employee', id, employee, null);
       
-      res.json({ success: true, message: "Employee deleted successfully" });
+      res.json({ success: true, mode, message: mode === "deleted" ? "Employee deleted successfully" : "Employee archived because other records refer to them" });
     } catch (error) {
       console.error("Error deleting employee:", error);
       res.status(500).json({ message: "Failed to delete employee" });
@@ -508,6 +498,7 @@ export function registerUserManagementRoutes(app: Express) {
         .from(users)
         .leftJoin(employees, eq(users.employeeId, employees.id))
         .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(req.query.archived === "true" ? sql`${users.archivedAt} IS NOT NULL` : sql`${users.archivedAt} IS NULL`)
         .orderBy(desc(users.createdAt));
       
       res.json(usersList);
@@ -755,6 +746,64 @@ export function registerUserManagementRoutes(app: Express) {
     }
   });
 
+  // Delete a user (and their employee record when nobody else shares it); archive instead when records refer to them
+  app.delete("/api/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const actingId = (req as any).user?.id;
+      if (!actingId) return res.status(401).json({ message: "Unauthorized" });
+
+      const [target] = await db.select().from(users).where(eq(users.id, id));
+      if (!target) return res.status(404).json({ message: "User not found" });
+      if (id === actingId) return res.status(400).json({ message: "You cannot delete your own account." });
+      if (await isLastActiveAdmin(target)) {
+        return res.status(409).json({ message: "This is the last active administrator and cannot be deleted." });
+      }
+
+      let employeeId: string | null = null;
+      if (target.employeeId) {
+        const sharing = await db.select({ id: users.id }).from(users).where(eq(users.employeeId, target.employeeId));
+        if (sharing.every((u) => u.id === id)) employeeId = target.employeeId;
+      }
+
+      const mode = await removePerson({ userIds: [id], employeeId });
+      await logAudit(req, mode === "deleted" ? 'delete' : 'archive', 'user', id, { email: target.email }, null);
+      res.json({ success: true, mode, message: mode === "deleted" ? "User deleted successfully" : "User archived because other records refer to them" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Bring an archived user or employee back
+  app.put("/api/users/:id/restore", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [target] = await db.select().from(users).where(eq(users.id, id));
+      if (!target) return res.status(404).json({ message: "User not found" });
+      await db.update(users).set({ archivedAt: null, isActive: true, updatedAt: new Date() }).where(eq(users.id, id));
+      if (target.employeeId) await db.update(employees).set({ archivedAt: null, status: "active", updatedAt: new Date() }).where(eq(employees.id, target.employeeId));
+      await logAudit(req, 'restore', 'user', id, null, { archived: false });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error restoring user:", error);
+      res.status(500).json({ message: "Failed to restore user" });
+    }
+  });
+
+  app.put("/api/employees/:id/restore", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [row] = await db.update(employees).set({ archivedAt: null, status: "active", updatedAt: new Date() }).where(eq(employees.id, id)).returning({ id: employees.id });
+      if (!row) return res.status(404).json({ message: "Employee not found" });
+      await logAudit(req, 'restore', 'employee', id, null, { archived: false });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error restoring employee:", error);
+      res.status(500).json({ message: "Failed to restore employee" });
+    }
+  });
+
   // Deactivate user
   app.put("/api/users/:id/deactivate", requireAdmin, async (req, res) => {
     try {
@@ -865,10 +914,10 @@ export function registerUserManagementRoutes(app: Express) {
         activeUsers,
         totalRoles
       ] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(employees),
-        db.select({ count: sql<number>`count(*)::int` }).from(employees).where(eq(employees.status, 'active')),
-        db.select({ count: sql<number>`count(*)::int` }).from(users),
-        db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.isActive, true)),
+        db.select({ count: sql<number>`count(*)::int` }).from(employees).where(sql`${employees.archivedAt} IS NULL`),
+        db.select({ count: sql<number>`count(*)::int` }).from(employees).where(and(eq(employees.status, 'active'), sql`${employees.archivedAt} IS NULL`)),
+        db.select({ count: sql<number>`count(*)::int` }).from(users).where(sql`${users.archivedAt} IS NULL`),
+        db.select({ count: sql<number>`count(*)::int` }).from(users).where(and(eq(users.isActive, true), sql`${users.archivedAt} IS NULL`)),
         db.select({ count: sql<number>`count(*)::int` }).from(roles).where(eq(roles.isActive, true))
       ]);
       

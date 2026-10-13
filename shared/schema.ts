@@ -55,6 +55,7 @@ export const employees = pgTable("employees", {
   department: departmentEnum("department").notNull(),
   hiringDate: timestamp("hiring_date"),
   status: employeeStatusEnum("status").notNull().default("active"),
+  archivedAt: timestamp("archived_at"),
   profileImage: text("profile_image"), // Base64 encoded image data
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -78,6 +79,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").notNull().default(true),
   lastLogin: timestamp("last_login"),
   mustChangePassword: boolean("must_change_password").notNull().default(false),
+  archivedAt: timestamp("archived_at"), // hidden from lists, cannot sign in; set instead of deleting when records refer to the person
   emailNotifications: boolean("email_notifications").default(true),
   inAppNotifications: boolean("in_app_notifications").default(true),
   createdAt: timestamp("created_at").defaultNow(),

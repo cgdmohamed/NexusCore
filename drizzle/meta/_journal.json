@@ -64,6 +64,13 @@
       "when": 1792015473350,
       "tag": "0008_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792101873350,
+      "tag": "0009_archive_people",
+      "breakpoints": true
     }
   ]
 }

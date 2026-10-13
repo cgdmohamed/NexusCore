@@ -29,6 +29,7 @@ import {
   Activity,
   Settings,
   Trash2,
+  RotateCcw,
   Copy,
   CheckCircle2,
   XCircle,
@@ -236,6 +237,7 @@ export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedTab, setSelectedTab] = useState("users");
   const [showUserForm, setShowUserForm] = useState(false);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
@@ -249,20 +251,36 @@ export default function UserManagement() {
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
+  const refreshPeople = () => {
+    queryClient.invalidateQueries({ predicate: (q) => /^\/api\/(employees|users)(\?|$)/.test(String(q.queryKey[0])) });
+    queryClient.invalidateQueries({ queryKey: ["/api/user-management/stats"] });
+  };
+  const onRemoved = (data: { mode?: string; message?: string }) => {
+    refreshPeople();
+    toast(data.mode === "archived"
+      ? { title: t("userManagement.archived"), description: t("userManagement.archived_desc") }
+      : { title: t("userManagement.deleted"), description: data.message || t("messages.success.deleted") });
+  };
+  const onRemoveFailed = (error: Error) => {
+    toast({ title: t("userManagement.delete_failed"), description: error.message || t("userManagement.delete_failed_desc"), variant: "destructive" });
+  };
+
   const deleteEmployeeMutation = useMutation({
-    mutationFn: async (employeeId: string) => {
-      const response = await apiRequest("DELETE", `/api/employees/${employeeId}`);
-      return response.json() as Promise<{ message: string }>;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user-management/stats"] });
-      toast({ title: t("userManagement.deleted"), description: data.message || t("messages.success.deleted") });
-    },
-    onError: (error: Error) => {
-      toast({ title: t("userManagement.delete_failed"), description: error.message || t("userManagement.delete_failed_desc"), variant: "destructive" });
-    },
+    mutationFn: async (employeeId: string) => (await apiRequest("DELETE", `/api/employees/${employeeId}`)).json() as Promise<{ mode?: string; message?: string }>,
+    onSuccess: onRemoved,
+    onError: onRemoveFailed,
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => (await apiRequest("DELETE", `/api/users/${userId}`)).json() as Promise<{ mode?: string; message?: string }>,
+    onSuccess: onRemoved,
+    onError: onRemoveFailed,
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (target: { kind: "users" | "employees"; id: string }) => apiRequest("PUT", `/api/${target.kind}/${target.id}/restore`),
+    onSuccess: () => { refreshPeople(); toast({ title: t("userManagement.restored") }); },
+    onError: onRemoveFailed,
   });
 
   const deleteRoleMutation = useMutation({
@@ -287,10 +305,10 @@ export default function UserManagement() {
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: userList = [], isLoading: usersLoading } = useQuery<UserWithEmployee[]>({
-    queryKey: ["/api/users"],
+    queryKey: [showArchived ? "/api/users?archived=true" : "/api/users"],
   });
   const { data: employeeList = [], isLoading: employeesLoading } = useQuery<EmployeeWithAccount[]>({
-    queryKey: ["/api/employees"],
+    queryKey: [showArchived ? "/api/employees?archived=true" : "/api/employees"],
   });
   const { data: roleList = [], isLoading: rolesLoading } = useQuery<RoleWithCount[]>({
     queryKey: ["/api/roles"],
@@ -328,6 +346,11 @@ export default function UserManagement() {
     if (window.confirm(t("userManagement.delete_confirm", { name: `${employee.firstName} ${employee.lastName}` }))) {
       deleteEmployeeMutation.mutate(employee.id);
     }
+  };
+
+  const handleDeleteUser = (user: UserWithEmployee) => {
+    const name = `${user.employee?.firstName ?? ""} ${user.employee?.lastName ?? ""}`.trim() || user.email;
+    if (window.confirm(t("userManagement.delete_user_confirm", { name }))) deleteUserMutation.mutate(user.id);
   };
 
   const handleDeleteRole = (role: RoleWithCount) => {
@@ -442,12 +465,19 @@ export default function UserManagement() {
 
           {/* Tabs */}
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
             <TabsList>
               <TabsTrigger value="users">System Users ({userList.length})</TabsTrigger>
               <TabsTrigger value="employees">Employees ({employeeList.length})</TabsTrigger>
               <TabsTrigger value="roles">Roles ({roleList.length})</TabsTrigger>
               <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             </TabsList>
+            {(selectedTab === "users" || selectedTab === "employees") && (
+              <Button variant={showArchived ? "default" : "outline"} size="sm" onClick={() => setShowArchived((v) => !v)} data-testid="button-toggle-archived">
+                {showArchived ? t("userManagement.hide_archived") : t("userManagement.show_archived")}
+              </Button>
+            )}
+            </div>
 
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-3 mt-4">
@@ -500,9 +530,20 @@ export default function UserManagement() {
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
                             </Link>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditUser(user)} data-testid={`button-edit-user-${user.id}`}>
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
+                            {showArchived ? (
+                              <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2" onClick={() => restoreMutation.mutate({ kind: "users", id: user.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-user-${user.id}`}>
+                                <RotateCcw className="h-3.5 w-3.5" />{t("userManagement.restore")}
+                              </Button>
+                            ) : (
+                              <>
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditUser(user)} data-testid={`button-edit-user-${user.id}`}>
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft" onClick={() => handleDeleteUser(user)} disabled={deleteUserMutation.isPending} data-testid={`button-delete-user-${user.id}`}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -567,19 +608,27 @@ export default function UserManagement() {
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
                             </Link>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditEmployee(employee)} data-testid={`button-edit-employee-${employee.id}`}>
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft"
-                              onClick={() => handleDeleteEmployee(employee)}
-                              disabled={deleteEmployeeMutation.isPending}
-                              data-testid={`button-delete-employee-${employee.id}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            {showArchived ? (
+                              <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2" onClick={() => restoreMutation.mutate({ kind: "employees", id: employee.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-employee-${employee.id}`}>
+                                <RotateCcw className="h-3.5 w-3.5" />{t("userManagement.restore")}
+                              </Button>
+                            ) : (
+                              <>
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditEmployee(employee)} data-testid={`button-edit-employee-${employee.id}`}>
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft"
+                                  onClick={() => handleDeleteEmployee(employee)}
+                                  disabled={deleteEmployeeMutation.isPending}
+                                  data-testid={`button-delete-employee-${employee.id}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

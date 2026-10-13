@@ -14,6 +14,7 @@ import { registerProjectRoutes } from "./project-routes";
 import { registerPushRoutes } from "./push-routes";
 import { runDigestMigrations, startDailyDigest } from "./daily-digest";
 import { registerDigestSettingsRoutes } from "./digest-settings";
+import { runArchiveMigration } from "./account-removal";
 import { runPaymentSourceLinkMigration } from "./payment-source-service";
 import { registerDashboardOverviewRoutes } from "./dashboard-overview";
 import { registerAiAccessRoutes } from "./ai-access-routes";
@@ -115,6 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await runPaymentSourceLinkMigration();
   await runApiTokensMigration();
   await runOAuthMigration();
+  await runArchiveMigration();
   startOAuthPurge();
   startDailyDigest();
   registerSettingsRoutes(app);
