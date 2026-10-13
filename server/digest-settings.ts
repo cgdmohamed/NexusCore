@@ -14,7 +14,7 @@ export interface DigestPrefs {
 // Per-person overrides: null means "follow the company setting"
 export type DigestOverrides = { [K in keyof DigestPrefs]: DigestPrefs[K] | null };
 
-export const DEFAULT_PREFS: DigestPrefs = { morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 17 };
+export const DEFAULT_PREFS: DigestPrefs = { morningEnabled: true, morningHour: 6, eveningEnabled: true, eveningHour: 17 };
 
 const hour = (v: unknown, fallback: number) => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 23 ? v : fallback);
 const flag = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);

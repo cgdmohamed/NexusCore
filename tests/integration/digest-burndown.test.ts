@@ -17,7 +17,7 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
   });
 
   const dueOn = (offsetDays: number) => new Date(`${dayKey(new Date(Date.now() + offsetDays * DAY), "Africa/Cairo")}T00:00:00Z`);
-  // A moment today (UTC clock) that falls inside the morning (08:00) or evening (17:00) window in Cairo, winter and summer
+  // A moment today (UTC clock) that falls inside the morning (06:00) or evening (17:00) window in Cairo, winter and summer
   const at = (hhmm: string) => new Date(`${dayKey(new Date(), "Africa/Cairo")}T${hhmm}:00Z`);
   const ago = (days: number) => new Date(Date.now() - days * DAY);
 
@@ -74,9 +74,9 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
 
     // Back on, but the company moves it to 21:00 and then to 17:00 again
     await ctx.api("PUT", "/api/settings/digest/me", { morningEnabled: null, morningHour: null, eveningEnabled: null, eveningHour: null });
-    expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 22 })).status).toBe(200);
+    expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 6, eveningEnabled: true, eveningHour: 22 })).status).toBe(200);
     expect((await runDailyDigest(at("15:30"), "Africa/Cairo", "evening")).sent).toBe(0);
-    await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 17 });
+    await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 6, eveningEnabled: true, eveningHour: 17 });
 
     const sent = await runDailyDigest(at("15:30"), "Africa/Cairo", "evening");
     expect(sent.sent).toBe(1);
@@ -91,14 +91,35 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
     expect((await runDailyDigest(at("06:30"))).sent).toBe(1);
   });
 
+  it("still sends today's summaries when the server was not running at the usual hour", async () => {
+    const { tasks, notifications } = await import("../../shared/schema");
+    const { runDailyDigest } = await import("../../server/daily-digest");
+    const { sql } = await import("drizzle-orm");
+    const me = ctx.currentUserId;
+    await ctx.db.delete(tasks);
+    await ctx.db.execute(sql`DELETE FROM notification_logs`);
+    await ctx.db.delete(notifications);
+    await ctx.db.execute(sql`DELETE FROM digest_log`);
+    await ctx.db.insert(tasks).values({ title: "t", assignedTo: me, createdBy: me, status: "pending", dueDate: dueOn(0) } as any);
+
+    // Before 06:00 nothing; at 14:00-15:00 UTC (late afternoon in Cairo) the morning summary is still owed, once
+    expect((await runDailyDigest(at("02:00"))).sent).toBe(0);
+    expect((await runDailyDigest(at("11:00"))).sent).toBe(1);
+    expect((await runDailyDigest(at("11:30"))).sent).toBe(0);
+    // Once the evening one is due the morning one is no longer sent, and the evening one goes out even late at night
+    await ctx.db.execute(sql`DELETE FROM digest_log`);
+    expect((await runDailyDigest(at("15:30"))).sent).toBe(0);
+    expect((await runDailyDigest(at("19:30"), "Africa/Cairo", "evening")).sent).toBe(1);
+  });
+
   it("lets only an administrator change the company defaults, and validates hours", async () => {
     const got = (await ctx.api("GET", "/api/settings/digest")).body;
-    expect(got.effective).toEqual({ morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 17 });
+    expect(got.effective).toEqual({ morningEnabled: true, morningHour: 6, eveningEnabled: true, eveningHour: 17 });
     expect(got.canEditCompany).toBe(true);
     expect((await ctx.api("PUT", "/api/settings/digest/me", { morningEnabled: null, morningHour: 24, eveningEnabled: null, eveningHour: null })).status).toBe(400);
     ctx.actAs({ roleName: "Staff" });
     try {
-      expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: false, morningHour: 8, eveningEnabled: false, eveningHour: 17 })).status).toBe(403);
+      expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: false, morningHour: 6, eveningEnabled: false, eveningHour: 17 })).status).toBe(403);
       expect((await ctx.api("GET", "/api/settings/digest")).body.canEditCompany).toBe(false);
     } finally { ctx.actAs(null); }
   });

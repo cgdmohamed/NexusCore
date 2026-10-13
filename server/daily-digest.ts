@@ -8,7 +8,7 @@ import { notificationService } from "./notification-service";
 import { logger } from "./logger";
 import { loadAllPrefs, mergePrefs, runDigestSettingsMigration } from "./digest-settings";
 
-export const DIGEST_HOUR = Math.min(23, Math.max(0, parseInt(process.env.DIGEST_HOUR || "8", 10) || 8));
+export const DIGEST_HOUR = Math.min(23, Math.max(0, parseInt(process.env.DIGEST_HOUR || "6", 10) || 6));
 // A server that restarts at noon should not send a "good morning" summary
 export const DIGEST_WINDOW_HOURS = 4;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -30,6 +30,14 @@ export function localHour(now: Date, tz: string = APP_TIMEZONE): number {
 export function isDigestTime(now: Date, tz: string = APP_TIMEZONE, hour: number = DIGEST_HOUR): boolean {
   const h = localHour(now, tz);
   return h >= hour && h < hour + DIGEST_WINDOW_HOURS;
+}
+
+// Delivery window for a person's summary. It opens at their hour and stays open, so a server that was down or deployed
+// later in the day still sends today's summary once (the ledger prevents a second one). The morning one closes when the
+// evening one opens, and the evening one stays open until midnight.
+export function inDeliveryWindow(now: Date, tz: string, from: number, to: number): boolean {
+  const h = localHour(now, tz);
+  return h >= from && h < to;
 }
 
 const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
@@ -173,7 +181,8 @@ export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TI
     const mine = mergePrefs(prefs.company, prefs.byUser.get(row.user_id));
     const enabled = kind === "morning" ? mine.morningEnabled : mine.eveningEnabled;
     const hour = kind === "morning" ? mine.morningHour : mine.eveningHour;
-    if (!enabled || !isDigestTime(now, tz, hour)) { summary.skipped++; continue; }
+    const until = kind === "evening" ? 24 : mine.eveningHour > hour ? mine.eveningHour : hour + DIGEST_WINDOW_HOURS;
+    if (!enabled || !inDeliveryWindow(now, tz, hour, until)) { summary.skipped++; continue; }
 
     const digest = kind === "morning"
       ? buildDigest({ dueToday: row.a, overdue: row.b }, DEFAULT_LANGUAGE)

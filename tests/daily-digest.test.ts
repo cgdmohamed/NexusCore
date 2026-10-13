@@ -52,6 +52,6 @@ describe("digest preferences", () => {
     const company = { ...DEFAULT_PREFS, eveningHour: 18 };
     expect(mergePrefs(company, null)).toEqual(company);
     expect(mergePrefs(company, { eveningHour: null, morningEnabled: false, morningHour: 9 })).toEqual({ morningEnabled: false, morningHour: 9, eveningEnabled: true, eveningHour: 18 });
-    expect(mergePrefs(company, { morningHour: 99 }).morningHour).toBe(8);
+    expect(mergePrefs(company, { morningHour: 99 }).morningHour).toBe(6);
   });
 });
