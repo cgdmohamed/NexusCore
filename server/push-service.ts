@@ -3,6 +3,7 @@ import { pushSubscriptions } from "@shared/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 import { sendPush, vapidFromEnv, type PushOptions, type PushResult } from "./web-push";
 import { logger } from "./logger";
+import { APP_TIMEZONE, dayKey } from "./task-insights";
 
 export interface PushMessage {
   type: string;
@@ -23,22 +24,30 @@ export function pushUrlFor(entityUrl: string | null | undefined, platform: strin
   return "/m/alerts";
 }
 
-// What the home-screen icon should show: unread notifications plus unread messages
-export async function unreadTotal(userId: string): Promise<number | undefined> {
+export interface BadgeCounts { total: number; notifications: number; tasks: number }
+
+// What the home-screen icon shows: unread notifications (a new message is one of them) plus the person's open tasks
+// that are due today or already late. The same figure travels with every push and is served to the open app.
+export async function badgeCounts(userId: string, now: Date = new Date(), tz: string = APP_TIMEZONE): Promise<BadgeCounts | undefined> {
   try {
+    const today = dayKey(now, tz);
+    const startOfToday = sql`((${today}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC'`;
     const result = await db.execute(sql`
-      SELECT (SELECT COUNT(*) FROM notifications WHERE user_id = ${userId} AND status = 'unread')
-           + (SELECT COUNT(*) FROM messages m
-                JOIN conversation_participants p ON p.conversation_id = m.conversation_id AND p.user_id = ${userId}
-               WHERE m.sender_id <> ${userId} AND (p.last_read_at IS NULL OR m.created_at > p.last_read_at)) AS n
+      SELECT (SELECT COUNT(*) FROM notifications WHERE user_id = ${userId} AND status = 'unread')::int AS notifications,
+             (SELECT COUNT(*) FROM tasks WHERE assigned_to = ${userId} AND status IN ('pending','in_progress')
+                AND due_date IS NOT NULL AND due_date < (${startOfToday}) + interval '1 day')::int AS tasks
     `);
     const row = (((result as any).rows ?? result) as any[])[0];
-    return Number(row?.n ?? 0);
+    const notifications = Number(row?.notifications ?? 0);
+    const tasks = Number(row?.tasks ?? 0);
+    return { total: notifications + tasks, notifications, tasks };
   } catch (error) {
-    logger.warn(`Could not count unread items for the app badge: ${error instanceof Error ? error.message : error}`);
+    logger.warn(`Could not count items for the app badge: ${error instanceof Error ? error.message : error}`);
     return undefined;
   }
 }
+
+export const unreadTotal = async (userId: string): Promise<number | undefined> => (await badgeCounts(userId))?.total;
 
 export function buildPushPayload(message: PushMessage, platform: string, badge?: number) {
   return {

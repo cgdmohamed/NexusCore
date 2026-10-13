@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { pushSubscriptions } from "@shared/schema";
 import { requireAuth } from "./auth";
 import { vapidFromEnv } from "./web-push";
-import { pushToUser } from "./push-service";
+import { badgeCounts, pushToUser } from "./push-service";
 
 // Existing databases were created before this table existed, so it is added at startup (idempotent)
 async function runPushMigrations(): Promise<void> {
@@ -44,6 +44,13 @@ export async function registerPushRoutes(app: Express): Promise<void> {
   await runPushMigrations();
 
   // Tells the browser whether push is available and which key to subscribe with
+  // The number for the app icon: unread notifications plus open tasks due today or late
+  app.get("/api/badge", requireAuth, async (req: any, res) => {
+    const counts = await badgeCounts(req.user.id);
+    if (!counts) return res.status(500).json({ message: "Failed to count" });
+    res.json(counts);
+  });
+
   app.get("/api/push/config", requireAuth, (_req, res) => {
     const vapid = vapidFromEnv();
     res.json({ enabled: !!vapid, publicKey: vapid?.publicKey ?? null });

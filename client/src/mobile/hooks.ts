@@ -34,7 +34,7 @@ export function useList<T>(url: string, enabled = true) {
 // After an add or an edit every list that may show the record is reloaded
 export function refreshLists() {
   return queryClient.invalidateQueries({
-    predicate: (q) => typeof q.queryKey[0] === "string" && /^\/api\/(tasks|projects|clients)/.test(q.queryKey[0] as string),
+    predicate: (q) => typeof q.queryKey[0] === "string" && /^\/api\/(tasks|projects|clients|badge)/.test(q.queryKey[0] as string),
   });
 }
 

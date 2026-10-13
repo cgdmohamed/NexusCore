@@ -150,4 +150,37 @@ describe.skipIf(!TEST_DATABASE_URL)("push notifications (integration)", () => {
     await api("PATCH", `/api/notifications/${a.id}/read`);
     expect(await unreadTotal(ctx.currentUserId)).toBe(before + 1);
   });
+
+  it("adds my open tasks that are due today or late to the badge, and nothing else about tasks", async () => {
+    const { badgeCounts } = await import("../../server/push-service");
+    const { tasks, users } = await import("../../shared/schema");
+    const { dayKey } = await import("../../server/task-insights");
+    const me = ctx.currentUserId;
+    const [other] = await ctx.db.insert(users).values({ username: "badge-other", email: "badge-other@example.com", passwordHash: "x" }).returning();
+    const day = (offset: number) => new Date(`${dayKey(new Date(Date.now() + offset * 86_400_000), "Africa/Cairo")}T00:00:00Z`);
+    const before = (await badgeCounts(me))!;
+    const t = (extra: object) => ({ title: "t", createdBy: me, assignedTo: me, ...extra }) as any;
+    await ctx.db.insert(tasks).values([
+      t({ status: "pending", dueDate: day(0) }),        // due today: counts
+      t({ status: "in_progress", dueDate: day(-3) }),   // late: counts
+      t({ status: "pending", dueDate: day(2) }),        // later: no
+      t({ status: "completed", dueDate: day(-1) }),     // done: no
+      t({ status: "cancelled", dueDate: day(-1) }),     // cancelled: no
+      t({ status: "pending", dueDate: null }),          // no date: no
+      t({ status: "pending", dueDate: day(0), assignedTo: other.id }), // someone else's: no
+    ]);
+    const after = (await badgeCounts(me))!;
+    expect(after.tasks - before.tasks).toBe(2);
+    expect(after.total).toBe(after.notifications + after.tasks);
+    expect(after.notifications).toBe(before.notifications);
+
+    // The open app asks the server for the same figure
+    expect((await api("GET", "/api/badge")).body).toEqual(after);
+
+    // A new message arrives as a notification, so it is counted once
+    const n = await notify("badge task test");
+    expect((await badgeCounts(me))!.total).toBe(after.total + 1);
+    await api("PATCH", `/api/notifications/${n.id}/read`);
+    expect((await badgeCounts(me))!.total).toBe(after.total);
+  });
 });
