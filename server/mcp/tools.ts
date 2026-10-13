@@ -299,7 +299,7 @@ const RUNNERS: Record<string, Runner> = {
   },
 };
 
-export function createToolkit(req: any) {
+export function createToolkit(req: any, opts: { source?: string } = {}) {
   const user = req.user;
   const can = (module: string, action: string) => user?.permissions?.[module]?.[action] === true;
 
@@ -316,7 +316,7 @@ export function createToolkit(req: any) {
 
     try {
       const result = await run(parsed.data, { userId: user.id, actor: user.email || user.username });
-      await logAudit(req, `mcp:${name}`, "mcp", (result as any)?.id ?? null, null, parsed.data);
+      await logAudit(req, `${opts.source ?? "mcp"}:${name}`, "mcp", (result as any)?.id ?? null, null, parsed.data);
       return text(result);
     } catch (error) {
       if (error instanceof ToolError) return text(error.message, true);

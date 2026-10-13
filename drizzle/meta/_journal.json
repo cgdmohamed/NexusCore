@@ -71,6 +71,13 @@
       "when": 1792101873350,
       "tag": "0009_archive_people",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792188273350,
+      "tag": "0010_ai_chat",
+      "breakpoints": true
     }
   ]
 }

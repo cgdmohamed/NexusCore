@@ -687,6 +687,26 @@ export const oauthTokens = pgTable("oauth_tokens", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// In-app AI assistant: one settings row (the key is stored encrypted) and one conversation row per chat
+export const aiSettings = pgTable("ai_settings", {
+  id: varchar("id").primaryKey().default("default"),
+  provider: varchar("provider").notNull().default("anthropic"), // anthropic | openai
+  model: varchar("model"),
+  apiKeyEnc: text("api_key_enc"),
+  enabled: boolean("enabled").notNull().default(true),
+  updatedBy: varchar("updated_by"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiChats = pgTable("ai_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  messages: jsonb("messages").notNull().default(sql`'[]'::jsonb`),
+  pending: jsonb("pending"), // actions waiting for the person's confirmation
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type PaymentSource = typeof paymentSources.$inferSelect;
 export type InsertPaymentSource = typeof paymentSources.$inferInsert;
 

@@ -46,6 +46,7 @@ export async function startApp() {
   const { registerMcpRoutes } = await import("../../server/mcp/routes");
   const { registerAiAccessRoutes } = await import("../../server/ai-access-routes");
   const { registerDigestSettingsRoutes } = await import("../../server/digest-settings");
+  const { registerAiChatRoutes } = await import("../../server/ai-chat/routes");
   const { registerOAuthConsentRoutes } = await import("../../server/oauth/routes");
 
   const app = express();
@@ -76,6 +77,7 @@ export async function startApp() {
   registerAiAccessRoutes(app as any);
   registerOAuthConsentRoutes(app as any);
   registerDigestSettingsRoutes(app as any);
+  registerAiChatRoutes(app as any);
 
   const server: Server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));

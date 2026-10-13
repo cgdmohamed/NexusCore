@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { LayoutDashboard, CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download } from "lucide-react";
+import { LayoutDashboard, CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ import TasksScreen from "./TasksScreen";
 import ProjectsScreen from "./ProjectsScreen";
 import ClientsScreen from "./ClientsScreen";
 import AlertsScreen from "./AlertsScreen";
+import AssistantScreen from "./AssistantScreen";
 import { MessagesScreen } from "./MessagesScreen";
 import { PushSettings } from "@/components/notifications/PushSettings";
 import { Segmented } from "./ui";
@@ -39,6 +40,7 @@ export default function MobileApp() {
   const { canView, canAdd } = usePermissions();
   const { unreadCount } = useNotifications(1, 1);
   const messagesUnread = useQuery<{ unreadCount: number }>({ queryKey: ["/api/messages/unread-count"], refetchInterval: 15_000, staleTime: 10_000, refetchOnWindowFocus: true }).data?.unreadCount ?? 0;
+  const assistant = useQuery<{ enabled: boolean }>({ queryKey: ["/api/ai-chat/status"], staleTime: 60_000, retry: false }).data?.enabled ?? false;
   const online = useOnline();
   const install = useInstall();
   const [location, navigate] = useLocation();
@@ -52,12 +54,16 @@ export default function MobileApp() {
   const area: string | undefined = segment === "messages" || segment === "alerts" ? "inbox" : segment || "overview";
   const active: Tab = tabs.find((x) => x.key === area)?.key ?? tabs[0]?.key ?? "inbox";
   const inThread = segment === "messages" && !!parts[3];
+  const inAssistant = segment === "assistant" && assistant;
   const canAddAny = canAdd("tasks") || canAdd("projects") || canAdd("crm");
 
   const openAdd = (r: AddRequest = {}) => {
     setRequest(r);
     setAddOpen(true);
   };
+
+  // The assistant is a full screen of its own, without the tab bar
+  if (inAssistant) return <AssistantScreen />;
 
   const slot = "flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium";
 
@@ -78,6 +84,11 @@ export default function MobileApp() {
       <header className="flex items-center justify-between border-b border-border bg-card px-4 pb-3 pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <h1 className="text-lg font-semibold">{t(TABS.find((x) => x.key === active)!.label)}</h1>
         <div className="flex items-center gap-1">
+          {assistant && (
+            <Link href="/m/assistant" aria-label={t("ai.chat.open")} className="flex h-11 w-11 items-center justify-center rounded-full text-primary" data-testid="open-assistant">
+              <Sparkles className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
+          )}
           <Link
             href="/m/alerts"
             aria-label={`${t("m.tab_alerts")}${unreadCount > 0 ? ` (${unreadCount})` : ""}`}

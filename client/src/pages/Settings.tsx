@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { AiAccessCard } from "@/components/settings/AiAccessCard";
 import { DigestSettingsCard } from "@/components/settings/DigestSettingsCard";
+import { AiChatSettingsCard } from "@/components/settings/AiChatSettingsCard";
 import {
   Download,
   Database,
@@ -308,6 +309,7 @@ export default function Settings() {
 
         <DigestSettingsCard scope="company" />
         <AiAccessCard />
+        <AiChatSettingsCard />
       </div>
     </div>
   );
