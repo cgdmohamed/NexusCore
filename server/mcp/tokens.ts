@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
-import { apiTokens, roles, users } from "@shared/schema";
+import { apiTokens, oauthGrants, oauthTokens, roles, users } from "@shared/schema";
 import { storage } from "../storage";
 
 export const TOKEN_PREFIX = "nxc_";
@@ -39,7 +39,7 @@ export function generateToken() {
 export function bearerFrom(header: unknown): string | null {
   if (typeof header !== "string") return null;
   const m = /^Bearer\s+(\S+)$/i.exec(header.trim());
-  return m && m[1].startsWith(TOKEN_PREFIX) ? m[1] : null;
+  return m && (m[1].startsWith(TOKEN_PREFIX) || m[1].startsWith("nxo_")) ? m[1] : null;
 }
 
 // Per-token request budget: a runaway loop in a model client should not hammer the database
@@ -60,6 +60,7 @@ const lastTouched = new Map<string, number>();
 export async function authenticateBearer(header: unknown) {
   const token = bearerFrom(header);
   if (!token) return null;
+  if (token.startsWith("nxo_")) return authenticateOAuth(token);
   const [row] = await db.select().from(apiTokens).where(and(eq(apiTokens.tokenHash, hashToken(token)), isNull(apiTokens.revokedAt)));
   if (!row) return null;
   const user = await storage.getUser(row.userId);
@@ -71,6 +72,24 @@ export async function authenticateBearer(header: unknown) {
     db.update(apiTokens).set({ lastUsedAt: new Date() }).where(eq(apiTokens.id, row.id)).catch(() => {});
   }
   return { user, tokenId: row.id };
+}
+
+// Access token issued through OAuth: acts as the administrator who approved the connection
+async function authenticateOAuth(token: string) {
+  const [row] = await db.select({ id: oauthTokens.id, expiresAt: oauthTokens.expiresAt, grantId: oauthGrants.id, userId: oauthGrants.userId })
+    .from(oauthTokens)
+    .innerJoin(oauthGrants, eq(oauthGrants.id, oauthTokens.grantId))
+    .where(and(eq(oauthTokens.tokenHash, hashToken(token)), eq(oauthTokens.kind, "access"), isNull(oauthGrants.revokedAt)));
+  if (!row || row.expiresAt.getTime() < Date.now()) return null;
+  const user = await storage.getUser(row.userId);
+  if (!user || user.isActive === false) return null;
+
+  const now = Date.now();
+  if (now - (lastTouched.get(row.grantId) ?? 0) > 60_000) {
+    lastTouched.set(row.grantId, now);
+    db.update(oauthGrants).set({ lastUsedAt: new Date() }).where(eq(oauthGrants.id, row.grantId)).catch(() => {});
+  }
+  return { user, tokenId: row.grantId };
 }
 
 const MODULES = ["dashboard", "crm", "quotations", "invoices", "expenses", "paymentSources", "services", "projects", "employees", "users", "roles", "tasks", "analytics", "auditLogs"];

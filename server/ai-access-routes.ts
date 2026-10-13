@@ -1,8 +1,8 @@
 import type { Express } from "express";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db";
-import { apiTokens, roles, users } from "@shared/schema";
+import { apiTokens, oauthClients, oauthGrants, roles, users } from "@shared/schema";
 import { requireAdmin, requireAuth } from "./auth";
 import { logAudit } from "./audit";
 import { ASSISTANT_ROLE, ASSISTANT_USERNAME, ensureAssistantAccount, generateToken } from "./mcp/tokens";
@@ -19,7 +19,15 @@ export function registerAiAccessRoutes(app: Express) {
         ? await db.select({ id: apiTokens.id, name: apiTokens.name, prefix: apiTokens.prefix, createdAt: apiTokens.createdAt, lastUsedAt: apiTokens.lastUsedAt, revokedAt: apiTokens.revokedAt })
             .from(apiTokens).where(eq(apiTokens.userId, assistant.id)).orderBy(desc(apiTokens.createdAt))
         : [];
-      res.json({ mcpUrl: `${baseUrl(req)}/mcp`, assistant: assistant ? { id: assistant.id, roleId: role?.id ?? assistant.roleId } : null, tokens });
+      const connections = await db.select({
+          id: oauthGrants.id, clientName: oauthClients.clientName, approvedBy: users.username,
+          approverFirstName: users.firstName, approverLastName: users.lastName,
+          createdAt: oauthGrants.createdAt, lastUsedAt: oauthGrants.lastUsedAt,
+        }).from(oauthGrants)
+        .innerJoin(users, eq(users.id, oauthGrants.userId))
+        .leftJoin(oauthClients, eq(oauthClients.clientId, oauthGrants.clientId))
+        .where(isNull(oauthGrants.revokedAt)).orderBy(desc(oauthGrants.createdAt));
+      res.json({ mcpUrl: `${baseUrl(req)}/mcp`, assistant: assistant ? { id: assistant.id, roleId: role?.id ?? assistant.roleId } : null, tokens, connections });
     } catch (error) {
       console.error("Error loading AI access:", error);
       res.status(500).json({ message: "Failed to load AI access" });
@@ -39,6 +47,20 @@ export function registerAiAccessRoutes(app: Express) {
       if (error instanceof z.ZodError) return res.status(400).json({ message: "A name for the token is required" });
       console.error("Error creating API token:", error);
       res.status(500).json({ message: "Failed to create token" });
+    }
+  });
+
+  // A connected app (OAuth grant): revoking it ends its access and refresh tokens at once
+  app.delete("/api/settings/ai-access/connections/:id", requireAuth, requireAdmin, async (req: any, res) => {
+    try {
+      const [row] = await db.update(oauthGrants).set({ revokedAt: new Date() })
+        .where(eq(oauthGrants.id, req.params.id)).returning({ id: oauthGrants.id });
+      if (!row) return res.status(404).json({ message: "Connection not found" });
+      await logAudit(req, "revoke_oauth_grant", "oauth_grant", row.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error revoking OAuth connection:", error);
+      res.status(500).json({ message: "Failed to revoke connection" });
     }
   });
 

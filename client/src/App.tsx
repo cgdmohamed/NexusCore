@@ -42,6 +42,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import QuotationPrint from "@/pages/QuotationPrint";
 import InvoicePrint from "@/pages/InvoicePrint";
 import ClientStatementPrint from "@/pages/ClientStatementPrint";
+import OAuthAuthorize from "@/pages/OAuthAuthorize";
 
 const MobileApp = lazy(() => import("@/mobile/MobileApp"));
 
@@ -78,6 +79,8 @@ function Router() {
       <Route path="/quotations/print/:printRecordId" component={QuotationPrint} />
       <Route path="/invoices/print/:printRecordId" component={InvoicePrint} />
       <Route path="/clients/:id/statement/print" component={ClientStatementPrint} />
+
+      <Route path="/oauth/authorize" component={OAuthAuthorize} />
 
       {/* Phone app: its own shell, loaded only when opened */}
       <Route path="/m/*?">

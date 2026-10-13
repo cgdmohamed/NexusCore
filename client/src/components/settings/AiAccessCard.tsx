@@ -13,7 +13,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { snippet, type SnippetKind } from "@/lib/ai-access-snippets";
 
 interface TokenRow { id: string; name: string; prefix: string; createdAt: string | null; lastUsedAt: string | null; revokedAt: string | null }
-interface AccessData { mcpUrl: string; assistant: { id: string; roleId: string | null } | null; tokens: TokenRow[] }
+interface ConnectionRow { id: string; clientName: string | null; approvedBy: string; approverFirstName: string | null; approverLastName: string | null; createdAt: string | null; lastUsedAt: string | null }
+interface AccessData { mcpUrl: string; assistant: { id: string; roleId: string | null } | null; tokens: TokenRow[]; connections?: ConnectionRow[] }
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false);
@@ -58,6 +59,11 @@ export function AiAccessCard() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/settings/ai-access"] }); toast({ title: t("ai.revoked") }); },
   });
 
+  const disconnect = useMutation({
+    mutationFn: async (id: string) => apiRequest("DELETE", `/api/settings/ai-access/connections/${id}`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/settings/ai-access"] }); toast({ title: t("ai.disconnected") }); },
+  });
+
   const url = data?.mcpUrl ?? "";
   const shownToken = fresh?.token ?? "YOUR_TOKEN";
   const code = url ? snippet(kind, url, shownToken) : "";
@@ -77,6 +83,30 @@ export function AiAccessCard() {
             <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-sm" dir="ltr">{url || "…"}</code>
             {url && <CopyButton text={url} label={t("ai.copy")} />}
           </div>
+        </div>
+
+        <div className="space-y-2" data-testid="ai-claude-connect">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ai.claude_title")}</p>
+          <p className="text-sm text-muted-foreground">{t("ai.claude_steps")}</p>
+          <p className="text-xs text-muted-foreground">{t("ai.claude_note")}</p>
+          <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ai.apps")}</p>
+          {(data?.connections ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("ai.no_apps")}</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {(data?.connections ?? []).map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{c.clientName || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{t("ai.approved_by", { name: [c.approverFirstName, c.approverLastName].filter(Boolean).join(" ") || c.approvedBy })} · {t("ai.created", { date: date(c.createdAt) })} · {t("ai.last_used", { date: date(c.lastUsedAt) })}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-danger" disabled={disconnect.isPending} onClick={() => disconnect.mutate(c.id)} data-testid={`ai-disconnect-${c.id}`}>
+                    <Trash2 className="h-3.5 w-3.5" />{t("ai.disconnect")}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="space-y-2">

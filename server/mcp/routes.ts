@@ -2,15 +2,20 @@ import type { Express } from "express";
 import { handleBody } from "./protocol";
 import { authenticateBearer, withinRate } from "./tokens";
 import { createToolkit, INSTRUCTIONS } from "./tools";
+import { baseUrlFor } from "../oauth/core";
+import { registerOAuthRoutes } from "../oauth/routes";
 
 // POST /mcp: the Model Context Protocol endpoint for Claude, OpenAI and other MCP clients.
 // It authenticates with a bearer token only (no cookies, so no CSRF), and is mounted ahead of the session middleware.
 export function registerMcpRoutes(app: Express) {
+  registerOAuthRoutes(app);
+
   app.post("/mcp", async (req: any, res) => {
     try {
       const auth = await authenticateBearer(req.headers.authorization);
       if (!auth) {
-        res.set("WWW-Authenticate", 'Bearer realm="nexus-mcp"');
+        // Points OAuth-capable clients (claude.ai) at the discovery document
+        res.set("WWW-Authenticate", `Bearer realm="nexus-mcp", resource_metadata="${baseUrlFor(req)}/.well-known/oauth-protected-resource"`);
         return res.status(401).json({ jsonrpc: "2.0", id: null, error: { code: -32001, message: "Missing, invalid or revoked access token" } });
       }
       if (!withinRate(auth.tokenId)) {

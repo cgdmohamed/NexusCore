@@ -644,6 +644,47 @@ export const apiTokens = pgTable("api_tokens", {
   revokedAt: timestamp("revoked_at"),
 });
 
+// OAuth for connectors such as claude.ai. Secrets (codes, access and refresh tokens) are stored only as hashes.
+export const oauthClients = pgTable("oauth_clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().unique(),
+  clientName: varchar("client_name").notNull(),
+  redirectUris: jsonb("redirect_uris").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// One approved connection of an app to a person's account; revoking it ends every token issued under it
+export const oauthGrants = pgTable("oauth_grants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+});
+
+export const oauthCodes = pgTable("oauth_codes", {
+  codeHash: varchar("code_hash").primaryKey(),
+  clientId: varchar("client_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  redirectUri: text("redirect_uri").notNull(),
+  codeChallenge: varchar("code_challenge").notNull(),
+  grantId: varchar("grant_id"),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const oauthTokens = pgTable("oauth_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tokenHash: varchar("token_hash").notNull().unique(),
+  kind: varchar("kind").notNull(), // access | refresh
+  grantId: varchar("grant_id").notNull().references(() => oauthGrants.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"), // a refresh token is used once, then replaced
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type PaymentSource = typeof paymentSources.$inferSelect;
 export type InsertPaymentSource = typeof paymentSources.$inferInsert;
 
