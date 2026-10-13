@@ -112,7 +112,7 @@ export function toView(state: ChatState) {
     if (m.role === "user" || m.role === "assistant") { if (m.text) items.push({ role: m.role, text: m.text }); }
     else for (const r of m.results) { const link = r.isError ? undefined : linkOf(r.content); items.push({ role: "event", name: r.name, ok: !r.isError, ...(link ? { link } : {}) }); }
   }
-  const pending = state.pending
+  const pending: { id: string; name: string; title: string; args: Record<string, unknown>; names?: Record<string, string> }[] | null = state.pending
     ? state.pending.calls.filter((c) => c.write).map((c) => ({ id: c.id, name: c.name, title: c.title, args: c.args }))
     : null;
   return { items, pending };

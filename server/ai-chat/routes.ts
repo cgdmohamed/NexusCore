@@ -8,6 +8,7 @@ import { decryptSecret, encryptSecret } from "../crypto-utils";
 import { logAudit } from "../audit";
 import { APP_TIMEZONE, dayKey } from "../task-insights";
 import { createToolkit } from "../mcp/tools";
+import { resolveNames } from "./names";
 import { buildSystemPrompt, resolvePending, sendMessage, toView, type ChatState } from "./agent";
 import { createProvider, DEFAULT_MODELS, ProviderError, type ProviderKind } from "./providers";
 
@@ -63,6 +64,16 @@ const userName = (u: any) => [u?.firstName, u?.lastName].filter(Boolean).join(" 
 async function currentChat(userId: string) {
   const [chat] = await db.select().from(aiChats).where(eq(aiChats.userId, userId)).orderBy(desc(aiChats.updatedAt)).limit(1);
   return chat ?? null;
+}
+
+// The view of a conversation, with the waiting actions' ids turned into names
+async function viewOf(state: ChatState) {
+  const view = toView(state);
+  if (view.pending?.length) {
+    const names = await resolveNames(view.pending);
+    for (const p of view.pending) if (names[p.id]) p.names = names[p.id];
+  }
+  return view;
 }
 
 const stateOf = (chat: { messages: unknown; pending: unknown } | null): ChatState => ({
@@ -136,7 +147,7 @@ export function registerAiChatRoutes(app: Express) {
   app.get("/api/ai-chat/current", requireAuth, async (req: any, res) => {
     try {
       const chat = await currentChat(req.user.id);
-      res.json({ chatId: chat?.id ?? null, ...toView(stateOf(chat)) });
+      res.json({ chatId: chat?.id ?? null, ...(await viewOf(stateOf(chat))) });
     } catch (error) {
       console.error("Error loading the AI chat:", error);
       res.status(500).json({ message: "Failed to load the conversation" });
@@ -185,7 +196,7 @@ export function registerAiChatRoutes(app: Express) {
       if (action === "message") await sendMessage(state, (parsed.data as any).text, deps);
       else await resolvePending(state, (parsed.data as any).approve, deps);
       const chatId = await persist(chat?.id ?? null, userId, state);
-      res.json({ chatId, ...toView(state) });
+      res.json({ chatId, ...(await viewOf(state)) });
     } catch (error) {
       const message = error instanceof ProviderError ? error.message : "The assistant could not answer.";
       if (!(error instanceof ProviderError)) console.error("AI chat failed:", error);
@@ -196,7 +207,7 @@ export function registerAiChatRoutes(app: Express) {
       }
       // The confirmed action already ran: keep that on record even though the follow-up failed
       const chatId = await persist(chat?.id ?? null, userId, state);
-      res.status(error instanceof ProviderError ? error.status : 500).json({ message, chatId, ...toView(state) });
+      res.status(error instanceof ProviderError ? error.status : 500).json({ message, chatId, ...(await viewOf(state)) });
     } finally {
       busy.delete(key);
     }

@@ -81,6 +81,17 @@ describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
     expect((await ctx.db.select().from(auditLogs)).some((a: any) => a.action === "chat:create_task")).toBe(true);
   });
 
+  it("shows names, not ids, in the waiting actions", async () => {
+    await configure();
+    const task = (await api("POST", "/api/tasks", { title: "Prepare the launch checklist" })).body;
+    replies = [[...use("a", "update_task", { taskId: task.id, dueDate: "2026-10-23" }), ...use("b", "update_task", { taskId: task.id, priority: "high" })]];
+    const r = await api("POST", "/api/ai-chat/messages", { text: "move it" });
+    expect(r.body.pending).toHaveLength(2);
+    expect(r.body.pending[0].names).toEqual({ taskId: "Prepare the launch checklist" });
+    // A person's current conversation shows the same names after a reload
+    expect((await api("GET", "/api/ai-chat/current")).body.pending[1].names.taskId).toBe("Prepare the launch checklist");
+  });
+
   it("does nothing when the person cancels", async () => {
     await configure();
     const { tasks } = await import("../../shared/schema");

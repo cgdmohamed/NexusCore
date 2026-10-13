@@ -1,6 +1,6 @@
 // Pure helpers for the assistant screen: how an action waiting for confirmation is described to the person.
 
-export interface PendingAction { id: string; name: string; title: string; args: Record<string, any> }
+export interface PendingAction { id: string; name: string; title: string; args: Record<string, any>; names?: Record<string, string> }
 
 export interface ActionLine { label: string; qty: number; price: number; discount?: number }
 export interface ActionSummary {
@@ -47,4 +47,47 @@ export function suggestionKeys(can: { view: (m: string) => boolean; add: (m: str
   if (can.add("invoices")) out.push("invoice");
   if (can.add("quotations")) out.push("quotation");
   return out.slice(0, 4);
+}
+
+// Several changes to one task read as one line: the model often sends a separate call for each field
+const MERGE_BY: Record<string, string> = { update_task: "taskId", assign_task: "taskId" };
+
+export interface ActionGroup { name: string; title: string; rows: PendingAction[] }
+
+export function groupActions(actions: PendingAction[]): ActionGroup[] {
+  const groups: ActionGroup[] = [];
+  for (const a of actions) {
+    let group = groups.find((g) => g.name === a.name);
+    if (!group) { group = { name: a.name, title: a.title, rows: [] }; groups.push(group); }
+    const key = MERGE_BY[a.name];
+    const same = key ? group.rows.find((r) => r.args[key] && r.args[key] === a.args[key]) : undefined;
+    if (same) { same.args = { ...same.args, ...a.args }; same.names = { ...same.names, ...a.names }; }
+    else group.rows.push({ ...a, args: { ...a.args }, names: { ...a.names } });
+  }
+  return groups;
+}
+
+// The fields of one row without the id that names its subject; ids that were looked up show as names
+export function changeFields(action: PendingAction): { key: string; value: string }[] {
+  const subjectKey = MERGE_BY[action.name];
+  return Object.entries(action.args ?? {})
+    .filter(([k, v]) => k !== subjectKey && !HIDDEN.has(k) && v !== undefined && v !== null && v !== "")
+    .map(([key, v]) => ({ key, value: action.names?.[key] ?? (typeof v === "object" ? JSON.stringify(v) : String(v)) }));
+}
+
+export const subjectOf = (action: PendingAction): string | null => {
+  const key = MERGE_BY[action.name];
+  return key ? action.names?.[key] ?? null : null;
+};
+
+// The same step repeated (four task updates) is shown once, with a count
+export interface EventChip { name: string; ok: boolean; count: number; link?: string }
+export function collapseEvents<T extends { role: string; name?: string; ok?: boolean; link?: string }>(items: T[]): (T | (T & { count: number }))[] {
+  const out: any[] = [];
+  for (const item of items) {
+    const prev = out[out.length - 1];
+    if (item.role === "event" && prev?.role === "event" && prev.name === item.name && prev.ok === item.ok && !item.link && !prev.link) prev.count += 1;
+    else out.push(item.role === "event" ? { ...item, count: 1 } : item);
+  }
+  return out;
 }
