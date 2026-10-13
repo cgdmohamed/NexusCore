@@ -30,3 +30,28 @@ describe("morning digest", () => {
     expect(localHour(new Date("2026-01-15T06:00:00Z"), tz)).toBe(8);
   });
 });
+
+describe("evening digest", () => {
+  it("says nothing when there is nothing to report", async () => {
+    const { buildEveningDigest } = await import("../server/daily-digest");
+    expect(buildEveningDigest({ completed: 0, remaining: 0 }, "ar")).toBeNull();
+  });
+
+  it("formats finished and remaining counts", async () => {
+    const { buildEveningDigest } = await import("../server/daily-digest");
+    expect(buildEveningDigest({ completed: 3, remaining: 2 }, "ar")!.message).toBe("أُنجزت ٣ مهام اليوم وتبقّت مهمتان");
+    expect(buildEveningDigest({ completed: 0, remaining: 1 }, "ar")!.message).toBe("تبقّت مهمة واحدة");
+    expect(buildEveningDigest({ completed: 1, remaining: 0 }, "ar")!.message).toBe("أُنجزت مهمة واحدة اليوم");
+    expect(buildEveningDigest({ completed: 4, remaining: 2 }, "en")!.message).toBe("4 tasks completed today and 2 still open");
+  });
+});
+
+describe("digest preferences", () => {
+  it("lets a person override only what they set", async () => {
+    const { mergePrefs, DEFAULT_PREFS } = await import("../server/digest-settings");
+    const company = { ...DEFAULT_PREFS, eveningHour: 18 };
+    expect(mergePrefs(company, null)).toEqual(company);
+    expect(mergePrefs(company, { eveningHour: null, morningEnabled: false, morningHour: 9 })).toEqual({ morningEnabled: false, morningHour: 9, eveningEnabled: true, eveningHour: 18 });
+    expect(mergePrefs(company, { morningHour: 99 }).morningHour).toBe(8);
+  });
+});

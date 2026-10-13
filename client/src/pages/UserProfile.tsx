@@ -33,6 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { NotificationSettings } from "@shared/schema";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
+import { DigestSettingsCard } from "@/components/settings/DigestSettingsCard";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "@/lib/dateUtils";
@@ -102,6 +104,7 @@ function UserActivityFeed({ userId }: { userId: string | undefined }) {
 
 export default function UserProfile() {
   const { id } = useParams<{ id: string }>();
+  const { user: signedIn } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -523,6 +526,7 @@ export default function UserProfile() {
                 )}
               </CardContent>
             </Card>
+            {signedIn?.id === id && <DigestSettingsCard scope="me" />}
           </TabsContent>
 
           <TabsContent value="permissions" className="space-y-6">

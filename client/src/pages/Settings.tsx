@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { AiAccessCard } from "@/components/settings/AiAccessCard";
+import { DigestSettingsCard } from "@/components/settings/DigestSettingsCard";
 import {
   Download,
   Database,
@@ -305,6 +306,7 @@ export default function Settings() {
         </Card>
 
 
+        <DigestSettingsCard scope="company" />
         <AiAccessCard />
       </div>
     </div>

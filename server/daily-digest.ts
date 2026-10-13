@@ -6,6 +6,7 @@ import { db } from "./db";
 import { APP_TIMEZONE, dayKey } from "./task-insights";
 import { notificationService } from "./notification-service";
 import { logger } from "./logger";
+import { loadAllPrefs, mergePrefs, runDigestSettingsMigration } from "./digest-settings";
 
 export const DIGEST_HOUR = Math.min(23, Math.max(0, parseInt(process.env.DIGEST_HOUR || "8", 10) || 8));
 // A server that restarts at noon should not send a "good morning" summary
@@ -47,6 +48,29 @@ function arTasksFor(n: number, kind: "due" | "late"): string {
   return n === 1 ? "مهمة واحدة متأخرة" : n === 2 ? "مهمتان متأخرتان" : `${arTasks(n)} متأخرة`;
 }
 
+export interface EveningCounts {
+  completed: number;
+  remaining: number;
+}
+
+// Evening wrap-up: what was finished today and what is still open. Silent when there is nothing to say.
+export function buildEveningDigest(counts: EveningCounts, language: DigestLanguage): { title: string; message: string } | null {
+  const { completed, remaining } = counts;
+  if (completed <= 0 && remaining <= 0) return null;
+
+  if (language === "ar") {
+    const parts: string[] = [];
+    if (completed > 0) parts.push(`أُنجزت ${arTasks(completed)} اليوم`);
+    if (remaining > 0) parts.push(`تبقّت ${arTasks(remaining)}`);
+    return { title: "ملخص نهاية اليوم", message: parts.join(" و") };
+  }
+
+  const parts: string[] = [];
+  if (completed > 0) parts.push(`${plural(completed, "task", "tasks")} completed today`);
+  if (remaining > 0) parts.push(`${remaining} still open`);
+  return { title: "End of day summary", message: parts.join(" and ") };
+}
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 // Returns null when there is nothing to report, so nobody is nudged for an empty day
@@ -82,39 +106,53 @@ export async function runDigestMigrations(): Promise<void> {
   } catch (err) {
     console.error("⚠️ Digest migrations failed (non-fatal):", err);
   }
+  await runDigestSettingsMigration();
 }
+
+export type DigestKind = "morning" | "evening";
 
 interface DigestRow {
   user_id: string;
-  due_today: number;
-  overdue: number;
+  a: number; // morning: due today; evening: completed today
+  b: number; // morning: overdue; evening: still open (due today or earlier)
 }
 
-// Per assignee: open tasks due today and open tasks already late, in the company's calendar
-async function loadCounts(today: string, tz: string): Promise<DigestRow[]> {
+// Per assignee, in the company's calendar. Morning: due today and late. Evening: finished today and still open.
+async function loadCounts(kind: DigestKind, today: string, tz: string): Promise<DigestRow[]> {
   const startOfToday = sql`((${today}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC'`;
-  const result = await db.execute(sql`
-    SELECT t.assigned_to AS user_id,
-           COUNT(*) FILTER (WHERE t.due_date >= ${startOfToday} AND t.due_date < (${startOfToday}) + interval '1 day')::int AS due_today,
-           COUNT(*) FILTER (WHERE t.due_date < ${startOfToday})::int AS overdue
-    FROM tasks t
-    JOIN users u ON u.id = t.assigned_to AND u.is_active = true
-    WHERE t.assigned_to IS NOT NULL AND t.status IN ('pending','in_progress') AND t.due_date IS NOT NULL
-    GROUP BY t.assigned_to
-  `);
+  const result = kind === "morning"
+    ? await db.execute(sql`
+        SELECT t.assigned_to AS user_id,
+               COUNT(*) FILTER (WHERE t.due_date >= ${startOfToday} AND t.due_date < (${startOfToday}) + interval '1 day')::int AS a,
+               COUNT(*) FILTER (WHERE t.due_date < ${startOfToday})::int AS b
+        FROM tasks t
+        JOIN users u ON u.id = t.assigned_to AND u.is_active = true
+        WHERE t.assigned_to IS NOT NULL AND t.status IN ('pending','in_progress') AND t.due_date IS NOT NULL
+        GROUP BY t.assigned_to
+      `)
+    : await db.execute(sql`
+        SELECT t.assigned_to AS user_id,
+               COUNT(*) FILTER (WHERE t.status = 'completed' AND t.completed_date >= ${startOfToday} AND t.completed_date < (${startOfToday}) + interval '1 day')::int AS a,
+               COUNT(*) FILTER (WHERE t.status IN ('pending','in_progress') AND t.due_date IS NOT NULL AND t.due_date < (${startOfToday}) + interval '1 day')::int AS b
+        FROM tasks t
+        JOIN users u ON u.id = t.assigned_to AND u.is_active = true
+        WHERE t.assigned_to IS NOT NULL
+        GROUP BY t.assigned_to
+      `);
   const rows = ((result as any).rows ?? result) as any[];
   return rows
-    .filter((r) => Number(r.due_today) > 0 || Number(r.overdue) > 0)
-    .map((r) => ({ user_id: r.user_id, due_today: Number(r.due_today), overdue: Number(r.overdue) }));
+    .filter((r) => Number(r.a) > 0 || Number(r.b) > 0)
+    .map((r) => ({ user_id: r.user_id, a: Number(r.a), b: Number(r.b) }));
 }
 
 // The interface language is a per-browser choice and is not stored on the server, so the digest uses the company default
 const DEFAULT_LANGUAGE: DigestLanguage = process.env.DIGEST_LANGUAGE === "en" ? "en" : "ar";
 
 // Claims the day for this user. Exactly one process wins, which keeps PM2 cluster workers from sending duplicates.
-async function claimDay(userId: string, day: string): Promise<boolean> {
+// The evening summary shares the ledger under its own key.
+async function claimDay(userId: string, key: string): Promise<boolean> {
   const result = await db.execute(sql`
-    INSERT INTO digest_log (user_id, day) VALUES (${userId}, ${day})
+    INSERT INTO digest_log (user_id, day) VALUES (${userId}, ${key})
     ON CONFLICT (user_id, day) DO NOTHING
     RETURNING user_id
   `);
@@ -124,25 +162,35 @@ async function claimDay(userId: string, day: string): Promise<boolean> {
 
 export interface DigestRunSummary { considered: number; sent: number; skipped: number }
 
-export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TIMEZONE): Promise<DigestRunSummary> {
+// Sends one kind of summary to everyone whose own (or the company's) time has come and who has not switched it off
+export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TIMEZONE, kind: DigestKind = "morning"): Promise<DigestRunSummary> {
   const summary: DigestRunSummary = { considered: 0, sent: 0, skipped: 0 };
   const today = dayKey(now, tz);
-  const rows = await loadCounts(today, tz);
+  const [rows, prefs] = await Promise.all([loadCounts(kind, today, tz), loadAllPrefs()]);
 
   for (const row of rows) {
     summary.considered++;
-    const digest = buildDigest({ dueToday: row.due_today, overdue: row.overdue }, DEFAULT_LANGUAGE);
+    const mine = mergePrefs(prefs.company, prefs.byUser.get(row.user_id));
+    const enabled = kind === "morning" ? mine.morningEnabled : mine.eveningEnabled;
+    const hour = kind === "morning" ? mine.morningHour : mine.eveningHour;
+    if (!enabled || !isDigestTime(now, tz, hour)) { summary.skipped++; continue; }
+
+    const digest = kind === "morning"
+      ? buildDigest({ dueToday: row.a, overdue: row.b }, DEFAULT_LANGUAGE)
+      : buildEveningDigest({ completed: row.a, remaining: row.b }, DEFAULT_LANGUAGE);
     if (!digest) { summary.skipped++; continue; }
     try {
-      if (!(await claimDay(row.user_id, today))) { summary.skipped++; continue; }
+      if (!(await claimDay(row.user_id, kind === "morning" ? today : `${today}#pm`))) { summary.skipped++; continue; }
       await notificationService.createNotification({
         userId: row.user_id,
         type: "daily_digest",
         title: digest.title,
         message: digest.message,
-        priority: row.overdue > 0 ? "high" : "medium",
+        priority: kind === "morning" && row.b > 0 ? "high" : "medium",
         entityUrl: "/tasks",
-        metadata: { day: today, dueToday: row.due_today, overdue: row.overdue },
+        metadata: kind === "morning"
+          ? { kind, day: today, dueToday: row.a, overdue: row.b }
+          : { kind, day: today, completed: row.a, remaining: row.b },
       });
       summary.sent++;
     } catch (err) {
@@ -159,8 +207,9 @@ let timer: NodeJS.Timeout | null = null;
 export function startDailyDigest(): void {
   if (timer || process.env.DIGEST_DISABLED === "true") return;
   const tick = () => {
-    if (!isDigestTime(new Date())) return;
-    runDailyDigest().catch((err) => logger.warn(`Daily digest run failed: ${err instanceof Error ? err.message : err}`));
+    for (const kind of ["morning", "evening"] as const) {
+      runDailyDigest(new Date(), APP_TIMEZONE, kind).catch((err) => logger.warn(`Daily digest (${kind}) failed: ${err instanceof Error ? err.message : err}`));
+    }
   };
   timer = setInterval(tick, CHECK_INTERVAL_MS);
   timer.unref();

@@ -13,6 +13,7 @@ import { registerTaskManagementRoutes } from "./task-management-routes";
 import { registerProjectRoutes } from "./project-routes";
 import { registerPushRoutes } from "./push-routes";
 import { runDigestMigrations, startDailyDigest } from "./daily-digest";
+import { registerDigestSettingsRoutes } from "./digest-settings";
 import { runPaymentSourceLinkMigration } from "./payment-source-service";
 import { registerDashboardOverviewRoutes } from "./dashboard-overview";
 import { registerAiAccessRoutes } from "./ai-access-routes";
@@ -109,6 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerDashboardOverviewRoutes(app);
   registerAiAccessRoutes(app);
   registerOAuthConsentRoutes(app);
+  registerDigestSettingsRoutes(app);
   await runDigestMigrations();
   await runPaymentSourceLinkMigration();
   await runApiTokensMigration();

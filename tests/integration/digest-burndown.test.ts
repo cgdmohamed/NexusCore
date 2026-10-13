@@ -17,6 +17,8 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
   });
 
   const dueOn = (offsetDays: number) => new Date(`${dayKey(new Date(Date.now() + offsetDays * DAY), "Africa/Cairo")}T00:00:00Z`);
+  // A moment today (UTC clock) that falls inside the morning (08:00) or evening (17:00) window in Cairo, winter and summer
+  const at = (hhmm: string) => new Date(`${dayKey(new Date(), "Africa/Cairo")}T${hhmm}:00Z`);
   const ago = (days: number) => new Date(Date.now() - days * DAY);
 
   it("sends each person one digest per day, however many workers run it", async () => {
@@ -33,7 +35,7 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
       t({ status: "pending", dueDate: dueOn(3) }),
     ]);
 
-    const [a, b] = await Promise.all([runDailyDigest(), runDailyDigest()]);
+    const [a, b] = await Promise.all([runDailyDigest(at("06:30")), runDailyDigest(at("06:30"))]);
     expect(a.sent + b.sent).toBe(1);
 
     const rows = (await ctx.db.select().from(notifications)).filter((n: any) => n.type === "daily_digest");
@@ -41,7 +43,64 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
     expect(rows[0].message).toBe("مهمتان مستحقتان اليوم ومهمة واحدة متأخرة");
     expect(rows[0].entityUrl).toBe("/tasks");
 
-    expect((await runDailyDigest()).sent).toBe(0);
+    expect((await runDailyDigest(at("06:30"))).sent).toBe(0);
+  });
+
+  it("sends the evening summary of finished and still-open work, and respects switches and hours", async () => {
+    const { tasks, notifications } = await import("../../shared/schema");
+    const { runDailyDigest } = await import("../../server/daily-digest");
+    const me = ctx.currentUserId;
+    await ctx.db.delete(tasks);
+    const { sql } = await import("drizzle-orm");
+    await ctx.db.execute(sql`DELETE FROM notification_logs`);
+    await ctx.db.delete(notifications);
+    await ctx.db.execute(sql`DELETE FROM digest_log`);
+    const t = (extra: object) => ({ title: "t", assignedTo: me, createdBy: me, ...extra }) as any;
+    await ctx.db.insert(tasks).values([
+      t({ status: "completed", dueDate: dueOn(0), completedDate: at("12:00") }),
+      t({ status: "completed", dueDate: dueOn(-1), completedDate: at("12:30") }),
+      t({ status: "completed", dueDate: dueOn(-3), completedDate: ago(2) }), // finished earlier, not counted
+      t({ status: "pending", dueDate: dueOn(0) }),
+      t({ status: "in_progress", dueDate: dueOn(-1) }),
+      t({ status: "pending", dueDate: dueOn(4) }), // not due yet, not counted
+    ]);
+
+    // Not yet 17:00: nothing goes out
+    expect((await runDailyDigest(at("12:00"), "Africa/Cairo", "evening")).sent).toBe(0);
+
+    // This person switches the evening summary off
+    expect((await ctx.api("PUT", "/api/settings/digest/me", { morningEnabled: null, morningHour: null, eveningEnabled: false, eveningHour: null })).status).toBe(200);
+    expect((await runDailyDigest(at("15:30"), "Africa/Cairo", "evening")).sent).toBe(0);
+
+    // Back on, but the company moves it to 21:00 and then to 17:00 again
+    await ctx.api("PUT", "/api/settings/digest/me", { morningEnabled: null, morningHour: null, eveningEnabled: null, eveningHour: null });
+    expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 22 })).status).toBe(200);
+    expect((await runDailyDigest(at("15:30"), "Africa/Cairo", "evening")).sent).toBe(0);
+    await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 17 });
+
+    const sent = await runDailyDigest(at("15:30"), "Africa/Cairo", "evening");
+    expect(sent.sent).toBe(1);
+    expect((await runDailyDigest(at("15:30"), "Africa/Cairo", "evening")).sent).toBe(0); // once per day
+
+    const rows = (await ctx.db.select().from(notifications)).filter((n: any) => n.type === "daily_digest");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].message).toBe("أُنجزت مهمتان اليوم وتبقّت مهمتان");
+    expect((rows[0].metadata as any).kind).toBe("evening");
+
+    // The morning summary still goes out the same day (its own ledger key)
+    expect((await runDailyDigest(at("06:30"))).sent).toBe(1);
+  });
+
+  it("lets only an administrator change the company defaults, and validates hours", async () => {
+    const got = (await ctx.api("GET", "/api/settings/digest")).body;
+    expect(got.effective).toEqual({ morningEnabled: true, morningHour: 8, eveningEnabled: true, eveningHour: 17 });
+    expect(got.canEditCompany).toBe(true);
+    expect((await ctx.api("PUT", "/api/settings/digest/me", { morningEnabled: null, morningHour: 24, eveningEnabled: null, eveningHour: null })).status).toBe(400);
+    ctx.actAs({ roleName: "Staff" });
+    try {
+      expect((await ctx.api("PUT", "/api/settings/digest/company", { morningEnabled: false, morningHour: 8, eveningEnabled: false, eveningHour: 17 })).status).toBe(403);
+      expect((await ctx.api("GET", "/api/settings/digest")).body.canEditCompany).toBe(false);
+    } finally { ctx.actAs(null); }
   });
 
   it("returns the burndown of the open project with the nearest deadline", async () => {
