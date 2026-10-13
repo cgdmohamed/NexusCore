@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { WifiOff, Loader2, Check, ChevronsUpDown } from "lucide-react";
-import { searchText, type SelectOption } from "@/components/ui/searchable-select";
+import { searchText, type SelectOption } from "@/lib/select-options";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useKeyboard } from "./keyboard";

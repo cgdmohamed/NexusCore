@@ -3,23 +3,10 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { searchText, type SelectOption } from "@/lib/select-options";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export interface SelectOption {
-  value: string;
-  label: string;
-  // A second line under the label, also searched
-  description?: string;
-  // Extra words the search should match
-  keywords?: string;
-  icon?: React.ReactNode;
-  disabled?: boolean;
-}
-
-// What the search matches against: the label, the description, any extra words, and the id (which also keeps every row unique)
-export function searchText(o: SelectOption): string {
-  return [o.label, o.description, o.keywords, o.value].filter(Boolean).join(" ");
-}
+export type { SelectOption };
 
 export interface SearchableSelectProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "value" | "onChange"> {
   options: SelectOption[];

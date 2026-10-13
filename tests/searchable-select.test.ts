@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { searchText } from "../client/src/components/ui/searchable-select";
 
 describe("searchable select", () => {
   it("searches the label, the description, extra words and the id", () => {
@@ -17,7 +16,7 @@ describe("searchable select", () => {
   });
 });
 
-import { clientOptions, listOptions, personName, projectOptions, userOptions } from "../client/src/lib/select-options";
+import { searchText, clientOptions, listOptions, personName, projectOptions, userOptions } from "../client/src/lib/select-options";
 
 describe("select option builders", () => {
   it("shows a person's name with the email underneath, falling back to the email", () => {

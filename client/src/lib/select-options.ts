@@ -1,5 +1,21 @@
 // Option lists for the searchable selects, built from the records the pages already load.
-import type { SelectOption } from "@/components/ui/searchable-select";
+import type { ReactNode } from "react";
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  // A second line under the label, also searched
+  description?: string;
+  // Extra words the search should match
+  keywords?: string;
+  icon?: ReactNode;
+  disabled?: boolean;
+}
+
+// What the search matches against: the label, the description, any extra words, and the id (which also keeps every row unique)
+export function searchText(o: SelectOption): string {
+  return [o.label, o.description, o.keywords, o.value].filter(Boolean).join(" ");
+}
 
 const clean = (s: unknown) => (typeof s === "string" ? s.trim() : "");
 
