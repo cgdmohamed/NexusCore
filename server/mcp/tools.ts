@@ -6,12 +6,14 @@ import { notificationService } from "../notification-service";
 import { logAudit } from "../audit";
 import type { ToolDefinition, ToolResult } from "./protocol";
 
-class ToolError extends Error {}
+import { ToolError } from "./errors";
+import { FINANCE_NEEDS, FINANCE_TOOLS, financeRunners, financeSchemas } from "./tools-finance";
 
 export const INSTRUCTIONS =
-  "Company task and project tools. Look people and projects up with list_users and list_projects before using their ids; " +
-  "a name is accepted too and must match exactly one record. Dates are YYYY-MM-DD. " +
-  "Priorities are low, medium or high. Statuses are pending, in_progress, completed or cancelled.";
+  "Company task, project, client, quotation and invoice tools. Look people, projects and clients up with the list tools before using their ids; " +
+  "a name is accepted too and must match exactly one record. Search before creating, so nothing is duplicated. Dates are YYYY-MM-DD. " +
+  "Priorities are low, medium or high. Statuses are pending, in_progress, completed or cancelled. " +
+  "Amounts are in EGP. Quotations and invoices are always created as drafts; a person issues or sends them in the app.";
 
 const idProps = (kind: string) => ({
   [`${kind}Id`]: { type: "string", description: `${kind} id (from the list tools)` },
@@ -93,6 +95,7 @@ export const TOOLS: ToolDefinition[] = [
       },
     },
   },
+  ...FINANCE_TOOLS,
 ];
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Dates must be YYYY-MM-DD");
@@ -106,6 +109,7 @@ const priority = z.enum(["low", "medium", "high"]);
 const status = z.enum(["pending", "in_progress", "completed", "cancelled"]);
 
 const schemas: Record<string, z.ZodTypeAny> = {
+  ...financeSchemas,
   list_users: z.object({ search: opt(z.string()) }),
   list_projects: z.object({ search: opt(z.string()), status: opt(z.enum(["active", "on_hold", "completed", "archived"])), limit: opt(z.number().int().min(1).max(100)) }),
   create_project: z.object({ name: z.string().trim().min(1), description: opt(z.string()), status: opt(z.enum(["active", "on_hold"])), startDate: opt(day), dueDate: opt(day), clientId: opt(z.string()), color: opt(z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
@@ -118,6 +122,7 @@ const schemas: Record<string, z.ZodTypeAny> = {
 };
 
 const NEEDS: Record<string, [string, string]> = {
+  ...FINANCE_NEEDS,
   list_users: ["tasks", "view"], list_projects: ["projects", "view"], create_project: ["projects", "add"], add_project_member: ["projects", "edit"],
   list_tasks: ["tasks", "view"], get_task: ["tasks", "view"], create_task: ["tasks", "add"], assign_task: ["tasks", "edit"], update_task: ["tasks", "edit"],
 };
@@ -188,9 +193,10 @@ async function notifyAssigned(taskId: string, assigneeId: string, byUserId: stri
   catch (error) { console.error("MCP: task assignment notification failed:", error); }
 }
 
-type Runner = (args: any, ctx: { userId: string }) => Promise<unknown>;
+type Runner = (args: any, ctx: { userId: string; actor?: string }) => Promise<unknown>;
 
 const RUNNERS: Record<string, Runner> = {
+  ...financeRunners,
   async list_users({ search }) {
     const rows = await db.select().from(users).where(and(
       eq(users.isActive, true),
@@ -309,7 +315,7 @@ export function createToolkit(req: any) {
     if (!parsed.success) return text(`Invalid arguments: ${parsed.error.issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ")}`, true);
 
     try {
-      const result = await run(parsed.data, { userId: user.id });
+      const result = await run(parsed.data, { userId: user.id, actor: user.email || user.username });
       await logAudit(req, `mcp:${name}`, "mcp", (result as any)?.id ?? null, null, parsed.data);
       return text(result);
     } catch (error) {
