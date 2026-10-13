@@ -140,4 +140,14 @@ describe.skipIf(!TEST_DATABASE_URL)("push notifications (integration)", () => {
     expect(after.isRead).toBe(true);
     expect(after.readAt).toBeTruthy();
   });
+
+  it("counts unread notifications for the app icon, and the count drops when they are read", async () => {
+    const { unreadTotal } = await import("../../server/push-service");
+    const before = (await unreadTotal(ctx.currentUserId)) ?? 0;
+    const a = await notify("badge one");
+    await notify("badge two");
+    expect(await unreadTotal(ctx.currentUserId)).toBe(before + 2);
+    await api("PATCH", `/api/notifications/${a.id}/read`);
+    expect(await unreadTotal(ctx.currentUserId)).toBe(before + 1);
+  });
 });

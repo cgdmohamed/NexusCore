@@ -74,14 +74,25 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = data.title || "Creative Code Nexus";
+  // The number on the app's icon (iPhone home screen, Android launcher), where the device supports it
+  const setBadge = async () => {
+    if (typeof data.badge !== "number") return;
+    try {
+      if (data.badge > 0 && self.navigator.setAppBadge) await self.navigator.setAppBadge(data.badge);
+      else if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+    } catch { /* the badge is a nicety; the notification itself matters more */ }
+  };
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: data.body || "",
-      icon: ICON,
-      badge: ICON,
-      tag: data.tag,
-      data: { url: data.url || "/notifications" },
-    }),
+    Promise.all([
+      self.registration.showNotification(title, {
+        body: data.body || "",
+        icon: ICON,
+        badge: ICON,
+        tag: data.tag,
+        data: { url: data.url || "/notifications" },
+      }),
+      setBadge(),
+    ]),
   );
 });
 

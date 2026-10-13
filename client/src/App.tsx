@@ -43,8 +43,15 @@ import QuotationPrint from "@/pages/QuotationPrint";
 import InvoicePrint from "@/pages/InvoicePrint";
 import ClientStatementPrint from "@/pages/ClientStatementPrint";
 import OAuthAuthorize from "@/pages/OAuthAuthorize";
+import { useAppBadge } from "@/hooks/useAppBadge";
 
 const MobileApp = lazy(() => import("@/mobile/MobileApp"));
+
+// Mounted only while signed in, so signing out clears the icon's number
+function AppBadge() {
+  useAppBadge();
+  return null;
+}
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -74,6 +81,8 @@ function Router() {
   }
 
   return (
+    <>
+    <AppBadge />
     <Switch>
       {/* Print pages — no sidebar, no navbar */}
       <Route path="/quotations/print/:printRecordId" component={QuotationPrint} />
@@ -133,6 +142,7 @@ function Router() {
         </div>
       </Route>
     </Switch>
+    </>
   );
 }
 

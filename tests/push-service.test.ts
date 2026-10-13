@@ -17,6 +17,13 @@ describe("pushUrlFor", () => {
 });
 
 describe("buildPushPayload", () => {
+  it("adds the unread count for the app icon only when it is known", () => {
+    const m = { type: "daily_digest", title: "T", message: "M" };
+    expect(buildPushPayload(m, "mobile", 4)).toMatchObject({ badge: 4 });
+    expect(buildPushPayload(m, "mobile", 0)).toMatchObject({ badge: 0 });
+    expect("badge" in buildPushPayload(m, "mobile")).toBe(false);
+  });
+
   it("carries what the service worker needs to show and open the notification", () => {
     expect(buildPushPayload({ type: "task_assigned", title: "T", message: "M", entityUrl: "/tasks", notificationId: "abc" }, "mobile")).toEqual({
       title: "T", body: "M", url: "/m/tasks", tag: "n-abc", type: "task_assigned",

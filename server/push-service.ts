@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { pushSubscriptions } from "@shared/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { sendPush, vapidFromEnv, type PushOptions, type PushResult } from "./web-push";
 import { logger } from "./logger";
 
@@ -23,13 +23,31 @@ export function pushUrlFor(entityUrl: string | null | undefined, platform: strin
   return "/m/alerts";
 }
 
-export function buildPushPayload(message: PushMessage, platform: string) {
+// What the home-screen icon should show: unread notifications plus unread messages
+export async function unreadTotal(userId: string): Promise<number | undefined> {
+  try {
+    const result = await db.execute(sql`
+      SELECT (SELECT COUNT(*) FROM notifications WHERE user_id = ${userId} AND status = 'unread')
+           + (SELECT COUNT(*) FROM messages m
+                JOIN conversation_participants p ON p.conversation_id = m.conversation_id AND p.user_id = ${userId}
+               WHERE m.sender_id <> ${userId} AND (p.last_read_at IS NULL OR m.created_at > p.last_read_at)) AS n
+    `);
+    const row = (((result as any).rows ?? result) as any[])[0];
+    return Number(row?.n ?? 0);
+  } catch (error) {
+    logger.warn(`Could not count unread items for the app badge: ${error instanceof Error ? error.message : error}`);
+    return undefined;
+  }
+}
+
+export function buildPushPayload(message: PushMessage, platform: string, badge?: number) {
   return {
     title: message.title,
     body: message.message,
     url: pushUrlFor(message.entityUrl, platform),
     tag: message.notificationId ? `n-${message.notificationId}` : `t-${message.type}`,
     type: message.type,
+    ...(badge !== undefined ? { badge } : {}),
   };
 }
 
@@ -43,11 +61,12 @@ export async function pushToUser(userId: string, message: PushMessage, options: 
 
   const subs = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
   if (subs.length === 0) return summary;
+  const badge = await unreadTotal(userId);
 
   const results = await Promise.all(
     subs.map(async (sub): Promise<[string, PushResult]> => [
       sub.id,
-      await sendPush({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, buildPushPayload(message, sub.platform), config, {
+      await sendPush({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, buildPushPayload(message, sub.platform, badge), config, {
         urgency: message.type === "direct_message" ? "high" : "normal",
         ...options,
       }),
