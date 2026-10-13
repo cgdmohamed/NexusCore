@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeAction, isWriteTool, suggestionKeys } from "../client/src/mobile/assistant-logic";
+import { describeAction, isWriteTool, suggestionKeys } from "../client/src/lib/assistant-logic";
 
 describe("assistant confirmation summary", () => {
   it("lists fields and estimates an invoice total with tax and discount", () => {

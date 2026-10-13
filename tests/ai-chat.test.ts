@@ -112,6 +112,20 @@ describe("assistant loop", () => {
     expect(state.messages.at(-1)).toMatchObject({ role: "assistant" });
   });
 
+  it("links a created record from its tool result", () => {
+    const state: ChatState = {
+      pending: null,
+      messages: [{ role: "tool", results: [
+        { id: "1", name: "create_invoice", content: JSON.stringify({ id: "abc-1", path: "/invoices/abc-1" }) },
+        { id: "2", name: "list_clients", content: "[]" },
+        { id: "3", name: "create_task", content: JSON.stringify({ path: "https://evil.example/x" }) },
+        { id: "4", name: "create_invoice", content: "failed", isError: true },
+      ] }],
+    };
+    const events: any[] = toView(state).items;
+    expect(events.map((e) => e.link)).toEqual(["/invoices/abc-1", undefined, undefined, undefined]);
+  });
+
   it("keeps a window that starts at a person's message", () => {
     const msgs: ChatMessage[] = [];
     for (let i = 0; i < 20; i++) msgs.push({ role: "user", text: `u${i}` }, { role: "assistant", text: `a${i}`, toolCalls: [{ id: `${i}`, name: "x", args: {} }] }, { role: "tool", results: [{ id: `${i}`, name: "x", content: "" }] });

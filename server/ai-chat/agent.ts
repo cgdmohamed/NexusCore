@@ -95,14 +95,22 @@ export async function resolvePending(state: ChatState, approve: boolean, deps: D
 
 export type ViewItem =
   | { role: "user" | "assistant"; text: string }
-  | { role: "event"; name: string; ok: boolean };
+  | { role: "event"; name: string; ok: boolean; link?: string };
+
+// A record the tool just created points to its page in the app (its result carries a path like /invoices/<id>)
+function linkOf(content: string): string | undefined {
+  try {
+    const path = JSON.parse(content)?.path;
+    return typeof path === "string" && /^\/[a-z-]+\/[\w-]+$/i.test(path) ? path : undefined;
+  } catch { return undefined; }
+}
 
 // What the app shows: the conversation, with tool activity reduced to small events
 export function toView(state: ChatState) {
   const items: ViewItem[] = [];
   for (const m of state.messages) {
     if (m.role === "user" || m.role === "assistant") { if (m.text) items.push({ role: m.role, text: m.text }); }
-    else for (const r of m.results) items.push({ role: "event", name: r.name, ok: !r.isError });
+    else for (const r of m.results) { const link = r.isError ? undefined : linkOf(r.content); items.push({ role: "event", name: r.name, ok: !r.isError, ...(link ? { link } : {}) }); }
   }
   const pending = state.pending
     ? state.pending.calls.filter((c) => c.write).map((c) => ({ id: c.id, name: c.name, title: c.title, args: c.args }))

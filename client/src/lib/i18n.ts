@@ -613,6 +613,7 @@ const translations: Translations = {
   'digest.follow': { en: 'Company default ({{time}})', ar: 'افتراضي الشركة ({{time}})' },
   'digest.saved': { en: 'Saved', ar: 'تم الحفظ' },
   'digest.failed': { en: 'Could not save the settings', ar: 'تعذّر حفظ الإعدادات' },
+  'ai.chat.open_record': { en: 'Open', ar: 'فتح' },
   'ai.chat.open': { en: 'Assistant', ar: 'المساعد' },
   'ai.chat.title': { en: 'Assistant', ar: 'المساعد الذكي' },
   'ai.chat.new': { en: 'New chat', ar: 'محادثة جديدة' },

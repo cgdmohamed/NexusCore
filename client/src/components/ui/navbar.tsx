@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
   FileText,
   CreditCard,
   Menu,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User as UserType } from "@shared/schema";
@@ -36,6 +37,8 @@ interface SearchResult {
   subtitle?: string;
   href: string;
 }
+
+const AssistantPanel = lazy(() => import("../assistant/AssistantPanel"));
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -49,6 +52,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantLoaded, setAssistantLoaded] = useState(false); // loaded on first use, then kept so closing can animate
+  // Shown only once an administrator has set the assistant up and this person may use at least one of its tools
+  const assistantEnabled = useQuery<{ enabled: boolean }>({ queryKey: ["/api/ai-chat/status"], staleTime: 60_000, retry: false }).data?.enabled ?? false;
 
   const currentUser = user as UserType | undefined;
 
@@ -265,6 +272,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {assistantEnabled && (
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-primary" aria-label={t('ai.chat.open')} title={t('ai.chat.title')} onClick={() => { setAssistantLoaded(true); setAssistantOpen(true); }} data-testid="open-assistant">
+              <Sparkles className="h-4 w-4" strokeWidth={1.75} />
+            </Button>
+          )}
+
           <NotificationDropdown />
 
           <DropdownMenu>
@@ -294,6 +307,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
       {showMobileSearch && (
         <div className="relative border-t border-border bg-card px-3 py-2 md:hidden">{searchInput(true)}</div>
+      )}
+
+      {assistantEnabled && assistantLoaded && (
+        <Suspense fallback={null}>
+          <AssistantPanel open={assistantOpen} onOpenChange={setAssistantOpen} />
+        </Suspense>
       )}
     </header>
   );
