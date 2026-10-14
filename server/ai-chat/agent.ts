@@ -93,6 +93,12 @@ export async function resolvePending(state: ChatState, approve: boolean, deps: D
   await loop(state, deps);
 }
 
+// The name a conversation gets in the list: its first message, on one line
+export function chatTitle(firstMessage: string | null | undefined, max = 40): string {
+  const line = (firstMessage ?? "").replace(/\s+/g, " ").trim();
+  return line.length > max ? `${line.slice(0, max - 1).trimEnd()}…` : line;
+}
+
 export type ViewItem =
   | { role: "user" | "assistant"; text: string }
   | { role: "event"; name: string; ok: boolean; link?: string };

@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import { aiChats, aiSettings } from "@shared/schema";
@@ -9,7 +9,7 @@ import { logAudit } from "../audit";
 import { APP_TIMEZONE, dayKey } from "../task-insights";
 import { createToolkit } from "../mcp/tools";
 import { resolveNames } from "./names";
-import { buildSystemPrompt, resolvePending, sendMessage, toView, type ChatState } from "./agent";
+import { buildSystemPrompt, chatTitle, resolvePending, sendMessage, toView, type ChatState } from "./agent";
 import { createProvider, DEFAULT_MODELS, ProviderError, type ProviderKind } from "./providers";
 
 const MAX_TEXT = 2000;
@@ -64,6 +64,24 @@ const userName = (u: any) => [u?.firstName, u?.lastName].filter(Boolean).join(" 
 async function currentChat(userId: string) {
   const [chat] = await db.select().from(aiChats).where(eq(aiChats.userId, userId)).orderBy(desc(aiChats.updatedAt)).limit(1);
   return chat ?? null;
+}
+
+async function ownChat(userId: string, id: string) {
+  const [chat] = await db.select().from(aiChats).where(and(eq(aiChats.id, id), eq(aiChats.userId, userId))).limit(1);
+  return chat ?? null;
+}
+
+// A person starts a new conversation without losing the others; an untouched empty one is reused rather than piled up
+async function startChat(userId: string): Promise<string> {
+  // A conversation that is answering its first message looks empty until it finishes, so it is never the one reused
+  const candidates = await db.execute(sql`
+    SELECT id FROM ai_chats WHERE user_id = ${userId} AND pending IS NULL AND jsonb_array_length(messages) = 0 ORDER BY updated_at DESC LIMIT 5`);
+  const free = (((candidates as any).rows ?? candidates) as any[]).find((r) => !busy.has(r.id));
+  if (free) {
+    await db.update(aiChats).set({ updatedAt: new Date() }).where(eq(aiChats.id, free.id));
+    return free.id;
+  }
+  return persist(null, userId, { messages: [], pending: null });
 }
 
 // The view of a conversation, with the waiting actions' ids turned into names
@@ -156,7 +174,7 @@ export function registerAiChatRoutes(app: Express) {
 
   app.post("/api/ai-chat/new", requireAuth, async (req: any, res) => {
     try {
-      await persist(null, req.user.id, { messages: [], pending: null });
+      await startChat(req.user.id);
       res.json({ chatId: null, items: [], pending: null });
     } catch (error) {
       console.error("Error starting a new AI chat:", error);
@@ -164,10 +182,62 @@ export function registerAiChatRoutes(app: Express) {
     }
   });
 
-  // One turn: used for both a new message and the answer to a confirmation
-  async function turn(req: any, res: any, action: "message" | "confirm") {
+  // ── Several conversations at once: each has its own history and its own busy lock ──
+  app.get("/api/ai-chat/chats", requireAuth, async (req: any, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT c.id, c.updated_at, (c.pending IS NOT NULL) AS awaiting,
+               (SELECT m->>'text' FROM jsonb_array_elements(c.messages) m WHERE m->>'role' = 'user' LIMIT 1) AS first_text
+        FROM ai_chats c
+        WHERE c.user_id = ${req.user.id} AND jsonb_array_length(c.messages) > 0
+        ORDER BY c.updated_at DESC LIMIT 50`);
+      const rows = ((result as any).rows ?? result) as any[];
+      res.json(rows.map((r) => ({ id: r.id, title: chatTitle(r.first_text), updatedAt: r.updated_at, awaiting: !!r.awaiting })));
+    } catch (error) {
+      console.error("Error listing AI chats:", error);
+      res.status(500).json({ message: "Failed to load the conversations" });
+    }
+  });
+
+  app.post("/api/ai-chat/chats", requireAuth, async (req: any, res) => {
+    try {
+      res.json({ chatId: await startChat(req.user.id), items: [], pending: null });
+    } catch (error) {
+      console.error("Error starting an AI chat:", error);
+      res.status(500).json({ message: "Failed to start a new conversation" });
+    }
+  });
+
+  app.get("/api/ai-chat/chats/:id", requireAuth, async (req: any, res) => {
+    try {
+      const chat = await ownChat(req.user.id, req.params.id);
+      if (!chat) return res.status(404).json({ message: "Conversation not found" });
+      res.json({ chatId: chat.id, ...(await viewOf(stateOf(chat))) });
+    } catch (error) {
+      console.error("Error loading the AI chat:", error);
+      res.status(500).json({ message: "Failed to load the conversation" });
+    }
+  });
+
+  app.delete("/api/ai-chat/chats/:id", requireAuth, async (req: any, res) => {
+    try {
+      const chat = await ownChat(req.user.id, req.params.id);
+      if (!chat) return res.status(404).json({ message: "Conversation not found" });
+      if (busy.has(chat.id)) return res.status(409).json({ message: "The assistant is still working on this conversation." });
+      await db.delete(aiChats).where(eq(aiChats.id, chat.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting the AI chat:", error);
+      res.status(500).json({ message: "Failed to delete the conversation" });
+    }
+  });
+
+  // One turn: used for both a new message and the answer to a confirmation.
+  // Without a chat id it works on the latest conversation (older clients); with one, on that conversation only.
+  async function turn(req: any, res: any, action: "message" | "confirm", chatId?: string) {
     const userId = req.user.id;
-    const chat = await currentChat(userId);
+    const chat = chatId ? await ownChat(userId, chatId) : await currentChat(userId);
+    if (chatId && !chat) return res.status(404).json({ message: "Conversation not found" });
     const state = stateOf(chat);
     const key = chat?.id ?? `new:${userId}`;
     if (busy.has(key)) return res.status(409).json({ message: "The assistant is still working on your last request." });
@@ -214,5 +284,7 @@ export function registerAiChatRoutes(app: Express) {
   }
 
   app.post("/api/ai-chat/messages", requireAuth, (req, res) => { turn(req, res, "message").catch((e) => { console.error(e); res.status(500).json({ message: "The assistant could not answer." }); }); });
+  app.post("/api/ai-chat/chats/:id/messages", requireAuth, (req, res) => { turn(req, res, "message", req.params.id).catch((e) => { console.error(e); res.status(500).json({ message: "The assistant could not answer." }); }); });
+  app.post("/api/ai-chat/chats/:id/confirm", requireAuth, (req, res) => { turn(req, res, "confirm", req.params.id).catch((e) => { console.error(e); res.status(500).json({ message: "The assistant could not answer." }); }); });
   app.post("/api/ai-chat/confirm", requireAuth, (req, res) => { turn(req, res, "confirm").catch((e) => { console.error(e); res.status(500).json({ message: "The assistant could not answer." }); }); });
 }
