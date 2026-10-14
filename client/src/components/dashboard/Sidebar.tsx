@@ -15,6 +15,7 @@ import {
   CreditCard,
   Wallet,
   CheckSquare,
+  CalendarDays,
   FolderKanban,
   TrendingUp,
   UserCog,
@@ -132,6 +133,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           badge: pendingTasks > 0 ? String(pendingTasks) : undefined,
         },
         { name: "nav.projects", href: "/projects", icon: FolderKanban, module: "projects" },
+        { name: "nav.calendar", href: "/calendar", icon: CalendarDays, module: "dashboard" },
         {
           name: "nav.messages",
           href: "/messages",

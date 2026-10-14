@@ -18,6 +18,7 @@ import { runArchiveMigration } from "./account-removal";
 import { registerAiChatRoutes, runAiChatMigration } from "./ai-chat/routes";
 import { runPaymentSourceLinkMigration } from "./payment-source-service";
 import { registerDashboardOverviewRoutes } from "./dashboard-overview";
+import { registerCalendarRoutes } from "./calendar";
 import { registerAiAccessRoutes } from "./ai-access-routes";
 import { runApiTokensMigration } from "./mcp/tokens";
 import { registerOAuthConsentRoutes, runOAuthMigration, startOAuthPurge } from "./oauth/routes";
@@ -110,6 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerMessagingRoutes(app);
   await registerPushRoutes(app);
   registerDashboardOverviewRoutes(app);
+  registerCalendarRoutes(app);
   registerAiAccessRoutes(app);
   registerOAuthConsentRoutes(app);
   registerDigestSettingsRoutes(app);

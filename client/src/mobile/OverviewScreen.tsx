@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "wouter";
-import { Check, ArrowUp, ArrowDown } from "lucide-react";
+import { Check, ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -113,8 +113,11 @@ export default function OverviewScreen() {
 
   return (
     <div className="space-y-4 p-4 pb-24">
-      <div>
-        <h2 className="text-xl font-semibold text-foreground">{greeting}</h2>
+      <div className="relative">
+        <Link href="/m/calendar" aria-label={t("nav.calendar")} className="absolute end-0 top-0 flex h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-sm font-medium text-primary active:scale-95" data-testid="m-open-calendar">
+          <CalendarDays className="h-4 w-4" />{t("nav.calendar")}
+        </Link>
+        <h2 className="pe-28 text-xl font-semibold text-foreground">{greeting}</h2>
         <p className="text-sm text-muted-foreground">{today}</p>
         {data && scope === "me" && (
           <p className="mt-1 text-sm">

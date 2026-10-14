@@ -13,6 +13,7 @@ import { userAvatarSrc, userInitials } from "@/lib/user-avatar";
 import { useInstall, useOnline } from "./hooks";
 import { QuickAdd, type AddRequest } from "./QuickAdd";
 import OverviewScreen from "./OverviewScreen";
+import CalendarScreen from "./CalendarScreen";
 import TasksScreen from "./TasksScreen";
 import ProjectsScreen from "./ProjectsScreen";
 import ClientsScreen from "./ClientsScreen";
@@ -140,7 +141,7 @@ export default function MobileApp() {
       {!online && <OfflineBanner />}
 
       <main className={cn("flex-1 overscroll-contain", inThread ? "overflow-hidden" : "overflow-y-auto")}>
-        {active === "overview" && <OverviewScreen />}
+        {active === "overview" && (segment === "calendar" ? <CalendarScreen /> : <OverviewScreen />)}
         {active === "tasks" && <TasksScreen />}
         {active === "projects" && <ProjectsScreen onAdd={openAdd} />}
         {active === "clients" && <ClientsScreen onAdd={openAdd} />}
