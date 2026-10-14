@@ -6,6 +6,7 @@ import { db } from "./db";
 import { APP_TIMEZONE, dayKey } from "./task-insights";
 import { notificationService } from "./notification-service";
 import { logger } from "./logger";
+import { projectHealth, type ProjectHealth } from "./project-health";
 import { loadAllPrefs, mergePrefs, runDigestSettingsMigration } from "./digest-settings";
 
 export const DIGEST_HOUR = Math.min(23, Math.max(0, parseInt(process.env.DIGEST_HOUR || "6", 10) || 6));
@@ -97,6 +98,50 @@ export function buildDigestSections(rows: DigestTaskRow[], today: string, langua
     sections.push({ key, heading: HEADINGS[language][key], items, more: Math.max(0, total - items.length) });
   }
   return sections;
+}
+
+export const DIGEST_PROJECTS_PER_PERSON = 8;
+
+export interface DigestProjectRow {
+  name: string;
+  dueDate: Date | null;
+  total: number;      // tasks, not counting cancelled ones
+  completed: number;
+  overdue: number;    // open tasks past their own due date
+  doneToday: number;
+}
+export interface DigestProject {
+  name: string;
+  pct: number;        // 0-100, completed / total
+  completed: number;
+  total: number;
+  overdue: number;
+  doneToday: number;
+  health: ProjectHealth;
+  healthLabel: string;
+}
+
+const HEALTH_LABELS: Record<DigestLanguage, Record<ProjectHealth, string>> = {
+  ar: { completed: "مكتمل", archived: "مؤرشف", on_hold: "معلّق", ready_to_close: "جاهز للإغلاق", overdue: "متأخر", at_risk: "معرّض للتأخر", no_tasks: "بلا مهام", on_track: "على المسار" },
+  en: { completed: "Completed", archived: "Archived", on_hold: "On hold", ready_to_close: "Ready to close", overdue: "Overdue", at_risk: "At risk", no_tasks: "No tasks", on_track: "On track" },
+};
+// Worst first, so the projects that need attention lead the list
+const HEALTH_RANK: Record<ProjectHealth, number> = { overdue: 0, at_risk: 1, ready_to_close: 2, on_track: 3, no_tasks: 4, on_hold: 5, completed: 6, archived: 7 };
+
+// Progress is the same figure the projects page shows (done / all tasks, cancelled ones left out), and the state comes from projectHealth
+export function buildDigestProjects(rows: DigestProjectRow[], language: DigestLanguage, now: Date = new Date()): { projects: DigestProject[]; more: number } {
+  const all = rows.map((r): DigestProject => {
+    const health = projectHealth({ status: "active", dueDate: r.dueDate, total: r.total, completed: r.completed, overdueTasks: r.overdue, now });
+    return {
+      name: r.name,
+      pct: r.total > 0 ? Math.round((r.completed / r.total) * 100) : 0,
+      completed: r.completed, total: r.total, overdue: r.overdue, doneToday: r.doneToday,
+      health, healthLabel: HEALTH_LABELS[language][health],
+    };
+  });
+  all.sort((a, b) => HEALTH_RANK[a.health] - HEALTH_RANK[b.health] || a.pct - b.pct || a.name.localeCompare(b.name));
+  const projects = all.slice(0, DIGEST_PROJECTS_PER_PERSON);
+  return { projects, more: all.length - projects.length };
 }
 
 export interface EveningCounts {
@@ -235,6 +280,40 @@ async function loadItems(kind: DigestKind, today: string, tz: string): Promise<M
   return byUser;
 }
 
+// Active projects each person is part of (a member, or holding tasks in it), with their progress. One query for everyone.
+async function loadProjects(today: string, tz: string): Promise<Map<string, DigestProjectRow[]>> {
+  const startOfToday = sql`((${today}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC'`;
+  const result = await db.execute(sql`
+    WITH people AS (
+      SELECT project_id, user_id FROM project_members
+      UNION
+      SELECT project_id, assigned_to FROM tasks WHERE project_id IS NOT NULL AND assigned_to IS NOT NULL
+    ), stats AS (
+      SELECT project_id,
+             COUNT(*) FILTER (WHERE status <> 'cancelled')::int AS total,
+             COUNT(*) FILTER (WHERE status = 'completed')::int AS completed,
+             COUNT(*) FILTER (WHERE status IN ('pending','in_progress') AND due_date < ${startOfToday})::int AS overdue,
+             COUNT(*) FILTER (WHERE status = 'completed' AND completed_date >= ${startOfToday} AND completed_date < (${startOfToday}) + interval '1 day')::int AS done_today
+      FROM tasks WHERE project_id IS NOT NULL GROUP BY project_id
+    )
+    SELECT pe.user_id, p.name, p.due_date,
+           COALESCE(s.total, 0) AS total, COALESCE(s.completed, 0) AS completed,
+           COALESCE(s.overdue, 0) AS overdue, COALESCE(s.done_today, 0) AS done_today
+    FROM people pe
+    JOIN projects p ON p.id = pe.project_id AND p.status = 'active'
+    JOIN users u ON u.id = pe.user_id AND u.is_active = true
+    LEFT JOIN stats s ON s.project_id = p.id
+  `);
+  const rows = ((result as any).rows ?? result) as any[];
+  const byUser = new Map<string, DigestProjectRow[]>();
+  for (const r of rows) {
+    const list = byUser.get(r.user_id) ?? [];
+    list.push({ name: r.name, dueDate: r.due_date ? new Date(r.due_date) : null, total: Number(r.total), completed: Number(r.completed), overdue: Number(r.overdue), doneToday: Number(r.done_today) });
+    byUser.set(r.user_id, list);
+  }
+  return byUser;
+}
+
 // The interface language is a per-browser choice and is not stored on the server, so the digest uses the company default
 const DEFAULT_LANGUAGE: DigestLanguage = process.env.DIGEST_LANGUAGE === "en" ? "en" : "ar";
 
@@ -256,7 +335,7 @@ export interface DigestRunSummary { considered: number; sent: number; skipped: n
 export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TIMEZONE, kind: DigestKind = "morning"): Promise<DigestRunSummary> {
   const summary: DigestRunSummary = { considered: 0, sent: 0, skipped: 0 };
   const today = dayKey(now, tz);
-  const [rows, prefs, items] = await Promise.all([loadCounts(kind, today, tz), loadAllPrefs(), loadItems(kind, today, tz)]);
+  const [rows, prefs, items, projectRows] = await Promise.all([loadCounts(kind, today, tz), loadAllPrefs(), loadItems(kind, today, tz), loadProjects(today, tz)]);
 
   for (const row of rows) {
     summary.considered++;
@@ -285,6 +364,8 @@ export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TI
             : { kind, day: today, completed: row.a, remaining: row.b }),
           lang: DEFAULT_LANGUAGE,
           sections: buildDigestSections(items.get(row.user_id) ?? [], today, DEFAULT_LANGUAGE),
+          projects: buildDigestProjects(projectRows.get(row.user_id) ?? [], DEFAULT_LANGUAGE, now),
+          projectsHeading: DEFAULT_LANGUAGE === "ar" ? "المشاريع" : "Projects",
         },
       });
       summary.sent++;

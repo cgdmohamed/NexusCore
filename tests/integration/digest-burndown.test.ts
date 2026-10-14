@@ -67,6 +67,57 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
     expect((await runDailyDigest(at("06:30"))).sent).toBe(0);
   });
 
+  it("adds each person's projects with progress that matches the projects page", async () => {
+    const { tasks, projects, projectMembers, users, notifications } = await import("../../shared/schema");
+    const { runDailyDigest } = await import("../../server/daily-digest");
+    const { notificationService } = await import("../../server/notification-service");
+    const { sql } = await import("drizzle-orm");
+    const me = ctx.currentUserId;
+    await ctx.db.delete(tasks);
+    await ctx.db.execute(sql`DELETE FROM notification_logs`);
+    await ctx.db.delete(notifications);
+    await ctx.db.execute(sql`DELETE FROM digest_log`);
+    const sent: any[] = [];
+    const spy = vi.spyOn(notificationService as any, "sendEmail").mockImplementation(async (p: any) => { sent.push(p); });
+
+    const [mine] = await ctx.db.insert(projects).values({ name: "Mine Alpha", status: "active", createdBy: me } as any).returning();
+    const [onHold] = await ctx.db.insert(projects).values({ name: "Paused Beta", status: "on_hold", createdBy: me } as any).returning();
+    const [others] = await ctx.db.insert(projects).values({ name: "Not Mine Gamma", status: "active", createdBy: me } as any).returning();
+    await ctx.db.insert(projectMembers).values({ projectId: mine.id, userId: me } as any);
+    const t = (extra: object) => ({ title: "t", assignedTo: me, createdBy: me, ...extra }) as any;
+    await ctx.db.insert(tasks).values([
+      t({ projectId: mine.id, status: "completed", completedDate: new Date() }),
+      t({ projectId: mine.id, status: "completed", completedDate: ago(3) }),
+      t({ projectId: mine.id, status: "pending", dueDate: dueOn(0) }),
+      t({ projectId: mine.id, status: "pending", dueDate: dueOn(-2) }),
+      t({ projectId: mine.id, status: "cancelled" }),
+      t({ projectId: onHold.id, status: "pending", dueDate: dueOn(0) }),
+    ]);
+    await ctx.db.insert(tasks).values({ title: "x", projectId: others.id, status: "pending", createdBy: me } as any);
+
+    expect((await runDailyDigest(at("06:30"))).sent).toBe(1);
+    const [row] = (await ctx.db.select().from(notifications)).filter((n: any) => n.type === "daily_digest");
+    const meta = typeof row.metadata === "string" ? JSON.parse(row.metadata) : (row.metadata as any);
+
+    // Only the active project this person belongs to; cancelled tasks are not counted: 2 done of 4
+    expect(meta.projects.projects).toHaveLength(1);
+    expect(meta.projects.projects[0]).toMatchObject({ name: "Mine Alpha", pct: 50, completed: 2, total: 4, overdue: 1 });
+
+    // The same numbers the projects page shows
+    const page = (await ctx.api("GET", "/api/projects")).body.find((p: any) => p.id === mine.id);
+    expect(page.taskCounts.completed).toBe(meta.projects.projects[0].completed);
+    expect(page.taskCounts.total).toBe(meta.projects.projects[0].total);
+    expect(page.health).toBe(meta.projects.projects[0].health);
+
+    const mail = sent.find((m) => m.subject === row.title);
+    expect(mail.bodyHtml).toContain("Mine Alpha");
+    expect(mail.bodyHtml).toContain("٥٠٪");
+    expect(meta.projects.projects.map((p: any) => p.name)).not.toContain("Paused Beta"); // on hold: not a project row (its due-today task still lists with its project name)
+    expect(mail.bodyHtml).not.toContain("Not Mine Gamma");
+    expect(mail.bodyText).toContain("Mine Alpha: ٥٠٪ · ٢ من ٤ مهام");
+    spy.mockRestore();
+  });
+
   it("sends the evening summary of finished and still-open work, and respects switches and hours", async () => {
     const { tasks, notifications } = await import("../../shared/schema");
     const { runDailyDigest } = await import("../../server/daily-digest");

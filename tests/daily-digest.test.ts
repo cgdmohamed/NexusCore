@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDigestSections, buildDigest, isDigestTime, localHour } from "../server/daily-digest";
+import { buildDigestProjects, buildDigestSections, buildDigest, isDigestTime, localHour } from "../server/daily-digest";
 
 describe("morning digest", () => {
   it("says nothing on an empty day", () => {
@@ -77,5 +77,35 @@ describe("buildDigestSections", () => {
     expect(sec.items).toHaveLength(10);
     expect(sec.more).toBe(5);
     expect(sec.heading).toBe("Due today");
+  });
+});
+
+describe("buildDigestProjects", () => {
+  const now = new Date("2026-10-13T08:00:00Z");
+  const row = (name: string, total: number, completed: number, extra: object = {}) => ({ name, dueDate: null, total, completed, overdue: 0, doneToday: 0, ...extra });
+
+  it("computes the percentage from done over all non-cancelled tasks and names the state in Arabic", () => {
+    const { projects } = buildDigestProjects([row("A", 10, 6)], "ar", now);
+    expect(projects[0]).toMatchObject({ pct: 60, completed: 6, total: 10, health: "on_track", healthLabel: "على المسار" });
+  });
+
+  it("handles a project with no tasks and one that is finished", () => {
+    const { projects } = buildDigestProjects([row("Empty", 0, 0), row("Done", 4, 4)], "en", now);
+    expect(projects.find((p) => p.name === "Empty")).toMatchObject({ pct: 0, health: "no_tasks" });
+    expect(projects.find((p) => p.name === "Done")).toMatchObject({ pct: 100, health: "ready_to_close", healthLabel: "Ready to close" });
+  });
+
+  it("puts the late and at-risk projects first, then the least finished", () => {
+    const { projects } = buildDigestProjects(
+      [row("Calm 90", 10, 9), row("Calm 20", 10, 2), row("Late task", 10, 5, { overdue: 2 }), row("Past due", 10, 5, { dueDate: new Date("2026-10-01T00:00:00Z") })],
+      "en", now);
+    expect(projects.map((p) => p.name)).toEqual(["Past due", "Late task", "Calm 20", "Calm 90"]);
+  });
+
+  it("caps the list and counts what was left out", () => {
+    const rows = Array.from({ length: 11 }, (_, i) => row(`P${i}`, 10, i));
+    const out = buildDigestProjects(rows, "en", now);
+    expect(out.projects).toHaveLength(8);
+    expect(out.more).toBe(3);
   });
 });

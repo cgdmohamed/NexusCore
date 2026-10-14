@@ -179,14 +179,38 @@ class NotificationService {
       const sections: Array<{ heading: string; items: Array<{ title: string; meta: string }>; more: number }> = Array.isArray(meta?.sections) ? meta.sections : [];
       const ar = meta?.lang === "ar";
       const moreText = (n: number) => (ar ? `و${n} أخرى` : `and ${n} more`);
-      const itemsHtml = sections.map((sec) => `
+      const projectList: Array<{ name: string; pct: number; completed: number; total: number; overdue: number; doneToday: number; healthLabel: string }> = Array.isArray(meta?.projects?.projects) ? meta.projects.projects : [];
+      const projectMore: number = Number(meta?.projects?.more) || 0;
+      const nums = (n: number) => (ar ? String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]) : String(n));
+      const projectLine = (p: (typeof projectList)[number]) => {
+        const bits = [ar ? `${nums(p.pct)}٪` : `${p.pct}%`, ar ? `${nums(p.completed)} من ${nums(p.total)} مهام` : `${p.completed} of ${p.total} tasks`];
+        if (p.overdue > 0) bits.push(ar ? `${nums(p.overdue)} متأخرة` : `${p.overdue} late`);
+        if (meta?.kind === "evening" && p.doneToday > 0) bits.push(ar ? `أُنجز اليوم ${nums(p.doneToday)}` : `${p.doneToday} done today`);
+        bits.push(p.healthLabel);
+        return bits.join(" · ");
+      };
+      const projectsHtml = projectList.length === 0 ? "" : `
+              <h3 style="margin:20px 0 8px;font-size:15px;color:#1a1a1a;">${escHtml(String(meta?.projectsHeading ?? ""))}</h3>
+              ${projectList.map((p) => `<div style="margin:0 0 12px;">
+                <div style="font-size:14px;color:#1a1a1a;font-weight:600;">${escHtml(p.name)}</div>
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0;"><tr>
+                  <td width="${Math.max(p.pct, 1)}%" height="6" style="background:${p.overdue > 0 ? "#dc2626" : "#4f46e5"};font-size:0;line-height:0;">&nbsp;</td>
+                  <td height="6" style="background:#e5e7eb;font-size:0;line-height:0;">&nbsp;</td>
+                </tr></table>
+                <div style="font-size:13px;color:#666;">${escHtml(projectLine(p))}</div>
+              </div>`).join("")}
+              ${projectMore > 0 ? `<p style="margin:0;font-size:13px;color:#888;">${escHtml(moreText(projectMore))}</p>` : ""}`;
+      const projectsText = projectList.length === 0 ? "" : `${meta?.projectsHeading ?? ""}:\n${projectList.map((p) => `- ${p.name}: ${projectLine(p)}`).join("\n")}${projectMore > 0 ? `\n${moreText(projectMore)}` : ""}`;
+      const taskItemsHtml = sections.map((sec) => `
             <h3 style="margin:20px 0 8px;font-size:15px;color:#1a1a1a;">${escHtml(sec.heading)}</h3>
             <ul style="margin:0;padding:0 ${ar ? "20px 0 0" : "0 0 20px"};color:#444;font-size:14px;line-height:1.7;">
               ${sec.items.map((it) => `<li>${escHtml(it.title)}${it.meta ? ` <span style="color:#888;">— ${escHtml(it.meta)}</span>` : ""}</li>`).join("")}
               ${sec.more > 0 ? `<li style="color:#888;list-style:none;">${escHtml(moreText(sec.more))}</li>` : ""}
       </ul>`).join("");
-      const itemsText = sections.map((sec) =>
+      const taskItemsText = sections.map((sec) =>
         `${sec.heading}:\n${sec.items.map((it) => `- ${it.title}${it.meta ? ` (${it.meta})` : ""}`).join("\n")}${sec.more > 0 ? `\n${moreText(sec.more)}` : ""}`).join("\n\n");
+      const itemsHtml = taskItemsHtml + projectsHtml;
+      const itemsText = [taskItemsText, projectsText].filter(Boolean).join("\n\n");
 
       if (!template) {
         // Use default template
