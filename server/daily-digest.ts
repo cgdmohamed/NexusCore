@@ -56,6 +56,49 @@ function arTasksFor(n: number, kind: "due" | "late"): string {
   return n === 1 ? "مهمة واحدة متأخرة" : n === 2 ? "مهمتان متأخرتان" : `${arTasks(n)} متأخرة`;
 }
 
+export interface DigestItem { title: string; meta: string }
+export interface DigestSection { key: "due" | "late" | "done" | "open"; heading: string; items: DigestItem[]; more: number }
+
+const HEADINGS: Record<DigestLanguage, Record<DigestSection["key"], string>> = {
+  ar: { due: "مستحقة اليوم", late: "متأخرة", done: "أُنجزت اليوم", open: "متبقية" },
+  en: { due: "Due today", late: "Overdue", done: "Completed today", open: "Still open" },
+};
+export const DIGEST_ITEMS_PER_SECTION = 10;
+
+export interface DigestTaskRow {
+  section: DigestSection["key"];
+  title: string;
+  project?: string | null;
+  dueDay?: string | null; // YYYY-MM-DD in the company's calendar
+  total: number; // all tasks in this section for the user, for the "and N more" line
+}
+
+function daysBetween(fromDay: string, toDay: string): number {
+  return Math.round((Date.parse(`${toDay}T00:00:00Z`) - Date.parse(`${fromDay}T00:00:00Z`)) / 86_400_000);
+}
+
+// Turns the per-user task rows into the sections shown in the email. Pure, so ordering and wording are testable.
+export function buildDigestSections(rows: DigestTaskRow[], today: string, language: DigestLanguage): DigestSection[] {
+  const order: DigestSection["key"][] = ["late", "due", "done", "open"];
+  const sections: DigestSection[] = [];
+  for (const key of order) {
+    const mine = rows.filter((r) => r.section === key);
+    if (mine.length === 0) continue;
+    const items = mine.slice(0, DIGEST_ITEMS_PER_SECTION).map((r) => {
+      const bits: string[] = [];
+      if (r.project) bits.push(r.project);
+      if ((key === "late" || key === "open") && r.dueDay) {
+        const late = daysBetween(r.dueDay, today);
+        if (late > 0) bits.push(language === "ar" ? `متأخرة ${late === 1 ? "يوماً واحداً" : late === 2 ? "يومين" : late <= 10 ? `${arNumber(late)} أيام` : `${arNumber(late)} يوماً`}` : `${late}d late`);
+      }
+      return { title: r.title, meta: bits.join(" · ") };
+    });
+    const total = Math.max(mine[0].total, mine.length);
+    sections.push({ key, heading: HEADINGS[language][key], items, more: Math.max(0, total - items.length) });
+  }
+  return sections;
+}
+
 export interface EveningCounts {
   completed: number;
   remaining: number;
@@ -153,6 +196,45 @@ async function loadCounts(kind: DigestKind, today: string, tz: string): Promise<
     .map((r) => ({ user_id: r.user_id, a: Number(r.a), b: Number(r.b) }));
 }
 
+// The tasks behind the numbers, so the summary says which ones and not only how many. The same conditions as loadCounts.
+async function loadItems(kind: DigestKind, today: string, tz: string): Promise<Map<string, DigestTaskRow[]>> {
+  const startOfToday = sql`((${today}::date)::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC'`;
+  const endOfToday = sql`(${startOfToday}) + interval '1 day'`;
+  const section = kind === "morning"
+    ? sql`CASE WHEN t.due_date < ${startOfToday} THEN 'late' ELSE 'due' END`
+    : sql`CASE WHEN t.status = 'completed' THEN 'done' ELSE 'open' END`;
+  const where = kind === "morning"
+    ? sql`t.status IN ('pending','in_progress') AND t.due_date IS NOT NULL AND t.due_date < ${endOfToday}`
+    : sql`(t.status = 'completed' AND t.completed_date >= ${startOfToday} AND t.completed_date < ${endOfToday})
+          OR (t.status IN ('pending','in_progress') AND t.due_date IS NOT NULL AND t.due_date < ${endOfToday})`;
+  const result = await db.execute(sql`
+    SELECT user_id, section, title, project, due_day, total FROM (
+      SELECT t.assigned_to AS user_id, ${section} AS section, t.title AS title, p.name AS project,
+             to_char((t.due_date AT TIME ZONE 'UTC') AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS due_day,
+             COUNT(*) OVER (PARTITION BY t.assigned_to, ${section})::int AS total,
+             ROW_NUMBER() OVER (
+               PARTITION BY t.assigned_to, ${section}
+               ORDER BY t.due_date ASC NULLS LAST,
+                        CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+                        t.created_at ASC
+             ) AS rn
+      FROM tasks t
+      JOIN users u ON u.id = t.assigned_to AND u.is_active = true
+      LEFT JOIN projects p ON p.id = t.project_id
+      WHERE t.assigned_to IS NOT NULL AND (${where})
+    ) x WHERE rn <= ${DIGEST_ITEMS_PER_SECTION}
+    ORDER BY user_id, rn
+  `);
+  const rows = ((result as any).rows ?? result) as any[];
+  const byUser = new Map<string, DigestTaskRow[]>();
+  for (const r of rows) {
+    const list = byUser.get(r.user_id) ?? [];
+    list.push({ section: r.section, title: r.title, project: r.project, dueDay: r.due_day, total: Number(r.total) });
+    byUser.set(r.user_id, list);
+  }
+  return byUser;
+}
+
 // The interface language is a per-browser choice and is not stored on the server, so the digest uses the company default
 const DEFAULT_LANGUAGE: DigestLanguage = process.env.DIGEST_LANGUAGE === "en" ? "en" : "ar";
 
@@ -174,7 +256,7 @@ export interface DigestRunSummary { considered: number; sent: number; skipped: n
 export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TIMEZONE, kind: DigestKind = "morning"): Promise<DigestRunSummary> {
   const summary: DigestRunSummary = { considered: 0, sent: 0, skipped: 0 };
   const today = dayKey(now, tz);
-  const [rows, prefs] = await Promise.all([loadCounts(kind, today, tz), loadAllPrefs()]);
+  const [rows, prefs, items] = await Promise.all([loadCounts(kind, today, tz), loadAllPrefs(), loadItems(kind, today, tz)]);
 
   for (const row of rows) {
     summary.considered++;
@@ -197,9 +279,13 @@ export async function runDailyDigest(now: Date = new Date(), tz: string = APP_TI
         message: digest.message,
         priority: kind === "morning" && row.b > 0 ? "high" : "medium",
         entityUrl: "/tasks",
-        metadata: kind === "morning"
-          ? { kind, day: today, dueToday: row.a, overdue: row.b }
-          : { kind, day: today, completed: row.a, remaining: row.b },
+        metadata: {
+          ...(kind === "morning"
+            ? { kind, day: today, dueToday: row.a, overdue: row.b }
+            : { kind, day: today, completed: row.a, remaining: row.b }),
+          lang: DEFAULT_LANGUAGE,
+          sections: buildDigestSections(items.get(row.user_id) ?? [], today, DEFAULT_LANGUAGE),
+        },
       });
       summary.sent++;
     } catch (err) {

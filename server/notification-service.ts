@@ -170,6 +170,24 @@ class NotificationService {
           )
         );
 
+      const escHtml = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      let meta: any = null;
+      try {
+        const raw: unknown = notification.metadata;
+        meta = typeof raw === "string" ? JSON.parse(raw) : raw ?? null;
+      } catch { meta = null; }
+      const sections: Array<{ heading: string; items: Array<{ title: string; meta: string }>; more: number }> = Array.isArray(meta?.sections) ? meta.sections : [];
+      const ar = meta?.lang === "ar";
+      const moreText = (n: number) => (ar ? `و${n} أخرى` : `and ${n} more`);
+      const itemsHtml = sections.map((sec) => `
+            <h3 style="margin:20px 0 8px;font-size:15px;color:#1a1a1a;">${escHtml(sec.heading)}</h3>
+            <ul style="margin:0;padding:0 ${ar ? "20px 0 0" : "0 0 20px"};color:#444;font-size:14px;line-height:1.7;">
+              ${sec.items.map((it) => `<li>${escHtml(it.title)}${it.meta ? ` <span style="color:#888;">— ${escHtml(it.meta)}</span>` : ""}</li>`).join("")}
+              ${sec.more > 0 ? `<li style="color:#888;list-style:none;">${escHtml(moreText(sec.more))}</li>` : ""}
+      </ul>`).join("");
+      const itemsText = sections.map((sec) =>
+        `${sec.heading}:\n${sec.items.map((it) => `- ${it.title}${it.meta ? ` (${it.meta})` : ""}`).join("\n")}${sec.more > 0 ? `\n${moreText(sec.more)}` : ""}`).join("\n\n");
+
       if (!template) {
         // Use default template
         const appName = process.env.SMTP_FROM_NAME || process.env.COMPANY_NAME || "Notification";
@@ -182,9 +200,12 @@ class NotificationService {
         const esc = (s: string) =>
           s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+        const buttonText = ar ? "عرض التفاصيل" : "View Details";
+        const footerText = ar ? `وصلك هذا الإشعار من ${appName}.` : `You are receiving this notification from ${appName}.`;
+
         const defaultHtml = `
 <!DOCTYPE html>
-<html>
+<html dir="${ar ? "rtl" : "ltr"}">
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f9f9f9;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9f9;padding:32px 0;">
     <tr>
@@ -199,14 +220,15 @@ class NotificationService {
             <td style="padding:32px;">
               <h2 style="margin:0 0 12px;font-size:18px;color:#1a1a1a;">${esc(notification.title)}</h2>
               <p style="margin:0 0 24px;font-size:15px;color:#444;line-height:1.6;">${esc(notification.message)}</p>
+              ${itemsHtml}
               ${actionUrl ? `<p style="text-align:center;margin:0;">
-                <a href="${esc(actionUrl)}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;">View Details</a>
+                <a href="${esc(actionUrl)}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;">${buttonText}</a>
               </p>` : ""}
             </td>
           </tr>
           <tr>
             <td style="padding:16px 32px;background:#f9f9f9;text-align:center;color:#aaa;font-size:12px;">
-              You are receiving this notification from ${esc(appName)}.
+              ${esc(footerText)}
             </td>
           </tr>
         </table>
@@ -220,7 +242,7 @@ class NotificationService {
           to: [user.email],
           subject: notification.title,
           bodyHtml: defaultHtml,
-          bodyText: `${notification.title}\n\n${notification.message}${actionUrl ? `\n\n${actionUrl}` : ""}`,
+          bodyText: `${notification.title}\n\n${notification.message}${itemsText ? `\n\n${itemsText}` : ""}${actionUrl ? `\n\n${actionUrl}` : ""}`,
           metadata: {
             notificationId: notification.id,
             entityType: notification.entityType,
@@ -237,7 +259,9 @@ class NotificationService {
           notification_title: notification.title,
           notification_message: notification.message,
           entity_url: notification.entityUrl || '#',
-          metadata: notification.metadata ? JSON.parse(notification.metadata as string) : {}
+          notification_items: itemsHtml,
+          notification_items_text: itemsText,
+          metadata: meta ?? {}
         };
 
         const subject = this.replaceVariables(template.subject, variables);

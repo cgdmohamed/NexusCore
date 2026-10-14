@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDigest, isDigestTime, localHour } from "../server/daily-digest";
+import { buildDigestSections, buildDigest, isDigestTime, localHour } from "../server/daily-digest";
 
 describe("morning digest", () => {
   it("says nothing on an empty day", () => {
@@ -53,5 +53,29 @@ describe("digest preferences", () => {
     expect(mergePrefs(company, null)).toEqual(company);
     expect(mergePrefs(company, { eveningHour: null, morningEnabled: false, morningHour: 9 })).toEqual({ morningEnabled: false, morningHour: 9, eveningEnabled: true, eveningHour: 18 });
     expect(mergePrefs(company, { morningHour: 99 }).morningHour).toBe(6);
+  });
+});
+
+describe("buildDigestSections", () => {
+  const row = (section: any, title: string, extra: object = {}) => ({ section, title, total: 1, ...extra });
+
+  it("lists late work first, with how late, and skips empty sections", () => {
+    const out = buildDigestSections(
+      [row("due", "B", { project: "P" }), row("late", "A", { dueDay: "2026-10-10" })],
+      "2026-10-13",
+      "ar",
+    );
+    expect(out.map((s) => s.key)).toEqual(["late", "due"]);
+    expect(out[0].heading).toBe("متأخرة");
+    expect(out[0].items[0]).toEqual({ title: "A", meta: "متأخرة ٣ أيام" });
+    expect(out[1].items[0]).toEqual({ title: "B", meta: "P" });
+  });
+
+  it("caps the list and reports how many were left out", () => {
+    const rows = Array.from({ length: 12 }, (_, i) => row("due", `T${i}`, { total: 15 }));
+    const [sec] = buildDigestSections(rows, "2026-10-13", "en");
+    expect(sec.items).toHaveLength(10);
+    expect(sec.more).toBe(5);
+    expect(sec.heading).toBe("Due today");
   });
 });

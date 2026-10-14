@@ -24,15 +24,18 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
   it("sends each person one digest per day, however many workers run it", async () => {
     const { tasks, notifications } = await import("../../shared/schema");
     const { runDailyDigest, runDigestMigrations } = await import("../../server/daily-digest");
+    const { notificationService } = await import("../../server/notification-service");
+    const sent: any[] = [];
+    const spy = vi.spyOn(notificationService as any, "sendEmail").mockImplementation(async (p: any) => { sent.push(p); });
     const me = ctx.currentUserId;
     await runDigestMigrations(); // idempotent on a database that already has the objects
     const t = (extra: object) => ({ title: "t", assignedTo: me, createdBy: me, ...extra }) as any;
     await ctx.db.insert(tasks).values([
-      t({ status: "pending", dueDate: dueOn(0) }),
-      t({ status: "in_progress", dueDate: dueOn(0) }),
-      t({ status: "pending", dueDate: dueOn(-2) }),
-      t({ status: "completed", dueDate: dueOn(-2), completedDate: new Date() }),
-      t({ status: "pending", dueDate: dueOn(3) }),
+      t({ title: "Due A", status: "pending", dueDate: dueOn(0) }),
+      t({ title: "Due B", status: "in_progress", dueDate: dueOn(0) }),
+      t({ title: "Late C", status: "pending", dueDate: dueOn(-2) }),
+      t({ title: "Done D", status: "completed", dueDate: dueOn(-2), completedDate: new Date() }),
+      t({ title: "Future E", status: "pending", dueDate: dueOn(3) }),
     ]);
 
     const [a, b] = await Promise.all([runDailyDigest(at("06:30")), runDailyDigest(at("06:30"))]);
@@ -42,6 +45,24 @@ describe.skipIf(!TEST_DATABASE_URL)("morning digest and project burndown (integr
     expect(rows).toHaveLength(1);
     expect(rows[0].message).toBe("مهمتان مستحقتان اليوم ومهمة واحدة متأخرة");
     expect(rows[0].entityUrl).toBe("/tasks");
+
+    // The notification carries the tasks themselves, late first, and nothing that is not due or late
+    const meta = typeof rows[0].metadata === "string" ? JSON.parse(rows[0].metadata) : (rows[0].metadata as any);
+    expect(meta.lang).toBe("ar");
+    expect(meta.sections.map((x: any) => x.key)).toEqual(["late", "due"]);
+    expect(meta.sections[0].items.map((i: any) => i.title)).toEqual(["Late C"]);
+    expect(meta.sections[0].items[0].meta).toContain("متأخرة يومين");
+    expect(meta.sections[1].items.map((i: any) => i.title).sort()).toEqual(["Due A", "Due B"]);
+
+    // ...and so does the email, in the digest's language
+    const mail = sent.find((m) => m.subject === rows[0].title);
+    expect(mail).toBeTruthy();
+    for (const title of ["Late C", "Due A", "Due B"]) expect(mail.bodyHtml).toContain(title);
+    expect(mail.bodyHtml).not.toContain("Future E");
+    expect(mail.bodyHtml).toContain('dir="rtl"');
+    expect(mail.bodyHtml).toContain("وصلك هذا الإشعار");
+    expect(mail.bodyText).toContain("- Late C");
+    spy.mockRestore();
 
     expect((await runDailyDigest(at("06:30"))).sent).toBe(0);
   });
