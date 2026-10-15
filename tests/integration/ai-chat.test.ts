@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { startApp, TEST_DATABASE_URL } from "./helpers";
+import type { FetchLike } from "../../server/ai-chat/providers";
 
 describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
   let ctx: Awaited<ReturnType<typeof startApp>>;
@@ -8,20 +9,22 @@ describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
   let responder: ((body: any) => Promise<any[]> | any[]) | null = null;
   const api = (m: string, p: string, b?: unknown) => ctx.api(m, p, b);
 
-  beforeAll(async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    process.env.VAULT_ENCRYPTION_KEY = "ab".repeat(32);
-    ctx = await startApp();
-    const { setProviderFetch } = await import("../../server/ai-chat/providers");
-    setProviderFetch(async (_url, init) => {
+  const stubFetch: FetchLike = async (_url, init) => {
       const body = JSON.parse(init.body);
       requests.push(body);
       if (responder) return { ok: true, status: 200, text: async () => JSON.stringify({ content: await responder!(body) }) };
       const next = replies.shift();
       if (!next) return { ok: false, status: 500, text: async () => "{}" };
       return { ok: true, status: 200, text: async () => JSON.stringify({ content: next }) };
-    });
+  };
+
+  beforeAll(async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    process.env.VAULT_ENCRYPTION_KEY = "ab".repeat(32);
+    ctx = await startApp();
+    const { setProviderFetch } = await import("../../server/ai-chat/providers");
+    setProviderFetch(stubFetch);
   });
   afterAll(async () => { const { setProviderFetch } = await import("../../server/ai-chat/providers"); setProviderFetch(null); await ctx?.close(); });
   beforeEach(async () => { requests = []; replies = []; responder = null; const { resetAiChatLimits } = await import("../../server/ai-chat/routes"); resetAiChatLimits(); await api("POST", "/api/ai-chat/new"); });
@@ -187,6 +190,45 @@ describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
     // and the model was told who it is talking to and today's date
     expect(requests[0].system).toContain(ctx.currentUserId);
     expect(requests[0].system).toMatch(/Today is \w+day \d{4}-\d{2}-\d{2}/);
+  });
+
+  it("works end to end with an OpenAI reasoning model that only takes tools through the Responses API", async () => {
+    const providers = await import("../../server/ai-chat/providers");
+    providers.resetOpenAIRouting();
+    const { tasks } = await import("../../shared/schema");
+    const before = (await ctx.db.select().from(tasks)).length;
+    const seen: { url: string; body: any }[] = [];
+    const queue: any[] = [
+      [{ type: "reasoning", summary: [] }, { type: "function_call", call_id: "c1", name: "create_task", arguments: JSON.stringify({ title: "Reasoned task" }) }],
+      [{ type: "message", content: [{ type: "output_text", text: "تم." }] }],
+    ];
+    providers.setProviderFetch(async (url, init) => {
+      const body = JSON.parse(init.body);
+      seen.push({ url, body });
+      if (url.endsWith("/chat/completions")) return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to none." } }) };
+      return { ok: true, status: 200, text: async () => JSON.stringify({ output: queue.shift() }) };
+    });
+    try {
+      expect((await api("PUT", "/api/settings/ai-chat", { provider: "openai", model: "gpt-5.6-terra", apiKey: "sk-test-1234", enabled: true })).status).toBe(200);
+      queue.unshift([{ type: "message", content: [{ type: "output_text", text: "OK" }] }]); // the connection test's answer
+      expect((await api("POST", "/api/settings/ai-chat/test")).body.ok).toBe(true); // the test now offers a tool, as real use does
+      const asked = await api("POST", "/api/ai-chat/messages", { text: "add a task: Reasoned task" });
+      expect(asked.status).toBe(200);
+      expect(asked.body.pending).toEqual([expect.objectContaining({ name: "create_task" })]);
+      expect(await ctx.db.select().from(tasks).then((r: any[]) => r.length)).toBe(before); // nothing yet: it waits for confirmation
+      const done = await api("POST", "/api/ai-chat/confirm", { approve: true });
+      expect(done.status).toBe(200);
+      expect(done.body.items.some((i: any) => i.role === "event" && i.name === "create_task" && i.ok)).toBe(true);
+      expect(await ctx.db.select().from(tasks).then((r: any[]) => r.length)).toBe(before + 1);
+      expect(seen.every((x) => x.url.endsWith("/responses"))).toBe(true);
+      // The tool result went back as a function_call_output for the same call id
+      const last = seen.at(-1)!.body.input;
+      expect(last.at(-1)).toMatchObject({ type: "function_call_output", call_id: "c1" });
+    } finally {
+      providers.setProviderFetch(stubFetch);
+      providers.resetOpenAIRouting();
+      await api("PUT", "/api/settings/ai-chat", { provider: "anthropic", model: "claude-x", apiKey: "sk-ant-test-WXYZ", enabled: true });
+    }
   });
 
   describe("several conversations at once", () => {

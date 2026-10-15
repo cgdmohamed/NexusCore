@@ -143,7 +143,11 @@ export function registerAiChatRoutes(app: Express) {
     try {
       const s = await loadSettings();
       if (!s.apiKey) return res.json({ ok: false, message: "No API key is set." });
-      await createProvider(s.provider, s.apiKey, s.model).complete({ system: "Reply with the single word OK.", messages: [{ role: "user", text: "ping" }], tools: [] });
+      // A tool is offered on purpose: some models accept plain chat but refuse tools, and the assistant is all tools
+      await createProvider(s.provider, s.apiKey, s.model).complete({
+        system: "Reply with the single word OK.", messages: [{ role: "user", text: "ping" }],
+        tools: [{ name: "noop", description: "Does nothing. You never need to call it.", inputSchema: { type: "object", properties: {} } }],
+      });
       res.json({ ok: true });
     } catch (error) {
       res.json({ ok: false, message: error instanceof ProviderError ? error.message : "The test failed." });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anthropicBody, createProvider, openaiBody, parseAnthropic, parseOpenAI, setProviderFetch, ProviderError, type ChatMessage } from "../server/ai-chat/providers";
+import { anthropicBody, createProvider, openaiBody, openaiResponsesBody, parseAnthropic, parseOpenAI, parseOpenAIResponses, setProviderFetch, ProviderError, type ChatMessage } from "../server/ai-chat/providers";
 import { buildSystemPrompt, relativeDates, DECLINED, MAX_STEPS, resolvePending, sendMessage, toView, windowed, type ChatState, type Toolkit } from "../server/ai-chat/agent";
 
 const tools = [{ name: "list_clients", description: "d", inputSchema: { type: "object" } }];
@@ -189,5 +189,99 @@ describe("a busy provider", () => {
       await expect(providers.createProvider("openai", "k", "m").complete({ system: "s", messages: [], tools: [] })).rejects.toThrow(/rejected the API key/);
       expect(calls).toBe(1);
     } finally { providers.setProviderFetch(null); }
+  });
+});
+
+describe("OpenAI reasoning models and the Responses API", () => {
+  const msgs: ChatMessage[] = [
+    { role: "user", text: "ما المتأخر؟" },
+    { role: "assistant", text: "سأبحث", toolCalls: [{ id: "call_1", name: "summary_invoices", args: { a: 1 } }] },
+    { role: "tool", results: [{ id: "call_1", name: "summary_invoices", content: '{"overdue":2}', isError: false }] },
+  ];
+  const tools = [{ name: "summary_invoices", description: "d", inputSchema: { type: "object", properties: {} } }];
+
+  it("builds a stateless Responses request with flat tools and no provider ids", () => {
+    const b = openaiResponsesBody("gpt-5.6-terra", "sys", msgs, tools);
+    expect(b).toMatchObject({ model: "gpt-5.6-terra", instructions: "sys", store: false, max_output_tokens: 3000 });
+    expect(b.tools).toEqual([{ type: "function", name: "summary_invoices", description: "d", parameters: { type: "object", properties: {} } }]);
+    expect(b.input).toEqual([
+      { role: "user", content: "ما المتأخر؟" },
+      { role: "assistant", content: "سأبحث" },
+      { type: "function_call", call_id: "call_1", name: "summary_invoices", arguments: '{"a":1}' },
+      { type: "function_call_output", call_id: "call_1", output: '{"overdue":2}' },
+    ]);
+    expect(JSON.stringify(b.input)).not.toContain('"id"');
+  });
+
+  it("reads text and tool calls out of a Responses reply and ignores the reasoning items", () => {
+    const out = parseOpenAIResponses({ output: [
+      { type: "reasoning", summary: [] },
+      { type: "message", content: [{ type: "output_text", text: "لديك " }, { type: "output_text", text: "فاتورتان" }] },
+      { type: "function_call", id: "fc_9", call_id: "call_9", name: "my_day", arguments: '{"x":2}' },
+      { type: "function_call", call_id: "call_10", name: "list_tasks", arguments: "not json" },
+    ] });
+    expect(out.text).toBe("لديك \nفاتورتان");
+    expect(out.toolCalls).toEqual([{ id: "call_9", name: "my_day", args: { x: 2 } }, { id: "call_10", name: "list_tasks", args: {} }]);
+    expect(parseOpenAIResponses({})).toEqual({ text: "", toolCalls: [] });
+  });
+
+  const chatOk = { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: "chat" } }] }) };
+  const respOk = { ok: true, status: 200, text: async () => JSON.stringify({ output: [{ type: "message", content: [{ type: "output_text", text: "resp" }] }] }) };
+  const fail = (status: number, message: string) => ({ ok: false, status, text: async () => JSON.stringify({ error: { message } }) });
+  const run = async (model: string, handler: (url: string, body: any) => any) => {
+    const providers = await import("../server/ai-chat/providers");
+    providers.resetOpenAIRouting();
+    const urls: string[] = [];
+    providers.setProviderFetch(async (url, init) => { urls.push(url.replace(/^.*\/v1/, "")); return handler(url, JSON.parse(init.body)); });
+    try {
+      const out = await providers.createProvider("openai", "k", model).complete({ system: "s", messages: [{ role: "user", text: "hi" }], tools });
+      return { out, urls };
+    } finally { providers.setProviderFetch(null); }
+  };
+  const refusal = "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to none.";
+
+  it("keeps gpt-4o on chat completions", async () => {
+    const { out, urls } = await run("gpt-4o", () => chatOk);
+    expect(out.text).toBe("chat");
+    expect(urls).toEqual(["/chat/completions"]);
+  });
+
+  it("starts a gpt-5 / o-series model on the Responses API", async () => {
+    for (const model of ["gpt-5.6-terra", "o4-mini"]) {
+      const { out, urls } = await run(model, () => respOk);
+      expect(out.text).toBe("resp");
+      expect(urls).toEqual(["/responses"]);
+    }
+  });
+
+  it("moves to the Responses API when the provider asks for it, and remembers that for the model", async () => {
+    const providers = await import("../server/ai-chat/providers");
+    providers.resetOpenAIRouting();
+    const urls: string[] = [];
+    providers.setProviderFetch(async (url) => { urls.push(url.replace(/^.*\/v1/, "")); return url.endsWith("/chat/completions") ? fail(400, refusal) : respOk; });
+    try {
+      const p = providers.createProvider("openai", "k", "custom-reasoner");
+      const input = { system: "s", messages: [{ role: "user", text: "hi" } as ChatMessage], tools };
+      expect((await p.complete(input)).text).toBe("resp");
+      expect((await p.complete(input)).text).toBe("resp");
+      expect(urls).toEqual(["/chat/completions", "/responses", "/responses"]); // the second message goes straight to /responses
+    } finally { providers.setProviderFetch(null); providers.resetOpenAIRouting(); }
+  });
+
+  it("falls back to chat completions with reasoning off when there is no Responses endpoint", async () => {
+    let sent: any = null;
+    const { out, urls } = await run("gpt-5.6-terra", (url, body) => {
+      if (url.endsWith("/responses")) return fail(404, "Not found");
+      sent = body;
+      return chatOk;
+    });
+    expect(out.text).toBe("chat");
+    expect(urls).toEqual(["/responses", "/chat/completions"]);
+    expect(sent.reasoning_effort).toBe("none");
+  });
+
+  it("does not mistake an unknown model name or a bad key for this", async () => {
+    await expect(run("gpt-4o", () => fail(400, "The model `gpt-9` does not exist"))).rejects.toThrow(/does not accept this model name/);
+    await expect(run("gpt-5.6-terra", () => fail(401, "bad key"))).rejects.toThrow(/rejected the API key/);
   });
 });

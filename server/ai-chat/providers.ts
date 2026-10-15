@@ -20,7 +20,7 @@ const TIMEOUT_MS = 60_000;
 
 // What the person sees when the provider refuses; never includes the key
 export class ProviderError extends Error {
-  constructor(message: string, public status = 502, public upstream?: number) { super(message); }
+  constructor(message: string, public status = 502, public upstream?: number, public detail?: string) { super(message); }
 }
 
 function friendly(status: number, body: string): ProviderError {
@@ -28,8 +28,8 @@ function friendly(status: number, body: string): ProviderError {
   try { const j = JSON.parse(body); detail = j?.error?.message ?? j?.message ?? ""; } catch { /* not JSON */ }
   if (status === 401 || status === 403) return new ProviderError("The AI provider rejected the API key. Check it in Settings.", 502);
   if (status === 429) return new ProviderError("The AI provider is busy or the quota is used up. Try again shortly.", 503, 429);
-  if (status === 400 && /model/i.test(detail)) return new ProviderError(`The AI provider does not accept this model name (${detail.slice(0, 120)}).`, 502);
-  return new ProviderError(`The AI provider returned an error (${status}).${detail ? " " + detail.slice(0, 160) : ""}`, 502, status);
+  if (status === 400 && /model/i.test(detail) && !/reasoning_effort|\/v1\/responses/i.test(detail)) return new ProviderError(`The AI provider does not accept this model name (${detail.slice(0, 120)}).`, 502, 400, detail);
+  return new ProviderError(`The AI provider returned an error (${status}).${detail ? " " + detail.slice(0, 160) : ""}`, 502, status, detail);
 }
 
 // A provider that is briefly busy or restarting deserves one more try before the person sees an error
@@ -118,6 +118,47 @@ export function parseOpenAI(json: any): Completion {
   };
 }
 
+// The Responses API: what OpenAI asks for with its newer "reasoning" models when tools are used. Stateless on purpose (store: false, no
+// provider-side ids), because the conversation is kept here and sending a call without its hidden reasoning item would be refused.
+export const openaiResponsesBody = (model: string, system: string, messages: ChatMessage[], tools: ModelTool[]) => ({
+  model, instructions: system, max_output_tokens: MAX_OUTPUT_TOKENS, store: false,
+  ...(tools.length ? { tools: tools.map((t) => ({ type: "function", name: t.name, description: t.description, parameters: t.inputSchema })) } : {}),
+  input: messages.flatMap((m): unknown[] => {
+    if (m.role === "user") return [{ role: "user", content: m.text }];
+    if (m.role === "assistant") {
+      return [
+        ...(m.text ? [{ role: "assistant", content: m.text }] : []),
+        ...(m.toolCalls ?? []).map((c) => ({ type: "function_call", call_id: c.id, name: c.name, arguments: JSON.stringify(c.args) })),
+      ];
+    }
+    return m.results.map((r) => ({ type: "function_call_output", call_id: r.id, output: r.content }));
+  }),
+});
+
+export function parseOpenAIResponses(json: any): Completion {
+  const items: any[] = Array.isArray(json?.output) ? json.output : [];
+  const text = items
+    .filter((i) => i?.type === "message")
+    .flatMap((i) => (Array.isArray(i.content) ? i.content : []))
+    .filter((c: any) => c?.type === "output_text" && typeof c.text === "string")
+    .map((c: any) => c.text)
+    .join("\n")
+    .trim();
+  const toolCalls = items.filter((i) => i?.type === "function_call").map((i) => {
+    let args: Record<string, unknown> = {};
+    try { args = JSON.parse(i.arguments || "{}"); } catch { /* the model sent broken JSON; the tool will report the missing fields */ }
+    return { id: String(i.call_id ?? i.id), name: String(i.name), args };
+  });
+  return { text, toolCalls };
+}
+
+// Models that take tools only through the Responses API (or with reasoning switched off). Remembered once the provider has said so.
+const needsResponses = new Set<string>();
+const startsOnResponses = (model: string) => /^(gpt-5|o\d)/i.test(model);
+const wantsResponses = (err: unknown) => err instanceof ProviderError && err.upstream === 400 && /reasoning_effort|\/v1\/responses/i.test(err.detail ?? "");
+const missingEndpoint = (err: unknown) => err instanceof ProviderError && (err.upstream === 404 || err.upstream === 405);
+export const resetOpenAIRouting = () => needsResponses.clear();
+
 let fetchOverride: FetchLike | null = null;
 export const setProviderFetch = (f: FetchLike | null) => { fetchOverride = f; };
 
@@ -126,7 +167,31 @@ export function createProvider(kind: ProviderKind, apiKey: string, model: string
   // The SDKs' usual variables, so a company gateway or proxy can sit in front of the provider
   const base = (env: string | undefined, fallback: string) => (env || fallback).replace(/\/+$/, "");
   if (kind === "openai") {
-    return { async complete({ system, messages, tools }) { return parseOpenAI(await post(fetchImpl, `${base(process.env.OPENAI_BASE_URL, "https://api.openai.com/v1")}/chat/completions`, { authorization: `Bearer ${apiKey}` }, openaiBody(model, system, messages, tools))); } };
+    const root = base(process.env.OPENAI_BASE_URL, "https://api.openai.com/v1");
+    const auth = { authorization: `Bearer ${apiKey}` };
+    const viaChat = async (input: { system: string; messages: ChatMessage[]; tools: ModelTool[] }, noReasoning = false) =>
+      parseOpenAI(await post(fetchImpl, `${root}/chat/completions`, auth, { ...openaiBody(model, input.system, input.messages, input.tools), ...(noReasoning ? { reasoning_effort: "none" } : {}) }));
+    const viaResponses = async (input: { system: string; messages: ChatMessage[]; tools: ModelTool[] }) =>
+      parseOpenAIResponses(await post(fetchImpl, `${root}/responses`, auth, openaiResponsesBody(model, input.system, input.messages, input.tools)));
+    return {
+      async complete(input) {
+        if (needsResponses.has(model) || startsOnResponses(model)) {
+          try { return await viaResponses(input); }
+          catch (error) {
+            // A gateway without the Responses endpoint: the provider's own suggestion is chat completions with reasoning off
+            if (!missingEndpoint(error)) throw error;
+            return viaChat(input, true);
+          }
+        }
+        try { return await viaChat(input); }
+        catch (error) {
+          if (!wantsResponses(error)) throw error;
+          needsResponses.add(model);
+          try { return await viaResponses(input); }
+          catch (second) { if (!missingEndpoint(second)) throw second; return viaChat(input, true); }
+        }
+      },
+    };
   }
   return { async complete({ system, messages, tools }) { return parseAnthropic(await post(fetchImpl, `${base(process.env.ANTHROPIC_BASE_URL, "https://api.anthropic.com")}/v1/messages`, { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, anthropicBody(model, system, messages, tools))); } };
 }
