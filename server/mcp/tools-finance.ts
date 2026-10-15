@@ -157,7 +157,7 @@ const toDate = (d: string) => {
 type ClientRow = { id: string; name: string; status: string };
 
 // A client by id, or by name when exactly one matches; otherwise the candidates are listed so the model can choose
-async function resolveClient(id?: string, name?: string): Promise<ClientRow> {
+export async function resolveClient(id?: string, name?: string): Promise<ClientRow> {
   if (!id && !name) throw new ToolError("Give clientId or clientName.");
   if (id) {
     const [c] = await db.select({ id: clients.id, name: clients.name, status: clients.status }).from(clients).where(eq(clients.id, id));

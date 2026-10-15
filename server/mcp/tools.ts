@@ -7,6 +7,7 @@ import { logAudit } from "../audit";
 import type { ToolDefinition, ToolResult } from "./protocol";
 
 import { ToolError } from "./errors";
+import { REPORT_NEEDS, REPORT_TOOLS, reportRunners, reportSchemas } from "./tools-reports";
 import { FINANCE_NEEDS, FINANCE_TOOLS, financeRunners, financeSchemas } from "./tools-finance";
 import { nameSearchIds, pickByName, type Named } from "./names";
 import { DEFAULT_PAGE, pageOf, pageProps } from "./paging";
@@ -15,7 +16,8 @@ export const INSTRUCTIONS =
   "Company task, project, client, quotation and invoice tools. Look people, projects and clients up with the list tools before using their ids; " +
   "a name is accepted too and must match exactly one record. Search before creating, so nothing is duplicated. Dates are YYYY-MM-DD. " +
   "Priorities are low, medium or high. Statuses are pending, in_progress, completed or cancelled. " +
-  "Amounts are in EGP. Quotations and invoices are always created as drafts; a person issues or sends them in the app.";
+  "Amounts are in EGP. Quotations and invoices are always created as drafts; a person issues or sends them in the app. " +
+  "Lists say their total and hasMore: read the next page with offset before claiming anything about all of them. For overviews use summary_invoices, summary_projects, my_day and client_statement, which give the figures worked out.";
 
 const idProps = (kind: string) => ({
   [`${kind}Id`]: { type: "string", description: `${kind} id (from the list tools)` },
@@ -98,6 +100,7 @@ export const TOOLS: ToolDefinition[] = [
     },
   },
   ...FINANCE_TOOLS,
+  ...REPORT_TOOLS,
 ];
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Dates must be YYYY-MM-DD");
@@ -112,6 +115,7 @@ const status = z.enum(["pending", "in_progress", "completed", "cancelled"]);
 
 const schemas: Record<string, z.ZodTypeAny> = {
   ...financeSchemas,
+  ...reportSchemas,
   list_users: z.object({ search: opt(z.string()), limit: opt(z.number().int().min(1).max(100)), offset: opt(z.number().int().min(0)) }),
   list_projects: z.object({ search: opt(z.string()), status: opt(z.enum(["active", "on_hold", "completed", "archived"])), limit: opt(z.number().int().min(1).max(100)), offset: opt(z.number().int().min(0)) }),
   create_project: z.object({ name: z.string().trim().min(1), description: opt(z.string()), status: opt(z.enum(["active", "on_hold"])), startDate: opt(day), dueDate: opt(day), clientId: opt(z.string()), color: opt(z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
@@ -125,6 +129,7 @@ const schemas: Record<string, z.ZodTypeAny> = {
 
 const NEEDS: Record<string, [string, string]> = {
   ...FINANCE_NEEDS,
+  ...REPORT_NEEDS,
   list_users: ["tasks", "view"], list_projects: ["projects", "view"], create_project: ["projects", "add"], add_project_member: ["projects", "edit"],
   list_tasks: ["tasks", "view"], get_task: ["tasks", "view"], create_task: ["tasks", "add"], assign_task: ["tasks", "edit"], update_task: ["tasks", "edit"],
 };
@@ -192,6 +197,7 @@ type Runner = (args: any, ctx: { userId: string; actor?: string }) => Promise<un
 
 const RUNNERS: Record<string, Runner> = {
   ...financeRunners,
+  ...reportRunners,
   async list_users({ search, limit = DEFAULT_PAGE, offset = 0 }) {
     const all = (await db.select().from(users).where(eq(users.isActive, true))).filter((u) => u.username !== "ai-assistant");
     let people = all;

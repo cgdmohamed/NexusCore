@@ -68,7 +68,7 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP endpoint (integration)", () => {
     expect(init.body.result.serverInfo.name).toBe("nexuscore");
     const list = await rpc("tools/list");
     expect(list.body.result.tools.map((t: any) => t.name).sort()).toEqual([
-      "add_project_member", "assign_task", "create_project", "create_task", "get_task", "list_projects", "list_tasks", "list_users", "update_task",
+      "add_project_member", "assign_task", "create_project", "create_task", "get_task", "list_projects", "list_tasks", "list_users", "my_day", "summary_projects", "update_task",
     ]);
     const notice = await fetch(`${ctx.base}/mcp`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) });
     expect(notice.status).toBe(202);
