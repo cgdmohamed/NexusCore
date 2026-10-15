@@ -7,6 +7,7 @@ import { format } from "@/lib/dateUtils";
 import { useTranslation } from "@/lib/i18n";
 import { usePermissions } from "@/hooks/usePermissions";
 import { changeFields, collapseEvents, describeAction, groupActions, subjectOf, suggestionKeys, type PendingAction } from "@/lib/assistant-logic";
+import { AssistantMarkdown } from "./AssistantMarkdown";
 import type { AssistantChat } from "./useAssistantChat";
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
@@ -195,8 +196,8 @@ export function AssistantChatBody({ chat, desktop = false, onNavigate }: { chat:
           return (
             <div key={i} className={cn("flex items-start gap-2", animate)}>
               <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Sparkles className="h-4 w-4" strokeWidth={1.75} /></span>
-              <div className="max-w-[86%] rounded-2xl rounded-ss-md border border-border bg-card px-3.5 py-2">
-                <p dir="auto" className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{m.text}</p>
+              <div className="min-w-0 max-w-[86%] rounded-2xl rounded-ss-md border border-border bg-card px-3.5 py-2">
+                <AssistantMarkdown text={m.text} />
               </div>
             </div>
           );
