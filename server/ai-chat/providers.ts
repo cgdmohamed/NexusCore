@@ -15,24 +15,39 @@ export type FetchLike = (url: string, init: { method: string; headers: Record<st
 
 export type ProviderKind = "anthropic" | "openai";
 export const DEFAULT_MODELS: Record<ProviderKind, string> = { anthropic: "claude-sonnet-5-5", openai: "gpt-4o" };
-export const MAX_OUTPUT_TOKENS = 1500;
+export const MAX_OUTPUT_TOKENS = 3000;
 const TIMEOUT_MS = 60_000;
 
 // What the person sees when the provider refuses; never includes the key
 export class ProviderError extends Error {
-  constructor(message: string, public status = 502) { super(message); }
+  constructor(message: string, public status = 502, public upstream?: number) { super(message); }
 }
 
 function friendly(status: number, body: string): ProviderError {
   let detail = "";
   try { const j = JSON.parse(body); detail = j?.error?.message ?? j?.message ?? ""; } catch { /* not JSON */ }
   if (status === 401 || status === 403) return new ProviderError("The AI provider rejected the API key. Check it in Settings.", 502);
-  if (status === 429) return new ProviderError("The AI provider is busy or the quota is used up. Try again shortly.", 503);
+  if (status === 429) return new ProviderError("The AI provider is busy or the quota is used up. Try again shortly.", 503, 429);
   if (status === 400 && /model/i.test(detail)) return new ProviderError(`The AI provider does not accept this model name (${detail.slice(0, 120)}).`, 502);
-  return new ProviderError(`The AI provider returned an error (${status}).${detail ? " " + detail.slice(0, 160) : ""}`, 502);
+  return new ProviderError(`The AI provider returned an error (${status}).${detail ? " " + detail.slice(0, 160) : ""}`, 502, status);
 }
 
+// A provider that is briefly busy or restarting deserves one more try before the person sees an error
+const TRANSIENT = new Set([429, 500, 502, 503, 504, 529]);
+export const RETRY_DELAY_MS = { value: process.env.VITEST ? 1 : 800 };
+
 async function post(fetchImpl: FetchLike, url: string, headers: Record<string, string>, body: unknown): Promise<any> {
+  try {
+    return await postOnce(fetchImpl, url, headers, body);
+  } catch (error) {
+    const transient = error instanceof ProviderError && (TRANSIENT.has(error.upstream ?? 0));
+    if (!transient) throw error;
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS.value));
+    return postOnce(fetchImpl, url, headers, body);
+  }
+}
+
+async function postOnce(fetchImpl: FetchLike, url: string, headers: Record<string, string>, body: unknown): Promise<any> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {

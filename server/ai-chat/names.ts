@@ -2,10 +2,14 @@
 import { inArray } from "drizzle-orm";
 import { db } from "../db";
 import { clients, projects, tasks, users } from "@shared/schema";
+import { matchNames, type Named } from "../mcp/names";
 
 const SOURCES: Record<string, "task" | "client" | "project" | "user"> = {
   taskId: "task", clientId: "client", projectId: "project", assigneeId: "user", userId: "user",
 };
+
+// When the model gave a name instead of an id, the card shows the record that name will resolve to, not the words that were typed
+const BY_NAME: Record<string, "client" | "project" | "user"> = { clientName: "client", projectName: "project", assigneeName: "user", userName: "user" };
 
 const fullName = (u: { firstName: string | null; lastName: string | null; username: string }) =>
   [u.firstName, u.lastName].filter(Boolean).join(" ") || u.username;
@@ -27,6 +31,27 @@ export async function resolveNames(calls: { id: string; args: Record<string, unk
   }
 
   const out: Record<string, Record<string, string>> = {};
+  try {
+    const pool: Partial<Record<"client" | "project" | "user", Named[]>> = {};
+    const load = async (kind: "client" | "project" | "user"): Promise<Named[]> => {
+      if (pool[kind]) return pool[kind]!;
+      if (kind === "client") pool[kind] = (await db.select({ id: clients.id, name: clients.name }).from(clients)).map((r) => ({ id: r.id, label: r.name, keys: [r.name] }));
+      else if (kind === "project") pool[kind] = (await db.select({ id: projects.id, name: projects.name }).from(projects)).map((r) => ({ id: r.id, label: r.name, keys: [r.name] }));
+      else pool[kind] = (await db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, username: users.username, email: users.email }).from(users)).map((r) => ({ id: r.id, label: fullName(r), keys: [fullName(r), r.username, r.email ?? ""].filter(Boolean) }));
+      return pool[kind]!;
+    };
+    for (const c of calls) {
+      for (const [k, v] of Object.entries(c.args ?? {})) {
+        const kind = BY_NAME[k];
+        if (!kind || typeof v !== "string" || !v.trim()) continue;
+        const m = matchNames(v, await load(kind));
+        const group = m.exact.length ? m.exact : m.contains;
+        if (group.length === 1) (out[c.id] ??= {})[k] = group[0].label;
+      }
+    }
+  } catch (error) {
+    console.error("AI chat: could not resolve names:", error);
+  }
   for (const c of calls) {
     for (const [k, v] of Object.entries(c.args ?? {})) {
       const source = SOURCES[k];

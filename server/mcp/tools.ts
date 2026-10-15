@@ -8,6 +8,8 @@ import type { ToolDefinition, ToolResult } from "./protocol";
 
 import { ToolError } from "./errors";
 import { FINANCE_NEEDS, FINANCE_TOOLS, financeRunners, financeSchemas } from "./tools-finance";
+import { nameSearchIds, pickByName, type Named } from "./names";
+import { DEFAULT_PAGE, pageOf, pageProps } from "./paging";
 
 export const INSTRUCTIONS =
   "Company task, project, client, quotation and invoice tools. Look people, projects and clients up with the list tools before using their ids; " +
@@ -23,14 +25,14 @@ const idProps = (kind: string) => ({
 export const TOOLS: ToolDefinition[] = [
   {
     name: "list_users", title: "List users",
-    description: "List active people who can be assigned work. Optional search over name, username and email.",
-    inputSchema: { type: "object", properties: { search: { type: "string" } } },
+    description: "List active people who can be assigned work. Optional search over name, username and email (spaces and Arabic spelling variants do not matter). Returns { total, hasMore, items }.",
+    inputSchema: { type: "object", properties: { search: { type: "string" }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
     name: "list_projects", title: "List projects",
-    description: "List projects with their status, dates and number of open tasks.",
-    inputSchema: { type: "object", properties: { search: { type: "string" }, status: { type: "string", enum: ["active", "on_hold", "completed", "archived"] }, limit: { type: "integer", minimum: 1, maximum: 100 } } },
+    description: "List projects with their status, dates and number of open tasks. The search matches names without regard to spaces, hyphens or case, so 'rose gold' finds 'rosegold'. Returns { total, hasMore, items }; read the next page with offset when hasMore is true.",
+    inputSchema: { type: "object", properties: { search: { type: "string" }, status: { type: "string", enum: ["active", "on_hold", "completed", "archived"] }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -53,8 +55,8 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "list_tasks", title: "List tasks",
-    description: "List tasks, newest first. Filter by assignee, project, status or text; overdue=true keeps open tasks past their due date.",
-    inputSchema: { type: "object", properties: { ...idProps("assignee"), ...idProps("project"), status: { type: "string", enum: ["pending", "in_progress", "completed", "cancelled"] }, search: { type: "string" }, overdue: { type: "boolean" }, limit: { type: "integer", minimum: 1, maximum: 100 } } },
+    description: "List tasks, newest first. Filter by assignee, project (by id or name), status or text; overdue=true keeps open tasks past their due date. Returns { total, hasMore, items }: say the total, and never total up numbers from a page when hasMore is true.",
+    inputSchema: { type: "object", properties: { ...idProps("assignee"), ...idProps("project"), status: { type: "string", enum: ["pending", "in_progress", "completed", "cancelled"] }, search: { type: "string" }, overdue: { type: "boolean" }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -110,11 +112,11 @@ const status = z.enum(["pending", "in_progress", "completed", "cancelled"]);
 
 const schemas: Record<string, z.ZodTypeAny> = {
   ...financeSchemas,
-  list_users: z.object({ search: opt(z.string()) }),
-  list_projects: z.object({ search: opt(z.string()), status: opt(z.enum(["active", "on_hold", "completed", "archived"])), limit: opt(z.number().int().min(1).max(100)) }),
+  list_users: z.object({ search: opt(z.string()), limit: opt(z.number().int().min(1).max(100)), offset: opt(z.number().int().min(0)) }),
+  list_projects: z.object({ search: opt(z.string()), status: opt(z.enum(["active", "on_hold", "completed", "archived"])), limit: opt(z.number().int().min(1).max(100)), offset: opt(z.number().int().min(0)) }),
   create_project: z.object({ name: z.string().trim().min(1), description: opt(z.string()), status: opt(z.enum(["active", "on_hold"])), startDate: opt(day), dueDate: opt(day), clientId: opt(z.string()), color: opt(z.string().regex(/^#[0-9a-fA-F]{6}$/)) }),
   add_project_member: z.object({ projectId: opt(z.string()), projectName: opt(z.string()), userId: opt(z.string()), userName: opt(z.string()), role: opt(z.enum(["lead", "member"])) }),
-  list_tasks: z.object({ assigneeId: opt(z.string()), assigneeName: opt(z.string()), projectId: opt(z.string()), projectName: opt(z.string()), status: opt(status), search: opt(z.string()), overdue: opt(z.boolean()), limit: opt(z.number().int().min(1).max(100)) }),
+  list_tasks: z.object({ assigneeId: opt(z.string()), assigneeName: opt(z.string()), projectId: opt(z.string()), projectName: opt(z.string()), status: opt(status), search: opt(z.string()), overdue: opt(z.boolean()), limit: opt(z.number().int().min(1).max(100)), offset: opt(z.number().int().min(0)) }),
   get_task: z.object({ taskId: z.string().min(1) }),
   create_task: z.object({ title: z.string().trim().min(1), description: opt(z.string()), priority: opt(priority), dueDate: opt(day), assigneeId: opt(z.string()), assigneeName: opt(z.string()), projectId: opt(z.string()), projectName: opt(z.string()) }),
   assign_task: z.object({ taskId: z.string().min(1), assigneeId: opt(z.string()), assigneeName: opt(z.string()) }),
@@ -141,16 +143,11 @@ export async function resolveUser(id?: string, name?: string): Promise<{ id: str
     return { id: u.id, name: fullName(u) };
   }
   const q = name!.trim();
-  const matches = await db.select().from(users).where(and(
-    eq(users.isActive, true),
-    or(ilike(users.firstName, like(q)), ilike(users.lastName, like(q)), ilike(users.username, like(q)), ilike(users.email, like(q)),
-      sql`concat_ws(' ', ${users.firstName}, ${users.lastName}) ILIKE ${like(q)}`),
-  )).limit(10);
-  const exact = matches.filter((u) => fullName(u).toLowerCase() === q.toLowerCase() || u.username.toLowerCase() === q.toLowerCase());
-  const pick = exact.length === 1 ? exact : matches;
-  if (pick.length === 1) return { id: pick[0].id, name: fullName(pick[0]) };
-  if (pick.length === 0) throw new ToolError(`No active user matches "${q}". Use list_users to see who is available.`);
-  throw new ToolError(`"${q}" matches ${pick.length} people: ${pick.map((u) => `${fullName(u)} (${u.id})`).join("; ")}. Repeat with the id of the right one.`);
+  const all = await db.select().from(users).where(eq(users.isActive, true));
+  const rows: Named[] = all.filter((u) => u.username !== "ai-assistant").map((u) => ({ id: u.id, label: fullName(u), keys: [fullName(u), u.username, u.email ?? "", u.firstName ?? "", u.lastName ?? ""].filter(Boolean) }));
+  const found = pickByName(q, rows, "people", { none: "Use list_users to see who is available.", singular: "person" });
+  if ("error" in found) throw new ToolError(found.error);
+  return { id: found.picked.id, name: found.picked.label };
 }
 
 export async function resolveProject(id?: string, name?: string): Promise<{ id: string; name: string } | null> {
@@ -161,12 +158,10 @@ export async function resolveProject(id?: string, name?: string): Promise<{ id: 
     return p;
   }
   const q = name!.trim();
-  const matches = await db.select({ id: projects.id, name: projects.name }).from(projects).where(ilike(projects.name, like(q))).limit(10);
-  const exact = matches.filter((p) => p.name.toLowerCase() === q.toLowerCase());
-  const pick = exact.length === 1 ? exact : matches;
-  if (pick.length === 1) return pick[0];
-  if (pick.length === 0) throw new ToolError(`No project matches "${q}". Use list_projects to see them.`);
-  throw new ToolError(`"${q}" matches ${pick.length} projects: ${pick.map((p) => `${p.name} (${p.id})`).join("; ")}. Repeat with the id of the right one.`);
+  const all = await db.select({ id: projects.id, name: projects.name }).from(projects);
+  const found = pickByName(q, all.map((p) => ({ id: p.id, label: p.name, keys: [p.name] })), "projects", { none: "Use list_projects to see them." });
+  if ("error" in found) throw new ToolError(found.error);
+  return { id: found.picked.id, name: found.picked.label };
 }
 
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
@@ -197,22 +192,28 @@ type Runner = (args: any, ctx: { userId: string; actor?: string }) => Promise<un
 
 const RUNNERS: Record<string, Runner> = {
   ...financeRunners,
-  async list_users({ search }) {
-    const rows = await db.select().from(users).where(and(
-      eq(users.isActive, true),
-      search ? or(ilike(users.firstName, like(search)), ilike(users.lastName, like(search)), ilike(users.username, like(search)), ilike(users.email, like(search))) : undefined,
-    )).limit(50);
-    return rows.filter((u) => u.username !== "ai-assistant").map((u) => ({ id: u.id, name: fullName(u), username: u.username, role: u.role }));
+  async list_users({ search, limit = DEFAULT_PAGE, offset = 0 }) {
+    const all = (await db.select().from(users).where(eq(users.isActive, true))).filter((u) => u.username !== "ai-assistant");
+    let people = all;
+    if (search) {
+      const ids = new Set(nameSearchIds(search, all.map((u) => ({ id: u.id, label: fullName(u), keys: [fullName(u), u.username, u.email ?? "", u.firstName ?? "", u.lastName ?? ""].filter(Boolean) }))));
+      people = all.filter((u) => ids.has(u.id));
+    }
+    return pageOf(people.length, people.slice(offset, offset + limit).map((u) => ({ id: u.id, name: fullName(u), username: u.username, role: u.role })), offset);
   },
 
-  async list_projects({ search, status: st, limit = 50 }) {
-    const rows = await db.select().from(projects).where(and(search ? ilike(projects.name, like(search)) : undefined, st ? eq(projects.status, st) : undefined)).orderBy(desc(projects.createdAt)).limit(limit);
+  async list_projects({ search, status: st, limit = DEFAULT_PAGE, offset = 0 }) {
+    // The text is compared without regard to spaces, hyphens, case or Arabic spelling variants
+    const named = search ? nameSearchIds(search, (await db.select({ id: projects.id, name: projects.name }).from(projects)).map((p) => ({ id: p.id, label: p.name, keys: [p.name] }))) : null;
+    const where = and(named ? (named.length ? inArray(projects.id, named) : sql`false`) : undefined, st ? eq(projects.status, st) : undefined);
+    const [{ n }] = await db.select({ n: sql<number>`COUNT(*)::int` }).from(projects).where(where);
+    const rows = await db.select().from(projects).where(where).orderBy(desc(projects.createdAt)).limit(limit).offset(offset);
     const ids = rows.map((p) => p.id);
     const open = ids.length
       ? await db.select({ projectId: tasks.projectId, n: sql<number>`COUNT(*)::int` }).from(tasks).where(and(inArray(tasks.projectId, ids), inArray(tasks.status, ["pending", "in_progress"]))).groupBy(tasks.projectId)
       : [];
     const openBy = new Map(open.map((o) => [o.projectId, Number(o.n)]));
-    return rows.map((p) => ({ id: p.id, name: p.name, status: p.status, startDate: iso(p.startDate), dueDate: iso(p.dueDate), openTasks: openBy.get(p.id) ?? 0 }));
+    return pageOf(Number(n), rows.map((p) => ({ id: p.id, name: p.name, status: p.status, startDate: iso(p.startDate), dueDate: iso(p.dueDate), openTasks: openBy.get(p.id) ?? 0 })), offset);
   },
 
   async create_project(a, { userId }) {
@@ -247,15 +248,17 @@ const RUNNERS: Record<string, Runner> = {
       a.search ? or(ilike(tasks.title, like(a.search)), ilike(tasks.description, like(a.search))) : undefined,
       a.overdue ? sql`${tasks.status} IN ('pending','in_progress') AND ${tasks.dueDate} < date_trunc('day', now())` : undefined,
     ];
+    const where = and(...conds);
+    const [{ n }] = await db.select({ n: sql<number>`COUNT(*)::int` }).from(tasks).where(where);
     const rows = await db
       .select({ t: tasks, first: users.firstName, last: users.lastName, username: users.username, projectName: projects.name })
       .from(tasks).leftJoin(users, eq(users.id, tasks.assignedTo)).leftJoin(projects, eq(projects.id, tasks.projectId))
-      .where(and(...conds)).orderBy(desc(tasks.createdAt)).limit(a.limit ?? 25);
-    return rows.map((r) => ({
+      .where(where).orderBy(desc(tasks.createdAt)).limit(a.limit ?? DEFAULT_PAGE).offset(a.offset ?? 0);
+    return pageOf(Number(n), rows.map((r) => ({
       id: r.t.id, title: r.t.title, status: r.t.status, priority: r.t.priority, dueDate: iso(r.t.dueDate),
       assignee: r.t.assignedTo ? fullName({ firstName: r.first, lastName: r.last, username: r.username }) : null,
       project: r.projectName ?? null,
-    }));
+    })), a.offset ?? 0);
   },
 
   async get_task({ taskId }) { return taskView(taskId); },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { anthropicBody, createProvider, openaiBody, parseAnthropic, parseOpenAI, setProviderFetch, ProviderError, type ChatMessage } from "../server/ai-chat/providers";
-import { buildSystemPrompt, DECLINED, MAX_STEPS, resolvePending, sendMessage, toView, windowed, type ChatState, type Toolkit } from "../server/ai-chat/agent";
+import { buildSystemPrompt, relativeDates, DECLINED, MAX_STEPS, resolvePending, sendMessage, toView, windowed, type ChatState, type Toolkit } from "../server/ai-chat/agent";
 
 const tools = [{ name: "list_clients", description: "d", inputSchema: { type: "object" } }];
 const history: ChatMessage[] = [
@@ -132,5 +132,62 @@ describe("assistant loop", () => {
     const w = windowed(msgs, 30);
     expect(w[0].role).toBe("user");
     expect(w.length).toBeLessThanOrEqual(30);
+  });
+});
+
+describe("what the assistant is told", () => {
+  it("knows today's weekday and works out relative dates", () => {
+    // 2026-10-14 is a Wednesday
+    const text = relativeDates("2026-10-14");
+    expect(text).toContain("tomorrow 2026-10-15");
+    expect(text).toContain("next Sunday 2026-10-18");
+    expect(text).toContain("next Thursday 2026-10-15");
+    expect(text).toContain("next Monday 2026-10-19");
+    expect(text).toContain("end of this month 2026-10-31");
+    // the same weekday means a week ahead, not today
+    expect(relativeDates("2026-10-18")).toContain("next Sunday 2026-10-25");
+  });
+
+  it("names the person, their id, their role and the tools they have, and states the accuracy rules", () => {
+    const p = buildSystemPrompt({ name: "Sara", language: "ar", today: "2026-10-14", userId: "u-1", role: "Admin", tools: ["list_tasks", "create_task"] });
+    expect(p).toContain("Wednesday 2026-10-14");
+    expect(p).toContain("user id is u-1");
+    expect(p).toContain("role: Admin");
+    expect(p).toContain("list_tasks, create_task");
+    expect(p).toContain("hasMore");
+    expect(p).toContain("rose gold");
+    expect(p).toContain("Modern Standard Arabic");
+  });
+});
+
+describe("a busy provider", () => {
+  const ok = { ok: true, status: 200, text: async () => JSON.stringify({ content: [{ type: "text", text: "hello" }] }) };
+  const busy = (status: number) => ({ ok: false, status, text: async () => "{}" });
+
+  it("is tried once more on a temporary error, and the person never sees the first failure", async () => {
+    const providers = await import("../server/ai-chat/providers");
+    providers.RETRY_DELAY_MS.value = 1;
+    let calls = 0;
+    providers.setProviderFetch(async () => (++calls === 1 ? busy(529) : ok));
+    try {
+      const out = await providers.createProvider("anthropic", "k", "m").complete({ system: "s", messages: [{ role: "user", text: "hi" }], tools: [] });
+      expect(out.text).toBe("hello");
+      expect(calls).toBe(2);
+    } finally { providers.setProviderFetch(null); }
+  });
+
+  it("gives up after one retry, and does not retry a rejected key", async () => {
+    const providers = await import("../server/ai-chat/providers");
+    providers.RETRY_DELAY_MS.value = 1;
+    let calls = 0;
+    providers.setProviderFetch(async () => { calls++; return busy(503); });
+    try {
+      await expect(providers.createProvider("openai", "k", "m").complete({ system: "s", messages: [], tools: [] })).rejects.toThrow(/error \(503\)/);
+      expect(calls).toBe(2);
+      calls = 0;
+      providers.setProviderFetch(async () => { calls++; return busy(401); });
+      await expect(providers.createProvider("openai", "k", "m").complete({ system: "s", messages: [], tools: [] })).rejects.toThrow(/rejected the API key/);
+      expect(calls).toBe(1);
+    } finally { providers.setProviderFetch(null); }
   });
 });

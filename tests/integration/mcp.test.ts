@@ -95,8 +95,8 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP endpoint (integration)", () => {
     expect(mine[0].message).toContain("Design the home page");
 
     const listed = await call("list_tasks", { assigneeId: sara.id });
-    expect(listed.data.map((t: any) => t.title)).toEqual(["Design the home page"]);
-    expect((await call("list_projects", { search: "relaunch" })).data[0].openTasks).toBe(1);
+    expect(listed.data.items.map((t: any) => t.title)).toEqual(["Design the home page"]);
+    expect((await call("list_projects", { search: "relaunch" })).data.items[0].openTasks).toBe(1);
   });
 
   it("reassigns a task and tells the new assignee", async () => {
@@ -126,9 +126,9 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP endpoint (integration)", () => {
     expect(r.isError).toBe(true);
     expect(r.text).toContain("matches 2 people");
     expect(r.text).toContain(a.id);
-    expect((await call("create_task", { title: "Nobody", assigneeName: "Zzzz" })).text).toContain("No active user matches");
+    expect((await call("create_task", { title: "Nobody", assigneeName: "Zzzz" })).text).toContain("No person matches");
     // nothing was created by the failed calls
-    expect((await call("list_tasks", { search: "Needs an owner" })).data).toHaveLength(0);
+    expect((await call("list_tasks", { search: "Needs an owner" })).data.items).toHaveLength(0);
   });
 
   it("explains bad input in a way a model can fix", async () => {
@@ -150,10 +150,48 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP endpoint (integration)", () => {
       const denied = await call("create_project", { name: "Not allowed" });
       expect(denied.isError).toBe(true);
       expect(denied.text).toContain("Permission denied");
-      expect((await call("list_projects", { search: "Not allowed" })).data).toHaveLength(0);
+      expect((await call("list_projects", { search: "Not allowed" })).data.items).toHaveLength(0);
     } finally {
       await ctx.db.update(roles).set({ permissions: role.permissions }).where(eq(roles.id, role.id));
     }
+  });
+
+  describe("names that are spelled a little differently", () => {
+    it("finds a project written 'rose gold' when it is stored as 'rosegold', for tasks, search and members", async () => {
+      const { projects, tasks } = await import("../../shared/schema");
+      const [p] = await ctx.db.insert(projects).values({ name: "rosegold", status: "active" } as any).returning();
+      await ctx.db.insert(tasks).values({ title: "Rosegold launch checklist", projectId: p.id, status: "pending", createdBy: ctx.currentUserId } as any);
+      for (const spelling of ["rose gold", "Rose Gold", "ROSE-GOLD", "rosegold"]) {
+        const r = await call("list_tasks", { projectName: spelling });
+        expect(r.isError, spelling).toBe(false);
+        expect(r.data.items.map((t: any) => t.title)).toEqual(["Rosegold launch checklist"]);
+        expect((await call("list_projects", { search: spelling })).data.items.map((x: any) => x.name)).toEqual(["rosegold"]);
+      }
+    });
+
+    it("offers a 'did you mean' for a slip, without acting on the guess", async () => {
+      const r = await call("list_tasks", { projectName: "rosgold" });
+      expect(r.isError).toBe(true);
+      expect(r.text).toMatch(/Did you mean: rosegold/);
+    });
+
+    it("finds a person whatever the Arabic spelling of the name", async () => {
+      const u = await addUser("ahmed.s", "أحمد", "سعيد");
+      const r = await call("create_task", { title: "Spelling check", assigneeName: "احمد سعيد" });
+      expect(r.isError).toBe(false);
+      expect(r.data.assignee.id).toBe(u.id);
+      expect((await call("list_users", { search: "احمد" })).data.items.map((x: any) => x.id)).toContain(u.id);
+    });
+
+    it("says how many there are, and lets the next page be read", async () => {
+      const { tasks, projects } = await import("../../shared/schema");
+      const [p] = await ctx.db.insert(projects).values({ name: "Paging", status: "active" } as any).returning();
+      await ctx.db.insert(tasks).values(Array.from({ length: 7 }, (_, i) => ({ title: `Paged ${i}`, projectId: p.id, status: "pending", createdBy: ctx.currentUserId })) as any);
+      const first = (await call("list_tasks", { projectName: "Paging", limit: 3 })).data;
+      expect(first).toMatchObject({ total: 7, returned: 3, offset: 0, hasMore: true });
+      const last = (await call("list_tasks", { projectName: "Paging", limit: 3, offset: 6 })).data;
+      expect(last).toMatchObject({ total: 7, returned: 1, offset: 6, hasMore: false });
+    });
   });
 
   it("limits how fast one token can call", async () => {

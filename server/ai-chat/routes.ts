@@ -256,7 +256,7 @@ export function registerAiChatRoutes(app: Express) {
     if (!withinHourlyLimit(userId)) return res.status(429).json({ message: "You have reached the hourly limit for assistant messages. Try again later." });
 
     const language = (parsed.data as any).language ?? "ar";
-    const system = buildSystemPrompt({ name: userName(req.user), language, today: dayKey(new Date(), APP_TIMEZONE) });
+    const system = buildSystemPrompt({ name: userName(req.user), language, today: dayKey(new Date(), APP_TIMEZONE), userId: userId, role: req.user?.roleName, tools: toolkit.tools.map((t) => t.name) });
     const provider = createProvider(settings.provider, settings.apiKey, settings.model);
     const deps = { provider, toolkit, system };
 

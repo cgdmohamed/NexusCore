@@ -7,6 +7,8 @@ import { generateInvoiceNumber, generateQuotationNumber, lockNumbering } from ".
 import { MAX_MONEY, parseMoney, parsePercent } from "../validation";
 import type { ToolDefinition } from "./protocol";
 import { ToolError } from "./errors";
+import { nameSearchIds, pickByName } from "./names";
+import { DEFAULT_PAGE, pageOf, pageProps } from "./paging";
 
 export const MAX_ITEMS = 50;
 
@@ -40,13 +42,12 @@ const clientProps = {
   clientName: { type: "string", description: "client name, used when no id is given; must match exactly one" },
 };
 const dateProp = { type: "string", description: "YYYY-MM-DD" };
-const limitProp = { type: "integer", minimum: 1, maximum: 100 };
 
 export const FINANCE_TOOLS: ToolDefinition[] = [
   {
     name: "list_clients", title: "List clients",
-    description: "Search clients by name, email or phone. Archived clients are hidden unless includeArchived is true. Call this before create_client to avoid duplicates.",
-    inputSchema: { type: "object", properties: { search: { type: "string" }, includeArchived: { type: "boolean" }, limit: limitProp } },
+    description: "Search clients by name, email or phone; names match without regard to spaces, case or Arabic spelling variants. Archived clients are hidden unless includeArchived is true. Returns { total, hasMore, items }. Call this before create_client to avoid duplicates.",
+    inputSchema: { type: "object", properties: { search: { type: "string" }, includeArchived: { type: "boolean" }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -59,8 +60,8 @@ export const FINANCE_TOOLS: ToolDefinition[] = [
   },
   {
     name: "list_quotations", title: "List quotations",
-    description: "List quotations, newest first. Filter by client, status (draft, sent, accepted, rejected, expired, invoiced) or text over number and title. Amounts are in EGP.",
-    inputSchema: { type: "object", properties: { ...clientProps, status: { type: "string" }, search: { type: "string" }, limit: limitProp } },
+    description: "List quotations, newest first. Filter by client, status (draft, sent, accepted, rejected, expired, invoiced) or text over number and title. Amounts are in EGP. Returns { total, hasMore, items }.",
+    inputSchema: { type: "object", properties: { ...clientProps, status: { type: "string" }, search: { type: "string" }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -85,8 +86,8 @@ export const FINANCE_TOOLS: ToolDefinition[] = [
   },
   {
     name: "list_invoices", title: "List invoices",
-    description: "List invoices, newest first, with total, paid and remaining amounts in EGP. Filter by client, status (draft, pending, partially_paid, paid, overdue, cancelled) or text over number and title.",
-    inputSchema: { type: "object", properties: { ...clientProps, status: { type: "string" }, search: { type: "string" }, limit: limitProp } },
+    description: "List invoices, newest first, with total, paid and remaining amounts in EGP. Filter by client, status (draft, sent, partially_paid, paid, overdue, cancelled) or text over number and title; status 'overdue' means issued, still owed and past its due date. Returns { total, hasMore, totalRemaining, items }: totalRemaining is what is still owed across every match, not only this page.",
+    inputSchema: { type: "object", properties: { ...clientProps, status: { type: "string" }, search: { type: "string" }, ...pageProps } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -123,19 +124,20 @@ const opt = <T extends z.ZodTypeAny>(s: T) => s.optional();
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Dates must be YYYY-MM-DD");
 const clientRef = { clientId: opt(z.string()), clientName: opt(z.string()) };
 const limit = opt(z.number().int().min(1).max(100));
+const offset = opt(z.number().int().min(0));
 const qty = z.number().positive();
 const price = z.number().min(0);
 
 export const financeSchemas: Record<string, z.ZodTypeAny> = {
-  list_clients: z.object({ search: opt(z.string()), includeArchived: opt(z.boolean()), limit }),
+  list_clients: z.object({ search: opt(z.string()), includeArchived: opt(z.boolean()), limit, offset }),
   create_client: z.object({ name: z.string().trim().min(1), email: opt(z.string().trim().email()), phone: opt(z.string().trim()), city: opt(z.string().trim()), country: opt(z.string().trim()), allowDuplicate: opt(z.boolean()) }),
-  list_quotations: z.object({ ...clientRef, status: opt(z.string()), search: opt(z.string()), limit }),
+  list_quotations: z.object({ ...clientRef, status: opt(z.string()), search: opt(z.string()), limit, offset }),
   get_quotation: z.object({ quotationId: opt(z.string()), number: opt(z.string()) }),
   create_quotation: z.object({
     ...clientRef, title: z.string().trim().min(1), description: opt(z.string()), validUntil: opt(day), notes: opt(z.string()), terms: opt(z.string()),
     items: z.array(z.object({ description: z.string().trim().min(1), quantity: qty, unitPrice: price, discountPercent: opt(z.number().min(0).max(100)) })).min(1).max(MAX_ITEMS),
   }),
-  list_invoices: z.object({ ...clientRef, status: opt(z.string()), search: opt(z.string()), limit }),
+  list_invoices: z.object({ ...clientRef, status: opt(z.string()), search: opt(z.string()), limit, offset }),
   get_invoice: z.object({ invoiceId: opt(z.string()), number: opt(z.string()) }),
   create_invoice: z.object({
     ...clientRef, title: z.string().trim().min(1), description: opt(z.string()), dueDate: opt(day), notes: opt(z.string()), paymentTerms: opt(z.string()),
@@ -163,12 +165,10 @@ async function resolveClient(id?: string, name?: string): Promise<ClientRow> {
     return c;
   }
   const q = name!.trim();
-  const matches = await db.select({ id: clients.id, name: clients.name, status: clients.status }).from(clients).where(ilike(clients.name, like(q))).limit(10);
-  const exact = matches.filter((c) => c.name.toLowerCase() === q.toLowerCase());
-  const pick = exact.length === 1 ? exact : matches;
-  if (pick.length === 1) return pick[0];
-  if (pick.length === 0) throw new ToolError(`No client matches "${q}". Use list_clients to search, or create_client to add one.`);
-  throw new ToolError(`"${q}" matches ${pick.length} clients: ${pick.map((c) => `${c.name} (${c.id})`).join("; ")}. Repeat with the id of the right one.`);
+  const all = await db.select({ id: clients.id, name: clients.name, status: clients.status }).from(clients);
+  const found = pickByName(q, all.map((c) => ({ id: c.id, label: c.name, keys: [c.name] })), "clients", { none: "Use list_clients to search, or create_client to add one." });
+  if ("error" in found) throw new ToolError(found.error);
+  return all.find((c) => c.id === found.picked.id)!;
 }
 
 function assertActive(c: ClientRow, what: string) {
@@ -185,12 +185,16 @@ type Runner = (args: any, ctx: Ctx) => Promise<unknown>;
 const record = async (fn: () => Promise<unknown>) => { try { await fn(); } catch (error) { console.error("MCP: could not write the activity or history entry:", error); } };
 
 export const financeRunners: Record<string, Runner> = {
-  async list_clients({ search, includeArchived, limit: lim = 25 }) {
-    const rows = await db.select().from(clients).where(and(
+  async list_clients({ search, includeArchived, limit: lim = DEFAULT_PAGE, offset = 0 }) {
+    // Names are compared without regard to spaces, case or Arabic spelling variants; email and phone still match as written
+    const named = search ? nameSearchIds(search, (await db.select({ id: clients.id, name: clients.name }).from(clients)).map((c) => ({ id: c.id, label: c.name, keys: [c.name] }))) : null;
+    const where = and(
       includeArchived ? undefined : ne(clients.status, "archived"),
-      search ? or(ilike(clients.name, like(search)), ilike(clients.email, like(search)), ilike(clients.phone, like(search))) : undefined,
-    )).orderBy(desc(clients.createdAt)).limit(lim);
-    return rows.map((c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, city: c.city, status: c.status }));
+      search ? or(named?.length ? inArray(clients.id, named) : undefined, ilike(clients.email, like(search)), ilike(clients.phone, like(search))) : undefined,
+    );
+    const [{ n }] = await db.select({ n: sql<number>`COUNT(*)::int` }).from(clients).where(where);
+    const rows = await db.select().from(clients).where(where).orderBy(desc(clients.createdAt)).limit(lim).offset(offset);
+    return pageOf(Number(n), rows.map((c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, city: c.city, status: c.status })), offset);
   },
 
   async create_client(a, { userId }) {
@@ -205,12 +209,15 @@ export const financeRunners: Record<string, Runner> = {
 
   async list_quotations(a) {
     const client = a.clientId || a.clientName ? await resolveClient(a.clientId, a.clientName) : null;
-    const rows = await db.select({ q: quotations, clientName: clients.name }).from(quotations).leftJoin(clients, eq(clients.id, quotations.clientId)).where(and(
+    const where = and(
       client ? eq(quotations.clientId, client.id) : undefined,
       a.status ? eq(quotations.status, a.status) : undefined,
       a.search ? or(ilike(quotations.quotationNumber, like(a.search)), ilike(quotations.title, like(a.search))) : undefined,
-    )).orderBy(desc(quotations.createdAt)).limit(a.limit ?? 25);
-    return rows.map((r) => ({ id: r.q.id, number: r.q.quotationNumber, title: r.q.title, client: r.clientName, status: r.q.status, amount: money(r.q.amount), validUntil: iso(r.q.validUntil), createdAt: iso(r.q.createdAt) }));
+    );
+    const [{ n }] = await db.select({ n: sql<number>`COUNT(*)::int` }).from(quotations).where(where);
+    const rows = await db.select({ q: quotations, clientName: clients.name }).from(quotations).leftJoin(clients, eq(clients.id, quotations.clientId)).where(where)
+      .orderBy(desc(quotations.createdAt)).limit(a.limit ?? DEFAULT_PAGE).offset(a.offset ?? 0);
+    return pageOf(Number(n), rows.map((r) => ({ id: r.q.id, number: r.q.quotationNumber, title: r.q.title, client: r.clientName, status: r.q.status, amount: money(r.q.amount), validUntil: iso(r.q.validUntil), createdAt: iso(r.q.createdAt) })), a.offset ?? 0);
   },
 
   async get_quotation({ quotationId, number }) {
@@ -263,12 +270,21 @@ export const financeRunners: Record<string, Runner> = {
 
   async list_invoices(a) {
     const client = a.clientId || a.clientName ? await resolveClient(a.clientId, a.clientName) : null;
-    const rows = await db.select({ i: invoices, clientName: clients.name }).from(invoices).leftJoin(clients, eq(clients.id, invoices.clientId)).where(and(
+    // "overdue" is not a stored status: it is an issued invoice with money still owed whose due date has passed
+    const statusCond = a.status === "overdue"
+      ? sql`${invoices.status} NOT IN ('draft','cancelled','paid','refunded','partially_refunded') AND ${invoices.dueDate} < date_trunc('day', now()) AND (${invoices.amount} - COALESCE(${invoices.paidAmount}, 0)) > 0`
+      : a.status ? eq(invoices.status, a.status) : undefined;
+    const where = and(
       client ? eq(invoices.clientId, client.id) : undefined,
-      a.status ? eq(invoices.status, a.status) : undefined,
+      statusCond,
       a.search ? or(ilike(invoices.invoiceNumber, like(a.search)), ilike(invoices.title, like(a.search))) : undefined,
-    )).orderBy(desc(invoices.createdAt)).limit(a.limit ?? 25);
-    return rows.map((r) => ({ id: r.i.id, number: r.i.invoiceNumber, title: r.i.title, client: r.clientName, status: r.i.status, amount: money(r.i.amount), paid: money(r.i.paidAmount), remaining: round2(money(r.i.amount) - money(r.i.paidAmount)), dueDate: iso(r.i.dueDate) }));
+    );
+    const [{ n, owed }] = await db.select({ n: sql<number>`COUNT(*)::int`, owed: sql<string>`COALESCE(SUM(${invoices.amount} - COALESCE(${invoices.paidAmount}, 0)), 0)` }).from(invoices).where(where);
+    const rows = await db.select({ i: invoices, clientName: clients.name }).from(invoices).leftJoin(clients, eq(clients.id, invoices.clientId)).where(where)
+      .orderBy(desc(invoices.createdAt)).limit(a.limit ?? DEFAULT_PAGE).offset(a.offset ?? 0);
+    const page = pageOf(Number(n), rows.map((r) => ({ id: r.i.id, number: r.i.invoiceNumber, title: r.i.title, client: r.clientName, status: r.i.status, amount: money(r.i.amount), paid: money(r.i.paidAmount), remaining: round2(money(r.i.amount) - money(r.i.paidAmount)), dueDate: iso(r.i.dueDate) })), a.offset ?? 0);
+    // The balance across everything the filter matches, not only this page
+    return { ...page, totalRemaining: round2(Number(owed)) };
   },
 
   async get_invoice({ invoiceId, number }) {

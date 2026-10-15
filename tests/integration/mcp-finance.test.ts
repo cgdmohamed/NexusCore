@@ -54,7 +54,7 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP clients, quotations and invoices (integ
     expect(a.data.name).toBe("Acme Trading");
     expect((await call("create_client", { name: "acme trading" })).text).toMatch(/already exists/);
     expect((await call("create_client", { name: "Acme Trading", allowDuplicate: true })).isError).toBe(false);
-    expect((await call("list_clients", { search: "acme" })).data.length).toBe(2);
+    expect((await call("list_clients", { search: "acme" })).data.items.length).toBe(2);
   });
 
   it("creates a draft quotation with discounted lines and reads it back", async () => {
@@ -75,7 +75,7 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP clients, quotations and invoices (integ
     // The app reads the same record
     const viaApi = (await ctx.api("GET", `/api/quotations/${q.data.id}`)).body;
     expect(Number(viaApi.amount)).toBe(2450);
-    expect((await call("list_quotations", { clientName: "Globex" })).data[0].number).toBe(q.data.number);
+    expect((await call("list_quotations", { clientName: "Globex" })).data.items[0].number).toBe(q.data.number);
   });
 
   it("creates a draft invoice whose totals match the app's recalculation", async () => {
@@ -92,7 +92,7 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP clients, quotations and invoices (integ
     expect(Number(re.taxAmount)).toBe(before.taxAmount);
     expect(Number(re.discountAmount)).toBe(before.discountAmount);
     expect(re.status).toBe("draft");
-    const list = (await call("list_invoices", { clientName: "Globex", status: "draft" })).data;
+    const list = (await call("list_invoices", { clientName: "Globex", status: "draft" })).data.items;
     expect(list[0]).toMatchObject({ number: inv.data.number, remaining: before.amount });
   });
 
@@ -115,5 +115,22 @@ describe.skipIf(!TEST_DATABASE_URL)("MCP clients, quotations and invoices (integ
     expect((await call("create_invoice", { clientName: "Globex", title: "x", items: [{ name: "a", quantity: 1, unitPrice: 1e12 }] })).isError).toBe(true);
     expect((await call("create_invoice", { clientName: "Globex", title: "x", items: [] })).text).toMatch(/Invalid arguments/);
     expect((await ctx.db.select().from(invoices)).length).toBe(before);
+  });
+
+  it("finds clients across spacing and spelling, and totals what is owed across all matches", async () => {
+    const { invoices, clients } = await import("../../shared/schema");
+    const [c] = await ctx.db.insert(clients).values({ name: "Blue-Ocean Resort", status: "active" } as any).returning();
+    const past = new Date(Date.now() - 5 * 86_400_000);
+    const future = new Date(Date.now() + 5 * 86_400_000);
+    await ctx.db.insert(invoices).values([
+      { invoiceNumber: "INV-N-1", clientId: c.id, amount: "1000", paidAmount: "250", status: "partially_paid", dueDate: past },
+      { invoiceNumber: "INV-N-2", clientId: c.id, amount: "400", paidAmount: "0", status: "sent", dueDate: past },
+      { invoiceNumber: "INV-N-3", clientId: c.id, amount: "900", paidAmount: "0", status: "sent", dueDate: future },
+      { invoiceNumber: "INV-N-4", clientId: c.id, amount: "300", paidAmount: "300", status: "paid", dueDate: past },
+      { invoiceNumber: "INV-N-5", clientId: c.id, amount: "700", paidAmount: "0", status: "draft", dueDate: past },
+    ] as any);
+    expect((await call("list_clients", { search: "blue ocean" })).data.items.map((x: any) => x.name)).toEqual(["Blue-Ocean Resort"]);
+    const late = (await call("list_invoices", { clientName: "blueocean resort", status: "overdue", limit: 1 })).data;
+    expect(late).toMatchObject({ total: 2, returned: 1, hasMore: true, totalRemaining: 1150 }); // 750 + 400, across both pages
   });
 });

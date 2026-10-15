@@ -172,6 +172,23 @@ describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
     } finally { ctx.actAs(null); }
   });
 
+  it("finds 'rosegold' when the model asks for 'rose gold', and the model sees the result, not an error", async () => {
+    await configure();
+    const { projects, tasks } = await import("../../shared/schema");
+    const [p] = await ctx.db.insert(projects).values({ name: "rosegold", status: "active" } as any).returning();
+    await ctx.db.insert(tasks).values({ title: "Rosegold shoot", projectId: p.id, status: "pending", createdBy: ctx.currentUserId } as any);
+    replies = [use("r1", "list_tasks", { projectName: "rose gold" }), text("لديك مهمة واحدة في المشروع.")];
+    const r = await api("POST", "/api/ai-chat/messages", { text: "ما المهام المطلوبة في rosegold؟", language: "ar" });
+    expect(r.status).toBe(200);
+    const result = requests[1].messages.at(-1).content[0];
+    expect(result.type).toBe("tool_result");
+    expect(result.is_error).toBeUndefined();
+    expect(JSON.parse(result.content)).toMatchObject({ total: 1, hasMore: false, items: [{ title: "Rosegold shoot", project: "rosegold" }] });
+    // and the model was told who it is talking to and today's date
+    expect(requests[0].system).toContain(ctx.currentUserId);
+    expect(requests[0].system).toMatch(/Today is \w+day \d{4}-\d{2}-\d{2}/);
+  });
+
   describe("several conversations at once", () => {
     const lastUserText = (b: any) => { const m = [...b.messages].reverse().find((x: any) => x.role === "user" && typeof x.content === "string"); return m?.content ?? ""; };
 
