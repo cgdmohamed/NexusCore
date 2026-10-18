@@ -148,7 +148,7 @@ export const financeSchemas: Record<string, z.ZodTypeAny> = {
 
 // ── Helpers ──
 
-const toDate = (d: string) => {
+export const toDate = (d: string) => {
   const date = new Date(`${d}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) throw new ToolError(`Invalid date: ${d}`);
   return date;
@@ -171,18 +171,18 @@ export async function resolveClient(id?: string, name?: string): Promise<ClientR
   return all.find((c) => c.id === found.picked.id)!;
 }
 
-function assertActive(c: ClientRow, what: string) {
+export function assertActive(c: ClientRow, what: string) {
   if (c.status === "archived") throw new ToolError(`Client "${c.name}" is archived. Restore it in the app before creating a new ${what}.`);
 }
 
-function checkMoney(label: string, value: number, allowZero = true) {
+export function checkMoney(label: string, value: number, allowZero = true) {
   if (parseMoney(value, { allowZero }) === null) throw new ToolError(`${label} is not a valid amount (must be ${allowZero ? "zero or more" : "above zero"} and at most ${MAX_MONEY.toLocaleString("en-US")}).`);
 }
 
 type Ctx = { userId: string; actor?: string };
 type Runner = (args: any, ctx: Ctx) => Promise<unknown>;
 
-const record = async (fn: () => Promise<unknown>) => { try { await fn(); } catch (error) { console.error("MCP: could not write the activity or history entry:", error); } };
+export const record = async (fn: () => Promise<unknown>) => { try { await fn(); } catch (error) { console.error("MCP: could not write the activity or history entry:", error); } };
 
 export const financeRunners: Record<string, Runner> = {
   async list_clients({ search, includeArchived, limit: lim = DEFAULT_PAGE, offset = 0 }) {

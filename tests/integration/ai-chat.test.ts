@@ -231,6 +231,39 @@ describe.skipIf(!TEST_DATABASE_URL)("In-app AI assistant (integration)", () => {
     }
   });
 
+  it("records an expense only after the person confirms, saved as pending, and shows the category it resolves to", async () => {
+    await configure();
+    const { expenseCategories, expenses } = await import("../../shared/schema");
+    const [cat] = await ctx.db.insert(expenseCategories).values({ name: "Hosting & Domains" }).returning();
+    const before = (await ctx.db.select().from(expenses)).length;
+    replies = [use("e1", "create_expense", { title: "Domain renewal", amount: 640, categoryName: "hosting domains" })];
+    const asked = await api("POST", "/api/ai-chat/messages", { text: "سجّل مصروف تجديد الدومين ٦٤٠" });
+    expect(asked.body.pending).toEqual([expect.objectContaining({ name: "create_expense", args: expect.objectContaining({ amount: 640 }), names: { categoryName: "Hosting & Domains" } })]);
+    expect((await ctx.db.select().from(expenses)).length).toBe(before); // nothing yet
+
+    replies = [text("تم تسجيل المصروف.")];
+    const done = await api("POST", "/api/ai-chat/confirm", { approve: true });
+    expect(done.status).toBe(200);
+    const ev = done.body.items.find((i: any) => i.role === "event" && i.name === "create_expense");
+    expect(ev).toMatchObject({ ok: true });
+    expect(ev.link).toMatch(/^\/expenses\/[\w-]+$/);
+    const created = (await ctx.db.select().from(expenses)).filter((e: any) => e.title === "Domain renewal");
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({ status: "pending", categoryId: cat.id, createdBy: ctx.currentUserId });
+    expect(Number(created[0].amount)).toBe(640);
+  });
+
+  it("does not record an expense the person declines", async () => {
+    await configure();
+    const { expenses } = await import("../../shared/schema");
+    const before = (await ctx.db.select().from(expenses)).length;
+    replies = [use("e2", "create_expense", { title: "Declined", amount: 10, categoryName: "hosting domains" })];
+    await api("POST", "/api/ai-chat/messages", { text: "record an expense" });
+    replies = [text("حسناً، لن أسجّله.")];
+    expect((await api("POST", "/api/ai-chat/confirm", { approve: false })).status).toBe(200);
+    expect((await ctx.db.select().from(expenses)).length).toBe(before);
+  });
+
   describe("several conversations at once", () => {
     const lastUserText = (b: any) => { const m = [...b.messages].reverse().find((x: any) => x.role === "user" && typeof x.content === "string"); return m?.content ?? ""; };
 

@@ -22,8 +22,8 @@ function useLabels() {
   const field = (key: string) => known("ai.chat.f.", key, key);
   // Dates read in the person's language; priorities and statuses are named, not shown as codes
   const value = (key: string, raw: string) => {
-    if (key === "dueDate" || key === "validUntil") { try { return format(new Date(`${raw}T00:00:00`), "dd MMM yyyy"); } catch { return raw; } }
-    if (key === "priority" || key === "status") return known("ai.chat.v.", raw, raw);
+    if (key === "dueDate" || key === "validUntil" || key === "expenseDate") { try { return format(new Date(`${raw}T00:00:00`), "dd MMM yyyy"); } catch { return raw; } }
+    if (key === "priority" || key === "status" || key === "paymentMethod" || key === "type") return known("ai.chat.v.", raw, raw);
     return raw;
   };
   return { t, known, field, value };
