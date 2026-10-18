@@ -155,7 +155,7 @@ function CredentialDialogForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>
-                Password{isEditing && <span className="text-xs text-muted-foreground/70 ms-1">(leave blank to keep existing)</span>}
+                Password{isEditing && <span className="text-xs text-muted-foreground ms-1">(leave blank to keep existing)</span>}
               </FormLabel>
               <FormControl>
                 <Input type="password" placeholder="password" {...field} data-testid="input-credential-password" />
@@ -406,7 +406,7 @@ function CredentialsVault({ clientId, canManage }: { clientId: string; canManage
                           </div>
                         )}
 
-                        <p className="text-xs text-muted-foreground/70">
+                        <p className="text-xs text-muted-foreground">
                           Last updated {cred.updatedAt ? formatDistanceToNow(new Date(cred.updatedAt), { addSuffix: true }) : "unknown"}
                         </p>
                       </div>
@@ -598,7 +598,7 @@ export default function ClientProfile() {
       case 'credit_refunded': return <TrendingUp className="w-4 h-4 text-success" />;
       case 'credit_used':
       case 'credit_applied': return <TrendingDown className="w-4 h-4 text-danger" />;
-      default: return <Minus className="w-4 h-4 text-muted-foreground/70" />;
+      default: return <Minus className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -779,7 +779,7 @@ export default function ClientProfile() {
           <CardContent className="p-5">
             <div className="flex items-center space-x-3">
               <div className={`p-3 rounded-lg ${creditBalance > 0 ? 'bg-success-soft' : 'bg-muted'}`}>
-                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-success' : 'text-muted-foreground/70'}`} />
+                <Wallet className={`w-5 h-5 ${creditBalance > 0 ? 'text-success' : 'text-muted-foreground'}`} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Credit Balance</p>
@@ -1042,7 +1042,7 @@ export default function ClientProfile() {
                               #{entry.relatedInvoiceId.slice(0, 8)}
                             </Link>
                           ) : (
-                            <span className="text-muted-foreground/70">—</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -1083,7 +1083,7 @@ export default function ClientProfile() {
                           {project.description && (
                             <p className="text-sm text-muted-foreground truncate">{project.description}</p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/70">
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             {project.taskCounts && (
                               <span>{project.taskCounts.total} tasks</span>
                             )}

@@ -291,7 +291,7 @@ export default function Expenses() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search expenses by title, description, or category..."
                   value={searchTerm}
@@ -494,7 +494,7 @@ export default function Expenses() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground/70" />
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm capitalize">
                         {expense.paymentMethod.replace("_", " ")}
                       </span>
@@ -527,7 +527,7 @@ export default function Expenses() {
             
             {filteredExpenses.length === 0 && (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">No expenses found</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"
@@ -643,7 +643,7 @@ export default function Expenses() {
           )}
           {filteredExpenses.length === 0 && (
             <div className="col-span-full text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No expenses found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all"

@@ -489,7 +489,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
           
           {!selectedFile && !expense?.attachmentUrl ? (
             <div className="border-2 border-dashed border-input rounded-lg p-6 text-center">
-              <Upload className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">
                 Upload Receipt
               </h3>
@@ -512,7 +512,7 @@ export function ExpenseForm({ expense, onClose }: ExpenseFormProps) {
                   Choose File
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground/70 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Supported formats: JPEG, PNG, GIF, PDF (max 5MB)
               </p>
             </div>

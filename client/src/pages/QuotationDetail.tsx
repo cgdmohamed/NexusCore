@@ -782,7 +782,7 @@ export default function QuotationDetail() {
         <CardContent>
           {quotationItems.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-4">No items added to this quotation yet.</p>
               <Button onClick={() => setIsAddingItem(true)}>
                 <Plus className="w-4 h-4 me-2" />
@@ -900,7 +900,7 @@ export default function QuotationDetail() {
         <CardContent>
           {history.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+              <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">No history events yet. Changes to this quotation will appear here.</p>
             </div>
           ) : (
@@ -989,7 +989,7 @@ export default function QuotationDetail() {
                 }
               </p>
               {printCurrency !== "EGP" && (
-                <p className="text-xs text-muted-foreground/70 mt-1">Source total: {formatCurrency(liveTotalEgp)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Source total: {formatCurrency(liveTotalEgp)}</p>
               )}
             </div>
 
@@ -1024,13 +1024,13 @@ export default function QuotationDetail() {
                 <span className="ms-1 text-xs font-normal text-muted-foreground">({printRecords.length})</span>
               )}
             </span>
-            {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground/70" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/70" />}
+            {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </CardTitle>
         </CardHeader>
         {printHistoryOpen && <CardContent>
           {printRecords.length === 0 ? (
             <div className="text-center py-8">
-              <Printer className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+              <Printer className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">No prints yet. Use the Print button to create a print record.</p>
             </div>
           ) : (

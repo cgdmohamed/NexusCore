@@ -141,7 +141,7 @@ export default function Notifications() {
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/70 w-4 h-4" />
+                <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder={t("notifications.searchPlaceholder")}
                   value={searchTerm}
@@ -197,7 +197,7 @@ export default function Notifications() {
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="text-center py-12">
-                <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground/70" />
+                <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-medium text-foreground dark:text-gray-100 mb-2">
                   {t("notifications.empty")}
                 </h3>
@@ -241,7 +241,7 @@ export default function Notifications() {
                         </div>
                       </div>
                       
-                      <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 mt-1">
+                      <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
                         {notification.message}
                       </p>
                       

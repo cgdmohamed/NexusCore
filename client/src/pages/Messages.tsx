@@ -216,7 +216,7 @@ export default function Messages() {
 
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/70 px-6 text-center">
+              <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground px-6 text-center">
                 <MessageSquare className="w-10 h-10 opacity-30" />
                 <p className="text-sm">{t("messages.no_conversations")}</p>
               </div>
@@ -245,7 +245,7 @@ export default function Messages() {
                           {name}
                         </span>
                         {conv.lastMessage?.createdAt && (
-                          <span className="text-xs text-muted-foreground/70 flex-shrink-0 ms-2">
+                          <span className="text-xs text-muted-foreground flex-shrink-0 ms-2">
                             {formatDistanceToNow(conv.lastMessage.createdAt, {
                               addSuffix: false,
                             })}
@@ -277,7 +277,7 @@ export default function Messages() {
         {/* Right panel — message thread */}
         <div className={`flex-1 flex flex-col border border-border rounded-xl bg-card overflow-hidden ${selectedConvId ? "flex" : "hidden sm:flex"}`}>
           {!selectedConvId ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground/70">
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
               <MessageSquare className="w-12 h-12 opacity-30" />
               <p className="text-sm">{t("messages.start_conversation")}</p>
             </div>
@@ -310,7 +310,7 @@ export default function Messages() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {currentMessages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-muted-foreground/70 text-sm">
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                     {t("messages.type_message")}
                   </div>
                 ) : (
@@ -335,7 +335,7 @@ export default function Messages() {
                           >
                             <span dir="auto" className="block">{msg.content}</span>
                           </div>
-                          <span className="text-xs text-muted-foreground/70 mt-1 px-1">
+                          <span className="text-xs text-muted-foreground mt-1 px-1">
                             {isOwn ? t("messages.you") : msg.senderName}
                             {" · "}
                             {formatDistanceToNow(msg.createdAt, { addSuffix: true })}

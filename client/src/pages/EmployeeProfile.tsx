@@ -40,7 +40,7 @@ export default function EmployeeProfile() {
         <Header title="Employee Profile" subtitle="Employee not found" />
         <Card>
           <CardContent className="p-8 text-center">
-            <User className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">Employee Not Found</h3>
             <p className="text-muted-foreground mb-4">The requested employee could not be found.</p>
             <Link href="/team-roles">
@@ -119,24 +119,24 @@ export default function EmployeeProfile() {
                 {/* Contact Info — horizontal chips */}
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>{employee.email}</span>
                   </div>
 
                   {employee.phone && (
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <bdi dir="ltr">{employee.phone}</bdi>
                     </div>
                   )}
 
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                    <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>{getDepartmentIcon(employee.department)} {employee.department}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                    <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>Hired {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMM d, yyyy') : 'N/A'}</span>
                   </div>
                 </div>
@@ -250,13 +250,13 @@ export default function EmployeeProfile() {
                         <Badge className="bg-success-soft text-success">Current</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground capitalize mt-0.5">{employee.department} Department</p>
-                      <p className="text-xs text-muted-foreground/70 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMMM yyyy') : 'N/A'} — Present
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-center py-6 text-muted-foreground/70">
+                  <div className="text-center py-6 text-muted-foreground">
                     <Calendar className="h-6 w-6 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No previous employment history recorded</p>
                   </div>

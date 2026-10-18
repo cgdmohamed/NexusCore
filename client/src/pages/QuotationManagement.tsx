@@ -258,7 +258,7 @@ function QuotationTable({ quotations, clients, getStatusColor, getClientName }: 
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">No quotations found for this filter.</p>
         </CardContent>
       </Card>

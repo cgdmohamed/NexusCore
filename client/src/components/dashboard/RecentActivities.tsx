@@ -69,7 +69,7 @@ export function RecentActivities() {
           {activityList.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                <AlertCircle className="w-6 h-6 text-muted-foreground/70" />
+                <AlertCircle className="w-6 h-6 text-muted-foreground" />
               </div>
               <p className="text-neutral text-sm">{t("dash.no_activities")}</p>
               <p className="text-neutral text-xs mt-1">{t("dash.no_activities_hint")}</p>

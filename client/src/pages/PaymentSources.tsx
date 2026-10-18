@@ -303,7 +303,7 @@ export default function PaymentSources() {
           <CardContent>
             <div className="flex flex-col gap-3 mb-4">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search payment sources..."
                   value={searchTerm}
@@ -600,7 +600,7 @@ export default function PaymentSources() {
         {filteredSources.length === 0 && (
           <Card>
             <CardContent className="text-center py-12">
-              <Wallet className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No Payment Sources Found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || typeFilter !== "all" || statusFilter !== "all"

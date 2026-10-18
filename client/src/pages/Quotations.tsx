@@ -275,7 +275,7 @@ export default function Quotations() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search quotations by title, number, or client..."
                   value={searchTerm}
@@ -336,7 +336,7 @@ export default function Quotations() {
               </div>
             ) : filteredAndSortedQuotations.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">
                   {quotationList.length === 0 ? "No quotations found" : "No quotations match your filters"}
                 </p>
@@ -426,7 +426,7 @@ export default function Quotations() {
                           {quotation.validUntil ? (
                             <div>
                               <div>{format(new Date(quotation.validUntil), 'MMM dd, yyyy')}</div>
-                              <div className="text-xs text-muted-foreground/70">
+                              <div className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(quotation.validUntil), { addSuffix: true })}
                               </div>
                             </div>
@@ -437,7 +437,7 @@ export default function Quotations() {
                         <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                           <div>
                             <div>{format(new Date(quotation.createdAt ?? new Date()), 'MMM dd, yyyy')}</div>
-                            <div className="text-xs text-muted-foreground/70">
+                            <div className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(quotation.createdAt ?? new Date()), { addSuffix: true })}
                             </div>
                           </div>

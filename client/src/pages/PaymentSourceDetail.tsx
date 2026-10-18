@@ -186,7 +186,7 @@ export default function PaymentSourceDetail() {
         />
         <Card>
           <CardContent className="text-center py-12">
-            <Wallet className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
               Payment Source Not Found
             </h3>
@@ -264,7 +264,7 @@ export default function PaymentSourceDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground/70" />
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Created Date</div>
                       <div className="text-sm text-muted-foreground">
@@ -274,7 +274,7 @@ export default function PaymentSourceDetail() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-muted-foreground/70" />
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Account Type</div>
                       <div className="text-sm text-muted-foreground capitalize">
@@ -287,7 +287,7 @@ export default function PaymentSourceDetail() {
                 <div className="space-y-4">
                   {paymentSource.currency && (
                     <div className="flex items-center gap-3">
-                      <Building className="h-5 w-5 text-muted-foreground/70" />
+                      <Building className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <div className="font-medium">Currency</div>
                         <div className="text-sm text-muted-foreground">
@@ -298,7 +298,7 @@ export default function PaymentSourceDetail() {
                   )}
 
                   <div className="flex items-center gap-3">
-                    <DollarSign className="h-5 w-5 text-muted-foreground/70" />
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Initial Balance</div>
                       <div className="text-sm text-muted-foreground">
@@ -365,7 +365,7 @@ export default function PaymentSourceDetail() {
                 </Table>
               ) : (
                 <div className="text-center py-12">
-                  <Activity className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     No Transactions Yet
                   </h3>
@@ -432,7 +432,7 @@ export default function PaymentSourceDetail() {
                 </Table>
               ) : (
                 <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     No Related Expenses
                   </h3>

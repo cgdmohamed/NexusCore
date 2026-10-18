@@ -211,7 +211,7 @@ export function NotificationDropdown() {
                         </div>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground dark:text-muted-foreground/70 mt-1 line-clamp-2">
+                      <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1 line-clamp-2">
                         {notification.message}
                       </p>
                       

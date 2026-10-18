@@ -214,7 +214,7 @@ export default function ExpenseDetail() {
         />
         <Card>
           <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
               Expense Not Found
             </h3>
@@ -290,7 +290,7 @@ export default function ExpenseDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground/70" />
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Expense Date</div>
                       <div className="text-sm text-muted-foreground">
@@ -300,7 +300,7 @@ export default function ExpenseDetail() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-muted-foreground/70" />
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Payment Method</div>
                       <div className="text-sm text-muted-foreground capitalize">
@@ -311,7 +311,7 @@ export default function ExpenseDetail() {
 
                   {categoryInfo && (
                     <div className="flex items-center gap-3">
-                      <Tag className="h-5 w-5 text-muted-foreground/70" />
+                      <Tag className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <div className="font-medium">Category</div>
                         <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function ExpenseDetail() {
 
                   {paymentSourceInfo && (
                     <div className="flex items-center gap-3">
-                      <Wallet className="h-5 w-5 text-muted-foreground/70" />
+                      <Wallet className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <div className="font-medium">Payment Source</div>
                         <div className="text-sm text-muted-foreground">
@@ -342,7 +342,7 @@ export default function ExpenseDetail() {
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-muted-foreground/70" />
+                    <User className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <div className="font-medium">Submitted By</div>
                       <div className="text-sm text-muted-foreground">
@@ -353,7 +353,7 @@ export default function ExpenseDetail() {
 
                   {expense.attachmentUrl && (
                     <div className="flex items-center gap-3">
-                      <Receipt className="h-5 w-5 text-muted-foreground/70" />
+                      <Receipt className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <div className="font-medium">Receipt</div>
                         <Button variant="outline" size="sm" className="mt-1">
@@ -366,7 +366,7 @@ export default function ExpenseDetail() {
 
                   {expense.relatedClientId && (
                     <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground/70" />
+                      <FileText className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <div className="font-medium">Related Client</div>
                         <div className="text-sm text-muted-foreground">

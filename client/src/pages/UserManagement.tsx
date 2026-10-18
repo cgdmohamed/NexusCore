@@ -192,7 +192,7 @@ function RoleViewDialog({
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
             ) : roleUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground/70 italic">No users assigned to this role</p>
+              <p className="text-sm text-muted-foreground italic">No users assigned to this role</p>
             ) : (
               <div className="space-y-2">
                 {roleUsers.map(u => (
@@ -210,7 +210,7 @@ function RoleViewDialog({
                           : u.email}
                       </p>
                       {u.employee && (
-                        <p className="text-xs text-muted-foreground/70 truncate">{u.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                       )}
                     </div>
                     <Badge
@@ -433,7 +433,7 @@ export default function UserManagement() {
           {/* Search and Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="relative w-full sm:w-72">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search users, employees, roles..."
                 value={searchTerm}
@@ -509,7 +509,7 @@ export default function UserManagement() {
                               {user.employee?.firstName} {user.employee?.lastName}
                             </p>
                             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                            <p className="text-xs text-muted-foreground/70 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {user.employee?.jobTitle}{user.employee?.department ? ` · ${user.employee.department}` : ""}
                             </p>
                           </div>
@@ -583,7 +583,7 @@ export default function UserManagement() {
                               {employee.firstName} {employee.lastName}
                             </p>
                             <p className="text-sm text-muted-foreground truncate">{employee.email}</p>
-                            <p className="text-xs text-muted-foreground/70 truncate">
+                            <p className="text-xs text-muted-foreground truncate">
                               {employee.jobTitle}{employee.department ? ` · ${employee.department}` : ""}
                             </p>
                           </div>
@@ -802,7 +802,7 @@ export default function UserManagement() {
                               by {log.user?.employee?.firstName} {log.user?.employee?.lastName}
                             </p>
                           </div>
-                          <p className="text-xs text-muted-foreground/70">
+                          <p className="text-xs text-muted-foreground">
                             {new Date(log.createdAt).toLocaleDateString('en-GB')}
                           </p>
                         </div>

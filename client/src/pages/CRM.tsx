@@ -357,7 +357,7 @@ export default function CRM() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search clients by name, email, phone, or location..."
                   value={searchTerm}
@@ -418,7 +418,7 @@ export default function CRM() {
               </div>
             ) : filteredAndSortedClients.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">
                   {clientList.length === 0 ? "No clients found" : "No clients match your filters"}
                 </p>
@@ -526,7 +526,7 @@ export default function CRM() {
                           <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                             <div>
                               <div>{client.createdAt ? format(new Date(client.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
-                              <div className="text-xs text-muted-foreground/70">
+                              <div className="text-xs text-muted-foreground">
                                 {client.createdAt ? formatDistanceToNow(new Date(client.createdAt), { addSuffix: true }) : ''}
                               </div>
                             </div>

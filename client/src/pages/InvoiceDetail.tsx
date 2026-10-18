@@ -730,7 +730,7 @@ export default function InvoiceDetail() {
       <div>
         <Header title="Invoice Not Found" subtitle="The requested invoice could not be found" />
         <div className="p-6 text-center">
-          <FileText className="w-16 h-16 text-muted-foreground/70 mx-auto mb-4" />
+          <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">Invoice not found</p>
           <Link href="/invoices">
             <Button variant="outline">
@@ -1361,7 +1361,7 @@ export default function InvoiceDetail() {
           <CardContent>
             {invoiceItems.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">No items added to this invoice</p>
                 <Button onClick={() => setIsAddingItem(true)}>
                   <Plus className="w-4 h-4 me-2" />
@@ -1742,7 +1742,7 @@ export default function InvoiceDetail() {
           <CardContent>
             {payments.length === 0 ? (
               <div className="text-center py-8">
-                <CreditCard className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">No payments recorded for this invoice</p>
                 <Button onClick={() => setIsAddingPayment(true)} disabled={invoice.status === 'cancelled'}>
                   <Plus className="w-4 h-4 me-2" />
@@ -1846,7 +1846,7 @@ export default function InvoiceDetail() {
           <CardContent>
             {(!invoice?.attachments || invoice.attachments.length === 0) ? (
               <div className="text-center py-8">
-                <Paperclip className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <Paperclip className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">No attachments yet</p>
                 <p className="text-sm text-muted-foreground">
                   Upload receipts, contracts, or other documents related to this invoice.
@@ -1926,7 +1926,7 @@ export default function InvoiceDetail() {
               </div>
             ) : (
               <div className="text-center py-6 print:hidden">
-                <QrCode className="w-14 h-14 text-muted-foreground/70 mx-auto mb-4" />
+                <QrCode className="w-14 h-14 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground text-sm mb-6">
                   No QR code attached yet. Generate one automatically or upload a custom image.
                 </p>
@@ -1979,14 +1979,14 @@ export default function InvoiceDetail() {
                   <span className="ms-1 text-xs font-normal text-muted-foreground">({printRecords.length})</span>
                 )}
               </span>
-              {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground/70" /> : <ChevronDown className="w-4 h-4 text-muted-foreground/70" />}
+              {printHistoryOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </CardTitle>
           </CardHeader>
           {printHistoryOpen && (
             <CardContent>
               {printRecords.length === 0 ? (
                 <div className="text-center py-8">
-                  <Printer className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+                  <Printer className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground text-sm">No prints yet. Use the Print button to create a print record.</p>
                 </div>
               ) : (
@@ -2053,7 +2053,7 @@ export default function InvoiceDetail() {
           <CardContent>
             {invoiceHistoryData.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="w-10 h-10 text-muted-foreground/70 mx-auto mb-3" />
+                <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">No history events yet. Changes to this invoice will appear here.</p>
               </div>
             ) : (
@@ -2168,7 +2168,7 @@ export default function InvoiceDetail() {
                       {printCurrency === "USD" ? `${symbol}${formatted}` : `${formatted} ${symbol}`}
                     </p>
                     {printCurrency !== "EGP" && (
-                      <p className="text-xs text-muted-foreground/70 mt-1">Source total: {formatCurrency(totalAmount)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Source total: {formatCurrency(totalAmount)}</p>
                     )}
                   </>
                 );

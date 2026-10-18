@@ -287,7 +287,7 @@ export default function Invoices() {
             {/* Search and Filter Controls */}
             <div className="flex flex-col gap-3 mb-6">
               <div className="relative">
-                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search invoices by number, title, or client..."
                   value={searchTerm}
@@ -349,7 +349,7 @@ export default function Invoices() {
               </div>
             ) : filteredAndSortedInvoices.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">
                   {invoiceList.length === 0 ? "No invoices found" : "No invoices match your filters"}
                 </p>
@@ -419,7 +419,7 @@ export default function Invoices() {
                           </TableCell>
                           <TableCell className="min-w-[10rem]">
                             <div className="flex items-center">
-                              <User className="w-3 h-3 me-1 text-muted-foreground/70" />
+                              <User className="w-3 h-3 me-1 text-muted-foreground" />
                               {getClientName(invoice.clientId)}
                             </div>
                           </TableCell>
@@ -452,7 +452,7 @@ export default function Invoices() {
                             <div>
                               <div>{invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}</div>
                               {invoice.dueDate && (
-                                <div className="text-xs text-muted-foreground/70">
+                                <div className="text-xs text-muted-foreground">
                                   {formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true })}
                                 </div>
                               )}
@@ -461,7 +461,7 @@ export default function Invoices() {
                           <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                             <div>
                               <div>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
-                              <div className="text-xs text-muted-foreground/70">
+                              <div className="text-xs text-muted-foreground">
                                 {invoice.createdAt ? formatDistanceToNow(new Date(invoice.createdAt), { addSuffix: true }) : ''}
                               </div>
                             </div>
@@ -548,7 +548,7 @@ export default function Invoices() {
                               Due: {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}
                             </div>
                             {invoice.dueDate && (
-                              <div className="text-xs text-muted-foreground/70 ms-4">
+                              <div className="text-xs text-muted-foreground ms-4">
                                 {formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true })}
                               </div>
                             )}

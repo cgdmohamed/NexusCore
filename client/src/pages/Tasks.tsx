@@ -630,7 +630,7 @@ export default function Tasks() {
         ) : tasks.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <Briefcase className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No tasks found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== "all" || priorityFilter !== "all"
@@ -680,7 +680,7 @@ export default function Tasks() {
                           {task.description && (
                             <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
                           )}
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground/70">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                             {task.assignedTo && (
                               <div className="flex items-center gap-1">
                                 <User className="h-3.5 w-3.5" />
