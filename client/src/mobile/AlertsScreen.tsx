@@ -12,7 +12,7 @@ export default function AlertsScreen() {
   return (
     <div className="space-y-3 p-4 pb-10">
       {unread.length > 0 && (
-        <button onClick={() => n.markMultipleAsRead(unread.map((x) => x.id))} className="h-10 text-sm font-medium text-primary">
+        <button onClick={() => n.markMultipleAsRead(unread.map((x) => x.id))} className="h-11 text-sm font-medium text-primary">
           {t("m.mark_all_read")} ({unread.length})
         </button>
       )}

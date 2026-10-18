@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "apple-design-skill-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "NutshellEngineering/apple-design-skill"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "apple-design-skill@apple-design-skill-marketplace": true
+  }
+}

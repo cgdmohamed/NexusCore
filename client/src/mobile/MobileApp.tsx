@@ -73,7 +73,7 @@ export default function MobileApp() {
       <span className="relative">
         <tab.icon className="h-5 w-5" strokeWidth={active === tab.key ? 2.25 : 1.75} />
         {tab.key === "inbox" && unreadCount + messagesUnread > 0 && (
-          <span className="absolute -end-2 -top-1.5 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] leading-4 text-white tabular-nums">{unreadCount + messagesUnread > 9 ? "9+" : unreadCount + messagesUnread}</span>
+          <span className="absolute -end-2 -top-1.5 min-w-4 rounded-full bg-danger px-1 text-center text-[11px] leading-4 text-white tabular-nums">{unreadCount + messagesUnread > 9 ? "9+" : unreadCount + messagesUnread}</span>
         )}
       </span>
       {t(tab.label)}
@@ -81,7 +81,7 @@ export default function MobileApp() {
   );
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col bg-background pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <header className="flex items-center justify-between border-b border-border bg-card px-4 pb-3 pt-[calc(0.875rem+env(safe-area-inset-top))]">
         <h1 className="text-lg font-semibold">{t(TABS.find((x) => x.key === active)!.label)}</h1>
         <div className="flex items-center gap-1">
@@ -98,7 +98,7 @@ export default function MobileApp() {
           >
             <Bell className="h-5 w-5" strokeWidth={1.75} />
             {unreadCount > 0 && (
-              <span className="absolute end-1 top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] leading-4 text-white tabular-nums">{unreadCount > 9 ? "9+" : unreadCount}</span>
+              <span className="absolute end-1 top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[11px] leading-4 text-white tabular-nums">{unreadCount > 9 ? "9+" : unreadCount}</span>
             )}
           </Link>
           <DropdownMenu>

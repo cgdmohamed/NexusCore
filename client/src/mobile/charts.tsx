@@ -52,10 +52,10 @@ export function ColumnChart({ data, average, averageLabel, ariaLabel }: { data: 
               <rect x={i * slot} y={0} width={slot} height={H} fill="transparent" onClick={() => setPicked(active ? null : i)} className="cursor-pointer" />
               {d.value > 0 && <path d={barPath(x, baseline - h, barW, h, 4)} className={cn("transition-opacity", active || picked === null ? "fill-primary" : "fill-primary/40")} />}
               {d.value > 0 && slot >= 18 && (
-                <text x={x + barW / 2} y={baseline - h - 4} textAnchor="middle" className="fill-foreground text-[10px] tabular-nums">{d.value}</text>
+                <text x={x + barW / 2} y={baseline - h - 4} textAnchor="middle" className="fill-foreground text-[11px] tabular-nums">{d.value}</text>
               )}
               {i % labelEvery === 0 && (
-                <text x={i * slot + slot / 2} y={H - 5} textAnchor="middle" className={cn("text-[10px]", active ? "fill-foreground font-semibold" : "fill-muted-foreground")}>{d.label}</text>
+                <text x={i * slot + slot / 2} y={H - 5} textAnchor="middle" className={cn("text-[11px]", active ? "fill-foreground font-semibold" : "fill-muted-foreground")}>{d.label}</text>
               )}
             </g>
           );
@@ -178,14 +178,14 @@ export function Burndown({ data, todayIndex, idealLabel, actualLabel, ariaLabel,
         {last && (
           <g>
             <circle cx={x(last.i)} cy={y(last.d.remaining!)} r="3.5" className="fill-primary" />
-            <text x={Math.min(W - 6, x(last.i))} y={y(last.d.remaining!) - 8} textAnchor="middle" className="fill-foreground text-[10px] font-semibold tabular-nums">{last.d.remaining}</text>
+            <text x={Math.min(W - 6, x(last.i))} y={y(last.d.remaining!) - 8} textAnchor="middle" className="fill-foreground text-[11px] font-semibold tabular-nums">{last.d.remaining}</text>
           </g>
         )}
         {data.map((d, i) => (
           <g key={i}>
             <rect x={x(i) - plotW / data.length / 2} y={0} width={plotW / data.length} height={H} fill="transparent" onClick={() => setPicked(picked === i ? null : i)} className="cursor-pointer" />
             {(i === data.length - 1 || (i % labelEvery === 0 && data.length - 1 - i >= labelEvery)) && (
-              <text x={x(i)} y={H - 5} textAnchor={i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"} className="fill-muted-foreground text-[10px]">{d.label}</text>
+              <text x={x(i)} y={H - 5} textAnchor={i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"} className="fill-muted-foreground text-[11px]">{d.label}</text>
             )}
           </g>
         ))}

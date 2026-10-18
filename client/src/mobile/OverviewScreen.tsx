@@ -208,7 +208,7 @@ export default function OverviewScreen() {
                   />
                 </Card>
 
-                <Card title={t("m.ov.top_title")} hint={t("m.ov.top_hint")} action={<Link href="/m/tasks" className="text-xs font-medium text-primary">{t("m.ov.view_all")}</Link>}>
+                <Card title={t("m.ov.top_title")} hint={t("m.ov.top_hint")} action={<Link href="/m/tasks" className="-my-3 inline-flex min-h-11 items-center px-1 text-xs font-medium text-primary">{t("m.ov.view_all")}</Link>}>
                   {data.topTasks.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">{t("m.ov.no_open")}</p>
                   ) : (
@@ -222,14 +222,15 @@ export default function OverviewScreen() {
                               disabled={!canEdit("tasks") || update.isPending}
                               aria-label={t("m.mark_done")}
                               onClick={() => update.mutate({ id: task.id, changes: { status: "completed" } })}
-                              className="flex h-11 w-9 shrink-0 items-center justify-center"
+                              className="flex h-11 w-11 shrink-0 items-center justify-center"
                             >
                               <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-border text-white hover:bg-success hover:border-success"><Check className="h-3.5 w-3.5" /></span>
                             </button>
-                            <button type="button" onClick={() => setSelectedId(task.id)} className="min-w-0 flex-1 text-start">
+                            <button type="button" onClick={() => setSelectedId(task.id)} className="min-h-11 min-w-0 flex-1 text-start">
                               <span className="flex items-baseline gap-1.5 text-sm font-medium"><span dir="ltr" className="shrink-0 text-muted-foreground tabular-nums">{i + 1}.</span><span dir="auto" className="min-w-0 truncate">{task.title}</span></span>
                               <span className="mt-0.5 flex items-center gap-2 text-xs">
                                 <span className={cn("h-2 w-2 shrink-0 rounded-full", PRIORITY_DOT[task.priority])} aria-hidden />
+                                <span className={task.priority === "high" ? "font-medium text-danger" : "sr-only"}>{t(`m.priority_${task.priority}`)}</span>
                                 {due && <span className={due.cls}>{due.text}</span>}
                                 {(task.projectName || (scope === "team" && task.assigneeName)) && (
                                   <span className="truncate text-muted-foreground">{task.projectName ?? task.assigneeName}</span>
@@ -259,7 +260,7 @@ export default function OverviewScreen() {
       )}
 
       {canView("projects") && projectsQ.data && (
-        <Card title={t("m.ov.projects_title")} action={<Link href="/m/projects" className="text-xs font-medium text-primary">{t("m.ov.view_all")}</Link>}>
+        <Card title={t("m.ov.projects_title")} action={<Link href="/m/projects" className="-my-3 inline-flex min-h-11 items-center px-1 text-xs font-medium text-primary">{t("m.ov.view_all")}</Link>}>
           {attention.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("m.ov.projects_ok")}</p>
           ) : (
@@ -324,7 +325,7 @@ function BurndownCard({ project, burndown }: { project: { id: string; name: stri
     : { text: t("m.ov.burn_ahead", { n: String(Math.round(-burndown.behindBy)) }), tone: "text-success" };
 
   return (
-    <Card title={t("m.ov.burn_title")} action={<Link href="/m/projects" className="max-w-[10rem] truncate text-xs font-medium text-primary">{project.name}</Link>}>
+    <Card title={t("m.ov.burn_title")} action={<Link href="/m/projects" className="-my-3 inline-flex min-h-11 items-center px-1 max-w-[10rem] truncate text-xs font-medium text-primary">{project.name}</Link>}>
       <p className="mb-2 text-sm">
         <span className="font-semibold tabular-nums">{t("m.ov.burn_left", { n: String(burndown.remaining), total: String(burndown.total) })}</span>
         <span className="text-muted-foreground"> · {timing}</span>

@@ -17,7 +17,7 @@ export default function AssistantScreen() {
   const [listOpen, setListOpen] = useState(false);
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-background" data-testid="assistant-screen">
+    <div className="flex h-[100dvh] flex-col bg-background pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" data-testid="assistant-screen">
       <header className="flex items-center gap-1 border-b border-border bg-card px-2 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <button onClick={() => navigate("/m")} aria-label={t("m.back")} className="flex h-11 w-11 items-center justify-center rounded-full">
           <ChevronLeft className="h-5 w-5 rtl:-scale-x-100" />

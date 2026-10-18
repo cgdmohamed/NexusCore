@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { WifiOff, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { WifiOff, Loader2, Check, ChevronsUpDown, X } from "lucide-react";
 import { searchText, type SelectOption } from "@/lib/select-options";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useKeyboard } from "./keyboard";
-import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
 export const inputCls =
   "h-12 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
@@ -13,6 +13,7 @@ export const inputCls =
 export const dateInputCls = `${inputCls} block min-w-0 max-w-full appearance-none text-start [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-start`;
 
 export function BottomSheet({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; children: ReactNode }) {
+  const { t } = useTranslation();
   const { inset, height } = useKeyboard();
   // With the keyboard up the sheet rests on top of it and never grows taller than what is visible
   const style = {
@@ -22,7 +23,13 @@ export function BottomSheet({ open, onOpenChange, title, children }: { open: boo
   return (
     <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <DrawerContent className="max-h-[92dvh]" style={style}>
-        <DrawerTitle className="px-4 pt-4 text-lg font-semibold">{title}</DrawerTitle>
+        {/* Swiping down closes a sheet, but a visible way to close it is always offered too */}
+        <div className="flex items-center justify-between gap-2 ps-4 pe-1 pt-2">
+          <DrawerTitle className="min-w-0 flex-1 truncate text-lg font-semibold">{title}</DrawerTitle>
+          <DrawerClose aria-label={t("m.close")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground active:bg-muted" data-testid="sheet-close">
+            <X className="h-5 w-5" />
+          </DrawerClose>
+        </div>
         <DrawerDescription className="sr-only">{title}</DrawerDescription>
         <div
           className="overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3"
@@ -59,7 +66,7 @@ export function Segmented<T extends string>({ value, options, onChange, disabled
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-10 flex-1 rounded-md px-2 text-sm font-medium transition-colors",
+            "h-11 flex-1 rounded-md px-2 text-sm font-medium transition-colors",
             value === o.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
           )}
         >
@@ -80,7 +87,7 @@ export function Chips<T extends string>({ value, options, onChange }: { value: T
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-9 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors",
+            "h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors",
             value === o.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
           )}
         >

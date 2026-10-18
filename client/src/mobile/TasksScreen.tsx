@@ -78,6 +78,7 @@ export default function TasksScreen() {
                         <span className={cn("block font-medium", done && "text-muted-foreground line-through")}>{task.title}</span>
                         <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           <span className={cn("h-2 w-2 rounded-full", PRIORITY_DOT[task.priority])} aria-hidden />
+                          <span className={task.priority === "high" ? "text-xs font-medium text-danger" : "sr-only"}>{t(`m.priority_${task.priority}`)}</span>
                           {task.dueDate && (
                             <span className={cn("flex items-center gap-1", late && "font-medium text-danger")}>
                               <CalendarDays className="h-3.5 w-3.5" />
