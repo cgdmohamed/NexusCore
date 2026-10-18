@@ -242,3 +242,16 @@
 
 /* Arabic letterforms read smaller at the same size; scale the root slightly in Arabic */
 html[lang="ar"] { font-size: 106.25%; }
+
+/* Phone app (/m): a fixed 16px root keeps every rem spacing on the 4px grid in both languages
+   (the 106.25% Arabic root above would make it 4.25px), and text sizes follow Apple's text styles
+   as whole pixels: footnote 13, subheadline 15, body 17, title3 20, title2 22, title1 28, large title 34. */
+html.m-app,
+html.m-app[lang="ar"] { font-size: 100%; }
+html.m-app .text-xs { font-size: 13px; line-height: 18px; }
+html.m-app .text-sm { font-size: 15px; line-height: 20px; }
+html.m-app .text-base { font-size: 17px; line-height: 22px; }
+html.m-app .text-lg { font-size: 20px; line-height: 25px; }
+html.m-app .text-xl { font-size: 22px; line-height: 28px; }
+html.m-app .text-2xl { font-size: 28px; line-height: 34px; }
+html.m-app .text-4xl { font-size: 34px; line-height: 41px; }

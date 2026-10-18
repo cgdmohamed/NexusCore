@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { LayoutDashboard, CheckSquare, FolderKanban, Users, MessageSquare, Bell, Plus, Languages, LogOut, Monitor, Download, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,6 +46,11 @@ export default function MobileApp() {
   const install = useInstall();
   const [location, navigate] = useLocation();
   const [addOpen, setAddOpen] = useState(false);
+  // Phone-only type scale and 16px root (see index.css); sheets render in portals, so the flag sits on <html>
+  useEffect(() => {
+    document.documentElement.classList.add("m-app");
+    return () => document.documentElement.classList.remove("m-app");
+  }, []);
   const [request, setRequest] = useState<AddRequest>({});
 
   const tabs = TABS.filter((tab) => tab.module === null || canView(tab.module));

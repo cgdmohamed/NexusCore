@@ -88,7 +88,7 @@ export function Chips<T extends string>({ value, options, onChange }: { value: T
           onClick={() => onChange(o.value)}
           className={cn(
             "h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors",
-            value === o.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
+            value === o.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground",
           )}
         >
           {o.label}
