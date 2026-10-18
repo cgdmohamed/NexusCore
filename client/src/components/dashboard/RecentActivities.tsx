@@ -59,7 +59,7 @@ export function RecentActivities() {
       <CardHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">{t("dashboard.recentActivities")}</h3>
-          <Button variant="link" size="sm" className="h-auto p-0">
+          <Button variant="link" size="sm" className="h-7 px-1">
             {t("common.viewAll")}
           </Button>
         </div>

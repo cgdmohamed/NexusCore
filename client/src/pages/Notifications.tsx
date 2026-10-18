@@ -255,7 +255,7 @@ export default function Notifications() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-auto p-1 text-xs"
+                            className="h-7 px-2 text-xs"
                             onClick={(e) => {
                               e.stopPropagation();
                               markAsRead(notification.id);

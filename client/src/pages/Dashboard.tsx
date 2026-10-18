@@ -27,11 +27,12 @@ export default function Dashboard() {
       />
       
       <div className="p-3 md:p-6 space-y-4">
+        {/* What needs attention first, then the headline numbers and the money picture */}
+        <AttentionStrip />
+
         {/* KPI Cards */}
         <KPICards />
 
-        {/* What needs attention, then the money picture */}
-        <AttentionStrip />
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           <RevenueVsExpenses />
           <ReceivablesAging />

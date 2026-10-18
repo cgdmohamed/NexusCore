@@ -252,3 +252,13 @@ html.m-app .text-lg { font-size: 20px; line-height: 25px; }
 html.m-app .text-xl { font-size: 22px; line-height: 28px; }
 html.m-app .text-2xl { font-size: 28px; line-height: 34px; }
 html.m-app .text-4xl { font-size: 34px; line-height: 41px; }
+
+/* Inline text links are 16-21px tall; widen the hit area to 28px (the macOS minimum control height)
+   with an invisible pseudo-element, so nothing moves on screen. */
+a[href]:not(.absolute):not(.fixed):not(.sticky) { position: relative; }
+a[href]:not(.absolute):not(.fixed):not(.sticky)::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block: min(0px, calc((100% - 28px) / 2));
+}

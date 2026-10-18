@@ -48,7 +48,7 @@ export function AttentionStrip() {
 
   return (
     <section aria-label={t("dash.att.title")}>
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+      <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-foreground">
         <AlertTriangle className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
         {t("dash.att.title")}
       </h2>
@@ -61,7 +61,7 @@ export function AttentionStrip() {
               <Card className="h-full cursor-pointer transition-colors hover:bg-accent/40">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-2xl font-semibold tabular-nums ${urgent ? "text-danger" : "text-foreground"}`}>{a.count}</span>
+                    <span className={`font-semibold tabular-nums ${urgent ? "text-[28px] leading-none text-danger" : "text-2xl text-foreground"}`}>{a.count}</span>
                     <Icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
                   </div>
                   <p className="mt-1 text-xs font-medium text-foreground">{t(`dash.att.${a.key}`)}</p>
