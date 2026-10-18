@@ -87,6 +87,7 @@ const statusColors = {
 export default function Tasks() {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const lsl = (v: string) => { const k = `ls.${v}`; const r = t(k); return r === k ? v.replace(/_/g, ' ') : r; };
   const qc = useQC();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -320,10 +321,10 @@ export default function Tasks() {
       qc.invalidateQueries({ queryKey: ["/api/tasks", selectedTask?.id] });
       setDepTaskIds([]);
       setDepPickerOpen(false);
-      toast({ title: "Dependency added" });
+      toast({ title: t('tk.dep_added') });
     },
     onError: (err: any) => {
-      toast({ title: "Failed to add dependency", description: err.message, variant: "destructive" });
+      toast({ title: t('tk.dep_add_fail'), description: err.message, variant: "destructive" });
     },
   });
 
@@ -335,10 +336,10 @@ export default function Tasks() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/tasks", selectedTask?.id] });
-      toast({ title: "Dependency removed" });
+      toast({ title: t('tk.dep_removed') });
     },
     onError: (err: any) => {
-      toast({ title: "Failed to remove dependency", description: err.message, variant: "destructive" });
+      toast({ title: t('tk.dep_remove_fail'), description: err.message, variant: "destructive" });
     },
   });
 
@@ -371,12 +372,12 @@ export default function Tasks() {
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {[
-              { label: "Total Tasks",   value: stats.totalTasks || 0,                         icon: Briefcase,    iconColor: "text-primary" },
-              { label: "Completed",     value: stats.statusBreakdown?.completed || 0,          icon: CheckCircle2, iconColor: "text-success" },
-              { label: "In Progress",   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-warning" },
-              { label: "Pending",       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-warning" },
-              { label: "High Priority", value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-danger" },
-              { label: "Assigned",      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-muted-foreground" },
+              { label: t('tk.total'),   value: stats.totalTasks || 0,                         icon: Briefcase,    iconColor: "text-primary" },
+              { label: t('ls.completed'),     value: stats.statusBreakdown?.completed || 0,          icon: CheckCircle2, iconColor: "text-success" },
+              { label: t('ls.in_progress'),   value: stats.statusBreakdown?.in_progress || 0,        icon: Clock,        iconColor: "text-warning" },
+              { label: t('ls.pending'),       value: stats.statusBreakdown?.pending || 0,            icon: AlertCircle,  iconColor: "text-warning" },
+              { label: t('tk.high_priority'), value: stats.priorityBreakdown?.high || 0,             icon: AlertCircle,  iconColor: "text-danger" },
+              { label: t('tk.assigned'),      value: tasks.filter((t: any) => t.assignedTo).length, icon: Users,        iconColor: "text-muted-foreground" },
             ].map(({ label, value, icon: Icon, iconColor }) => (
               <Card key={label}>
                 <CardContent className="p-4">
@@ -396,7 +397,7 @@ export default function Tasks() {
         {/* Controls and Filters */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Task Management</CardTitle>
+            <CardTitle className="text-lg font-semibold">{t('tk.management')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3 mb-4">
@@ -412,26 +413,26 @@ export default function Tasks() {
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
-                    <SelectValue placeholder="All Status" />
+                    <SelectValue placeholder={t('tk.all_status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="all">{t('tk.all_status')}</SelectItem>
+                    <SelectItem value="pending">{t('ls.pending')}</SelectItem>
+                    <SelectItem value="in_progress">{t('ls.in_progress')}</SelectItem>
+                    <SelectItem value="completed">{t('ls.completed')}</SelectItem>
+                    <SelectItem value="cancelled">{t('ls.cancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
-                    <SelectValue placeholder="All Priority" />
+                    <SelectValue placeholder={t('tk.all_priority')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Priority</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="all">{t('tk.all_priority')}</SelectItem>
+                    <SelectItem value="high">{t('ls.high')}</SelectItem>
+                    <SelectItem value="medium">{t('ls.medium')}</SelectItem>
+                    <SelectItem value="low">{t('ls.low')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -442,15 +443,15 @@ export default function Tasks() {
                   setSortOrder(order);
                 }}>
                   <SelectTrigger className="w-full sm:w-[140px] flex-1 sm:flex-none">
-                    <SelectValue placeholder="Sort by" />
+                    <SelectValue placeholder={t('tk.sort_by')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                    <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                    <SelectItem value="title-asc">Title A-Z</SelectItem>
-                    <SelectItem value="title-desc">Title Z-A</SelectItem>
-                    <SelectItem value="priority-asc">Priority (High first)</SelectItem>
-                    <SelectItem value="dueDate-asc">Due Date (Earliest)</SelectItem>
+                    <SelectItem value="createdAt-desc">{t('tk.newest')}</SelectItem>
+                    <SelectItem value="createdAt-asc">{t('tk.oldest')}</SelectItem>
+                    <SelectItem value="title-asc">{t('tk.title_az')}</SelectItem>
+                    <SelectItem value="title-desc">{t('tk.title_za')}</SelectItem>
+                    <SelectItem value="priority-asc">{t('tk.priority_high_first')}</SelectItem>
+                    <SelectItem value="dueDate-asc">{t('tk.due_earliest')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -461,14 +462,14 @@ export default function Tasks() {
                   onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
                 >
                   <RotateCcw className="h-4 w-4 me-1.5" />
-                  Clear
+                  {t('tk.clear')}
                 </Button>
               </div>
             </div>
             <div className="flex items-center justify-between mt-2">
               <p className="text-sm text-muted-foreground">
-                Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-                {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && " matching your filters"}
+                {t('tk.showing', { n: String(tasks.length) })}
+                {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && ` ${t('tk.matching')}`}
               </p>
               <div className="flex items-center gap-2">
                 <div className="flex border rounded-md">
@@ -492,7 +493,7 @@ export default function Tasks() {
                 <DataExportButton data={tasks} filename="tasks-export" type="csv" />
                 <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
                   <Plus className="h-4 w-4 me-2" />
-                  {t('common.create')} Task
+                  {t('tasks.createTask')}
                 </Button>
               </div>
             </div>
@@ -503,8 +504,8 @@ export default function Tasks() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
-              <DialogDescription>Create a new task and assign it to team members</DialogDescription>
+              <DialogTitle>{t('tk.create_new')}</DialogTitle>
+              <DialogDescription>{t('tk.create_desc')}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -513,8 +514,8 @@ export default function Tasks() {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl><Input placeholder="Enter task title" {...field} /></FormControl>
+                      <FormLabel>{t('tk.title')}</FormLabel>
+                      <FormControl><Input placeholder={t('tk.enter_title')} {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -524,9 +525,9 @@ export default function Tasks() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>{t('common.description')}</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Enter task description" className="min-h-[100px]" {...field} />
+                        <Textarea placeholder={t('tk.enter_desc')} className="min-h-[100px]" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -538,13 +539,13 @@ export default function Tasks() {
                     name="priority"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Priority</FormLabel>
+                        <FormLabel>{t('tasks.priority')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder={t('tk.select_priority')} /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="low">{t('ls.low')}</SelectItem>
+                            <SelectItem value="medium">{t('ls.medium')}</SelectItem>
+                            <SelectItem value="high">{t('ls.high')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -556,14 +557,14 @@ export default function Tasks() {
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>{t('common.status')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder={t('tk.select_status')} /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="pending">{t('ls.pending')}</SelectItem>
+                            <SelectItem value="in_progress">{t('ls.in_progress')}</SelectItem>
+                            <SelectItem value="completed">{t('ls.completed')}</SelectItem>
+                            <SelectItem value="cancelled">{t('ls.cancelled')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -576,9 +577,9 @@ export default function Tasks() {
                   name="assignedTo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assign To</FormLabel>
+                      <FormLabel>{t('tk.assign_to')}</FormLabel>
                       <FormControl>
-                        <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder="Select assignee" />
+                        <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder={t('tk.select_assignee')} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -590,13 +591,13 @@ export default function Tasks() {
                     name="projectId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <FormLabel>{t('tk.project')} <span className="text-muted-foreground font-normal">({t('common.optional')})</span></FormLabel>
                         <FormControl>
                           <SearchableSelect
-                            options={[{ value: "none", label: "Not linked to a project" }, ...projectOptions(projects)]}
+                            options={[{ value: "none", label: t('tk.no_project') }, ...projectOptions(projects)]}
                             value={field.value ?? "none"}
                             onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                            placeholder="Not linked to a project"
+                            placeholder={t('tk.no_project')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -605,7 +606,7 @@ export default function Tasks() {
                   />
                 )}
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('common.cancel')}</Button>
                   <Button type="submit" disabled={createTaskMutation.isPending}>
                     {createTaskMutation.isPending ? "Creating..." : "Create Task"}
                   </Button>
@@ -631,29 +632,22 @@ export default function Tasks() {
           <Card>
             <CardContent className="p-8 text-center">
               <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No tasks found</h3>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('tk.none')}</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== "all" || priorityFilter !== "all"
-                  ? "No tasks match your current filters."
-                  : "Get started by creating your first task."}
+                  ? t('tk.no_match')
+                  : t('tk.get_started')}
               </p>
               {(!searchTerm && statusFilter === "all" && priorityFilter === "all") && (
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
                   <Plus className="h-4 w-4 me-2" />
-                  Create Task
+                  {t('tasks.createTask')}
                 </Button>
               )}
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-                {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && " matching your filters"}
-              </p>
-            </div>
-            
             {viewMode === "cards" ? (
               <>
               <div className="grid gap-4">
@@ -668,13 +662,13 @@ export default function Tasks() {
                               variant="outline"
                               className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
                             >
-                              {task.status.replace("_", " ").toUpperCase()}
+                              {lsl(task.status)}
                             </Badge>
                             <Badge
                               variant="outline"
                               className={`${priorityColors[task.priority as keyof typeof priorityColors]} text-xs`}
                             >
-                              {task.priority.toUpperCase()}
+                              {lsl(task.priority)}
                             </Badge>
                           </div>
                           {task.description && (
@@ -690,7 +684,7 @@ export default function Tasks() {
                             {task.dueDate && (
                               <div className="flex items-center gap-1">
                                 <CalendarIcon className="h-3.5 w-3.5" />
-                                <span>Due {new Date(task.dueDate).toLocaleDateString('en-GB')}</span>
+                                <span>{t('tk.due')} {new Date(task.dueDate).toLocaleDateString('en-GB')}</span>
                               </div>
                             )}
                           </div>
@@ -703,7 +697,7 @@ export default function Tasks() {
                             onClick={() => viewTaskDetails(task)}
                           >
                             <Eye className="h-3.5 w-3.5 sm:me-1.5" />
-                            <span className="hidden sm:inline text-xs">View</span>
+                            <span className="hidden sm:inline text-xs">{t('common.view')}</span>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -713,16 +707,16 @@ export default function Tasks() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openEditDialog(task)}>
-                                <Edit className="h-4 w-4 me-2" />Edit Task
+                                <Edit className="h-4 w-4 me-2" />{t('tk.edit')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'in_progress')}>
-                                <Clock className="h-4 w-4 me-2" />Mark In Progress
+                                <Clock className="h-4 w-4 me-2" />{t('tk.mark_progress')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'completed')}>
-                                <CheckCircle2 className="h-4 w-4 me-2" />Mark Complete
+                                <CheckCircle2 className="h-4 w-4 me-2" />{t('tk.mark_complete')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'cancelled')}>
-                                <AlertCircle className="h-4 w-4 me-2" />Cancel Task
+                                <AlertCircle className="h-4 w-4 me-2" />{t('tk.cancel_task')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -747,12 +741,12 @@ export default function Tasks() {
                 <Table className="min-w-[560px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Assigned To</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="text-end">Actions</TableHead>
+                      <TableHead>{t('tk.title')}</TableHead>
+                      <TableHead>{t('common.status')}</TableHead>
+                      <TableHead>{t('tasks.priority')}</TableHead>
+                      <TableHead>{t('tasks.assignedTo')}</TableHead>
+                      <TableHead>{t('tasks.dueDate')}</TableHead>
+                      <TableHead className="text-end">{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -764,7 +758,7 @@ export default function Tasks() {
                             variant="outline"
                             className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
                           >
-                            {task.status.replace("_", " ").toUpperCase()}
+                            {lsl(task.status)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -772,7 +766,7 @@ export default function Tasks() {
                             variant="outline"
                             className={`${priorityColors[task.priority as keyof typeof priorityColors]} text-xs`}
                           >
-                            {task.priority.toUpperCase()}
+                            {lsl(task.priority)}
                           </Badge>
                         </TableCell>
                         <TableCell>{task.assigneeName || task.assignedTo || "-"}</TableCell>
@@ -797,19 +791,19 @@ export default function Tasks() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => openEditDialog(task)}>
                                   <Edit className="h-4 w-4 me-2" />
-                                  Edit Task
+                                  {t('tk.edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'in_progress')}>
                                   <Clock className="h-4 w-4 me-2" />
-                                  Mark In Progress
+                                  {t('tk.mark_progress')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'completed')}>
                                   <CheckCircle2 className="h-4 w-4 me-2" />
-                                  Mark Complete
+                                  {t('tk.mark_complete')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'cancelled')}>
                                   <AlertCircle className="h-4 w-4 me-2" />
-                                  Cancel Task
+                                  {t('tk.cancel_task')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -848,13 +842,13 @@ export default function Tasks() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Status</Label>
+                  <Label>{t('common.status')}</Label>
                   <Badge variant="outline" className={cn(statusColors[selectedTask.status as keyof typeof statusColors])}>
-                    {selectedTask.status.replace('_', ' ')}
+                    {lsl(selectedTask.status)}
                   </Badge>
                 </div>
                 <div>
-                  <Label>Priority</Label>
+                  <Label>{t('tasks.priority')}</Label>
                   <Badge variant="outline" className={cn(priorityColors[selectedTask.priority as keyof typeof priorityColors])}>
                     {selectedTask.priority}
                   </Badge>
@@ -863,7 +857,7 @@ export default function Tasks() {
               
               {selectedTask.description && (
                 <div>
-                  <Label>Description</Label>
+                  <Label>{t('common.description')}</Label>
                   <p className="mt-1 text-sm">{selectedTask.description}</p>
                 </div>
               )}
@@ -871,7 +865,7 @@ export default function Tasks() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {selectedTask.assignedToEmployee && (
                   <div>
-                    <Label>Assigned To</Label>
+                    <Label>{t('tasks.assignedTo')}</Label>
                     <p className="mt-1 text-sm">
                       {selectedTask.assignedToEmployee.firstName} {selectedTask.assignedToEmployee.lastName}
                     </p>
@@ -880,7 +874,7 @@ export default function Tasks() {
                 
                 {selectedTask.category && (
                   <div>
-                    <Label>Category</Label>
+                    <Label>{t('tk.category')}</Label>
                     <p className="mt-1 text-sm">{selectedTask.category}</p>
                   </div>
                 )}
@@ -888,14 +882,14 @@ export default function Tasks() {
 
               {selectedTask.client && (
                 <div>
-                  <Label>Linked Client</Label>
+                  <Label>{t('tk.linked_client')}</Label>
                   <p className="mt-1 text-sm">{selectedTask.client.name}</p>
                 </div>
               )}
 
               {selectedTask.dueDate && (
                 <div>
-                  <Label>Due Date</Label>
+                  <Label>{t('tasks.dueDate')}</Label>
                   <p className="mt-1 text-sm">
                     {format(new Date(selectedTask.dueDate), 'MMM dd, yyyy')}
                   </p>
@@ -906,8 +900,8 @@ export default function Tasks() {
 
               {/* Dependencies Section */}
               <div>
-                <Label className="text-base font-semibold">Dependencies</Label>
-                <p className="text-xs text-muted-foreground mb-3">Tasks that must be completed before this one.</p>
+                <Label className="text-base font-semibold">{t('tk.dependencies')}</Label>
+                <p className="text-xs text-muted-foreground mb-3">{t('tk.dep_hint')}</p>
 
                 {/* Existing dependencies */}
                 {fullTaskDetail?.dependencies && fullTaskDetail.dependencies.length > 0 ? (
@@ -916,7 +910,7 @@ export default function Tasks() {
                       <div key={dep.dependsOnTaskId || dep.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
                         <div className="flex items-center gap-2 min-w-0">
                           <Badge className={cn("text-xs", statusColors[(dep.dependentTask?.status || 'pending') as keyof typeof statusColors])}>
-                            {(dep.dependentTask?.status || 'pending').replace('_', ' ')}
+                            {lsl(dep.dependentTask?.status || 'pending')}
                           </Badge>
                           <span className="text-sm truncate">{dep.dependentTask?.title || dep.dependsOnTaskId}</span>
                         </div>
@@ -933,7 +927,7 @@ export default function Tasks() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground mb-3">No dependencies set.</p>
+                  <p className="text-sm text-muted-foreground mb-3">{t('tk.no_deps')}</p>
                 )}
 
                 {/* Add dependency — multi-select via checkbox popover */}
@@ -951,13 +945,13 @@ export default function Tasks() {
                         <PopoverTrigger asChild>
                           <Button variant="outline" size="sm" className="flex-1 justify-start text-sm font-normal truncate">
                             {depTaskIds.length === 0
-                              ? "Select tasks to depend on…"
+                              ? t('tk.select_deps')
                               : `${depTaskIds.length} task${depTaskIds.length > 1 ? "s" : ""} selected`}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-72 p-2 max-h-56 overflow-y-auto" align="start">
                           {availableTasks.length === 0 ? (
-                            <p className="text-sm text-muted-foreground px-2 py-1">No available tasks.</p>
+                            <p className="text-sm text-muted-foreground px-2 py-1">{t('tk.no_available')}</p>
                           ) : (
                             availableTasks.map((t: any) => (
                               <label key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer">
@@ -994,7 +988,7 @@ export default function Tasks() {
               <Separator />
 
               <div>
-                <Label>Created</Label>
+                <Label>{t('tk.created_at')}</Label>
                 <p className="mt-1 text-sm">
                   {format(new Date(selectedTask.createdAt), 'MMM dd, yyyy HH:mm')}
                 </p>
@@ -1014,7 +1008,7 @@ export default function Tasks() {
       }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
+            <DialogTitle>{t('tk.edit')}</DialogTitle>
             <DialogDescription>
               Update task details and assignment
             </DialogDescription>
@@ -1026,9 +1020,9 @@ export default function Tasks() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>{t('tk.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter task title" {...field} />
+                      <Input placeholder={t('tk.enter_title')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1040,10 +1034,10 @@ export default function Tasks() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('common.description')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Enter task description" 
+                        placeholder={t('tk.enter_desc')} 
                         className="min-h-[100px]"
                         {...field} 
                       />
@@ -1059,17 +1053,17 @@ export default function Tasks() {
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Priority</FormLabel>
+                      <FormLabel>{t('tasks.priority')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select priority" />
+                            <SelectValue placeholder={t('tk.select_priority')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="low">{t('ls.low')}</SelectItem>
+                          <SelectItem value="medium">{t('ls.medium')}</SelectItem>
+                          <SelectItem value="high">{t('ls.high')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1082,18 +1076,18 @@ export default function Tasks() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>{t('common.status')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder={t('tk.select_status')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="pending">{t('ls.pending')}</SelectItem>
+                          <SelectItem value="in_progress">{t('ls.in_progress')}</SelectItem>
+                          <SelectItem value="completed">{t('ls.completed')}</SelectItem>
+                          <SelectItem value="cancelled">{t('ls.cancelled')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1107,7 +1101,7 @@ export default function Tasks() {
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Due Date</FormLabel>
+                    <FormLabel>{t('tasks.dueDate')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -1121,7 +1115,7 @@ export default function Tasks() {
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>{t('tk.pick_date')}</span>
                             )}
                             <CalendarIcon className="ms-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -1147,9 +1141,9 @@ export default function Tasks() {
                 name="assignedTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assign To</FormLabel>
+                    <FormLabel>{t('tk.assign_to')}</FormLabel>
                     <FormControl>
-                      <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder="Select assignee" />
+                      <SearchableSelect options={userOptions(users as any[])} value={field.value || ""} onValueChange={field.onChange} placeholder={t('tk.select_assignee')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1162,13 +1156,13 @@ export default function Tasks() {
                   name="projectId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormLabel>{t('tk.project')} <span className="text-muted-foreground font-normal">({t('common.optional')})</span></FormLabel>
                       <FormControl>
                         <SearchableSelect
-                          options={[{ value: "none", label: "Not linked to a project" }, ...projectOptions(projects)]}
+                          options={[{ value: "none", label: t('tk.no_project') }, ...projectOptions(projects)]}
                           value={field.value ?? "none"}
                           onValueChange={(v) => field.onChange(v === "none" ? null : v)}
-                          placeholder="Not linked to a project"
+                          placeholder={t('tk.no_project')}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1187,10 +1181,10 @@ export default function Tasks() {
                     editForm.reset();
                   }}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={updateTaskMutation.isPending}>
-                  {updateTaskMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateTaskMutation.isPending ? t('common.saving') : t('common.save_changes')}
                 </Button>
               </div>
             </form>

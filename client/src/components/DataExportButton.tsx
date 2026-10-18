@@ -41,8 +41,8 @@ export function DataExportButton({ data, filename, type, amountFields }: DataExp
       if (type === 'csv') {
         if (rows.length === 0) {
           toast({
-            title: "No data to export",
-            description: "There are no records to export.",
+            title: t('ex.none'),
+            description: t('ex.none_desc'),
             variant: "destructive",
           });
           return;
@@ -66,15 +66,15 @@ export function DataExportButton({ data, filename, type, amountFields }: DataExp
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Export successful",
-        description: `Data exported as ${filename}.${type}`,
+        title: t('ex.ok'),
+        description: t('ex.ok_desc', { file: `${filename}.${type}` }),
       });
       setOpen(false);
     } catch (error) {
       console.error('Export error:', error);
       toast({
-        title: "Export failed",
-        description: "Failed to export data. Please try again.",
+        title: t('ex.fail'),
+        description: t('ex.fail_desc'),
         variant: "destructive",
       });
     }
@@ -104,7 +104,7 @@ export function DataExportButton({ data, filename, type, amountFields }: DataExp
         className="flex items-center space-x-1"
       >
         <Download className="w-4 h-4" />
-        <span>Export</span>
+        <span>{t('common.export')}</span>
       </Button>
 
       {amountFields && (

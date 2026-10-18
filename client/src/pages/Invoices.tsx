@@ -45,6 +45,7 @@ import type { Invoice, Client } from "@shared/schema";
 
 export default function Invoices() {
   const { t } = useTranslation();
+  const lsl = (v: string) => { const k = `ls.${v}`; const r = t(k); return r === k ? v.replace(/_/g, ' ') : r; };
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
@@ -165,7 +166,7 @@ export default function Invoices() {
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
-    return client?.name || 'Unknown Client';
+    return client?.name || t('iv.unknown_client');
   };
 
   const toggleSort = (field: string) => {
@@ -189,13 +190,13 @@ export default function Invoices() {
       
       <div className="p-3 md:p-6 space-y-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3 md:gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <FileText className="h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Invoices</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('iv.total')}</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
               </div>
@@ -207,7 +208,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-success" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Paid</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('ls.paid')}</p>
                   <p className="text-2xl font-bold">{stats.paid}</p>
                 </div>
               </div>
@@ -219,7 +220,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <CreditCard className="h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Partial</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('invoices.partial')}</p>
                   <p className="text-2xl font-bold">{stats.partiallyPaid}</p>
                 </div>
               </div>
@@ -231,7 +232,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-4 w-4 text-danger" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('ls.overdue')}</p>
                   <p className="text-2xl font-bold">{stats.overdue}</p>
                 </div>
               </div>
@@ -243,7 +244,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-success" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('iv.total_amount')}</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
                 </div>
               </div>
@@ -255,7 +256,7 @@ export default function Invoices() {
               <div className="flex items-center space-x-2">
                 <Building className="h-4 w-4 text-danger" />
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('iv.outstanding')}</p>
                   <p className="text-xl font-bold">{formatCurrency(stats.outstanding)}</p>
                 </div>
               </div>
@@ -267,11 +268,11 @@ export default function Invoices() {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg font-semibold">Invoice Management</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t('iv.management')}</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <InvoiceForm />
                 <Button variant="outline" size="sm" onClick={() => setViewMode(viewMode === "table" ? "cards" : "table")}>
-                  {viewMode === "table" ? "Card View" : "Table View"}
+                  {viewMode === "table" ? t('iv.card_view') : t('common.table_view')}
                 </Button>
                 <DataExportButton 
                   data={filteredAndSortedInvoices} 
@@ -289,7 +290,7 @@ export default function Invoices() {
               <div className="relative">
                 <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search invoices by number, title, or client..."
+                  placeholder={t('iv.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="ps-10 w-full"
@@ -298,16 +299,16 @@ export default function Invoices() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder={t('iv.filter_status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="all">{t('tk.all_status')}</SelectItem>
+                    <SelectItem value="draft">{t('ls.draft')}</SelectItem>
+                    <SelectItem value="sent">{t('ls.sent')}</SelectItem>
+                    <SelectItem value="paid">{t('ls.paid')}</SelectItem>
+                    <SelectItem value="partially_paid">{t('ls.partially_paid')}</SelectItem>
+                    <SelectItem value="overdue">{t('ls.overdue')}</SelectItem>
+                    <SelectItem value="cancelled">{t('ls.cancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -317,17 +318,17 @@ export default function Invoices() {
                   setSortOrder(order as "asc" | "desc");
                 }}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Sort by" />
+                    <SelectValue placeholder={t('tk.sort_by')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                    <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                    <SelectItem value="dueDate-asc">Due Date (Earliest)</SelectItem>
-                    <SelectItem value="dueDate-desc">Due Date (Latest)</SelectItem>
-                    <SelectItem value="amount-desc">Highest Amount</SelectItem>
-                    <SelectItem value="amount-asc">Lowest Amount</SelectItem>
-                    <SelectItem value="invoiceNumber-asc">Invoice # A-Z</SelectItem>
-                    <SelectItem value="status-asc">Status A-Z</SelectItem>
+                    <SelectItem value="createdAt-desc">{t('tk.newest')}</SelectItem>
+                    <SelectItem value="createdAt-asc">{t('tk.oldest')}</SelectItem>
+                    <SelectItem value="dueDate-asc">{t('tk.due_earliest')}</SelectItem>
+                    <SelectItem value="dueDate-desc">{t('iv.due_latest')}</SelectItem>
+                    <SelectItem value="amount-desc">{t('iv.amount_high')}</SelectItem>
+                    <SelectItem value="amount-asc">{t('iv.amount_low')}</SelectItem>
+                    <SelectItem value="invoiceNumber-asc">{t('iv.number_az')}</SelectItem>
+                    <SelectItem value="status-asc">{t('iv.status_az')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -336,7 +337,7 @@ export default function Invoices() {
             {/* Results Info */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredAndSortedInvoices.length} of {invoiceList.length} invoices
+                {t('iv.showing', { n: String(filteredAndSortedInvoices.length), total: String(invoiceList.length) })}
               </p>
             </div>
 
@@ -345,7 +346,7 @@ export default function Invoices() {
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading invoices...</p>
+                <p className="text-muted-foreground">{t('common.loading')}</p>
               </div>
             ) : filteredAndSortedInvoices.length === 0 ? (
               <div className="text-center py-12">
@@ -357,7 +358,7 @@ export default function Invoices() {
                   <InvoiceForm trigger={
                     <Button>
                       <Plus className="w-4 h-4 me-2" />
-                      Create your first invoice
+                      {t('iv.first')}
                     </Button>
                   } />
                 )}
@@ -372,35 +373,35 @@ export default function Invoices() {
                         className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("invoiceNumber")}
                       >
-                        Invoice # {sortBy === "invoiceNumber" && (sortOrder === "asc" ? "↑" : "↓")}
+                        {t('iv.number')} {sortBy === "invoiceNumber" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>Client</TableHead>
+                      <TableHead>{t('iv.client')}</TableHead>
                       <TableHead 
                         className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("amount")}
                       >
-                        Amount {sortBy === "amount" && (sortOrder === "asc" ? "↑" : "↓")}
+                        {t('common.amount')} {sortBy === "amount" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>Payment Progress</TableHead>
+                      <TableHead>{t('iv.progress')}</TableHead>
                       <TableHead 
                         className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("status")}
                       >
-                        Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
+                        {t('common.status')} {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead 
                         className="cursor-pointer hover:bg-muted"
                         onClick={() => toggleSort("dueDate")}
                       >
-                        Due Date {sortBy === "dueDate" && (sortOrder === "asc" ? "↑" : "↓")}
+                        {t('tasks.dueDate')} {sortBy === "dueDate" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-muted"
+                        className="hidden cursor-pointer hover:bg-muted 2xl:table-cell"
                         onClick={() => toggleSort("createdAt")}
                       >
-                        Created {sortBy === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
+                        {t('tk.created_at')} {sortBy === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -417,7 +418,7 @@ export default function Invoices() {
                               {invoice.invoiceNumber}
                             </Link>
                           </TableCell>
-                          <TableCell className="min-w-[10rem]">
+                          <TableCell className="min-w-[8rem]">
                             <div className="flex items-center">
                               <User className="w-3 h-3 me-1 text-muted-foreground" />
                               {getClientName(invoice.clientId)}
@@ -426,11 +427,11 @@ export default function Invoices() {
                           <TableCell className="whitespace-nowrap font-medium tabular-nums">
                             {formatCurrency(amount)}
                           </TableCell>
-                          <TableCell className="min-w-[13rem]">
+                          <TableCell className="min-w-[10rem]">
                             <div className="space-y-1">
                               <div className="flex justify-between gap-4 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                                <span>Paid: {formatCurrency(paid)}</span>
-                                <span>Due: {formatCurrency(remaining)}</span>
+                                <span>{t('iv.paid_lbl')}: {formatCurrency(paid)}</span>
+                                <span>{t('iv.due_lbl')}: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-muted rounded-full h-2">
                                 <div 
@@ -444,13 +445,13 @@ export default function Invoices() {
                             <Badge variant="outline" className={`whitespace-nowrap ${getStatusColor(invoice.status)}`}>
                               <div className="flex items-center gap-1">
                                 {getStatusIcon(invoice.status)}
-                                <span className="capitalize">{invoice.status.replace('_', ' ')}</span>
+                                <span>{lsl(invoice.status)}</span>
                               </div>
                             </Badge>
                           </TableCell>
                           <TableCell className={`whitespace-nowrap ${isOverdue(invoice) ? 'text-danger font-medium' : 'text-sm text-muted-foreground'}`}>
                             <div>
-                              <div>{invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}</div>
+                              <div>{invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : t('iv.no_due')}</div>
                               {invoice.dueDate && (
                                 <div className="text-xs text-muted-foreground">
                                   {formatDistanceToNow(new Date(invoice.dueDate), { addSuffix: true })}
@@ -458,9 +459,9 @@ export default function Invoices() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                          <TableCell className="hidden whitespace-nowrap text-sm text-muted-foreground 2xl:table-cell">
                             <div>
-                              <div>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : 'Unknown'}</div>
+                              <div>{invoice.createdAt ? format(new Date(invoice.createdAt), 'MMM dd, yyyy') : t('iv.unknown')}</div>
                               <div className="text-xs text-muted-foreground">
                                 {invoice.createdAt ? formatDistanceToNow(new Date(invoice.createdAt), { addSuffix: true }) : ''}
                               </div>
@@ -468,7 +469,7 @@ export default function Invoices() {
                           </TableCell>
                           <TableCell>
                             <Link href={`/invoices/${invoice.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="View" title="View">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={t('common.view')} title={t('common.view')}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -514,7 +515,7 @@ export default function Invoices() {
                           <Badge variant="outline" className={getStatusColor(invoice.status)}>
                             <div className="flex items-center space-x-1">
                               {getStatusIcon(invoice.status)}
-                              <span className="capitalize">{invoice.status.replace('_', ' ')}</span>
+                              <span>{lsl(invoice.status)}</span>
                             </div>
                           </Badge>
                         </div>
@@ -524,13 +525,13 @@ export default function Invoices() {
                           {/* Amount and Payment Progress */}
                           <div>
                             <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm text-muted-foreground">Amount</span>
+                              <span className="text-sm text-muted-foreground">{t('common.amount')}</span>
                               <span className="text-lg font-bold">{formatCurrency(amount)}</span>
                             </div>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
-                                <span className="text-success">Paid: {formatCurrency(paid)}</span>
-                                <span className="text-danger">Due: {formatCurrency(remaining)}</span>
+                                <span className="text-success">{t('iv.paid_lbl')}: {formatCurrency(paid)}</span>
+                                <span className="text-danger">{t('iv.due_lbl')}: {formatCurrency(remaining)}</span>
                               </div>
                               <div className="w-full bg-muted rounded-full h-2">
                                 <div 
@@ -545,7 +546,7 @@ export default function Invoices() {
                           <div className="pt-2 border-t border-border">
                             <div className={`flex items-center text-xs ${isOverdue(invoice) ? 'text-danger font-medium' : 'text-muted-foreground'}`}>
                               <Calendar className="w-3 h-3 me-1" />
-                              Due: {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : 'No due date'}
+                              {t('tasks.dueDate')}: {invoice.dueDate ? format(new Date(invoice.dueDate), 'MMM dd, yyyy') : t('iv.no_due')}
                             </div>
                             {invoice.dueDate && (
                               <div className="text-xs text-muted-foreground ms-4">
@@ -559,7 +560,7 @@ export default function Invoices() {
                           <Link href={`/invoices/${invoice.id}`} className="w-full block">
                             <Button variant="outline" size="sm" className="w-full">
                               <Eye className="w-3 h-3 me-1" />
-                              View Details
+                              {t('iv.view_details')}
                             </Button>
                           </Link>
                         </div>

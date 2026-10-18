@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ trigger }: InvoiceFormProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -95,7 +97,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
         {trigger || (
           <Button>
             <Plus className="w-4 h-4 me-2" />
-            Create Invoice
+            {t('iv.create')}
           </Button>
         )}
       </DialogTrigger>
@@ -170,7 +172,7 @@ export function InvoiceForm({ trigger }: InvoiceFormProps) {
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Creating..." : "Create Invoice"}
+                {mutation.isPending ? t('iv.creating') : t('iv.create')}
               </Button>
             </div>
           </form>
