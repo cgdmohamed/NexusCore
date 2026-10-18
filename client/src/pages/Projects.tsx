@@ -476,18 +476,18 @@ export default function Projects() {
           ))}
         </div>
 
-        <div className="mb-5 flex flex-wrap gap-1.5">
+        <div className="mb-5 flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setView(tab.key)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                "rounded-full px-3 py-2 text-sm font-medium transition-colors",
                 view === tab.key ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-muted/50",
               )}
             >
               {tab.label}
-              <span className="ms-1.5 text-xs opacity-70 tabular-nums">({counts[tab.key as "live" | "completed" | "archived" | "all"]})</span>
+              <span className="ms-2 text-xs opacity-70 tabular-nums">({counts[tab.key as "live" | "completed" | "archived" | "all"]})</span>
             </button>
           ))}
         </div>

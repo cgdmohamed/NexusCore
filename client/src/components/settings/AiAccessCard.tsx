@@ -20,7 +20,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false);
   return (
     <Button
-      type="button" variant="outline" size="sm" className="gap-1.5"
+      type="button" variant="outline" size="sm" className="gap-2"
       onClick={() => { navigator.clipboard?.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1500); }).catch(() => {}); }}
     >
       {done ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -77,7 +77,7 @@ export function AiAccessCard() {
         <p className="text-sm text-muted-foreground">{t("ai.intro")}</p>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ai.url")}</p>
           <div className="flex items-center gap-2">
             <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-sm" dir="ltr">{url || "…"}</code>
@@ -100,7 +100,7 @@ export function AiAccessCard() {
                     <p className="truncate font-medium">{c.clientName || "—"}</p>
                     <p className="text-xs text-muted-foreground">{t("ai.approved_by", { name: [c.approverFirstName, c.approverLastName].filter(Boolean).join(" ") || c.approvedBy })} · {t("ai.created", { date: date(c.createdAt) })} · {t("ai.last_used", { date: date(c.lastUsedAt) })}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-danger" disabled={disconnect.isPending} onClick={() => disconnect.mutate(c.id)} data-testid={`ai-disconnect-${c.id}`}>
+                  <Button variant="ghost" size="sm" className="gap-2 text-danger" disabled={disconnect.isPending} onClick={() => disconnect.mutate(c.id)} data-testid={`ai-disconnect-${c.id}`}>
                     <Trash2 className="h-3.5 w-3.5" />{t("ai.disconnect")}
                   </Button>
                 </li>
@@ -113,7 +113,7 @@ export function AiAccessCard() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ai.tokens")}</p>
           <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); if (name.trim()) create.mutate(); }}>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("ai.token_name_ph")} maxLength={80} data-testid="ai-token-name" />
-            <Button type="submit" disabled={!name.trim() || create.isPending} className="gap-1.5 sm:shrink-0" data-testid="ai-create-token">
+            <Button type="submit" disabled={!name.trim() || create.isPending} className="gap-2 sm:shrink-0" data-testid="ai-create-token">
               <KeyRound className="h-4 w-4" />{t("ai.create")}
             </Button>
           </form>
@@ -139,7 +139,7 @@ export function AiAccessCard() {
                     <p className="truncate font-medium">{tk.name} <code className="ms-1 text-xs text-muted-foreground" dir="ltr">{tk.prefix}…</code></p>
                     <p className="text-xs text-muted-foreground">{t("ai.created", { date: date(tk.createdAt) })} · {t("ai.last_used", { date: date(tk.lastUsedAt) })}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-danger" disabled={revoke.isPending} onClick={() => revoke.mutate(tk.id)} data-testid={`ai-revoke-${tk.id}`}>
+                  <Button variant="ghost" size="sm" className="gap-2 text-danger" disabled={revoke.isPending} onClick={() => revoke.mutate(tk.id)} data-testid={`ai-revoke-${tk.id}`}>
                     <Trash2 className="h-3.5 w-3.5" />{t("ai.revoke")}
                   </Button>
                 </li>
@@ -150,7 +150,7 @@ export function AiAccessCard() {
 
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ai.connect")}</p>
-          <div className="flex flex-wrap gap-1.5" role="tablist">
+          <div className="flex flex-wrap gap-2" role="tablist">
             {KINDS.map((k) => (
               <Button key={k.kind} variant={kind === k.kind ? "default" : "outline"} size="sm" role="tab" aria-selected={kind === k.kind} onClick={() => setKind(k.kind)}>{k.label}</Button>
             ))}

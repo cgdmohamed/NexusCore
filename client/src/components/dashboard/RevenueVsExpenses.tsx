@@ -53,8 +53,8 @@ export function RevenueVsExpenses() {
             <div className="mb-1 flex min-h-5 flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span className="tabular-nums" dir={language === "ar" ? "rtl" : "ltr"} data-testid="cash-reading">{selected ? describe(selected) : ""}</span>
               <span className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" aria-hidden />{t("dash.cash.collected")}</span>
-                {showSpent && <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-muted-foreground/45" aria-hidden />{t("dash.cash.spent")}</span>}
+                <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-primary" aria-hidden />{t("dash.cash.collected")}</span>
+                {showSpent && <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-muted-foreground/45" aria-hidden />{t("dash.cash.spent")}</span>}
               </span>
             </div>
             <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t("dash.cash.title")}>
@@ -71,9 +71,9 @@ export function RevenueVsExpenses() {
                     {m.collected > 0 && <path d={barPath(showSpent ? cx - barW - gap / 2 : cx - barW / 2, baseline - hC, barW, hC, 4)} className={cn("fill-primary transition-opacity", !active && "opacity-45")} />}
                     {showSpent && m.spent > 0 && <path d={barPath(cx + gap / 2, baseline - hS, barW, hS, 4)} className={cn("fill-muted-foreground transition-opacity", active ? "opacity-60" : "opacity-30")} />}
                     {active && m.collected > 0 && (
-                      <text x={showSpent ? cx - barW / 2 - gap / 2 : cx} y={y(m.collected) - 5} textAnchor="middle" className="fill-foreground text-[10px] font-semibold tabular-nums">{formatCurrencyShort(m.collected)}</text>
+                      <text x={showSpent ? cx - barW / 2 - gap / 2 : cx} y={y(m.collected) - 5} textAnchor="middle" className="fill-foreground text-xs font-semibold tabular-nums">{formatCurrencyShort(m.collected)}</text>
                     )}
-                    <text x={cx} y={H - 6} textAnchor="middle" className={cn("text-[11px]", active ? "fill-foreground font-semibold" : "fill-muted-foreground")}>{monthLabel(m.month)}</text>
+                    <text x={cx} y={H - 6} textAnchor="middle" className={cn("text-xs", active ? "fill-foreground font-semibold" : "fill-muted-foreground")}>{monthLabel(m.month)}</text>
                   </g>
                 );
               })}

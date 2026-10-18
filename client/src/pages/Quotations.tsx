@@ -445,7 +445,7 @@ export default function Quotations() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Link href={`/quotations/${quotation.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="View" title="View">
+                              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" aria-label="View" title="View">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>

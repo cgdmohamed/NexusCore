@@ -105,7 +105,7 @@ export function CurrencyAmountField({ value, onChange, onBlur, id, name, placeho
       </div>
 
       {currency !== "EGP" && (
-        <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+        <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-3">
           <Label className="text-xs text-muted-foreground" htmlFor={id ? `${id}-rate` : undefined}>{t("money.rate_label", { cur: currency })}</Label>
           <Input
             id={id ? `${id}-rate` : undefined}

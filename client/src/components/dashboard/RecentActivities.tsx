@@ -80,7 +80,7 @@ export function RecentActivities() {
               const Icon = activityType.icon;
               
               return (
-                <div key={activity.id} className="flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-accent/60">
+                <div key={activity.id} className="flex items-start gap-3 rounded-md px-3 py-3 transition-colors hover:bg-accent/60">
                   <div className={`h-7 w-7 ${activityType.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`${activityType.color} h-3.5 w-3.5`} />
                   </div>

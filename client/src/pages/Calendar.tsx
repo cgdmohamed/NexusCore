@@ -58,7 +58,7 @@ function EventLine({ e, compact = false }: { e: CalEvent; compact?: boolean }) {
       href={e.href}
       title={[label, e.title, e.subtitle].filter(Boolean).join(" · ")}
       className={cn(
-        "flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-start text-xs transition-colors hover:brightness-95",
+        "flex min-w-0 items-center gap-2 rounded-md px-2 py-0.5 text-start text-xs transition-colors hover:brightness-95",
         TONE[e.type], e.state === "done" && "opacity-60 line-through", e.state === "late" && "ring-1 ring-danger/60",
         compact && "py-px",
       )}
@@ -82,7 +82,7 @@ function DayDetails({ day, events, fmt }: { day: string; events: CalEvent[]; fmt
           const kind = e.type === "project" ? t(e.mark === "start" ? "cal.project_start" : "cal.project_due") : t(`cal.kind.${e.type}`);
           return (
             <li key={`${e.type}-${e.id}-${e.mark ?? ""}`}>
-              <Link href={e.href} className="flex items-start gap-2.5 rounded-lg p-2 hover:bg-accent">
+              <Link href={e.href} className="flex items-start gap-3 rounded-lg p-2 hover:bg-accent">
                 <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md", TONE[e.type])}><Icon className="h-4 w-4" /></span>
                 <span className="min-w-0 flex-1">
                   <span dir="auto" className={cn("block truncate text-sm font-medium", e.state === "done" && "line-through opacity-70")}>{e.title}</span>
@@ -123,7 +123,7 @@ function MonthView({ data, anchor, selected, onSelect, fmt }: { data: CalData | 
               aria-pressed={isSelected}
               aria-label={`${fmt.full(d)}${list.length ? `، ${t("cal.events_n", { n: fmt.n(list.length) })}` : ""}`}
               className={cn(
-                "flex min-h-14 flex-col gap-1 border-b border-e border-border p-1 text-start transition-colors hover:bg-accent/50 md:min-h-28 md:p-1.5",
+                "flex min-h-14 flex-col gap-1 border-b border-e border-border p-1 text-start transition-colors hover:bg-accent/50 md:min-h-28 md:p-2",
                 !inMonth && "bg-muted/30 text-muted-foreground", isSelected && "bg-primary/5 ring-2 ring-inset ring-primary",
               )}
               data-testid="cal-day"
@@ -266,7 +266,7 @@ export default function CalendarPage() {
             <div className="flex rounded-lg border border-border bg-card p-0.5" role="group" aria-label={t("cal.scope")}>
               {(["me", "team"] as const).map((s) => (
                 <button key={s} type="button" aria-pressed={scope === s} onClick={() => chooseScope(s)} data-testid={`cal-scope-${s}`}
-                  className={cn("rounded-md px-3 py-1.5 text-sm transition-colors", scope === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+                  className={cn("rounded-md px-3 py-2 text-sm transition-colors", scope === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
                   {t(s === "me" ? "cal.mine" : "cal.team")}
                 </button>
               ))}
@@ -275,7 +275,7 @@ export default function CalendarPage() {
           <div className="flex rounded-lg border border-border bg-card p-0.5" role="group" aria-label={t("cal.view")}>
             {views.map((v) => (
               <button key={v.key} type="button" aria-pressed={view === v.key} onClick={() => choose(v.key)} data-testid={`cal-view-${v.key}`}
-                className={cn("rounded-md px-3 py-1.5 text-sm transition-colors", view === v.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
+                className={cn("rounded-md px-3 py-2 text-sm transition-colors", view === v.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}>
                 {v.label}
               </button>
             ))}
@@ -289,7 +289,7 @@ export default function CalendarPage() {
             return (
               <button key={ty} type="button" aria-pressed={on} data-testid={`cal-filter-${ty}`}
                 onClick={() => setOff((prev) => { const n = new Set(prev); on ? n.add(ty) : n.delete(ty); return n; })}
-                className={cn("flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors", on ? `${TONE[ty]} border-transparent` : "border-border bg-card text-muted-foreground line-through")}>
+                className={cn("flex min-h-9 items-center gap-2 rounded-full border px-3 text-sm transition-colors", on ? `${TONE[ty]} border-transparent` : "border-border bg-card text-muted-foreground line-through")}>
                 <Icon className="h-3.5 w-3.5" />{t(`cal.type.${ty}`)}
               </button>
             );

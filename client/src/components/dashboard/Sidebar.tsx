@@ -185,7 +185,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           {visibleGroups.map((group, groupIndex) => (
             <div key={group.label ?? "top"} className={cn(groupIndex > 0 && "mt-5")}>
               {group.label && !isCollapsed && (
-                <p className="mb-1 px-2.5 text-xs font-medium text-muted-foreground">{t(group.label)}</p>
+                <p className="mb-1 px-3 text-xs font-medium text-muted-foreground">{t(group.label)}</p>
               )}
               {group.label && isCollapsed && groupIndex > 0 && <div className="mx-2 mb-2 border-t border-border" />}
               <ul className="space-y-0.5">
@@ -200,8 +200,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                         aria-current={active ? "page" : undefined}
                         title={isCollapsed ? t(item.name) : undefined}
                         className={cn(
-                          "relative flex h-9 items-center gap-2.5 rounded-md text-sm transition-colors",
-                          isCollapsed ? "justify-center px-0" : "px-2.5",
+                          "relative flex h-9 items-center gap-3 rounded-md text-sm transition-colors",
+                          isCollapsed ? "justify-center px-0" : "px-3",
                           active
                             ? "bg-accent font-medium text-foreground"
                             : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
@@ -221,7 +221,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                           ) : (
                             <span
                               className={cn(
-                                "min-w-5 rounded-full px-1.5 text-center text-[11px] font-medium leading-5 tabular-nums",
+                                "min-w-5 rounded-full px-2 text-center text-xs font-medium leading-5 tabular-nums",
                                 item.badgeTone === "alert"
                                   ? "bg-danger-soft text-danger"
                                   : "bg-muted text-muted-foreground",
@@ -244,8 +244,8 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
             <button
               onClick={toggle}
               className={cn(
-                "flex h-9 w-full items-center gap-2.5 rounded-md text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground",
-                isCollapsed ? "justify-center px-0" : "px-2.5",
+                "flex h-9 w-full items-center gap-3 rounded-md text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground",
+                isCollapsed ? "justify-center px-0" : "px-3",
               )}
               title={collapsed ? t("nav.expand") : t("nav.collapse")}
               aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}

@@ -67,12 +67,12 @@ export function UnassignedPaymentsBanner() {
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p>{t("paysrc.confirm_into", { name: data.defaultSource?.name ?? "" })}</p>
-            <dl className="space-y-1.5 rounded-md border border-border p-3">
+            <dl className="space-y-2 rounded-md border border-border p-3">
               <div className="flex justify-between"><dt className="text-muted-foreground">{t("paysrc.collections", { n: String(data.collections) })}</dt><dd className="tabular-nums text-success">+ {formatCurrency(data.collected)}</dd></div>
               {data.refunds > 0 && (
                 <div className="flex justify-between"><dt className="text-muted-foreground">{t("paysrc.refunds", { n: String(data.refunds) })}</dt><dd className="tabular-nums text-danger">− {formatCurrency(data.refunded)}</dd></div>
               )}
-              <div className="flex justify-between border-t border-border pt-1.5 font-semibold"><dt>{t("paysrc.net")}</dt><dd className="tabular-nums">{formatCurrency(data.net)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-2 font-semibold"><dt>{t("paysrc.net")}</dt><dd className="tabular-nums">{formatCurrency(data.net)}</dd></div>
             </dl>
             <p className="text-xs text-muted-foreground">{t("paysrc.migrate_warning")}</p>
           </div>

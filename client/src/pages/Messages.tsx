@@ -175,7 +175,7 @@ export default function Messages() {
                 icon: (
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={(u as any).avatarUrl ?? undefined} alt="" />
-                    <AvatarFallback className="bg-primary/10 text-[10px] text-primary">{getInitials(displayName)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-xs text-primary">{getInitials(displayName)}</AvatarFallback>
                   </Avatar>
                 ),
               };
@@ -261,7 +261,7 @@ export default function Messages() {
                             : ""}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <Badge className="ms-2 h-5 min-w-5 px-1.5 flex-shrink-0 bg-primary text-white text-xs">
+                          <Badge className="ms-2 h-5 min-w-5 px-2 flex-shrink-0 bg-primary text-white text-xs">
                             {conv.unreadCount}
                           </Badge>
                         )}

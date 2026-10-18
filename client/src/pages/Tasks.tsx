@@ -461,7 +461,7 @@ export default function Tasks() {
                   className="shrink-0"
                   onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}
                 >
-                  <RotateCcw className="h-4 w-4 me-1.5" />
+                  <RotateCcw className="h-4 w-4 me-2" />
                   {t('tk.clear')}
                 </Button>
               </div>
@@ -477,7 +477,7 @@ export default function Tasks() {
                     variant={viewMode === "cards" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("cards")}
-                    className="rounded-e-none h-8 px-2.5"
+                    className="rounded-e-none h-8 px-3"
                   >
                     <Grid3X3 className="h-3.5 w-3.5" />
                   </Button>
@@ -485,7 +485,7 @@ export default function Tasks() {
                     variant={viewMode === "table" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("table")}
-                    className="rounded-s-none h-8 px-2.5"
+                    className="rounded-s-none h-8 px-3"
                   >
                     <List className="h-3.5 w-3.5" />
                   </Button>
@@ -656,8 +656,8 @@ export default function Tasks() {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold text-text leading-snug mb-1.5 truncate">{task.title}</h3>
-                          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          <h3 className="text-base font-semibold text-text leading-snug mb-2 truncate">{task.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge
                               variant="outline"
                               className={`${statusColors[task.status as keyof typeof statusColors]} text-xs`}
@@ -689,19 +689,19 @@ export default function Tasks() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0 sm:w-auto sm:px-3"
                             onClick={() => viewTaskDetails(task)}
                           >
-                            <Eye className="h-3.5 w-3.5 sm:me-1.5" />
+                            <Eye className="h-3.5 w-3.5 sm:me-2" />
                             <span className="hidden sm:inline text-xs">{t('common.view')}</span>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -954,7 +954,7 @@ export default function Tasks() {
                             <p className="text-sm text-muted-foreground px-2 py-1">{t('tk.no_available')}</p>
                           ) : (
                             availableTasks.map((t: any) => (
-                              <label key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer">
+                              <label key={t.id} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-accent cursor-pointer">
                                 <Checkbox
                                   checked={depTaskIds.includes(t.id)}
                                   onCheckedChange={(checked) => {

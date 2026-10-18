@@ -485,7 +485,7 @@ export default function Services() {
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
-                  className="rounded-e-none h-8 px-2.5"
+                  className="rounded-e-none h-8 px-3"
                 >
                   <Grid className="h-3.5 w-3.5" />
                 </Button>
@@ -493,7 +493,7 @@ export default function Services() {
                   variant={viewMode === "table" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("table")}
-                  className="rounded-s-none h-8 px-2.5"
+                  className="rounded-s-none h-8 px-3"
                 >
                   <List className="h-3.5 w-3.5" />
                 </Button>

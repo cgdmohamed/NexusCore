@@ -235,11 +235,11 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
         {/* Actions */}
         <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={exportKpis} disabled={filteredKpis.length === 0}>
-            <FileText className="h-3.5 w-3.5 me-1.5" />
+            <FileText className="h-3.5 w-3.5 me-2" />
             Export CSV
           </Button>
           <Button size="sm" onClick={() => { setEditingKpi(null); setShowKpiForm(true); }}>
-            <Plus className="h-3.5 w-3.5 me-1.5" />
+            <Plus className="h-3.5 w-3.5 me-2" />
             Add KPI
           </Button>
         </div>
@@ -293,7 +293,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                   )}
 
                   {hasValues ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Progress</span>
                         <span className="font-medium text-text">{Math.round(progress)}%</span>
@@ -316,7 +316,7 @@ export function EmployeeKpiTab({ employeeId, employeeName }: EmployeeKpiTabProps
                 </div>
 
                 {/* Card Footer */}
-                <div className="px-4 py-2.5 border-t border-border flex items-center justify-between">
+                <div className="px-4 py-3 border-t border-border flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(kpi.createdAt ?? new Date()), 'MMM d, yyyy')}
                   </span>

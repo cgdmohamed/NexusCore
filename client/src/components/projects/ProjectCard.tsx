@@ -87,14 +87,14 @@ export function ProjectCard({ project, canEdit, canDelete, onEdit, onSetStatus, 
     <Card className={cn("flex flex-col", finished && "bg-muted/30")}>
       <CardContent className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
-          <Link href={`/projects/${project.id}`} className="flex min-w-0 items-center gap-2.5 hover:underline">
+          <Link href={`/projects/${project.id}`} className="flex min-w-0 items-center gap-3 hover:underline">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
             <span className="truncate font-semibold text-foreground">{project.name}</span>
           </Link>
           {(canEdit || canDelete) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="-me-2 -mt-1 h-8 w-8 shrink-0 p-0" aria-label={t("projects.menu")}>
+                <Button variant="ghost" size="sm" className="-me-2 -mt-1 h-9 w-8 shrink-0 p-0" aria-label={t("projects.menu")}>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -136,7 +136,7 @@ export function ProjectCard({ project, canEdit, canDelete, onEdit, onSetStatus, 
 
         {project.description && <p className="line-clamp-2 text-sm text-muted-foreground">{project.description}</p>}
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {c.total === 0 ? (
             <p className="text-xs text-muted-foreground">{t("projects.no_tasks_yet")}</p>
           ) : (
@@ -166,7 +166,7 @@ export function ProjectCard({ project, canEdit, canDelete, onEdit, onSetStatus, 
         </div>
 
         {(budget != null && budget > 0) || project.spent > 0 ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">{t("projects.budget_label")}</span>
               <span className={cn("tabular-nums", overBudget ? "font-medium text-danger" : "text-muted-foreground")}>
@@ -190,14 +190,14 @@ export function ProjectCard({ project, canEdit, canDelete, onEdit, onSetStatus, 
             {dueText}
           </span>
           {project.members.length > 0 && (
-            <div className="flex -space-x-1.5">
+            <div className="flex -space-x-2">
               {project.members.slice(0, 3).map((m) => (
-                <span key={m.userId} title={m.name} className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground">
+                <span key={m.userId} title={m.name} className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-xs font-medium text-muted-foreground">
                   {initials(m.name)}
                 </span>
               ))}
               {project.members.length > 3 && (
-                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-xs font-medium text-muted-foreground">
                   {t("projects.members_more", { n: String(project.members.length - 3) })}
                 </span>
               )}

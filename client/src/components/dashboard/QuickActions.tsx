@@ -88,17 +88,17 @@ export function QuickActions() {
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">{t("dash.system_status")}</span>
             {healthLoading ? (
-              <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="flex items-center gap-2 text-muted-foreground">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground/40" />
                 {t("dash.checking")}
               </span>
             ) : healthData?.db ? (
-              <span className="flex items-center gap-1.5 text-success">
+              <span className="flex items-center gap-2 text-success">
                 <span className="h-2 w-2 rounded-full bg-success" />
                 {t("dash.online")}
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-danger">
+              <span className="flex items-center gap-2 text-danger">
                 <span className="h-2 w-2 rounded-full bg-danger" />
                 {t("dash.degraded")}
               </span>

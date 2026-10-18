@@ -118,24 +118,24 @@ export default function EmployeeProfile() {
 
                 {/* Contact Info — horizontal chips */}
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>{employee.email}</span>
                   </div>
 
                   {employee.phone && (
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <bdi dir="ltr">{employee.phone}</bdi>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Building className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>{getDepartmentIcon(employee.department)} {employee.department}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span>Hired {employee.hiringDate ? format(new Date(employee.hiringDate), 'MMM d, yyyy') : 'N/A'}</span>
                   </div>
@@ -154,15 +154,15 @@ export default function EmployeeProfile() {
         {/* Tabs */}
         <Tabs defaultValue="performance" className="space-y-5">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="performance" className="flex items-center gap-1.5">
+            <TabsTrigger value="performance" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               <span>Performance & KPIs</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-1.5">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span>Profile Details</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1.5">
+            <TabsTrigger value="history" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span>Employment History</span>
             </TabsTrigger>
@@ -243,7 +243,7 @@ export default function EmployeeProfile() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-start gap-4 p-4 border rounded-lg bg-muted/50">
-                    <div className="w-2.5 h-2.5 bg-primary rounded-full mt-1.5 shrink-0" />
+                    <div className="w-2.5 h-2.5 bg-primary rounded-full mt-2 shrink-0" />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="font-medium text-text">{employee.jobTitle}</h4>

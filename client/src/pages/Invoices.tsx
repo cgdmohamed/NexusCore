@@ -469,7 +469,7 @@ export default function Invoices() {
                           </TableCell>
                           <TableCell>
                             <Link href={`/invoices/${invoice.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={t('common.view')} title={t('common.view')}>
+                              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" aria-label={t('common.view')} title={t('common.view')}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>

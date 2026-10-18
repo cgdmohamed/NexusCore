@@ -67,7 +67,7 @@ export function TasksTable() {
         ) : (
           <ul>
             {pendingTasks.map((task) => (
-              <li key={task.id} className="flex items-center justify-between gap-3 rounded-md px-3 py-2.5 hover:bg-accent/60">
+              <li key={task.id} className="flex items-center justify-between gap-3 rounded-md px-3 py-3 hover:bg-accent/60">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                   <p className="text-xs text-muted-foreground">

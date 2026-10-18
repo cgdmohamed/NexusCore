@@ -114,7 +114,7 @@ export function DataExportButton({ data, filename, type, amountFields }: DataExp
               <DialogTitle>{t("export.title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>{t("export.currency")}</Label>
                 <Select value={currency} onValueChange={changeCurrency}>
                   <SelectTrigger data-testid="select-export-currency"><SelectValue /></SelectTrigger>
@@ -124,7 +124,7 @@ export function DataExportButton({ data, filename, type, amountFields }: DataExp
                 </Select>
               </div>
               {currency !== "EGP" && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="export-rate">{t("money.rate_label", { cur: currency })}</Label>
                   <Input
                     id="export-rate"

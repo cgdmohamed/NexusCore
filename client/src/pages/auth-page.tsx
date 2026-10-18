@@ -92,7 +92,7 @@ export default function AuthPage() {
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="username">{t("auth.username")}</Label>
                 <Input
                   id="username"
@@ -105,7 +105,7 @@ export default function AuthPage() {
                   data-testid="input-username"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">{t("auth.password")}</Label>
                   <Link

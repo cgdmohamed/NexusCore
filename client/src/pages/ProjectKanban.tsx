@@ -349,7 +349,7 @@ export default function ProjectKanban() {
 
               {project?.clientName ? (
                 <Link href={`/clients/${project.clientId}`}>
-                  <div className="flex items-center gap-1.5 text-sm text-primary hover:underline cursor-pointer w-fit">
+                  <div className="flex items-center gap-2 text-sm text-primary hover:underline cursor-pointer w-fit">
                     <User className="h-3.5 w-3.5" />
                     <span>{project.clientName}</span>
                   </div>
@@ -379,7 +379,7 @@ export default function ProjectKanban() {
                   <span className={cn("flex items-center gap-1", isProjectOverdue && "text-danger font-medium")}>
                     <CalendarDays className="h-3.5 w-3.5" />
                     {t("projects.due_label")} {format(dueDate, "MMM d, yyyy")}
-                    {isProjectOverdue && <Badge className="ms-1 bg-danger-soft text-danger border-danger/20 text-xs px-1.5 py-0">{t("projects.overdue")}</Badge>}
+                    {isProjectOverdue && <Badge className="ms-1 bg-danger-soft text-danger border-danger/20 text-xs px-2 py-0">{t("projects.overdue")}</Badge>}
                   </span>
                 )}
                 {project?.budget != null && (
@@ -393,7 +393,7 @@ export default function ProjectKanban() {
 
             <div className="flex flex-col items-end gap-3">
               <Button onClick={() => openCreateDialog("pending")} size="sm">
-                <Plus className="h-4 w-4 me-1.5" />
+                <Plus className="h-4 w-4 me-2" />
                 {t("kanban.new_task")}
               </Button>
               {members.length > 0 && (
@@ -425,7 +425,7 @@ export default function ProjectKanban() {
           />
 
           <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-36 h-8 text-xs bg-card">
+            <SelectTrigger className="w-36 h-9 text-xs bg-card">
               <SelectValue placeholder={t("kanban.filter_priority")} />
             </SelectTrigger>
             <SelectContent>
@@ -440,7 +440,7 @@ export default function ProjectKanban() {
             <Badge
               key={f.key}
               variant="outline"
-              className="h-8 px-2.5 text-xs flex items-center gap-1.5 bg-primary/5 border-primary/20 text-primary cursor-default"
+              className="h-8 px-3 text-xs flex items-center gap-2 bg-primary/5 border-primary/20 text-primary cursor-default"
             >
               {f.label}
               <button
@@ -512,7 +512,7 @@ export default function ProjectKanban() {
                       className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 text-xs"
                       onClick={() => openCreateDialog(col.id)}
                     >
-                      <Plus className="h-3.5 w-3.5 me-1.5" />
+                      <Plus className="h-3.5 w-3.5 me-2" />
                       {t("kanban.add_task")}
                     </Button>
                   </div>

@@ -419,7 +419,7 @@ export default function UserManagement() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <p className="text-xs text-muted-foreground leading-tight">{label}</p>
-                      <div className={`p-1.5 rounded-md shrink-0 ${colorMap[color]}`}>
+                      <div className={`p-2 rounded-md shrink-0 ${colorMap[color]}`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                     </div>
@@ -524,22 +524,22 @@ export default function UserManagement() {
                               <p className="text-xs text-muted-foreground">{user.role.name}</p>
                             )}
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-2">
                             <Link href={`/users/${user.id}`}>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" data-testid={`button-view-user-${user.id}`}>
+                              <Button variant="outline" size="sm" className="h-9 w-9 p-0" data-testid={`button-view-user-${user.id}`}>
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
                             </Link>
                             {showArchived ? (
-                              <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2" onClick={() => restoreMutation.mutate({ kind: "users", id: user.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-user-${user.id}`}>
+                              <Button variant="outline" size="sm" className="h-9 gap-2 px-2" onClick={() => restoreMutation.mutate({ kind: "users", id: user.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-user-${user.id}`}>
                                 <RotateCcw className="h-3.5 w-3.5" />{t("userManagement.restore")}
                               </Button>
                             ) : (
                               <>
-                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditUser(user)} data-testid={`button-edit-user-${user.id}`}>
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => handleEditUser(user)} data-testid={`button-edit-user-${user.id}`}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft" onClick={() => handleDeleteUser(user)} disabled={deleteUserMutation.isPending} data-testid={`button-delete-user-${user.id}`}>
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-danger hover:text-danger hover:bg-danger-soft" onClick={() => handleDeleteUser(user)} disabled={deleteUserMutation.isPending} data-testid={`button-delete-user-${user.id}`}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </>
@@ -602,25 +602,25 @@ export default function UserManagement() {
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex gap-2">
                             <Link href={`/employees/${employee.id}`}>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" data-testid={`button-view-employee-${employee.id}`}>
+                              <Button variant="outline" size="sm" className="h-9 w-9 p-0" data-testid={`button-view-employee-${employee.id}`}>
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
                             </Link>
                             {showArchived ? (
-                              <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2" onClick={() => restoreMutation.mutate({ kind: "employees", id: employee.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-employee-${employee.id}`}>
+                              <Button variant="outline" size="sm" className="h-9 gap-2 px-2" onClick={() => restoreMutation.mutate({ kind: "employees", id: employee.id })} disabled={restoreMutation.isPending} data-testid={`button-restore-employee-${employee.id}`}>
                                 <RotateCcw className="h-3.5 w-3.5" />{t("userManagement.restore")}
                               </Button>
                             ) : (
                               <>
-                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditEmployee(employee)} data-testid={`button-edit-employee-${employee.id}`}>
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => handleEditEmployee(employee)} data-testid={`button-edit-employee-${employee.id}`}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-danger hover:text-danger hover:bg-danger-soft"
+                                  className="h-9 w-9 p-0 text-danger hover:text-danger hover:bg-danger-soft"
                                   onClick={() => handleDeleteEmployee(employee)}
                                   disabled={deleteEmployeeMutation.isPending}
                                   data-testid={`button-delete-employee-${employee.id}`}
@@ -683,7 +683,7 @@ export default function UserManagement() {
                               <p className="text-sm text-muted-foreground mb-3">{role.description}</p>
                             )}
                             {permEntries.length > 0 && (
-                              <div className="space-y-1.5">
+                              <div className="space-y-2">
                                 {permEntries.map(({ module, label, allowed }) => (
                                   <div key={module} className="flex items-start gap-2 flex-wrap">
                                     <span className="text-xs font-medium text-muted-foreground w-28 shrink-0 pt-0.5">
@@ -691,7 +691,7 @@ export default function UserManagement() {
                                     </span>
                                     <div className="flex flex-wrap gap-1">
                                       {allowed.map(perm => (
-                                        <Badge key={perm} variant="outline" className="text-xs h-5 px-1.5 py-0 capitalize font-normal">
+                                        <Badge key={perm} variant="outline" className="text-xs h-5 px-2 py-0 capitalize font-normal">
                                           {perm}
                                         </Badge>
                                       ))}
@@ -702,13 +702,13 @@ export default function UserManagement() {
                             )}
                           </div>
 
-                          <div className="flex gap-1.5 shrink-0">
+                          <div className="flex gap-2 shrink-0">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0"
+                                  className="h-9 w-9 p-0"
                                   onClick={() => handleViewRole(role)}
                                   data-testid={`button-view-role-${role.id}`}
                                 >
@@ -723,7 +723,7 @@ export default function UserManagement() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0"
+                                  className="h-9 w-9 p-0"
                                   onClick={() => handleEditRole(role)}
                                   data-testid={`button-edit-role-${role.id}`}
                                 >
@@ -738,7 +738,7 @@ export default function UserManagement() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0"
+                                  className="h-9 w-9 p-0"
                                   onClick={() => handleCloneRole(role)}
                                   data-testid={`button-clone-role-${role.id}`}
                                 >
@@ -754,7 +754,7 @@ export default function UserManagement() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className={`h-8 w-8 p-0 ${canDelete ? "text-danger hover:text-danger hover:bg-danger-soft" : "opacity-40 cursor-not-allowed"}`}
+                                    className={`h-9 w-9 p-0 ${canDelete ? "text-danger hover:text-danger hover:bg-danger-soft" : "opacity-40 cursor-not-allowed"}`}
                                     onClick={() => canDelete && handleDeleteRole(role)}
                                     disabled={!canDelete || deleteRoleMutation.isPending}
                                     data-testid={`button-delete-role-${role.id}`}

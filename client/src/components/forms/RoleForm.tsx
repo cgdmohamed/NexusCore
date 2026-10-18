@@ -202,7 +202,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               className="text-success border-success/20 hover:bg-success-soft"
               data-testid="button-grant-all"
             >
-              <CheckSquare className="h-3.5 w-3.5 me-1.5" />
+              <CheckSquare className="h-3.5 w-3.5 me-2" />
               Grant All
             </Button>
             <Button
@@ -213,7 +213,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
               className="text-danger border-danger/20 hover:bg-danger-soft"
               data-testid="button-revoke-all"
             >
-              <XSquare className="h-3.5 w-3.5 me-1.5" />
+              <XSquare className="h-3.5 w-3.5 me-2" />
               Revoke All
             </Button>
           </div>
@@ -255,7 +255,7 @@ export function RoleForm({ role, initialData, onClose }: RoleFormProps) {
                   {permissions.map((permission) => (
                     <div
                       key={permission.key}
-                      className="flex items-center gap-2.5 min-w-0"
+                      className="flex items-center gap-3 min-w-0"
                       title={permission.description}
                     >
                       <Switch

@@ -68,15 +68,15 @@ export function ClientStatement({ clientId }: { clientId: string }) {
     <div className="space-y-4">
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 p-4">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="stmt-from">{t("stmt.from")}</Label>
             <Input id="stmt-from" type="date" className="h-9 w-40" value={range.from} max={range.to || undefined} onChange={(e) => setRange({ ...range, from: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="stmt-to">{t("stmt.to")}</Label>
             <Input id="stmt-to" type="date" className="h-9 w-40" value={range.to} min={range.from || undefined} onChange={(e) => setRange({ ...range, to: e.target.value })} />
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {([["all", "stmt.all_time"], ["thisMonth", "stmt.this_month"], ["last90", "stmt.last_90"], ["thisYear", "stmt.this_year"]] as const).map(([k, label]) => (
               <Button key={k} type="button" size="sm" variant={isActive(quick[k]) ? "secondary" : "ghost"} className="h-9" onClick={() => setRange(quick[k])}>
                 {t(label)}
@@ -137,20 +137,20 @@ export function ClientStatement({ clientId }: { clientId: string }) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-xs text-muted-foreground">
-                      <th className="whitespace-nowrap px-4 py-2.5 text-start font-medium">{t("stmt.date")}</th>
-                      <th className="px-4 py-2.5 text-start font-medium">{t("stmt.description")}</th>
-                      <th className="whitespace-nowrap px-4 py-2.5 text-end font-medium">{t("stmt.debit")}</th>
-                      <th className="whitespace-nowrap px-4 py-2.5 text-end font-medium">{t("stmt.credit")}</th>
-                      <th className="whitespace-nowrap px-4 py-2.5 text-end font-medium">{t("stmt.balance")}</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-start font-medium">{t("stmt.date")}</th>
+                      <th className="px-4 py-3 text-start font-medium">{t("stmt.description")}</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-end font-medium">{t("stmt.debit")}</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-end font-medium">{t("stmt.credit")}</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-end font-medium">{t("stmt.balance")}</th>
                     </tr>
                   </thead>
                   <tbody className="tabular-nums">
                     {data.period.from && (
                       <tr className="border-b border-border bg-muted/40">
-                        <td className="px-4 py-2.5" />
-                        <td className="px-4 py-2.5 font-medium">{t("stmt.opening_balance")}</td>
+                        <td className="px-4 py-3" />
+                        <td className="px-4 py-3 font-medium">{t("stmt.opening_balance")}</td>
                         <td /><td />
-                        <td className="whitespace-nowrap px-4 py-2.5 text-end font-medium">{formatCurrency(data.openingBalance)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-end font-medium">{formatCurrency(data.openingBalance)}</td>
                       </tr>
                     )}
                     {data.entries.length === 0 && (
@@ -161,8 +161,8 @@ export function ClientStatement({ clientId }: { clientId: string }) {
                       const memo = e.kind === "credit_applied";
                       return (
                         <tr key={i} className={`border-b border-border last:border-0 ${memo ? "text-muted-foreground" : ""}`}>
-                          <td className="whitespace-nowrap px-4 py-2.5">{format(e.date, "dd/MM/yyyy")}</td>
-                          <td className="px-4 py-2.5">
+                          <td className="whitespace-nowrap px-4 py-3">{format(e.date, "dd/MM/yyyy")}</td>
+                          <td className="px-4 py-3">
                             {e.invoiceId ? (
                               <Link href={`/invoices/${e.invoiceId}`} className="hover:underline">{describeEntry(e, t)}</Link>
                             ) : (
@@ -171,9 +171,9 @@ export function ClientStatement({ clientId }: { clientId: string }) {
                             {detail && <span className="block text-xs text-muted-foreground">{detail}</span>}
                             {e.overpayment > 0 && <span className="block text-xs text-muted-foreground">{t("stmt.overpayment_note", { n: formatCurrency(e.overpayment) })}</span>}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-2.5 text-end">{e.debit ? formatCurrency(e.debit) : ""}</td>
-                          <td className="whitespace-nowrap px-4 py-2.5 text-end">{e.credit ? formatCurrency(e.credit) : ""}</td>
-                          <td className="whitespace-nowrap px-4 py-2.5 text-end font-medium">{formatCurrency(e.balance)}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-end">{e.debit ? formatCurrency(e.debit) : ""}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-end">{e.credit ? formatCurrency(e.credit) : ""}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-end font-medium">{formatCurrency(e.balance)}</td>
                         </tr>
                       );
                     })}
@@ -181,11 +181,11 @@ export function ClientStatement({ clientId }: { clientId: string }) {
                   {data.entries.length > 0 && (
                     <tfoot className="tabular-nums">
                       <tr className="border-t border-border bg-muted/40 font-medium">
-                        <td className="px-4 py-2.5" />
-                        <td className="px-4 py-2.5">{t("stmt.totals")}</td>
-                        <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatCurrency(data.totals.billed + data.totals.refunded)}</td>
-                        <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatCurrency(data.totals.received)}</td>
-                        <td className="whitespace-nowrap px-4 py-2.5 text-end">{formatCurrency(data.totals.closingBalance)}</td>
+                        <td className="px-4 py-3" />
+                        <td className="px-4 py-3">{t("stmt.totals")}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-end">{formatCurrency(data.totals.billed + data.totals.refunded)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-end">{formatCurrency(data.totals.received)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-end">{formatCurrency(data.totals.closingBalance)}</td>
                       </tr>
                     </tfoot>
                   )}

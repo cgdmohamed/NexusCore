@@ -181,7 +181,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const renderResults = () => {
     if (!showSearchResults || searchQuery.length < 2) return null;
     return (
-      <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-lg">
+      <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-lg">
         {searchResults.length === 0 ? (
           <p className="px-3 py-4 text-center text-sm text-muted-foreground">{t('common.noResults')}</p>
         ) : (
@@ -236,7 +236,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 md:w-[13.5rem]">
+        <Link href="/" className="flex shrink-0 items-center gap-3 md:w-[13.5rem]">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Building2 className="h-4 w-4" strokeWidth={1.75} />
           </span>

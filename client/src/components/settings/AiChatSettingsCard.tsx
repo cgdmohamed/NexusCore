@@ -55,19 +55,19 @@ export function AiChatSettingsCard() {
           <Switch id="ai-chat-enabled" checked={enabled} onCheckedChange={setEnabled} data-testid="ai-chat-enabled" />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label htmlFor="ai-chat-provider" className="text-sm font-medium">{t("ai.chatset.provider")}</label>
             <select id="ai-chat-provider" className={select} value={provider} onChange={(e) => setProvider(e.target.value as any)} data-testid="ai-chat-provider">
               <option value="anthropic">Anthropic (Claude)</option>
               <option value="openai">OpenAI</option>
             </select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label htmlFor="ai-chat-model" className="text-sm font-medium">{t("ai.chatset.model")}</label>
             <Input id="ai-chat-model" dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} placeholder={t("ai.chatset.model_ph", { model: data.defaults[provider] })} data-testid="ai-chat-model" />
           </div>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label htmlFor="ai-chat-key" className="text-sm font-medium">{t("ai.chatset.key")}</label>
           <Input id="ai-chat-key" type="password" dir="ltr" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} data-testid="ai-chat-key" />
           <p className="text-xs text-muted-foreground">{keyHint}</p>

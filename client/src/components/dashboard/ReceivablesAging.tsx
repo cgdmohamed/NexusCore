@@ -46,7 +46,7 @@ export function ReceivablesAging() {
               })}
             </div>
 
-            <ul className="space-y-1.5 text-sm">
+            <ul className="space-y-2 text-sm">
               {ORDER.map((k) => (
                 <li key={k} className="flex items-center justify-between gap-3" data-testid={`aging-${k}`}>
                   <span className="flex items-center gap-2 text-muted-foreground">
@@ -61,8 +61,8 @@ export function ReceivablesAging() {
 
             {aging.topDebtors.length > 0 && (
               <div>
-                <p className="mb-1.5 border-t border-border pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("dash.aging.debtors")}</p>
-                <ul className="space-y-1.5">
+                <p className="mb-2 border-t border-border pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("dash.aging.debtors")}</p>
+                <ul className="space-y-2">
                   {aging.topDebtors.map((d) => (
                     <li key={d.clientId ?? d.name} className="flex items-center justify-between gap-3 text-sm">
                       {d.clientId ? (

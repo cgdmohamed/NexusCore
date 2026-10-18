@@ -912,7 +912,7 @@ export default function QuotationDetail() {
                     <div className="absolute start-2.5 top-1.5 w-3 h-3 rounded-full bg-primary border-2 border-white ring-2 ring-primary/20" />
                     <div className="flex-1 bg-muted/50 rounded-lg p-3 border border-border">
                       <p className="text-sm font-medium text-foreground">{entry.event}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         {entry.actor && (
                           <span className="flex items-center gap-1">
                             <User className="w-3 h-3" />
