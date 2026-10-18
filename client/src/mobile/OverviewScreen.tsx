@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "wouter";
-import { Check, ArrowUp, ArrowDown, CalendarDays } from "lucide-react";
+import { Check, ArrowUp, ArrowDown, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -119,17 +119,9 @@ export default function OverviewScreen() {
         </Link>
         <h2 className="pe-28 text-xl font-semibold text-foreground">{greeting}</h2>
         <p className="text-sm text-muted-foreground">{today}</p>
-        {data && scope === "me" && (
+        {data && scope === "me" && (data.totals.dueToday + data.totals.overdue === 0 || data.totals.dueToday > 0) && (
           <p className="mt-1 text-sm">
-            {data.totals.dueToday + data.totals.overdue === 0 ? (
-              t("m.ov.focus_none")
-            ) : (
-              <>
-                {data.totals.dueToday > 0 && <span className="font-medium">{t("m.ov.focus_today", { n: String(data.totals.dueToday) })}</span>}
-                {data.totals.dueToday > 0 && data.totals.overdue > 0 && " · "}
-                {data.totals.overdue > 0 && <span className="font-medium text-danger">{t("m.ov.focus_overdue", { n: String(data.totals.overdue) })}</span>}
-              </>
-            )}
+            {data.totals.dueToday + data.totals.overdue === 0 ? t("m.ov.focus_none") : <span className="font-medium">{t("m.ov.focus_today", { n: String(data.totals.dueToday) })}</span>}
           </p>
         )}
       </div>
@@ -144,11 +136,20 @@ export default function OverviewScreen() {
           <ListState loading={insightsQ.isLoading} error={insightsQ.isError} onRetry={() => insightsQ.refetch()} empty={false} emptyTitle="">
             {data && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                {data.totals.overdue > 0 && (
+                  <Link href="/m/tasks" className="flex min-h-[72px] items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 active:scale-[0.99]" data-testid="m-overdue-hero">
+                    <span>
+                      <span className="block text-2xl font-semibold leading-none tabular-nums text-danger">{data.totals.overdue}</span>
+                      <span className="mt-1 block text-sm font-medium text-danger">{t("m.ov.kpi_overdue")}</span>
+                    </span>
+                    {language === "ar" ? <ChevronLeft className="h-5 w-5 text-danger" aria-hidden /> : <ChevronRight className="h-5 w-5 text-danger" aria-hidden />}
+                  </Link>
+                )}
+                <div className={cn("grid gap-3", data.totals.overdue > 0 ? "grid-cols-3" : "grid-cols-2")}>
                   {tile(t("m.ov.kpi_open"), data.totals.open)}
-                  {tile(t("m.ov.kpi_overdue"), data.totals.overdue, undefined, "danger")}
+                  {data.totals.overdue === 0 && tile(t("m.ov.kpi_overdue"), 0, undefined, "danger")}
                   {tile(t("m.ov.kpi_today"), data.totals.dueToday)}
-                  {tile(t("m.ov.kpi_done"), data.totals.completed, <Delta pct={data.productivity.changePct} label={t("m.ov.vs_previous", { n: String(data.days) })} />)}
+                  {tile(t("m.ov.kpi_done"), data.totals.completed, data.totals.overdue > 0 ? undefined : <Delta pct={data.productivity.changePct} label={t("m.ov.vs_previous", { n: String(data.days) })} />)}
                 </div>
 
                 <Card title={t("m.ov.productivity")}>

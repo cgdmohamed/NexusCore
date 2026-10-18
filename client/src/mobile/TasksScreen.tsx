@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, CalendarDays } from "lucide-react";
+import { Check, CalendarDays, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -18,6 +18,7 @@ export default function TasksScreen() {
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [filter, setFilter] = useState<StatusFilter>("open");
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const q = useDebounced(search.trim());
   const update = useTaskUpdate();
@@ -40,8 +41,21 @@ export default function TasksScreen() {
 
   return (
     <div className="space-y-3 p-4 pb-10">
-      <Segmented value={scope} onChange={setScope} options={[{ value: "mine", label: t("m.scope_mine") }, { value: "all", label: t("m.scope_all") }]} />
-      <SearchBox value={search} onChange={setSearch} placeholder={t("m.search")} />
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <Segmented value={scope} onChange={setScope} options={[{ value: "mine", label: t("m.scope_mine") }, { value: "all", label: t("m.scope_all") }]} />
+        </div>
+        <button
+          type="button"
+          aria-label={t("m.search")}
+          aria-pressed={searchOpen || !!search}
+          onClick={() => setSearchOpen((v) => !v)}
+          className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg", searchOpen || search ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}
+        >
+          <Search className="h-5 w-5" />
+        </button>
+      </div>
+      {(searchOpen || !!search) && <SearchBox value={search} onChange={setSearch} placeholder={t("m.search")} />}
       <Chips value={filter} onChange={setFilter} options={[
         { value: "open", label: t("m.filter_open") }, { value: "done", label: t("m.filter_done") }, { value: "all", label: t("m.filter_all") },
       ]} />
@@ -54,8 +68,8 @@ export default function TasksScreen() {
         <div className="space-y-5">
           {groups.map((g) => (
             <section key={g.key}>
-              <h2 className={cn("mb-2 text-sm font-semibold", g.key === "overdue" ? "text-danger" : "text-muted-foreground")}>
-                {labels[g.key]} <span className="tabular-nums">({g.tasks.length})</span>
+              <h2 className={cn("mb-2 text-sm font-semibold", g.key === "overdue" ? "text-danger" : "text-foreground")}>
+                {labels[g.key]} <span className="font-normal tabular-nums text-muted-foreground">({g.tasks.length})</span>
               </h2>
               <ul className="space-y-2">
                 {g.tasks.map((task) => {

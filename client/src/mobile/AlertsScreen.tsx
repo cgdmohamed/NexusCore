@@ -23,8 +23,17 @@ export default function AlertsScreen() {
               <button onClick={() => !x.isRead && n.markAsRead(x.id)} className={cn("flex w-full items-start gap-3 rounded-xl border p-3 text-start", x.isRead ? "border-border bg-card" : "border-primary/30 bg-accent/50")}>
                 <span className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", x.isRead ? "bg-transparent" : "bg-primary")} aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className={cn("block", !x.isRead && "font-semibold")}>{x.title}</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">{x.message}</span>
+                  {x.type === "daily_digest" ? (
+                    <>
+                      <span className="block text-xs text-muted-foreground">{x.title}</span>
+                      <span className={cn("mt-0.5 block text-sm", !x.isRead && "font-semibold")}>{x.message}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className={cn("block", !x.isRead && "font-semibold")}>{x.title}</span>
+                      <span className="mt-0.5 block text-sm text-muted-foreground">{x.message}</span>
+                    </>
+                  )}
                   <span className="mt-1 block text-xs text-muted-foreground">{formatDistanceToNow(x.createdAt, { addSuffix: true })}</span>
                 </span>
               </button>
