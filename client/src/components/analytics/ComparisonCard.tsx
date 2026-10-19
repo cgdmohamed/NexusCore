@@ -10,6 +10,7 @@ interface ComparisonCardProps {
   change: {
     absolute: number;
     percentage: number;
+    isNew?: boolean;
   };
   formatter?: (value: number) => string;
 }
@@ -53,7 +54,7 @@ export function ComparisonCard({
               ) : (
                 <ArrowDown className="h-3 w-3" />
               )}
-              <span>{absPct.toFixed(2)}%</span>
+              <span>{change.isNew ? t("an.new") : `${absPct >= 10 ? absPct.toFixed(0) : absPct.toFixed(1)}%`}</span>
             </div>
             <span className="text-xs text-neutral">
               {isPositive ? "+" : isNeutral ? "" : "-"}{formatter(absChange)} {t("an.vs_previous")}

@@ -169,7 +169,7 @@ export function registerAnalyticsRoutes(app: Express) {
         const percentage = previous === 0
           ? (current > 0 ? 100 : 0)
           : round2(((current - previous) / previous) * 100);
-        return { absolute, percentage };
+        return { absolute, percentage, isNew: previous === 0 && current > 0 };
       };
 
       const p1r = period1Metrics.revenue;

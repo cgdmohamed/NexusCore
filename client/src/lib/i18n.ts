@@ -1199,6 +1199,7 @@ const translations: Translations = {
   'tk.showing': { en: 'Showing {{n}} tasks', ar: 'عرض {{n}} مهمة' },
   'tk.matching': { en: 'matching your filters', ar: 'تطابق التصفية الحالية' },
   'tk.due': { en: 'Due', ar: 'الاستحقاق' },
+  'an.new': { en: 'New', ar: 'جديد' },
   'an.tab_overview': { en: 'Overview', ar: 'نظرة عامة' },
   'an.tab_financial': { en: 'Financial', ar: 'المالية' },
   'an.tab_trends': { en: 'Trends', ar: 'الاتجاهات' },

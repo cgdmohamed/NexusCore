@@ -13,9 +13,11 @@ interface KpiCardProps {
   icon: LucideIcon;
   className?: string;
   description?: string;
+  // The one number the screen is about: 28px on phones instead of 22px
+  primary?: boolean;
 }
 
-export function KpiCard({ title, value, change, icon: Icon, className, description }: KpiCardProps) {
+export function KpiCard({ title, value, change, icon: Icon, className, description, primary }: KpiCardProps) {
   const { t } = useTranslation();
   return (
     <Card className={cn("", className)}>
@@ -26,7 +28,7 @@ export function KpiCard({ title, value, change, icon: Icon, className, descripti
         <Icon className="h-4 w-4 text-neutral" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-text">{value}</div>
+        <div className={cn("font-semibold tabular-nums text-text sm:text-2xl sm:font-bold", primary ? "text-2xl" : "text-xl")}>{value}</div>
         {change && (
           <p className={cn(
             "text-xs",

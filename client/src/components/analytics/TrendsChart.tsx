@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/currency";
 import { TrendingUp } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface TrendPoint { period: string; collected: number; spent: number; net: number }
 
@@ -30,6 +31,10 @@ const SPENT = "hsl(var(--chart-4))";
 export function TrendsChart({ points }: { points: TrendPoint[] }) {
   const { t, language } = useTranslation();
   const lang = language === "ar" ? "ar" : "en";
+  const phone = useIsMobile();
+  const tickSize = phone ? 13 : 12;
+  // 12 months do not fit a 324px axis: label every third one on a phone
+  const xInterval = phone ? (points.length > 8 ? 2 : 0) : "preserveStartEnd";
   const hasData = points.some((p) => p.collected !== 0 || p.spent !== 0);
 
   return (
@@ -54,8 +59,8 @@ export function TrendsChart({ points }: { points: TrendPoint[] }) {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={points} margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
                   <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="period" tickFormatter={(p) => periodLabel(String(p), lang)} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} interval="preserveStartEnd" minTickGap={16} padding={{ left: 24, right: 24 }} />
-                  <YAxis width={52} domain={[0, "auto"]} tickCount={5} tickFormatter={(v) => compactNumber(Number(v))} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <XAxis dataKey="period" tickFormatter={(p) => periodLabel(String(p), lang)} tick={{ fontSize: tickSize, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={{ stroke: "hsl(var(--border))" }} interval={xInterval as any} minTickGap={16} padding={{ left: 24, right: 24 }} />
+                  <YAxis width={52} domain={[0, "auto"]} tickCount={5} tickFormatter={(v) => compactNumber(Number(v))} tick={{ fontSize: tickSize, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip
                     cursor={{ stroke: "hsl(var(--border))" }}
                     content={({ active, payload, label }) => {
@@ -71,8 +76,8 @@ export function TrendsChart({ points }: { points: TrendPoint[] }) {
                       );
                     }}
                   />
-                  <Line type="linear" dataKey="collected" stroke={COLLECTED} strokeWidth={2} dot={{ r: 3, fill: COLLECTED, strokeWidth: 0 }} activeDot={{ r: 5 }} isAnimationActive={false} />
-                  <Line type="linear" dataKey="spent" stroke={SPENT} strokeWidth={2} dot={{ r: 3, fill: SPENT, strokeWidth: 0 }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                  <Line type="linear" dataKey="collected" stroke={COLLECTED} strokeWidth={2} dot={phone ? false : { r: 3, fill: COLLECTED, strokeWidth: 0 }} activeDot={{ r: phone ? 6 : 5 }} isAnimationActive={false} />
+                  <Line type="linear" dataKey="spent" stroke={SPENT} strokeWidth={2} dot={phone ? false : { r: 3, fill: SPENT, strokeWidth: 0 }} activeDot={{ r: phone ? 6 : 5 }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

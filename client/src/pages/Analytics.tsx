@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Header } from "@/components/dashboard/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,13 @@ import { formatCurrency } from "@/lib/currency";
 export default function Analytics() {
   const { t, language } = useTranslation();
   const lang = language === "ar" ? "ar" : "en";
+  const phone = useIsMobile();
+  // Phone-sized screens get the same text scale as the /m app (13/15/17/20/22/28px)
+  useEffect(() => {
+    if (!phone) return;
+    document.documentElement.classList.add("phone-scale");
+    return () => document.documentElement.classList.remove("phone-scale");
+  }, [phone]);
   const [trendMonths, setTrendMonths] = useState("12");
   const [granularity, setGranularity] = useState<"month" | "quarter">("month");
   const [dateRange, setDateRange] = useState<{start: Date | null, end: Date | null}>({
@@ -48,7 +56,9 @@ export default function Analytics() {
       
       const response = await fetch(`/api/analytics/kpis?${params}`);
       return response.json();
-    }
+    },
+    // Changing the dates must not replace the whole page with the loader (it unmounted the filter and lost its state)
+    placeholderData: keepPreviousData,
   });
 
   // Collected vs spent by month or quarter, on its own window
@@ -173,8 +183,9 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         <Header 
           title={t('nav.reports_kpis')}
           subtitle={t('analytics.subtitle')}
+          hideExport
         />
-        <div className="p-3 md:p-6">
+        <div className="p-4 md:p-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -191,9 +202,10 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
       <Header 
         title={t('nav.reports_kpis')}
         subtitle={t('analytics.subtitle')}
+        hideExport
       />
       
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Filter Bar */}
         <FilterBar
           onDateRangeChange={handleDateRangeChange}
@@ -202,21 +214,21 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         />
 
         <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">
-          <div className="overflow-x-auto pb-1 -mx-3 md:mx-0 px-3 md:px-0">
-            <TabsList className="flex w-max md:grid md:grid-cols-5 md:w-full">
-              <TabsTrigger value="overview" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_overview")}</TabsTrigger>
-              <TabsTrigger value="financial" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_financial")}</TabsTrigger>
-              <TabsTrigger value="trends" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_trends")}</TabsTrigger>
-              <TabsTrigger value="comparison" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_comparison")}</TabsTrigger>
-              <TabsTrigger value="outstanding" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_outstanding")}</TabsTrigger>
+          <div className="-mx-4 snap-x snap-proximity overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)] md:mx-0 md:px-0 md:[mask-image:none]">
+            <TabsList className="flex h-[52px] w-max md:grid md:h-10 md:w-full md:grid-cols-5">
+              <TabsTrigger value="overview" className="h-11 snap-start whitespace-nowrap px-4 md:h-auto md:px-2">{t("an.tab_overview")}</TabsTrigger>
+              <TabsTrigger value="financial" className="h-11 snap-start whitespace-nowrap px-4 md:h-auto md:px-2">{t("an.tab_financial")}</TabsTrigger>
+              <TabsTrigger value="trends" className="h-11 snap-start whitespace-nowrap px-4 md:h-auto md:px-2">{t("an.tab_trends")}</TabsTrigger>
+              <TabsTrigger value="comparison" className="h-11 snap-start whitespace-nowrap px-4 md:h-auto md:px-2">{t("an.tab_comparison")}</TabsTrigger>
+              <TabsTrigger value="outstanding" className="h-11 snap-start whitespace-nowrap px-4 md:h-auto md:px-2">{t("an.tab_outstanding")}</TabsTrigger>
             </TabsList>
           </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             {/* The four numbers that matter first, then the supporting ones */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard title={t("an.kpi_net")} value={formatCurrencyValue(kpis?.netProfit || 0)} icon={TrendingUp} />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <KpiCard primary title={t("an.kpi_net")} value={formatCurrencyValue(kpis?.netProfit || 0)} icon={TrendingUp} />
               <KpiCard title={t("an.kpi_revenue")} value={formatCurrencyValue(kpis?.totalRevenue || 0)} icon={DollarSign} />
               <KpiCard title={t("an.kpi_expenses")} value={formatCurrencyValue(kpis?.totalExpenses || 0)} icon={CreditCard} />
               <KpiCard
@@ -225,6 +237,8 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                 icon={AlertCircle}
                 description={t("an.overdue_n", { n: String(outstanding?.overdueCount || 0) })}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
               <KpiCard title={t("an.kpi_margin")} value={`${(kpis?.profitMargin || 0).toFixed(1)}%`} icon={Target} />
               <KpiCard title={t("an.kpi_clients")} value={kpis?.newClients || 0} icon={Users} />
               <KpiCard title={t("an.kpi_tasks")} value={kpis?.completedTasks || 0} icon={FileText} />
@@ -310,7 +324,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
           <TabsContent value="trends" className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               <Select value={trendMonths} onValueChange={setTrendMonths}>
-                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-11 w-44 md:h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="6">{t("an.range_6")}</SelectItem>
                   <SelectItem value="12">{t("an.range_12")}</SelectItem>
@@ -324,7 +338,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                     type="button"
                     aria-pressed={granularity === g}
                     onClick={() => setGranularity(g)}
-                    className={`h-8 rounded-md px-3 text-sm font-medium transition-colors ${granularity === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+                    className={`h-11 rounded-md px-3 text-sm font-medium transition-colors md:h-8 ${granularity === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
                   >
                     {t(g === "month" ? "an.by_month" : "an.by_quarter")}
                   </button>
@@ -334,7 +348,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
             </div>
 
             {trends?.summary && (
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                 <KpiCard title={t("an.sum_collected")} value={formatCurrencyValue(trends.summary.collected)} icon={DollarSign} />
                 <KpiCard title={t("an.sum_spent")} value={formatCurrencyValue(trends.summary.spent)} icon={CreditCard} />
                 <KpiCard title={t("an.sum_net")} value={formatCurrencyValue(trends.summary.net)} icon={TrendingUp} />
