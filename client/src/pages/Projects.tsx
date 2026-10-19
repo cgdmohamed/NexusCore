@@ -471,7 +471,7 @@ export default function Projects() {
               )}
             >
               <p className="text-sm text-muted-foreground">{item.label}</p>
-              <p className={cn("mt-1 text-2xl font-semibold tabular-nums", item.alert && "text-danger")}>{item.value}</p>
+              <p className={cn("mt-1 text-2xl tabular-nums", item.value === 0 ? "font-medium text-muted-foreground" : "font-semibold", item.alert && item.value > 0 && "text-danger")}>{item.value}</p>
             </button>
           ))}
         </div>

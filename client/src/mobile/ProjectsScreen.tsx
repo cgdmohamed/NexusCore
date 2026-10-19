@@ -54,24 +54,33 @@ export default function ProjectsScreen({ onAdd }: { onAdd: (r: AddRequest) => vo
             const pct = c.total ? Math.round((c.completed / c.total) * 100) : 0;
             return (
               <li key={p.id}>
-                <button onClick={() => setSelectedId(p.id)} className="w-full rounded-xl border border-border bg-card p-3 text-start">
+                <button
+                  onClick={() => setSelectedId(p.id)}
+                  className={cn(
+                    "w-full rounded-xl border border-border bg-card p-3 text-start",
+                    // The late and at-risk ones are marked on the leading edge so they stand out in a list of look-alikes
+                    p.health === "overdue" && "border-s-[3px] border-s-danger",
+                    p.health === "at_risk" && "border-s-[3px] border-s-warning",
+                  )}
+                >
                   <span className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
                       <span className="truncate text-sm font-semibold">{p.name}</span>
                     </span>
-                    <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs", HEALTH_CLS[p.health])}>{health[p.health]}</span>
+                    {p.health !== "no_tasks" && <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs", HEALTH_CLS[p.health])}>{health[p.health]}</span>}
                   </span>
                   <span className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                     {p.clientName && <span className="flex items-center gap-1 truncate"><User2 className="h-3.5 w-3.5" />{p.clientName}</span>}
                     {p.dueDate && <span className={cn("flex items-center gap-1", p.health === "overdue" && "font-medium text-danger")}><CalendarDays className="h-3.5 w-3.5" />{format(p.dueDate, "dd/MM/yyyy")}</span>}
                   </span>
+                  {c.total === 0 && <span className="mt-2 block text-xs text-muted-foreground">{t("projects.no_tasks_yet")}</span>}
                   {c.total > 0 && (
                     <span className="mt-2 block">
                       <span className="mb-1 flex justify-between text-xs text-muted-foreground tabular-nums">
-                        <span>{t("m.tasks_progress", { done: String(c.completed), total: String(c.total) })}</span><span>{pct}%</span>
+                        <span>{t("m.tasks_progress", { done: String(c.completed), total: String(c.total) })}</span><span className="text-sm font-semibold text-foreground">{pct}%</span>
                       </span>
-                      <span className="block h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${pct}%` }} /></span>
+                      <span className="block h-2 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${pct}%` }} /></span>
                     </span>
                   )}
                 </button>

@@ -475,11 +475,11 @@ export default function ProjectKanban() {
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="flex gap-5 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 items-start">
           {COLUMN_DEFS.map((col) => {
             const columnTasks = filteredTasks.filter((t: any) => t.status === col.id);
             return (
-              <div key={col.id} className="flex flex-col w-80 flex-shrink-0 min-w-[18rem]">
+              <div key={col.id} className="flex min-w-[14rem] flex-1 basis-0 flex-col">
                 <div
                   className={cn("rounded-t-lg px-4 py-3 flex items-center justify-between", col.headerBg)}
                   style={{ borderTop: `3px solid ${col.accent}` }}
