@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 interface ComparisonCardProps {
   title: string;
@@ -20,6 +21,7 @@ export function ComparisonCard({
   change,
   formatter = (val) => Number(val.toFixed(2)).toString(),
 }: ComparisonCardProps) {
+  const { t } = useTranslation();
   const isPositive = change.percentage > 0;
   const isNeutral = change.percentage === 0;
 
@@ -54,12 +56,12 @@ export function ComparisonCard({
               <span>{absPct.toFixed(2)}%</span>
             </div>
             <span className="text-xs text-neutral">
-              {isPositive ? "+" : isNeutral ? "" : "-"}{formatter(absChange)} vs previous period
+              {isPositive ? "+" : isNeutral ? "" : "-"}{formatter(absChange)} {t("an.vs_previous")}
             </span>
           </div>
 
           <div className="text-xs text-neutral">
-            Previous: {formatter(previousValue)}
+            {t("an.previous")}: {formatter(previousValue)}
           </div>
         </div>
       </CardContent>

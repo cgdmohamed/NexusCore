@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "@/lib/i18n";
 import { KpiCard } from "@/components/analytics/KpiCard";
-import { RevenueChart } from "@/components/analytics/RevenueChart";
+import { TrendsChart, type TrendPoint } from "@/components/analytics/TrendsChart";
+import { periodLabel } from "@/components/analytics/TrendsChart";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExpenseBreakdown } from "@/components/analytics/ExpenseBreakdown";
 import { ComparisonCard } from "@/components/analytics/ComparisonCard";
 import { FilterBar } from "@/components/analytics/FilterBar";
@@ -23,7 +25,10 @@ import { format, subDays, subMonths, startOfDay, endOfDay } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 
 export default function Analytics() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const lang = language === "ar" ? "ar" : "en";
+  const [trendMonths, setTrendMonths] = useState("12");
+  const [granularity, setGranularity] = useState<"month" | "quarter">("month");
   const [dateRange, setDateRange] = useState<{start: Date | null, end: Date | null}>({
     start: startOfDay(subMonths(new Date(), 1)),
     end: endOfDay(new Date())
@@ -46,20 +51,11 @@ export default function Analytics() {
     }
   });
 
-  // Fetch Revenue Trends
-  const { data: revenueTrends } = useQuery({
-    queryKey: ['/api/analytics/trends', 'revenue', selectedPeriod],
+  // Collected vs spent by month or quarter, on its own window
+  const { data: trends } = useQuery<{ granularity: string; points: TrendPoint[]; summary: { collected: number; spent: number; net: number; averageCollected: number; bestPeriod: { period: string; collected: number } | null } }>({
+    queryKey: ['/api/analytics/trends', trendMonths, granularity],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics/trends?metric=revenue&period=${selectedPeriod}`);
-      return response.json();
-    }
-  });
-
-  // Fetch Expense Trends
-  const { data: expenseTrends } = useQuery({
-    queryKey: ['/api/analytics/trends', 'expenses', selectedPeriod],
-    queryFn: async () => {
-      const response = await fetch(`/api/analytics/trends?metric=expenses&period=${selectedPeriod}`);
+      const response = await fetch(`/api/analytics/trends?months=${trendMonths}&period=${granularity}`);
       return response.json();
     }
   });
@@ -208,108 +204,65 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
         <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">
           <div className="overflow-x-auto pb-1 -mx-3 md:mx-0 px-3 md:px-0">
             <TabsList className="flex w-max md:grid md:grid-cols-5 md:w-full">
-              <TabsTrigger value="overview" className="whitespace-nowrap px-4 md:px-2">Overview</TabsTrigger>
-              <TabsTrigger value="financial" className="whitespace-nowrap px-4 md:px-2">Financial</TabsTrigger>
-              <TabsTrigger value="trends" className="whitespace-nowrap px-4 md:px-2">Trends</TabsTrigger>
-              <TabsTrigger value="comparison" className="whitespace-nowrap px-4 md:px-2">Comparison</TabsTrigger>
-              <TabsTrigger value="outstanding" className="whitespace-nowrap px-4 md:px-2">Outstanding</TabsTrigger>
+              <TabsTrigger value="overview" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_overview")}</TabsTrigger>
+              <TabsTrigger value="financial" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_financial")}</TabsTrigger>
+              <TabsTrigger value="trends" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_trends")}</TabsTrigger>
+              <TabsTrigger value="comparison" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_comparison")}</TabsTrigger>
+              <TabsTrigger value="outstanding" className="whitespace-nowrap px-4 md:px-2">{t("an.tab_outstanding")}</TabsTrigger>
             </TabsList>
           </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Company KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* The four numbers that matter first, then the supporting ones */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard title={t("an.kpi_net")} value={formatCurrencyValue(kpis?.netProfit || 0)} icon={TrendingUp} />
+              <KpiCard title={t("an.kpi_revenue")} value={formatCurrencyValue(kpis?.totalRevenue || 0)} icon={DollarSign} />
+              <KpiCard title={t("an.kpi_expenses")} value={formatCurrencyValue(kpis?.totalExpenses || 0)} icon={CreditCard} />
               <KpiCard
-                title="Total Revenue"
-                value={formatCurrencyValue(kpis?.totalRevenue || 0)}
-                icon={DollarSign}
-              />
-              <KpiCard
-                title="Total Expenses"
-                value={formatCurrencyValue(kpis?.totalExpenses || 0)}
-                icon={CreditCard}
-              />
-              <KpiCard
-                title="Net Profit"
-                value={formatCurrencyValue(kpis?.netProfit || 0)}
-                icon={TrendingUp}
-              />
-              <KpiCard
-                title="Profit Margin"
-                value={`${(kpis?.profitMargin || 0).toFixed(1)}%`}
-                icon={Target}
-              />
-              <KpiCard
-                title="New Clients"
-                value={kpis?.newClients || 0}
-                icon={Users}
-              />
-              <KpiCard
-                title="Completed Tasks"
-                value={kpis?.completedTasks || 0}
-                icon={FileText}
-              />
-              <KpiCard
-                title="Conversion Rate"
-                value={`${(kpis?.conversionRate || 0).toFixed(1)}%`}
-                icon={BarChart3}
-              />
-              <KpiCard
-                title="Outstanding"
+                title={t("an.kpi_outstanding")}
                 value={formatCurrencyValue(outstanding?.outstandingTotal || 0)}
                 icon={AlertCircle}
-                description={`${outstanding?.overdueCount || 0} overdue invoices`}
+                description={t("an.overdue_n", { n: String(outstanding?.overdueCount || 0) })}
               />
+              <KpiCard title={t("an.kpi_margin")} value={`${(kpis?.profitMargin || 0).toFixed(1)}%`} icon={Target} />
+              <KpiCard title={t("an.kpi_clients")} value={kpis?.newClients || 0} icon={Users} />
+              <KpiCard title={t("an.kpi_tasks")} value={kpis?.completedTasks || 0} icon={FileText} />
+              <KpiCard title={t("an.kpi_conversion")} value={`${(kpis?.conversionRate || 0).toFixed(1)}%`} icon={BarChart3} />
             </div>
 
-            {/* Invoice Status Breakdown */}
-            {kpis?.invoiceBreakdown && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Paid Invoices</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-text">
-                      {kpis.invoiceBreakdown.paid?.count || 0}
-                    </div>
-                    <p className="text-sm text-neutral">
-                      {formatCurrencyValue(kpis.invoiceBreakdown.paid?.amount || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Pending Invoices</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-text">
-                      {kpis.invoiceBreakdown.pending?.count || 0}
-                    </div>
-                    <p className="text-sm text-neutral">
-                      {formatCurrencyValue(kpis.invoiceBreakdown.pending?.amount || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Partially Paid Invoices</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-text">
-                      {kpis.invoiceBreakdown.partially_paid?.count || 0}
-                    </div>
-                    <p className="text-sm text-neutral">
-                      Paid: {formatCurrencyValue(kpis.invoiceBreakdown.partially_paid?.paidAmount || 0)} / 
-                      Total: {formatCurrencyValue(kpis.invoiceBreakdown.partially_paid?.amount || 0)}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            {/* Invoice status breakdown (invoices created in the selected dates) */}
+            {kpis?.invoiceBreakdown && (() => {
+              const bd = kpis.invoiceBreakdown;
+              const waiting = { count: (bd.pending?.count || 0) + (bd.sent?.count || 0), amount: (bd.pending?.amount || 0) + (bd.sent?.amount || 0) };
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">{t("an.inv_paid")}</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-text">{bd.paid?.count || 0}</div>
+                      <p className="text-sm text-neutral">{formatCurrencyValue(bd.paid?.amount || 0)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">{t("an.inv_pending")}</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-text">{waiting.count}</div>
+                      <p className="text-sm text-neutral">{formatCurrencyValue(waiting.amount)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">{t("an.inv_partial")}</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-text">{bd.partially_paid?.count || 0}</div>
+                      <p className="text-sm text-neutral">
+                        {t("an.paid_of", { paid: formatCurrencyValue(bd.partially_paid?.paidAmount || 0), total: formatCurrencyValue(bd.partially_paid?.amount || 0) })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
           </TabsContent>
 
           {/* Financial Tab */}
@@ -318,30 +271,30 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
               {/* P&L Summary */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Profit & Loss Summary</CardTitle>
+                  <CardTitle>{t("an.pl_title")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-neutral">Total Revenue</span>
+                    <span className="text-neutral">{t("an.kpi_revenue")}</span>
                     <span className="font-semibold text-success">
                       {formatCurrencyValue(kpis?.totalRevenue || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-neutral">Total Expenses</span>
+                    <span className="text-neutral">{t("an.kpi_expenses")}</span>
                     <span className="font-semibold text-danger">
                       {formatCurrencyValue(kpis?.totalExpenses || 0)}
                     </span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-text">Net Profit</span>
+                    <span className="font-medium text-text">{t("an.kpi_net")}</span>
                     <span className={`font-bold text-lg ${(kpis?.netProfit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                       {formatCurrencyValue(kpis?.netProfit || 0)}
                     </span>
                   </div>
                   <div className="text-sm text-neutral">
-                    Profit Margin: {(kpis?.profitMargin || 0).toFixed(2)}%
+                    {t("an.kpi_margin")}: {(kpis?.profitMargin || 0).toFixed(2)}%
                   </div>
                 </CardContent>
               </Card>
@@ -354,24 +307,48 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
           </TabsContent>
 
           {/* Trends Tab */}
-          <TabsContent value="trends" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {revenueTrends?.trends && (
-                <RevenueChart 
-                  data={revenueTrends.trends} 
-                  title="Revenue Trends"
-                  color="#10B981"
-                />
-              )}
-              
-              {expenseTrends?.trends && (
-                <RevenueChart 
-                  data={expenseTrends.trends} 
-                  title="Expense Trends"
-                  color="#EF4444"
-                />
-              )}
+          <TabsContent value="trends" className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={trendMonths} onValueChange={setTrendMonths}>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">{t("an.range_6")}</SelectItem>
+                  <SelectItem value="12">{t("an.range_12")}</SelectItem>
+                  <SelectItem value="24">{t("an.range_24")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-1 rounded-lg bg-muted p-1" role="group">
+                {(["month", "quarter"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    aria-pressed={granularity === g}
+                    onClick={() => setGranularity(g)}
+                    className={`h-8 rounded-md px-3 text-sm font-medium transition-colors ${granularity === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+                  >
+                    {t(g === "month" ? "an.by_month" : "an.by_quarter")}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("an.trend_note")}</p>
             </div>
+
+            {trends?.summary && (
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-5">
+                <KpiCard title={t("an.sum_collected")} value={formatCurrencyValue(trends.summary.collected)} icon={DollarSign} />
+                <KpiCard title={t("an.sum_spent")} value={formatCurrencyValue(trends.summary.spent)} icon={CreditCard} />
+                <KpiCard title={t("an.sum_net")} value={formatCurrencyValue(trends.summary.net)} icon={TrendingUp} />
+                <KpiCard title={t(granularity === "month" ? "an.avg_month" : "an.avg_quarter")} value={formatCurrencyValue(trends.summary.averageCollected)} icon={BarChart3} />
+                <KpiCard
+                  title={t("an.best_period")}
+                  value={trends.summary.bestPeriod ? periodLabel(trends.summary.bestPeriod.period, lang) : "—"}
+                  icon={Target}
+                  description={trends.summary.bestPeriod ? formatCurrencyValue(trends.summary.bestPeriod.collected) : undefined}
+                />
+              </div>
+            )}
+
+            {trends?.points && <TrendsChart points={trends.points} />}
           </TabsContent>
 
           {/* Comparison Tab */}
@@ -379,34 +356,34 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
             {comparison && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <ComparisonCard
-                  title="Revenue"
+                  title={t("an.sum_collected")}
                   currentValue={comparison.period1.revenue}
                   previousValue={comparison.period2.revenue}
                   change={comparison.changes.revenue}
                   formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
-                  title="Expenses"
+                  title={t("an.kpi_expenses")}
                   currentValue={comparison.period1.expenses}
                   previousValue={comparison.period2.expenses}
                   change={comparison.changes.expenses}
                   formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
-                  title="Net Profit"
+                  title={t("an.kpi_net")}
                   currentValue={Math.round((comparison.period1.revenue - comparison.period1.expenses) * 100) / 100}
                   previousValue={Math.round((comparison.period2.revenue - comparison.period2.expenses) * 100) / 100}
                   change={comparison.changes.profit}
                   formatter={formatCurrencyValue}
                 />
                 <ComparisonCard
-                  title="New Clients"
+                  title={t("an.kpi_clients")}
                   currentValue={comparison.period1.newClients}
                   previousValue={comparison.period2.newClients}
                   change={comparison.changes.newClients}
                 />
                 <ComparisonCard
-                  title="Completed Tasks"
+                  title={t("an.kpi_tasks")}
                   currentValue={comparison.period1.completedTasks}
                   previousValue={comparison.period2.completedTasks}
                   change={comparison.changes.completedTasks}
@@ -421,7 +398,7 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Outstanding Receivables</CardTitle>
+                    <CardTitle className="text-base">{t("an.out_title")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-text mb-4">
@@ -429,45 +406,58 @@ ${t('analytics.csv_profit_margin')}: ${kpis?.profitMargin?.toFixed(2) || 0}%
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-neutral">Total Outstanding Invoices</span>
-                        <span className="font-medium">{outstanding.receivables?.length || 0}</span>
+                        <span className="text-neutral">{t("an.out_count")}</span>
+                        <span className="font-medium">{outstanding.receivableCount || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral">Overdue Invoices</span>
+                        <span className="text-neutral">{t("an.out_overdue")}</span>
                         <span className="font-medium text-danger">{outstanding.overdueCount}</span>
                       </div>
                     </div>
+                    {outstanding.aging && (
+                      <div className="mt-5 border-t border-border pt-4">
+                        <p className="mb-2 text-sm font-medium text-foreground">{t("an.aging")}</p>
+                        <ul className="space-y-1.5 text-sm">
+                          {(["notDue", "d1_30", "d31_60", "d61_90", "d90plus"] as const).map((k) => (
+                            <li key={k} className="flex justify-between">
+                              <span className="text-neutral">{t(`an.age_${k}`)} <span className="tabular-nums">({outstanding.aging[k]?.count || 0})</span></span>
+                              <span className="font-medium tabular-nums">{formatCurrencyValue(outstanding.aging[k]?.amount || 0)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Overdue Details</CardTitle>
+                    <CardTitle className="text-base">{t("an.out_details")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {outstanding.overdueInvoices?.length > 0 ? (
                       <div className="space-y-3">
                         {outstanding.overdueInvoices.slice(0, 5).map((invoice: any) => (
-                          <div key={invoice.id} className="flex justify-between items-center">
-                            <div>
+                          <div key={invoice.id} className="flex justify-between items-center gap-3">
+                            <div className="min-w-0">
                               <div className="font-medium text-text">{formatCurrencyValue(invoice.amount)}</div>
-                              <div className="text-xs text-neutral">
-                                {invoice.daysPastDue} days overdue
+                              <div className="truncate text-xs text-neutral">
+                                {invoice.clientName ? `${invoice.clientName} · ` : ""}{t("an.days_overdue", { n: String(invoice.daysPastDue) })}
                               </div>
                             </div>
-                            <div className="text-xs text-neutral">
-                              Due: {format(new Date(invoice.dueDate), 'MMM dd')}
+                            <div className="shrink-0 text-xs text-neutral">
+                              {t("an.due")}: {format(new Date(invoice.dueDate), 'dd/MM/yyyy')}
                             </div>
                           </div>
                         ))}
                         {outstanding.overdueInvoices.length > 5 && (
                           <div className="text-sm text-neutral text-center">
-                            And {outstanding.overdueInvoices.length - 5} more...
+                            {t("an.more", { n: String(outstanding.overdueInvoices.length - 5) })}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-neutral text-center">No overdue invoices</p>
+                      <p className="text-neutral text-center">{t("an.none_overdue")}</p>
                     )}
                   </CardContent>
                 </Card>

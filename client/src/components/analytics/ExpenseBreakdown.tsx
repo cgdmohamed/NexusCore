@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/currency";
+import { useTranslation } from "@/lib/i18n";
 
 interface ExpenseBreakdownProps {
   data: Array<{
@@ -22,6 +23,7 @@ const COLORS = [
 ];
 
 export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
+  const { t } = useTranslation();
 
   const pieData = data.map((item, index) => ({
     name: item.category,
@@ -33,9 +35,13 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-text">Expense Breakdown by Category</CardTitle>
+        <CardTitle className="text-lg font-semibold text-text">{t("an.exp_breakdown")}</CardTitle>
       </CardHeader>
       <CardContent>
+        {pieData.length === 0 ? (
+          <p className="py-16 text-center text-sm text-muted-foreground">{t("an.no_expenses")}</p>
+        ) : (
+        <>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -55,7 +61,7 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
               <Tooltip 
                 formatter={(value: number, name: string, props: any) => [
                   formatCurrency(value), 
-                  `${name} (${props.payload.count} expenses)`
+                  `${name} (${t("an.expenses_n", { n: String(props.payload.count) })})`
                 ]}
                 contentStyle={{
                   backgroundColor: 'white',
@@ -68,7 +74,7 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
                 verticalAlign="bottom" 
                 height={36}
                 formatter={(value, entry: any) => (
-                  <span style={{ color: entry.color }}>{value}</span>
+                  <span className="text-foreground">{value}</span>
                 )}
               />
             </PieChart>
@@ -88,11 +94,13 @@ export function ExpenseBreakdown({ data }: ExpenseBreakdownProps) {
               </div>
               <div className="text-end">
                 <div className="font-medium text-text">{formatCurrency(item.value)}</div>
-                <div className="text-xs text-neutral">{item.count} expenses</div>
+                <div className="text-xs text-neutral">{t("an.expenses_n", { n: String(item.count) })}</div>
               </div>
             </div>
           ))}
         </div>
+        </>
+        )}
       </CardContent>
     </Card>
   );

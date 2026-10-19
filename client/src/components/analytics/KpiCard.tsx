@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 interface KpiCardProps {
   title: string;
@@ -15,6 +16,7 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ title, value, change, icon: Icon, className, description }: KpiCardProps) {
+  const { t } = useTranslation();
   return (
     <Card className={cn("", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -30,7 +32,7 @@ export function KpiCard({ title, value, change, icon: Icon, className, descripti
             "text-xs",
             change.isPositive ? "text-success" : "text-danger"
           )}>
-            {change.isPositive ? "+" : ""}{change.value.toFixed(1)}% from last period
+            {change.isPositive ? "+" : ""}{change.value.toFixed(1)}% {t("an.from_last")}
           </p>
         )}
         {description && (

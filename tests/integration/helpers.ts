@@ -43,6 +43,7 @@ export async function startApp() {
   const { registerProjectRoutes } = await import("../../server/project-routes");
   const { registerPushRoutes } = await import("../../server/push-routes");
   const { registerDashboardOverviewRoutes } = await import("../../server/dashboard-overview");
+  const { registerAnalyticsRoutes } = await import("../../server/analytics-routes");
   const { registerCalendarRoutes } = await import("../../server/calendar");
   const { registerMcpRoutes } = await import("../../server/mcp/routes");
   const { registerAiAccessRoutes } = await import("../../server/ai-access-routes");
@@ -63,6 +64,7 @@ export async function startApp() {
     next();
   });
   setupDatabaseRoutes(app as any);
+  registerAnalyticsRoutes(app as any);
   registerExpenseRoutes(app as any);
   registerPaymentSourceRoutes(app as any);
   registerTaskManagementRoutes(app as any);
