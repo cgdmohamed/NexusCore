@@ -58,7 +58,7 @@ export default function ProjectsScreen({ onAdd }: { onAdd: (r: AddRequest) => vo
                   <span className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
-                      <span className="truncate font-medium">{p.name}</span>
+                      <span className="truncate text-sm font-semibold">{p.name}</span>
                     </span>
                     <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs", HEALTH_CLS[p.health])}>{health[p.health]}</span>
                   </span>

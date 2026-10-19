@@ -89,7 +89,7 @@ export function ProjectCard({ project, canEdit, canDelete, onEdit, onSetStatus, 
         <div className="flex items-start justify-between gap-2">
           <Link href={`/projects/${project.id}`} className="flex min-w-0 items-center gap-3 hover:underline">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
-            <span className="truncate font-semibold text-foreground">{project.name}</span>
+            <span className="truncate text-base font-semibold text-foreground">{project.name}</span>
           </Link>
           {(canEdit || canDelete) && (
             <DropdownMenu>

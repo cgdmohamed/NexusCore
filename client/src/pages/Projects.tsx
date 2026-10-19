@@ -483,11 +483,11 @@ export default function Projects() {
               onClick={() => setView(tab.key)}
               className={cn(
                 "rounded-full px-3 py-2 text-sm font-medium transition-colors",
-                view === tab.key ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground hover:bg-muted/50",
+                view === tab.key ? "border border-primary bg-primary/10 text-primary" : "border border-border bg-card text-muted-foreground hover:bg-muted/50",
               )}
             >
               {tab.label}
-              <span className="ms-2 text-xs opacity-70 tabular-nums">({counts[tab.key as "live" | "completed" | "archived" | "all"]})</span>
+              <span className="ms-2 text-xs tabular-nums">({counts[tab.key as "live" | "completed" | "archived" | "all"]})</span>
             </button>
           ))}
         </div>

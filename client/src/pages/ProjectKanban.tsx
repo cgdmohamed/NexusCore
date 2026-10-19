@@ -91,6 +91,22 @@ const priorityColors: Record<string, string> = {
   high:   "bg-danger-soft text-danger border-danger/20",
 };
 
+// Only what stands out gets a mark: high priority is a red badge, low a quiet dot, medium (the usual case) nothing
+function PriorityMark({ priority }: { priority: string }) {
+  const { t } = useTranslation();
+  if (priority === "high") {
+    return <Badge variant="outline" className={cn("flex-shrink-0 text-xs", priorityColors.high)}>{t("tasks.high")}</Badge>;
+  }
+  if (priority === "low") {
+    return (
+      <span className="mt-1.5 flex h-2 w-2 flex-shrink-0 rounded-full bg-muted-foreground/50" title={t("tasks.low")}>
+        <span className="sr-only">{t("tasks.low")}</span>
+      </span>
+    );
+  }
+  return null;
+}
+
 const STATUS_BADGE_CLS: Record<string, string> = {
   active:    "bg-success-soft text-success border-success/20",
   on_hold:   "bg-warning-soft text-warning border-warning/20",
@@ -152,9 +168,7 @@ function SortableTaskCard({ task, onClick }: { task: any; onClick: (t: any) => v
       <CardContent className="p-3 space-y-2">
         <div className="flex justify-between items-start gap-2">
           <span className="font-medium text-sm leading-snug line-clamp-2 flex-1">{task.title}</span>
-          <Badge variant="outline" className={cn("text-xs flex-shrink-0", priorityColors[task.priority] ?? "")}>
-            {task.priority}
-          </Badge>
+          <PriorityMark priority={task.priority} />
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           {task.assigneeName && (
@@ -279,7 +293,7 @@ export default function ProjectKanban() {
     activeFilters.push({ key: "assignee", label: `${t("kanban.filter_assignee")}: ${name}`, clear: () => setFilterAssignee("all") });
   }
   if (filterPriority !== "all") {
-    activeFilters.push({ key: "priority", label: `${t("kanban.filter_priority")}: ${filterPriority}`, clear: () => setFilterPriority("all") });
+    activeFilters.push({ key: "priority", label: `${t("kanban.filter_priority")}: ${t(`tasks.${filterPriority}`)}`, clear: () => setFilterPriority("all") });
   }
 
   const statusLabel = {
@@ -339,9 +353,9 @@ export default function ProjectKanban() {
             <div className="space-y-2 min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: project?.color }} />
-                <h1 className="text-xl font-bold text-foreground truncate">{project?.name ?? t("nav.projects")}</h1>
+                <h1 className="text-xl font-semibold text-foreground truncate">{project?.name ?? t("nav.projects")}</h1>
                 {project?.status && (
-                  <Badge variant="outline" className={cn("text-xs capitalize", STATUS_BADGE_CLS[project.status] ?? "")}>
+                  <Badge variant="outline" className={cn("text-xs", STATUS_BADGE_CLS[project.status] ?? "")}>
                     {statusLabel}
                   </Badge>
                 )}
@@ -528,9 +542,7 @@ export default function ProjectKanban() {
               <CardContent className="p-3">
                 <div className="flex justify-between items-start gap-2">
                   <span className="font-medium text-sm line-clamp-2 flex-1">{activeTask.title}</span>
-                  <Badge variant="outline" className={cn("text-xs", priorityColors[activeTask.priority] ?? "")}>
-                    {activeTask.priority}
-                  </Badge>
+                  <PriorityMark priority={activeTask.priority} />
                 </div>
               </CardContent>
             </Card>
@@ -603,7 +615,7 @@ export default function ProjectKanban() {
             <div className="flex items-start justify-between gap-3 pe-8">
               <DialogTitle className="text-xl leading-snug">{selectedTask?.title}</DialogTitle>
               <Badge variant="outline" className={cn("text-xs mt-0.5 flex-shrink-0", priorityColors[selectedTask?.priority] ?? "")}>
-                {selectedTask?.priority}
+                {selectedTask?.priority ? t(`tasks.${selectedTask.priority}`) : null}
               </Badge>
             </div>
           </DialogHeader>
